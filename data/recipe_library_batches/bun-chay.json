@@ -1,0 +1,146 @@
+{
+ "dish_name": "Bun Chay",
+ "cuisine": "Vietnamese",
+ "main_protein": "tofu",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Thin rice vermicelli noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Peanut oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp plus 2 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Coconut sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "1 stalk",
+   "category": "produce",
+   "cook_qty": "2 tbsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "1 clove"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Orange bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 cup leaves"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 cup leaves"
+  },
+  {
+   "item": "Roasted unsalted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Bird's eye chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil.",
+  "In a bowl, stir 1/4 cup rice vinegar, the juice of the 2 limes, 3 tbsp of the coconut sugar, 2 tbsp of the tamari, the lemongrass, 1 grated garlic clove and 1 tbsp water until the sugar dissolves.",
+  "Cut the carrots into thin matchsticks, slice the bell pepper thinly and cut the cucumber into half moons. Pick the cilantro, basil and mint leaves and chop the peanuts. Slice the chili and set it aside.",
+  "Cook the noodles in the boiling water for the time on the package. Drain, rinse under cold water and drain well. Divide them among 4 bowls.",
+  "Pat the tofu dry and cut it into bite-size rectangles. Heat the peanut oil in a large non-stick skillet over medium-high heat. Add the tofu in a single layer and cook without moving it for 4 to 5 minutes per side, until golden and crisp at the edges.",
+  "Meanwhile, in a small bowl, stir the remaining 2 tsp tamari, the sesame oil and the last 1 tbsp coconut sugar until the sugar dissolves.",
+  "Pour it over the tofu and cook for 1 minute, turning the pieces, until the sauce is thick and sticky. Transfer the tofu to the noodle bowls.",
+  "Top each bowl with the carrot, bell pepper, cucumber, herbs and peanuts. Spoon a quarter of the dressing over each bowl.",
+  "Put the sliced chili on the table for anyone who wants heat.",
+  "To pack, put the dressing in a small jar and pour it on at lunch. The bowls keep in the fridge for 1 day."
+ ],
+ "method_notes": "The Wanderlust Kitchen tosses rice vermicelli with raw vegetables and herbs, tops it with tofu fried then glazed in soy, sesame oil and sugar, and dresses it with a lime, rice vinegar and lemongrass sauce, which is the version used here. Wok and Kin marinates the tofu and adds fried toppings, which takes over an hour. The dressing uses gluten-free tamari instead of mushroom soy sauce and leaves out the Maggi seasoning, which contains wheat, so it stays vegan and gluten-free. The chili is moved to the table.",
+ "sources": [
+  {
+   "name": "The Wanderlust Kitchen",
+   "title": "Fresh and Easy Vietnamese Noodle Salad (Vegan Bun Chay)",
+   "url": "https://thewanderlustkitchen.com/vegan-bun-chay-vietnamese-noodle-salad/",
+   "rating": 4.5,
+   "rating_count": 210,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wok and Kin",
+   "title": "Bun Chay (Vegetarian Noodle Salad)",
+   "url": "https://www.wokandkin.com/bun-chay-vegetarian-noodle-salad/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

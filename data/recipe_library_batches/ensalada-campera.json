@@ -1,0 +1,119 @@
+{
+ "dish_name": "Ensalada Campera",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tsp juice"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "1 clove"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 3/4-inch pieces. Put them in a large pot, cover with cold water and add 1 tbsp salt. Bring to a boil over medium-high heat and cook for 10 to 12 minutes, until a knife slides in easily.",
+  "Meanwhile, put the eggs in a small saucepan and cover them with cold water. Bring to a boil, then cover the pan and take it off the heat. Leave the eggs for 10 to 11 minutes, then transfer them to a bowl of cold water.",
+  "Drain the potatoes and spread them on a plate for 10 minutes to cool a little.",
+  "In a large bowl, whisk the olive oil, sherry vinegar, 1 tsp lemon juice, 1 grated garlic clove, the parsley and the pepper.",
+  "Thinly slice the shallots and the olives. Finely chop the red and green peppers and roughly chop the tomatoes.",
+  "Add the potatoes and the chopped vegetables to the dressing and toss. Taste it, and add a pinch of salt if it's flat.",
+  "Peel and quarter the eggs and lay them on top so the yolks don't crumble into the salad. Serve at room temperature or chilled.",
+  "To pack, keep it in a covered container in the fridge for up to 3 days."
+ ],
+ "method_notes": "No version with enough ratings was found, so this follows Spain on a Fork: boiled potatoes tossed with peppers, tomato, shallot and olives in a sherry vinegar and olive oil dressing, with egg on top. Gourmet Traveller and Movida Rustica use the same base with more oil and vinegar. All of them include canned tuna, which is left out here to keep the salad vegetarian. It tastes better made ahead.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Country Salad (Ensalada Campera)",
+   "url": "https://spainonafork.com/?p=16676",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gourmet Traveller",
+   "title": "Summer potato salad (ensalada campera)",
+   "url": "https://www.gourmettraveller.com.au/recipe/snacks-sides/summer-potato-salad-ensalada-campera-11162/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

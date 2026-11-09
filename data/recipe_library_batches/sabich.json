@@ -1,0 +1,128 @@
+{
+ "dish_name": "Sabich",
+ "cuisine": "Lebanese",
+ "main_protein": "eggs",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Large eggplant",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Plum tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "2 cloves"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 pack of 4",
+   "category": "other"
+  },
+  {
+   "item": "Hummus",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Pickled vegetables",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Amba sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the eggs in a saucepan and cover them with cold water by 1 inch. Bring to a boil over high heat, then cover the pan and take it off the heat. Leave the eggs for 11 minutes.",
+  "Meanwhile, make the salad. Dice the tomatoes, the cucumber half and the red onion half, and chop 1/4 cup parsley. Toss them in a bowl with the juice of half a lemon and 1/4 tsp salt.",
+  "Make the tahini sauce. Whisk the tahini, 2 tbsp lemon juice from the second lemon, 2 pressed garlic cloves and a small pinch of salt. Whisk in 2 tbsp water until it's creamy.",
+  "Transfer the eggs to a bowl of cold water. Slice the eggplant into rounds about 3/8 inch thick and cut each round in half.",
+  "Heat 1/4 cup of the oil in a large skillet over medium heat. Fry the eggplant in batches for 4 to 5 minutes per side, until it's soft and golden. Add more oil between batches as you need it.",
+  "Transfer each batch to a plate lined with paper towels and sprinkle with salt.",
+  "Peel and slice the eggs.",
+  "Cut the pitas open and spread about 2 tbsp hummus inside each one.",
+  "Layer in the eggplant, the egg slices, the pickled vegetables and the salad. Drizzle with the tahini sauce and the amba, and serve right away."
+ ],
+ "method_notes": "Tasting Table fries eggplant rounds, then layers them in a pita with hummus, hard-boiled egg, a chopped tomato and cucumber salad, tahini sauce, pickles and amba, which is the version used here. America's Test Kitchen salts and broils the eggplant instead and adds zhoug and Aleppo pepper. The fried version takes about 40 minutes, so it runs over a 30 minute lunch; the eggplant, eggs and sauces can all be made ahead and packed separately.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Sabich (Middle Eastern Stuffed Sandwiches)",
+   "url": "https://www.tastingtable.com/1436223/sabich-middle-eastern-stuffed-sandwiches-recipe",
+   "rating": 5.0,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "America's Test Kitchen",
+   "title": "Sabich (Eggplant and Egg Sandwiches)",
+   "url": "https://www.americastestkitchen.com/recipes/13748-Sabich-eggplant-and-egg-sandwiches",
+   "rating": 4.0,
+   "rating_count": 14,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

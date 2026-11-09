@@ -1,0 +1,114 @@
+{
+ "dish_name": "Pasta Fredda",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Fusilli or farfalle",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "1 clove"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Pitted olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Jarred roasted red peppers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup leaves"
+  },
+  {
+   "item": "Mozzarella pearls",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil and add 1 tbsp salt. Cook the fusilli or farfalle for the time on the package, until it's al dente.",
+  "Meanwhile, in a large bowl, whisk the olive oil, balsamic vinegar, honey, 1 grated garlic clove, oregano, 1/4 tsp salt and 1/2 tsp pepper.",
+  "Halve the cherry tomatoes and the olives. Dice the roasted peppers and tear the basil. Pat the mozzarella pearls dry.",
+  "Drain the pasta and rinse it under cold water until it's cool. Shake out as much water as you can.",
+  "Transfer the pasta to the bowl with the dressing and toss. Add the tomatoes, olives, peppers, basil and mozzarella and toss gently. Taste it, and add a pinch more salt if it's flat.",
+  "Cover and chill for at least 1 hour. It keeps in a covered container in the fridge for up to 3 days, so it's ready to pack."
+ ],
+ "method_notes": "Cup of Yum dresses cooled pasta with olive oil, balsamic, honey, garlic and oregano and chills it for an hour, which is the version used here. Other cooks keep it simpler with just tomatoes, mozzarella, basil and olive oil, or blend a basil sauce through it. Everyone rinses the pasta in cold water and drains the mozzarella well so the salad doesn't turn watery.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Pasta Fredda (Italian Cold Pasta Salad)",
+   "url": "https://cupofyum.com/recipes/pasta-fredda-italian-cold-pasta-salad",
+   "rating": 5.0,
+   "rating_count": 246,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Italian Recipe Book",
+   "title": "Pasta Caprese",
+   "url": "https://italianrecipebook.com/pasta-caprese",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

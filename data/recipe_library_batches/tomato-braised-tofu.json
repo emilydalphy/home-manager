@@ -1,0 +1,112 @@
+{
+ "dish_name": "Tomato Braised Tofu",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Soft tofu",
+   "qty": "1 block (16 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Ripe tomatoes",
+   "qty": "1 1/2 lbs (4 to 5 medium)",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry sherry",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Gluten-free tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water and bring to a boil. Cover, turn the heat to low and cook for 15 minutes, then leave the lid on, off the heat, for 5 minutes.",
+  "Meanwhile, cut the tomatoes into wedges. Cut the white parts of the scallions into 2-inch pieces and slice the green parts thinly.",
+  "Slide the tofu onto a plate, pat it dry gently and cut it into 3/4-inch thick squares.",
+  "In a small bowl, stir the cornstarch with 2 tbsp water. In a measuring cup, stir 1/2 cup water, the sugar, the tamari, the sesame oil, the white pepper and the salt.",
+  "Heat the oil in a wide skillet over high heat. Add the scallion whites and cook for 15 seconds. Add the tomatoes and stir-fry for 2 minutes.",
+  "Pour the sherry around the edge of the pan. Add the water and tamari mixture and simmer for 1 minute, until the tomatoes start to wilt.",
+  "Stir the cornstarch mixture again and pour it in. Stir for about 30 seconds, until the sauce thickens.",
+  "Slide the tofu in and spoon some sauce over it. Turn the heat to medium, cover and cook for 2 minutes, until the tomatoes are soft and the sauce is thick. Handle the tofu gently so it doesn't break up.",
+  "Take the pan off the heat and stir in the scallion greens. Taste it, and add a pinch more salt if it's flat.",
+  "Serve over the rice."
+ ],
+ "method_notes": "The Woks of Life stir-fries wedged tomatoes with scallion, thickens the sauce with a little cornstarch and slides in soft tofu to finish, which is the version used here. Bittman Project peels the tomatoes and simmers them with ginger and brown sugar for longer. Shaoxing wine and oyster sauce are swapped for dry sherry and gluten-free tamari so the dish stays vegan and gluten-free.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Tomato Tofu",
+   "url": "https://thewoksoflife.com/tomato-tofu/",
+   "rating": 5.0,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bittman Project",
+   "title": "Tomato and Tofu",
+   "url": "https://bittmanproject.com/recipe/tomato-and-tofu/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
