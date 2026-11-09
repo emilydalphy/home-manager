@@ -1,0 +1,112 @@
+{
+ "dish_name": "Sushi Bake",
+ "cuisine": "Japanese",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Sushi rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salmon fillet, skinless",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Imitation crab",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "2/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Furikake",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted seaweed snack sheets",
+   "qty": "1 package",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve under cold water for about a minute.",
+  "Put the rice in a saucepan with 1 1/3 cups of water. Bring it to a boil over high heat, cover, turn the heat to low, and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes.",
+  "Meanwhile, heat the oven to 425°F and line a 7 x 11-inch baking dish with parchment.",
+  "Transfer the rice to a large bowl. Stir in the rice vinegar, sugar and salt, then spread it out and let it cool for 10 minutes.",
+  "Dice the salmon into 1/2-inch pieces. Pull the imitation crab into thin strands and chop them.",
+  "In a medium bowl, stir the salmon, crab, 1/3 cup of the mayonnaise, 2 tbsp of the soy sauce and 2 tsp of the sriracha.",
+  "Press the rice into an even layer in the baking dish and sprinkle the furikake over it.",
+  "Spread the salmon mixture over the rice and press it down lightly.",
+  "Bake for 18 to 20 minutes. You're cooking the salmon to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Break a piece open, and it's done when it flakes and isn't see-through.",
+  "While it bakes, stir the other 1/3 cup mayonnaise, the last tbsp of soy sauce and the other 4 tsp of sriracha in a small bowl. Slice the avocado and the green onions.",
+  "Let the bake cool for 5 minutes, then cut it into squares. Serve with the seaweed sheets, avocado, green onions and the sriracha mayo."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Wholly Tasteful (5.0 from 41) is the lead: seasoned sushi rice, furikake, a raw salmon and imitation crab mixture with mayo and soy, baked, and served with seaweed and a sriracha mayo. Cook the salmon through in the bake rather than ahead, as that version does; Cooking With Ayeh agrees on the layers but cooks the salmon first. The sriracha mayo is kept on the side so the base stays mild. Honest total is about 55 minutes: the rice needs 20 minutes and 10 to cool before the 18 to 20 minute bake, so this can't make the 30 minute target.",
+ "sources": [
+  {
+   "name": "Wholly Tasteful",
+   "title": "Salmon Sushi Bake (no cream cheese)",
+   "url": "https://www.whollytasteful.com/salmon-sushi-bake/",
+   "rating": 5.0,
+   "rating_count": 41,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking With Ayeh",
+   "title": "Sushi Bake (Viral Tiktok Recipe)",
+   "url": "https://cookingwithayeh.com/sushi-bake/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

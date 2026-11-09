@@ -1,0 +1,116 @@
+{
+ "dish_name": "Tonjiru",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork belly, thinly sliced",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Daikon",
+   "qty": "1 piece (about 8 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Medium-firm tofu",
+   "qty": "7 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "5 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Miso paste",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "for the table"
+  }
+ ],
+ "instructions": [
+  "Peel the daikon and carrot. Cut them into thin half-moons, about 1/4 inch thick.",
+  "Halve the onion and slice it thin. Slice the shiitake caps. Cut the pork into 1-inch pieces and the tofu into 1/2-inch cubes.",
+  "Slice the green onions, keeping the white parts and the green tops in separate piles. Grate the ginger.",
+  "Heat the sesame oil in a large heavy pot over medium-high heat. Add the pork and cook for 3 minutes, stirring now and then, until it's lightly browned at the edges.",
+  "Add the onion, daikon, carrot, shiitake and the white parts of the green onions. Stir for 2 minutes, until the onion looks glossy.",
+  "Add 5 cups of water and the dashi granules. Bring it to a boil, then skim off the foam that rises.",
+  "Turn the heat to low, cover, and simmer for 10 minutes, until a knife slides easily into the daikon.",
+  "Take the pot off the heat. Put 4 tbsp of the miso in a ladle, stir in some of the hot broth until it dissolves, then stir it back into the pot.",
+  "Add the tofu and the ginger. Put the pot back on low heat for 2 minutes, just until the tofu is hot. Don't let it boil.",
+  "Taste it. If it's flat, stir in the last tbsp of miso.",
+  "Ladle into bowls and top with the green onion tops. Serve with the shichimi togarashi at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook (4.76 from 116) is the lead: brown the pork in sesame oil, simmer the root vegetables in dashi, then dissolve the miso off the heat and add ginger and tofu at the end. Cut to 4 bowls and 30 minutes by dropping the burdock, taro, konnyaku and fried tofu pouch, and by cutting the vegetables thin; shiitake come from the No Recipes version, and instant dashi granules stand in for homemade dashi. Shinagawa's quick version agrees on the browned pork and the miso going in last. Sesame oil, dashi granules and miso contain no dairy or nuts.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Tonjiru (Pork and Vegetable Miso Soup)",
+   "url": "https://www.justonecookbook.com/tonjiru/",
+   "rating": 4.76,
+   "rating_count": 116,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Tonjiru (Japanese Pork Soup)",
+   "url": "https://norecipes.com/tonjiru-japanese-pork-soup/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "Shinagawa Japanese Cooking",
+   "title": "Tonjiru (Japanese Pork and Vegetable Miso Soup)",
+   "url": "https://www.shinagawa-japanese-cooking.com/post/tonjiru-pork-and-vegetable-miso-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,89 @@
+{
+ "dish_name": "Miso Cod",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1 1/2 lb (4 fillets, about 6 oz each)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White miso paste",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice, then put it in a saucepan with 2 cups of water. Bring it to a boil over high heat, cover, turn the heat to low, and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes.",
+  "Meanwhile, set an oven rack 6 inches below the broiler and turn the broiler to high. Line a sheet pan with foil and rub it with the oil.",
+  "Simmer the mirin in a small saucepan over medium heat for 1 minute. Take it off the heat and whisk in the miso and brown sugar until smooth.",
+  "Spoon 2 tbsp of the glaze into a small bowl and set it aside for later.",
+  "Pat the cod dry and sprinkle the salt over it. Put the fillets on the sheet pan.",
+  "Spoon the rest of the glaze over the tops and sides of the fillets. Let them sit for 10 minutes.",
+  "Broil for 8 to 9 minutes, until the top is browned in spots and the fish flakes. You're looking for 140°F in the thickest part if you have a thermometer. No thermometer? Press a fork into the thickest part, and it's done when the fish comes apart in flakes. If the top darkens too fast, move the pan down a rack.",
+  "Brush the reserved glaze over the hot fillets.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish has 20 ratings, so the lead is Momma Chef (unrated): a mirin, miso and brown sugar glaze, a short sit, and 8 to 9 minutes under the broiler. Splendid Table (Nancy Singleton Hachisu) agrees on the quick broil and warns that miso burns, and Fearless Dining (5.0 from 5) agrees on the miso glaze with a short marinade. The Nobu-style versions marinate for days and were left out. The sake in Momma Chef's glaze is dropped, with the mirin simmered briefly in its place, and the rice is a real amount so the timeline holds.",
+ "sources": [
+  {
+   "name": "Momma Chef",
+   "title": "Miso Glazed Cod",
+   "url": "https://mommachef.com/miso-glazed-cod-easy-quick-recipe-momma-chef/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Splendid Table",
+   "title": "Miso-Broiled Cod",
+   "url": "https://www.splendidtable.org/story/2013/01/22/miso-broiled-cod",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Fearless Dining",
+   "title": "Easy Baked Miso Glazed Cod",
+   "url": "https://www.fearlessdining.com/easy-baked-miso-glazed-cod/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

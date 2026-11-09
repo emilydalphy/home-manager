@@ -1,0 +1,126 @@
+{
+ "dish_name": "Teriyaki Meatballs",
+ "cuisine": "Japanese",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice, then put it in a saucepan with 2 cups of water. Bring it to a boil over high heat, cover, turn the heat to low, and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes.",
+  "Meanwhile, heat the oven to 400°F and line a baking sheet with parchment.",
+  "Stir the panko into 3 tbsp of water in a large bowl and let it sit for 5 minutes.",
+  "Slice the green onions. Add 3 of them to the bowl with the turkey, 1/4 cup of the soy sauce, the garlic powder, 1/2 tsp of the salt and the pepper.",
+  "Mix with your hands until just combined. Stop as soon as there are no streaks left, or the meatballs come out dense.",
+  "With wet hands, roll the mixture into balls about 1 1/2 tbsp each and set them on the baking sheet. That should be about 24 meatballs.",
+  "Bake for 15 minutes. You're cooking them to 165°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open, and it's done when there's no pink left.",
+  "While they bake, whisk the remaining 3/4 cup soy sauce, the brown sugar, rice vinegar, cornstarch and 1 cup of water in a small saucepan, off the heat. Grate in the garlic and the ginger.",
+  "Bring the sauce to a boil over medium-high heat, stirring, then simmer for 1 minute, until it's glossy and thick.",
+  "Transfer the meatballs to the sauce and stir gently to coat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, topped with the other 2 sliced green onions and the sesame seeds."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish has 20 ratings, so the lead is Babaganosh (5.0 from 1): panko, soy, green onion and garlic powder in the meatballs, and a soy, brown sugar, rice vinegar, ginger and garlic sauce thickened with cornstarch. Babaganosh brushes the sauce on during baking; here the meatballs bake plain and are tossed in the sauce after. Rachel Mansfield (5.0 from 3) and Amy Casey agree on turkey, a quick bake and a sauce tossed on. Amounts are scaled to 1 1/2 lb of turkey, the panko is soaked in water to keep lean turkey moist, and rice is a real amount; start the rice first to hit 30 minutes.",
+ "sources": [
+  {
+   "name": "Babaganosh",
+   "title": "Teriyaki Turkey Meatballs",
+   "url": "https://www.babaganosh.org/teriyaki-turkey-meatballs/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "rachLmansfield",
+   "title": "Teriyaki Turkey Meatballs",
+   "url": "https://rachlmansfield.com/teriyaki-turkey-meatballs/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Amy Casey Cooks",
+   "title": "30 Minute Baked and Glazed Teriyaki Turkey Meatballs",
+   "url": "https://amycaseycooks.com/30-minute-baked-and-glazed-teriyaki-turkey-meatballs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

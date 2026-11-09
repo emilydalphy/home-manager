@@ -1,0 +1,114 @@
+{
+ "dish_name": "Sesame Soba Salad",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Dried soba noodles",
+   "qty": "14 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen shelled edamame",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Green onions",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped leaves"
+  },
+  {
+   "item": "Toasted white sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "for the table"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of unsalted water to a boil.",
+  "Meanwhile, whisk the neutral oil, sesame oil, maple syrup and soy sauce in a small bowl until it's smooth. That's the dressing.",
+  "Cut the cucumber and carrots into thin matchsticks. Thinly slice the green onions and chop the cilantro leaves.",
+  "Add the soba to the boiling water and cook for 30 seconds less than the package says. Stir the edamame in for the last 2 minutes.",
+  "Drain the noodles and edamame in a colander and rinse well under cold running water until they're cool. Shake off as much water as you can.",
+  "Transfer the noodles and edamame to a large bowl. Pour the dressing over and toss until every strand is coated.",
+  "Add the cucumber, carrots, green onions, cilantro and sesame seeds, and toss again.",
+  "Serve chilled or at room temperature, with the shichimi togarashi at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook's soba salad (4.76 from 216) is the lead: the dressing is toasted sesame oil, soy sauce and a sweetener, poured over rinsed noodles with green onion, cilantro and sesame seeds. It's made vegan with maple syrup instead of honey, and the chili flakes are left for the table. That recipe has no vegetables, so the cucumber, carrots and edamame come from the other versions read (Elle Gourmet, Six Hungry Feet, Running on Real Food), which all pile crunchy vegetables onto the same sesame-soy dressing. Amounts are doubled for four.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Soba Noodle Salad",
+   "url": "https://www.justonecookbook.com/soba-salad/",
+   "rating": 4.76,
+   "rating_count": 216,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Six Hungry Feet",
+   "title": "Vegan Soba Noodle Salad",
+   "url": "https://sixhungryfeet.com/vegan-soba-noodle-salad/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Running on Real Food",
+   "title": "Cold Soba Noodle Salad",
+   "url": "https://runningonrealfood.com/cold-soba-noodle-salad/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

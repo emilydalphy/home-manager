@@ -1,0 +1,115 @@
+{
+ "dish_name": "Shabu Shabu",
+ "cuisine": "Japanese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Thinly sliced ribeye (shabu shabu cut)",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Kombu",
+   "qty": "1 piece (about 3 x 3 inches, 10 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Napa cabbage",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "1/4 of a large head, about 1 1/2 lb"
+  },
+  {
+   "item": "Enoki mushrooms",
+   "qty": "1 package (7 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Medium-firm tofu",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Daikon",
+   "qty": "1 piece (about 5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen udon noodles",
+   "qty": "1 package (9 oz)",
+   "category": "frozen"
+  },
+  {
+   "item": "Ponzu",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame sauce (goma dare)",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "for the table"
+  }
+ ],
+ "instructions": [
+  "Put the kombu and 8 cups of water in a large wide pot over medium-low heat. Leave it for about 15 minutes while you prep, until tiny bubbles form around the edges. Don't let it boil.",
+  "Cut the napa cabbage into 2-inch pieces, keeping the stems and leafy tops apart.",
+  "Trim the base off the enoki and pull them apart. Remove the shiitake stems. Peel the carrot and slice it thin.",
+  "Cut the tofu into 1-inch cubes. Cut 3 of the green onions into 2-inch pieces. Slice the other 2 into thin rounds.",
+  "Peel and grate the daikon and squeeze out a little of the juice. Stir the daikon and the sliced rounds together in a small bowl.",
+  "Arrange the cabbage, mushrooms, carrot, tofu and green onion pieces on a platter. Put the beef on its own plate.",
+  "Pour the ponzu and the sesame sauce into small dipping bowls, one of each per person.",
+  "When bubbles form around the kombu, take it out. Add the tofu, cabbage stems, carrot, shiitake and green onion pieces to the pot. Cover and simmer over medium heat for 8 minutes.",
+  "Add the enoki and the cabbage tops. Cook for 2 minutes.",
+  "Swish a few slices of beef through the broth for 20 to 30 seconds, until there's no pink left. Dip them in the ponzu or sesame sauce and eat them with the vegetables. Skim off any foam, and keep going in batches.",
+  "When you're nearly done, add the udon to the broth for 1 to 2 minutes, until hot. Ladle the noodles and broth into bowls.",
+  "Serve with the daikon and green onion mix to stir into the ponzu, and the shichimi togarashi at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook (4.71 from 99) is the lead: a kombu broth, thin ribeye swished for 20 to 30 seconds, napa, mushrooms and tofu, ponzu and sesame sauce for dipping, udon at the end. The 30 minute kombu soak is replaced by 15 minutes of slow heating, a shortcut that lets the 30 minute target hold, and shungiku and shimeji (hard to find) are left out. Funky Asian Kitchen agrees on the broth and the dipping sauces but adds kamaboko and watercress. Ponzu and sesame sauce are store-bought, as the lead allows; check the labels for nuts.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Shabu Shabu Recipe",
+   "url": "https://www.justonecookbook.com/shabu-shabu/",
+   "rating": 4.71,
+   "rating_count": 99,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Funky Asian Kitchen",
+   "title": "Shabu Shabu",
+   "url": "https://www.funkyasiankitchen.com/blog/shabu-shabu/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

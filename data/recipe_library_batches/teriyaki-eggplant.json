@@ -1,0 +1,115 @@
+{
+ "dish_name": "Teriyaki Eggplant",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Eggplants",
+   "qty": "3 medium (about 2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Mirin",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 1/2 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice, then put it in a saucepan with 2 cups of water. Bring it to a boil over high heat, cover, turn the heat to low, and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes.",
+  "Meanwhile, off the heat, whisk 2/3 cup of the soy sauce, the mirin, rice vinegar and brown sugar in a large bowl until the sugar dissolves. Grate in the ginger and the garlic.",
+  "Cut the eggplants into 3/4-inch chunks and add them to the bowl. Toss to coat and let them sit for 10 minutes, stirring a couple of times.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat. Lift half the eggplant out of the bowl with a slotted spoon, leaving the liquid behind.",
+  "Add that eggplant to the skillet and cook for 6 minutes, stirring now and then, until it's browned in spots and soft. Transfer it to a plate.",
+  "Heat the other tbsp of oil, then cook the second half of the eggplant the same way. Transfer it to the plate.",
+  "Stir the cornstarch into 2 tbsp of cold water. Pour the liquid left in the bowl into the skillet and simmer over medium heat for 1 minute.",
+  "Stir in the cornstarch mixture and simmer for 1 minute, until the sauce is glossy and thick enough to coat a spoon.",
+  "Return the eggplant to the skillet and toss for 1 minute to coat. Slice the green onions.",
+  "Taste it. If it's flat, add a splash of the rest of the soy sauce.",
+  "Spoon the eggplant and sauce over the rice and top with the green onions and sesame seeds."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 23,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish has 20 ratings, so the lead is the unrated Cupful of Kale version (52 comments): eggplant chunks marinated in soy, mirin, rice vinegar, brown sugar, ginger and garlic, then cooked in a hot pan and served over short-grain rice. A cornstarch glaze from the Eat Drink Shrink version thickens the leftover marinade so it soaks into the rice, and the rice is a real amount so the timeline holds. The ratings seen were 5.0 from 1 and 5.0 from 7 for other versions. Sriracha in two sources is left out to keep the base mild. Honest total is about 35 minutes, a little over the 30 minute target.",
+ "sources": [
+  {
+   "name": "Cupful of Kale",
+   "title": "Marinated Teriyaki Eggplant",
+   "url": "https://cupfulofkale.com/vegan-marinated-teriyaki-eggplant/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Labeless Nutrition",
+   "title": "Vegan Teriyaki Eggplant",
+   "url": "https://labelessnutrition.com/vegan-teriyaki-eggplant/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "The Foodie Takes Flight",
+   "title": "Eggplant and Tofu Teriyaki",
+   "url": "https://thefoodietakesflight.com/eggplant-and-tofu-teriyaki-vegan-recipe/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
