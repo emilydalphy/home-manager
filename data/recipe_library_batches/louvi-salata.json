@@ -1,0 +1,124 @@
+{
+ "dish_name": "Louvi Salata",
+ "cuisine": "Greek",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Canned black-eyed peas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Kalamata olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "6 olives"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1 large",
+   "category": "produce",
+   "cook_qty": "1/4 cup juice"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain the black-eyed peas in a colander and rinse them under cold water. Shake off the extra water and transfer them to a large bowl. That should be about 3 cups.",
+  "Dice the tomato and the cucumber. Finely chop the onion. Chop the bell pepper into small pieces. Halve the olives and chop 1/4 cup of parsley.",
+  "Add the tomato, cucumber, onion, bell pepper, olives, 1 tbsp capers and the parsley to the peas.",
+  "In a small bowl, whisk 6 tbsp olive oil with 1/4 cup lemon juice, 1 tsp oregano, 1/4 tsp salt and the pepper. Pour it over the salad and stir.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Cover and chill for at least 30 minutes, or overnight. It keeps in the fridge for up to 3 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Kopiaste's black-eyed pea salad (5 from 1 review) is the lead, so this is a fallback: peas with tomato, cucumber, onion, pepper, olives, capers and parsley in plenty of olive oil, lemon juice and oregano, refrigerated before serving. Dimitra's Dishes says canned peas work if you want it right away, and The Greek Foodie says it keeps 3 days. The feta and the purslane are left out, so the salad is vegan, and canned peas replace the lead's boiled ones to keep it quick. Louvi Salata is not a name any source uses, so this is the Greek black-eyed pea salad (mavromatika salata).",
+ "sources": [
+  {
+   "name": "Kopiaste",
+   "title": "A Different Greek Salad with Black Eyed Peas",
+   "url": "https://www.kopiaste.org/?p=24858",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Greek Black-Eyed Peas Salad",
+   "url": "https://www.dimitrasdishes.com/greek-black-eyed-peas-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Greek Foodie",
+   "title": "Black Eyed Peas Salad (Mavromatika)",
+   "url": "https://thegreekfoodie.com/black-eyed-peas-salad-mavromatika/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

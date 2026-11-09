@@ -1,0 +1,152 @@
+{
+ "dish_name": "Greek Tuna Salad",
+ "cuisine": "Greek",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Canned tuna",
+   "qty": "2 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/4 of the onion"
+  },
+  {
+   "item": "Kalamata olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "half the lemon"
+  },
+  {
+   "item": "Grainy Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a small bowl or a jar, whisk together 1/4 cup olive oil, 3 tbsp red wine vinegar, the juice of half the lemon, 1 tsp mustard, the garlic clove, grated, 1 tsp oregano, 1/4 tsp salt and the pepper. Set it aside.",
+  "Drain the tuna well, then transfer it to a large bowl and break it into chunks with a fork.",
+  "Chop the romaine into bite-size pieces. Slice the cucumber thinly. Halve the cherry tomatoes and the olives. Slice a quarter of the red onion as thinly as you can, and slice the green onions. Chop 2 tbsp of the parsley and 2 tbsp of the dill.",
+  "Add all of it to the tuna, along with the 3 tbsp capers.",
+  "Pour about two thirds of the dressing over the salad and toss. Add more if it looks dry.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve in bowls. For packed lunches, keep the undressed salad and the dressing in separate containers in the fridge for up to 2 days, and dress each portion just before you eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Olive and Mango, Your Better Kitchen and Nourish and Fete all pile canned tuna with cucumber, tomato, red onion and Kalamata olives. Olive and Mango is the lead (unrated, so this is a fallback): it adds romaine, capers, herbs and a red wine vinaigrette with mustard, and keeps the salad undressed for make-ahead portions. Feta, in all three, is left out so the salad stays dairy-free, and no yogurt dressing is used. Your Better Kitchen's 2 day fridge limit sets the storage time.",
+ "sources": [
+  {
+   "name": "Olive and Mango",
+   "title": "Greek Tuna Salad",
+   "url": "https://www.oliveandmango.com/greek-tuna-salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Your Better Kitchen",
+   "title": "Greek Style Tuna Salad",
+   "url": "https://yourbetterkitchen.com/greek-style-tuna-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Nourish and Fete",
+   "title": "Mediterranean Tuna Salad",
+   "url": "https://www.nourish-and-fete.com/mediterranean-tuna-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

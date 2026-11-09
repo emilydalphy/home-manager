@@ -1,0 +1,133 @@
+{
+ "dish_name": "Tomatokeftedes",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Cherry tomatoes",
+   "qty": "14 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup shredded leaves"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup shredded leaves"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp shredded leaves"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "2 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tin",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Soda water",
+   "qty": "1 small bottle",
+   "category": "pantry",
+   "cook_qty": "2/3 cup, chilled"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup for frying"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 small tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Chop the cherry tomatoes small. Set a sieve over a bowl, add the tomatoes and press down on them to push out the juice and seeds. Discard the juice.",
+  "Finely chop the onion and slice the green onions. Shred the basil, mint and parsley. Add all of it to the drained tomatoes, along with the crumbled feta.",
+  "In a separate bowl, whisk 1 1/2 cups flour, 2 tsp baking powder, 1 tsp salt and the pepper. Stir it into the tomato mixture.",
+  "Pour in 2/3 cup chilled soda water and stir until it comes together as a thick batter. It will look too dry at first, but keep stirring.",
+  "Heat a large frying pan over medium heat. Add 2 tbsp of the oil and wait until it shimmers.",
+  "Scoop about 1/4 cup of batter into the pan for each fritter and flatten it with the back of the spoon. Fry 5 or 6 fritters at a time for 3 minutes on each side, until golden. Stand back a little, they can spatter.",
+  "Transfer them to a plate lined with paper towels. Add 2 tbsp of oil to the pan before each new batch. You should get about 18 fritters.",
+  "Taste one. If it's flat, add a pinch more salt to the rest of the batter before you fry it.",
+  "Serve hot or cold with the Greek yogurt. For packed lunches, keep the fritters in the fridge for up to 2 days and warm them in a 350°F oven for 8 minutes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Not Quite Nigella is the lead (5 from 64 ratings): tomatoes pressed in a sieve, onion, spring onion and basil, mint and parsley, folded into a flour and baking powder batter loosened with chilled soda water and shallow fried about 3 minutes a side. Coley Cooks and Great British Chefs agree on the tomato and herb base and add feta, which the lead doesn't have, so a small amount is added to match the list. Cold fritters are fine in the sources, which is why this counts as a make-ahead lunch even though the frying takes about 35 minutes in total.",
+ "sources": [
+  {
+   "name": "Not Quite Nigella",
+   "title": "Santorini Tomato Fritters (Tomatokeftedes)",
+   "url": "https://www.notquitenigella.com/2024/11/10/tomato-fritters-santorini-tomatokeftedes/",
+   "rating": 5.0,
+   "rating_count": 64,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Coley Cooks",
+   "title": "Greek Tomato Fritters (Tomatokeftedes)",
+   "url": "https://coleycooks.com/greek-tomato-fritters/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Great British Chefs",
+   "title": "Tomatokeftedes (Greek tomato fritters)",
+   "url": "https://www.greatbritishchefs.com/recipes/tomatokeftedes-recipe",
+   "rating": 4.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

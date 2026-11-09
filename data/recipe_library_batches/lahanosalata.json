@@ -1,0 +1,97 @@
+{
+ "dish_name": "Lahanosalata",
+ "cuisine": "Greek",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "4 cups finely shredded (about half the head)"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1 large",
+   "category": "produce",
+   "cook_qty": "3 tbsp juice and 1 tsp zest"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Mild yellow mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the cabbage in half, remove the tough outer leaves and the core, and slice it as thinly as you can. Do this with half the head. That should be about 4 cups.",
+  "Peel and grate the carrots on the large holes of a box grater. Chop 2 tbsp of parsley.",
+  "In a large bowl, whisk 3 tbsp olive oil with 3 tbsp lemon juice, 1 tsp lemon zest, 1 tsp mustard, 1/2 tsp salt and the pepper until it's blended.",
+  "Add the cabbage, carrots and parsley to the bowl and toss well, rubbing the dressing into the cabbage with your hands.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Cover and chill for 30 minutes before serving. It keeps in the fridge for 3 to 4 days. For packed lunches, store the dressing in a separate container and toss it in just before you eat, so the cabbage stays crisp."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Kopiaste is the lead (4.4 from 6 ratings, so this is a fallback): shredded cabbage and grated carrot in olive oil, lemon juice, zest and a little mustard, chilled for 30 minutes and kept 3 to 4 days. Souvlaki for the Soul and Greek Boston agree on the oil and acid dressing and on dressing it just before serving for packed portions, and Souvlaki for the Soul adds the parsley. The lead's teaspoon of honey is left out so the salad stays vegan.",
+ "sources": [
+  {
+   "name": "Kopiaste",
+   "title": "Lahanosalata me Karoto (Cabbage and Carrot Salad)",
+   "url": "https://www.kopiaste.org/?p=114",
+   "rating": 4.4,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Souvlaki for the Soul",
+   "title": "Greek Cabbage Salad (Lahanosalata)",
+   "url": "https://souvlakiforthesoul.com/greek-cabbage-salad-lahanosalata/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Greek Boston",
+   "title": "Greek Style Cabbage Salad (Lahanosalata)",
+   "url": "https://www.greekboston.com/food/lahanosalata-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

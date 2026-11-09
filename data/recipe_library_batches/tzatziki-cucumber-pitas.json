@@ -1,0 +1,111 @@
+{
+ "dish_name": "Tzatziki Cucumber Pitas",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Pita bread",
+   "qty": "4 pockets",
+   "category": "pantry"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 cucumber"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "3 oz",
+   "category": "dairy",
+   "cook_qty": "1/2 cup crumbled"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 small tub",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce",
+   "cook_qty": "1/2 clove"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "2 tsp juice"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Grate a quarter of the cucumber into a clean kitchen towel or a sieve and squeeze out as much water as you can, or the tzatziki will be runny. That should be about 1/3 cup.",
+  "In a bowl, stir together the grated cucumber, 3/4 cup yogurt, 1/2 of the garlic clove, grated, 2 tsp lemon juice, 2 tsp olive oil, 2 tsp chopped dill and 1/4 tsp salt. Set it in the fridge while you slice.",
+  "Slice the rest of the cucumber thinly. Slice the tomatoes and the onion thinly, and crumble the feta.",
+  "Warm the pitas, 2 at a time, wrapped in a damp paper towel in the microwave for 10 to 15 seconds, until soft.",
+  "Fill each pita with cucumber, tomato and onion. Spoon in the tzatziki, then sprinkle with the feta and 1/2 tsp of the oregano.",
+  "Serve right away with any extra tzatziki on the side. If you're packing them, keep the tzatziki and the vegetables in separate containers for up to 2 days and fill the pitas just before you eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Fork in the Kitchen's veggie pitas are the lead: warmed pita, sliced tomato, cucumber and onion, tzatziki, oregano and feta. Its tzatziki is a link to another page, so the tzatziki here follows Cup of Yum (Greek yogurt, grated cucumber, garlic, lemon, olive oil, dill) scaled to 4 pitas. Both agree on squeezing the cucumber dry and filling the pita just before eating; Fork in the Kitchen uses raw onion since its 2022 update, and so does this version.",
+ "sources": [
+  {
+   "name": "Fork in the Kitchen",
+   "title": "Easy 10-Minute Veggie Greek Pitas",
+   "url": "https://www.forkinthekitchen.com/easy-veggie-greek-pitas/",
+   "rating": 4.99,
+   "rating_count": 96,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Greek Pita Sandwiches",
+   "url": "https://cupofyum.com/recipes/greek-pita-sandwiches",
+   "rating": 4.7,
+   "rating_count": 18,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

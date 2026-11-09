@@ -1,0 +1,128 @@
+{
+ "dish_name": "Greek Quinoa Salad",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Quinoa",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Water",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Plum tomatoes",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Cucumbers",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Kalamata olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "24 olives"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the quinoa in a fine sieve under cold water until the water runs clear.",
+  "Add the quinoa, 2 cups water and 1/2 tsp salt to a medium saucepan and bring it to a boil over high heat. Turn the heat down to low, cover, and cook for 15 minutes, until the water is absorbed.",
+  "Fluff the quinoa with a fork and spread it out on a large plate or a baking sheet. Let it cool for 10 minutes while you chop. That should be about 3 cups.",
+  "Meanwhile, in a large salad bowl, whisk 2 tbsp red wine vinegar, 2 tsp oregano, 1/2 tsp salt and the pepper. Slowly pour in 1/4 cup olive oil while you whisk, until the dressing looks thick and blended.",
+  "Dice the tomatoes and the cucumbers. Slice the bell pepper thinly. Slice the shallot into thin rings. Halve the olives, and finely dice the feta.",
+  "Add the cooled quinoa, the tomatoes, cucumbers, pepper, shallot, 24 olives, 1 tbsp capers and the feta to the bowl. Toss gently until everything is coated.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "To pack it for lunches, spoon it into containers and keep it in the fridge for up to 3 days. For the crispest vegetables, hold back half the dressing and add it just before you eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Pinch and Swirl (5 from 12 ratings) is the lead, so this is a fallback: cooled quinoa with tomato, cucumber, red pepper, shallot, Kalamata olives, capers and feta in a red wine vinegar and oregano dressing. I Heart Vegetables cooks the quinoa 2 cups water to 1 cup for about 15 minutes and salts it, and Primavera Kitchen agrees on cooling it fully; all three keep it 3 days or more in the fridge. Pinch and Swirl suggests adding the dressing just before eating for the crispest vegetables.",
+ "sources": [
+  {
+   "name": "Pinch and Swirl",
+   "title": "Greek Quinoa Salad",
+   "url": "https://pinchandswirl.com/greek-quinoa-salad/",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "I Heart Vegetables",
+   "title": "Greek Quinoa Salad",
+   "url": "https://iheartvegetables.com/greek-quinoa-salad/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Primavera Kitchen",
+   "title": "Quinoa Greek Salad",
+   "url": "https://www.primaverakitchen.com/quinoa-greek-salad/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

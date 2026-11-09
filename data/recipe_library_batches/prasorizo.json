@@ -1,0 +1,124 @@
+{
+ "dish_name": "Prasorizo",
+ "cuisine": "Greek",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Leeks",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce",
+   "cook_qty": "1/2 onion"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Arborio rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton",
+   "category": "pantry",
+   "cook_qty": "3 1/2 cups"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1 large",
+   "category": "produce",
+   "cook_qty": "3 tbsp juice and the zest of half"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the dark green tops off the leeks and slice the rest into 3/4 inch rounds. Put the slices in a big bowl of cold water, swish them around to loosen the grit, then lift them out into a colander and drain.",
+  "Finely chop 1/2 an onion, slice the green onions and mince 2 tbsp of dill.",
+  "Warm the vegetable broth in a small saucepan or the microwave until it's hot.",
+  "Heat 3 tbsp of the olive oil in a large pot over medium heat. Add the onion and 1/4 tsp salt and cook for 4 minutes, until soft and see-through.",
+  "Add the leeks and green onions and 1/2 tsp salt. Turn the heat up a little and cook for 8 minutes, stirring now and then, until the leeks are soft and taking on a little color.",
+  "Add both rices and stir for 2 minutes.",
+  "Pour in the hot broth, then add the bay leaf, 3 tbsp olive oil, the remaining 1/4 tsp salt and the pepper. Bring it to a simmer, cover, turn the heat to low and cook for 20 minutes, until the rice is tender.",
+  "Stir in the dill, 3 tbsp lemon juice, the zest of half the lemon and the last 2 tbsp olive oil. Put it back on low heat for 1 minute. If it's thick, add a splash of hot water.",
+  "Take out the bay leaf, turn off the heat and let the pot sit, covered, for 5 minutes.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve warm or at room temperature with a drizzle of olive oil. For packed lunches, it keeps in the fridge for up to 2 days. Reheat with a splash of water, or eat it cold."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Real Greek Recipes is the lead (4.04 from 66 ratings): onion, leeks and spring onions softened in olive oil, a mix of long-grain and Arborio rice, hot stock, and dill and lemon stirred in at the end, rested for 5 minutes. Dimitra's Dishes uses far less rice and oil, and a little tomato paste, and agrees the dish is better the next day and good at room temperature. The amounts are scaled down from the lead's 5 to 6 servings, and the oil is reduced to 1/2 cup. Vegetable broth, not chicken, keeps it vegan.",
+ "sources": [
+  {
+   "name": "Real Greek Recipes",
+   "title": "Prasorizo (Rice With Leeks)",
+   "url": "https://realgreekrecipes.com/prasorizo-rice-with-leeks/",
+   "rating": 4.04,
+   "rating_count": 66,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Olive Tomato",
+   "title": "Greek Leeks and Rice (Prasorizo)",
+   "url": "https://www.olivetomato.com/greek-leeks-rice-prasorizo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Greek Leeks and Rice Pilaf (Prasorizo)",
+   "url": "https://www.dimitrasdishes.com/greek-leeks-rice-pilaf-prasorizo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
