@@ -1,0 +1,82 @@
+{
+ "dish_name": "Bukkake Udon",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Frozen udon noodles",
+   "qty": "4 packs (about 7 oz each)",
+   "category": "frozen"
+  },
+  {
+   "item": "Mentsuyu (concentrated noodle sauce)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 cup + 1 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "2 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Bonito flakes",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "In a jar or measuring cup, stir together the mentsuyu and 1/3 cup plus 1 tbsp of water. Put it in the freezer to chill while you do the rest.",
+  "Thinly slice the scallions. Peel the ginger and grate it. Crack each egg into its own small cup or ramekin.",
+  "Bring a large pot of water to a boil for the udon. Bring a medium pot of water to a gentle simmer in a second pot and add the vinegar.",
+  "Stir the simmering water to make a slow swirl. Slide in 2 eggs and cook for 2 1/2 minutes, until the whites are set and the yolks are still runny. Lift them out with a slotted spoon onto a plate. Repeat with the other 2 eggs.",
+  "Boil the udon in the large pot for the time on the pack, about 1 to 2 minutes for frozen. Stir with chopsticks to separate the noodles.",
+  "Drain the noodles and rinse them under cold running water, rubbing them gently, until they're cool. Drain well.",
+  "Divide the noodles among 4 bowls. Pour about 1/3 cup of the chilled sauce over each bowl.",
+  "Top each bowl with a poached egg, scallions, ginger and a pinch of the bonito flakes. Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Bukkake udon has no version with 20 ratings: Chef JA Cooks has 5 stars from 4, Pickled Plum and Cooking with Dog none. It leads with Chef JA Cooks for the 2 to 1 mentsuyu to water sauce and the cold-rinsed noodles. The poached egg and the toppings come from Pickled Plum. The sauce is strong by design, and 'bukkake' means it is poured over. Check your mentsuyu bottle: this assumes a 3x concentrate; for a different strength, dilute to the ratio on the label for dipping noodles.",
+ "sources": [
+  {
+   "name": "Chef JA Cooks",
+   "title": "Bukkake Udon (Simple Japanese Cold Noodles Recipe)",
+   "url": "https://chefjacooks.com/en/bukkake-udon/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Bukkake Udon",
+   "url": "https://pickledplum.com/bukkake-udon/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

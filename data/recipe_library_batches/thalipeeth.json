@@ -1,0 +1,136 @@
+{
+ "dish_name": "Thalipeeth",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Jowar (sorghum) flour",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gram flour (besan)",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole wheat flour",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bajra (pearl millet) flour",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1/2 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ajwain (carom seeds)",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Indian pickle",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion. Mince the garlic, grate the ginger, and remove the seeds from the green chili and chop it fine. Chop 2 tbsp of cilantro.",
+  "In a large bowl, mix the jowar flour, gram flour, whole wheat flour, bajra flour and rice flour. Add the onion, garlic, ginger, chili, cilantro, sesame seeds, turmeric, coriander, cumin, ajwain and salt. Stir until it's evenly mixed.",
+  "Add 1/2 cup of water and mix with your hand. Add more water a spoonful at a time until the dough is soft and holds together. The onion will release some water as it sits, so go slowly.",
+  "Knead for 2 minutes, until smooth. Divide the dough into 6 balls.",
+  "Rub a sheet of parchment paper with a little of the oil. Wet your fingers, then pat one ball into a thin round about 6 inches wide. Poke 4 or 5 holes in it with your finger. Wet your hands again if the dough cracks.",
+  "Heat a large skillet or griddle over medium heat for 2 minutes. Flip the thalipeeth onto the skillet and peel off the parchment slowly.",
+  "Drizzle 1 tsp of oil over the top and a little into each hole. Cover and cook for 3 minutes, until the underside has brown spots.",
+  "Flip it and press gently with a spatula. Cook uncovered for 2 to 3 minutes, until both sides are browned and the edges look crisp. Transfer to a plate.",
+  "Repeat with the remaining balls, shaping the next one while the last one cooks.",
+  "Serve with the pickle. To pack them for lunch, cool them, then keep them in the fridge for up to 2 days. Reheat in a dry skillet for 1 to 2 minutes per side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 24,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen leads (5.0 from 257 ratings): the five-flour dough, the onion and herbs kneaded in, and the holes in the round so the oil reaches the middle. It is written for 6 servings, so the flours are scaled to four. Nisha Madhulika's version uses ready-mixed bhajani flour with potato and cauliflower; that is a shortcut if you can find it. Butter and curd are left off the plate so the dish stays vegan, and the pickle goes with it instead. Heat is mild, with one seeded green chili.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Thalipeeth Recipe | Maharashtrian Thalipith",
+   "url": "https://hebbarskitchen.com/thalipeeth-recipe-maharashtrian-thalipit/",
+   "rating": 5.0,
+   "rating_count": 257,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nisha Madhulika",
+   "title": "Thalipeeth Recipe",
+   "url": "https://www.nishamadhulika.com/en/1012-thalipeeth-recipe.html",
+   "rating": 4.8,
+   "rating_count": 664,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

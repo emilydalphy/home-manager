@@ -1,0 +1,111 @@
+{
+ "dish_name": "Grilled Vegetable Panini",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow squash",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ciabatta rolls",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (8 oz)",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Fresh mozzarella",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat a large cast iron skillet or grill pan over medium heat for 3 minutes.",
+  "Meanwhile, cut the zucchini and yellow squash lengthwise into 1/4 inch slabs. Cut each bell pepper into quarters and remove the seeds.",
+  "In a large bowl, toss the zucchini, squash and peppers with 1 tbsp of the olive oil, the balsamic vinegar, the salt and the pepper.",
+  "Put the peppers in the hot pan, skin side down. Cook for 3 minutes per side, until tender and marked with brown. Transfer them to a plate.",
+  "Put the zucchini and squash in the pan in a single layer. Cook for 2 minutes per side, until tender and marked with brown. Work in two batches if they don't fit. Transfer to the plate.",
+  "Slice the rolls in half. Spread the tomato sauce on the cut sides. Slice the mozzarella and tear 8 basil leaves.",
+  "Layer the zucchini, squash, peppers, mozzarella and basil on the bottom halves, then close the sandwiches. Brush the outsides of the rolls with the remaining 1 tbsp of olive oil.",
+  "Wipe out the skillet and heat it over medium heat. Put in 2 sandwiches and press them down with a heavy pan or a foil-wrapped brick.",
+  "Cook for 3 to 4 minutes per side, until the bread is toasted and the cheese has melted. Transfer to a board and repeat with the other 2 sandwiches.",
+  "Cut each sandwich in half and serve."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No grilled vegetable panini had 20 ratings: Cup of Yum has 5 stars from 2, Culinary Ginger 5 from 4 and Chef Savvy 5 from 5. It leads with Cup of Yum because it is the one with zucchini, red peppers, mozzarella and ciabatta, as the list says, and its 27 minute time fits. Chef Savvy and Culinary Ginger confirm the grill-then-press method; their herb oil, sun-dried tomato spread and provolone are not used. The pesto some versions use is left out because it usually has nuts.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Grilled Italian Vegetable Panini",
+   "url": "https://cupofyum.com/recipes/grilled-italian-vegetable-panini",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Culinary Ginger",
+   "title": "Grilled Summer Vegetable Panini",
+   "url": "https://culinaryginger.com/grilled-summer-vegetable-panini/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Chef Savvy",
+   "title": "Grilled Vegetable Panini",
+   "url": "https://chefsavvy.com/grilled-vegetable-panini/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

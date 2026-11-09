@@ -1,0 +1,152 @@
+{
+ "dish_name": "Tomato Shorba",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Tomatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Gram flour (besan)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Water",
+   "qty": "4 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the tomatoes into small cubes, about 1/2 inch, so they break down quickly. Mince the garlic and grate the ginger.",
+  "Chop the cilantro. Keep 3 tbsp of the stems in one pile and 3 tbsp of the leaves in another.",
+  "Heat the oil in a large pot over medium heat for 1 minute. Add the bay leaves, cinnamon, cloves, cardamom and cumin seeds. Stir for about 30 seconds, until the cumin sizzles and smells toasty.",
+  "Add the ginger and garlic and stir for 30 seconds, until the raw smell is gone.",
+  "Add the gram flour and stir for 1 minute, until it smells nutty and turns pale gold.",
+  "Add the cilantro stems and the tomatoes. Cook for 3 minutes, stirring, until the tomatoes start to soften.",
+  "Add the turmeric, chili powder, coriander, pepper and salt. Stir for 1 minute, until fragrant.",
+  "Pour in the water and bring it to a boil. Turn the heat to medium-low, cover and simmer for 12 minutes, until the tomatoes fall apart.",
+  "Take the pot off the heat. Fish out the bay leaves, cinnamon stick, cloves and cardamom pods.",
+  "Blend the soup until smooth with an immersion blender. A countertop blender works too: blend in two batches, filling it no more than halfway, and hold the lid down with a towel.",
+  "Pour the soup through a sieve back into the pot, pressing on the pulp with a spoon. The shorba should be thin, closer to a broth than a thick tomato soup.",
+  "Bring it back to a boil for 2 minutes. Take it off the heat and stir in the cilantro leaves.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot in mugs or bowls. To pack it for lunch, cool it, then keep it in the fridge for up to 4 days and reheat it on the stove or in the microwave until steaming. It freezes for up to 2 months."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 28,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Tomato shorba has no popular rated version: the pages read had no ratings, or one vote. It leads with Hebbar's Kitchen (the second trusted cook on the Indian list; Swasthi had no tomato shorba page) for the whole-spice start, the besan to thicken lightly, and the strained finish. Hebbar's 30 minute boil is cut to 12 because the tomatoes are cut small, and the soup is blended instead of mashed and strained twice. Other cooks finish with a cumin tempering or ghee; this one keeps the spices in the pot so it stays vegan and simple. Chili powder is kept to a mild 1/2 tsp, and heat can go on the side.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Tomato Shorba Recipe",
+   "url": "https://hebbarskitchen.com/tomato-shorba-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "J Cooking Odyssey",
+   "title": "Tamatar ka Shorba (Thin Indian Tomato Soup)",
+   "url": "https://www.jcookingodyssey.com/tamatar-ka-shorba-thin-indian-tomato/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "My Weekend Kitchen",
+   "title": "Tamatar ka Shorba",
+   "url": "https://www.myweekendkitchen.in/2013/07/07/tamatar-ka-shorba-tomato-soup-indian-style/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Great Curry Recipes",
+   "title": "Tomato Shorba",
+   "url": "https://greatcurryrecipes.net/2024/08/17/tomato-shorba/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

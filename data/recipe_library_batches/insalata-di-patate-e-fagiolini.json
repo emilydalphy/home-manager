@@ -1,0 +1,91 @@
+{
+ "dish_name": "Insalata di Patate e Fagiolini",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Baby yellow potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "14 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "White wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Wash the potatoes, leave the skins on and cut them into 1 inch pieces. Trim the green beans.",
+  "Put the potatoes in a large pot, cover them with cold water and add 1 tsp of the salt. Bring to a boil and cook for 12 minutes, until a knife slides in easily.",
+  "Meanwhile, make the dressing. Mince the garlic. Chop 2 tbsp of parsley and 2 tbsp of basil. In a large bowl, whisk the olive oil, vinegar, garlic, parsley, basil, the remaining 1/2 tsp of salt and the pepper.",
+  "Lift the potatoes out with a slotted spoon into the bowl with the dressing, leaving the water in the pot. Toss gently.",
+  "Add the green beans to the same water and boil for 5 minutes, until bright green and tender but still crisp. Drain, rinse under cold water and drain again.",
+  "Add the beans to the bowl and toss to coat in the dressing.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Let the salad sit for at least 30 minutes before serving. Serve it at room temperature.",
+  "It keeps in the fridge for up to 2 days. Take it out 30 minutes before eating and drizzle on a little more olive oil."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this salad had 20 ratings: Memorie di Angelina has 5 stars from 1 and Cup of Yum none. It leads with Memorie di Angelina for the boiled yellow potatoes and beans and the oil, vinegar and herb dressing. The potatoes are cut before boiling instead of boiled whole and peeled, which brings the time from 30 minutes down to about 20 plus the rest. A reader comment from the author is the source for the room temperature and extra oil tip. Pesto and olives, which some Ligurian versions add, are left out.",
+ "sources": [
+  {
+   "name": "Memorie di Angelina",
+   "title": "Fagiolini e patate (Green Bean and Potato Salad)",
+   "url": "https://memoriediangelina.com/2023/08/12/fagiolini-e-patate-green-bean-and-potato-salad",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Fagiolini e Patate",
+   "url": "https://cupofyum.com/recipes/fagiolini-e-patate/print",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

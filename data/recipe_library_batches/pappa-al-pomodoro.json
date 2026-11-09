@@ -1,0 +1,113 @@
+{
+ "dish_name": "Pappa al Pomodoro",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Day-old crusty bread",
+   "qty": "6 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned whole tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Tear the bread into 1 inch pieces, spread them on a baking sheet and toast for 10 minutes, until dry and lightly golden.",
+  "Meanwhile, finely dice half the onion, which should be about 1/2 cup. Smash the garlic cloves with the flat of a knife. Tear 8 large basil leaves.",
+  "Heat 2 tbsp of the olive oil in a large pot over medium heat. Add the onion and cook for 3 minutes, stirring, until soft.",
+  "Add the garlic and tomato paste. Stir for 1 minute, until the paste darkens a shade.",
+  "Add the tomatoes with their juice and crush them with a potato masher or the back of a spoon. Add the broth, the toasted bread, the basil, the salt and the pepper.",
+  "Turn the heat to medium-low and simmer for 20 minutes, stirring now and then, until the bread has fallen apart and the soup is thick.",
+  "Fish out the garlic cloves. Whisk the soup hard for a minute to break up any lumps of bread, or use an immersion blender for a smoother soup.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle into bowls and drizzle with the remaining 1 tbsp of olive oil. Tear a few more basil leaves over the top.",
+  "It keeps in the fridge for up to 4 days. Reheat it on the stove with a splash of water, since it thickens as it sits."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Pappa al pomodoro has no source with 20 ratings: Seasons and Suppers has 5 stars from 2 and Taras Multicultural Table 5 from 1. It leads with Seasons and Suppers for the canned tomatoes, vegetable broth and toasted bread cubes that simmer into the soup, which also gets it close to 30 minutes. Dream of Italy and Giallo Zafferano confirm the garlic-and-oil start and the bread cooked until it is a pulp. The bread is raised from 4 oz to 6 oz so the soup is thick, and the Parmesan some versions use is left out so it stays vegan.",
+ "sources": [
+  {
+   "name": "Seasons and Suppers",
+   "title": "Tuscan Tomato Bread Soup",
+   "url": "https://www.seasonsandsuppers.ca/tuscan-tomato-bread-soup/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Pappa al Pomodoro",
+   "url": "https://tarasmulticulturaltable.com/pappa-al-pomodoro-tuscan-bread-and-tomato-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Dream of Italy",
+   "title": "Pappa al Pomodoro",
+   "url": "https://dreamofitaly.com/2005/07/01/recipe-pappa-al-pomodoro-thick-tomato-and-bread-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Giallo Zafferano",
+   "title": "Pappa al pomodoro",
+   "url": "https://www.giallozafferano.com/recipes/Pappa-al-pomodoro-Tuscan-Tomato-and-Bread-Soup.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
