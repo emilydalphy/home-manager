@@ -1,0 +1,109 @@
+{
+ "dish_name": "Chamchi Kimchi Jjigae",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Kimchi",
+   "qty": "1 jar (about 16 oz)",
+   "category": "produce",
+   "cook_qty": "2 cups, plus 1/2 cup of the juice"
+  },
+  {
+   "item": "Canned tuna in oil",
+   "qty": "2 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Medium soft tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a medium pot with cold water, swirling and draining until the water runs almost clear. Add 1 3/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 12 minutes. Take the pot off the heat and leave it covered until you serve.",
+  "Drain the tuna over a small bowl so you keep the oil. Cut the kimchi into bite-size pieces if the leaves are whole. Slice the onion, cut the 4 green onions into 2 inch pieces, and cut the tofu into 3/4 inch slices.",
+  "Heat 1 tbsp of the tuna oil in a large pot over medium-high heat. Add 2 cups of the kimchi and cook, stirring now and then, for 4 minutes, until it softens and smells sweeter. Use old, sour kimchi if you have it.",
+  "Push the kimchi to one side. Add the onion, tofu and green onions, then pour in 1/2 cup of the kimchi juice from the jar and the broth.",
+  "Bring to a boil over high heat. Cover, turn the heat to medium and simmer for 10 minutes.",
+  "Stir in the fish sauce. Add the tuna in large flakes and simmer for 4 minutes, until it's heated through.",
+  "Take the pot off the heat and stir in the sesame oil.",
+  "Taste the broth. If it's flat, add a splash more fish sauce.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Seonkyoung Longest's tuna kimchi jjigae: kimchi sauteed first, then juice and stock, tofu and onion simmered, tuna added last so it stays in flakes. No version has 20 ratings (Maangchi's page blocked the reader), so this is a fallback; the Subversive Table, Basic Sunday and KimchiGuide agree on the order. The sources simmer 15 to 20 minutes; this is 10 so the dinner stays at 30 minutes, which makes old, sour kimchi matter. Chicken broth stands in for the anchovy-kelp stock, as the Subversive Table and Farah J. Eats allow. Kimchi is spicy by nature, so rinse it briefly for small children. Sesame oil to finish is from KimchiGuide.",
+ "sources": [
+  {
+   "name": "Seonkyoung Longest",
+   "title": "Tuna Kimchi Jjigae (Stew)",
+   "url": "https://seonkyounglongest.com/tuna-kimchi-jjigae/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Subversive Table",
+   "title": "Easy Tuna Kimchi Stew (Chamchi Kimchi Jjigae)",
+   "url": "https://thesubversivetable.com/easy-tuna-kimchi-stew-chamchi-kimchi-jjigae/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Basic Sunday",
+   "title": "Kimchi Stew with Tuna (ChamChi-Kimchi Jjigae)",
+   "url": "https://basicsunday.com/kimchi-stew-with-tuna-chamchi-kimchi-jjigae/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "KimchiGuide",
+   "title": "Tuna Kimchi Jjigae (Chamchi)",
+   "url": "https://kimchiguide.com/tuna-kimchi-jjigae/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

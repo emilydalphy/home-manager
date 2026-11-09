@@ -1,0 +1,91 @@
+{
+ "dish_name": "Mentaiko Pasta",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Mentaiko (cod roe)",
+   "qty": "4 sacs (about 4 oz)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Butter",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Nori",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "2 sheets"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add the salt and bring it to a boil over high heat.",
+  "Meanwhile, cut the nori sheets into thin strips with scissors and set them aside.",
+  "Melt the butter in a small bowl in the microwave, about 30 seconds. Pour it into a large serving bowl and whisk in the milk, cream, soy sauce and pepper.",
+  "Slit each mentaiko sac down the middle with a knife. Squeeze the roe into the bowl and discard the skins. Stir until the roe is spread through the sauce and it looks pink and creamy.",
+  "Add the spaghetti to the boiling water and cook until al dente, 10 minutes or as the package says. Scoop out 1/4 cup of the pasta water, then drain the spaghetti.",
+  "Transfer the hot spaghetti into the bowl with the sauce. Toss for about 1 minute, until the butter has melted and every strand is coated. If it looks tight, add a splash of the pasta water.",
+  "Taste it. If it's flat, add a pinch more pepper.",
+  "Divide the spaghetti among 4 bowls and top with the nori."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 17,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Just One Cookbook's classic mentaiko pasta (4.83 from 91): butter, milk, cream and soy sauce whisked in the bowl, raw roe stirred in, hot spaghetti tossed through, nothing cooked in a pan. Doubled to feed 4. Left out: the shiso garnish (hard to find; nori on its own is in the Onolicious version too). The roe is salty, so no extra salt goes in the sauce. Buy mild mentaiko if the children are at the table, since the usual karashi mentaiko has chili in it.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Classic Mentaiko Pasta",
+   "url": "https://www.justonecookbook.com/classic-mentaiko-pasta/",
+   "rating": 4.83,
+   "rating_count": 91,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Onolicious Hawai'i",
+   "title": "Mentaiko Pasta",
+   "url": "https://onolicioushawaii.com/mentaiko-pasta/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

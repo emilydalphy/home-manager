@@ -1,0 +1,125 @@
+{
+ "dish_name": "Kinoko Soba",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Dried soba noodles",
+   "qty": "14 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Shimeji mushrooms",
+   "qty": "2 packs (3.5 oz each)",
+   "category": "produce"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water and bring it to a boil over high heat for the soba.",
+  "Meanwhile, wipe the shiitake with a damp towel, cut off and discard the stems, and slice the caps 1/4 inch thick. Cut the root end off the shimeji and pull the clusters apart. Mince the garlic and thinly slice the 3 green onions.",
+  "Heat the sesame oil in a large pot over medium-high heat. Add the shiitake and shimeji and cook, stirring now and then, for 6 minutes, until the liquid has cooked off and they're browned in spots.",
+  "Add the garlic and stir for 30 seconds, until it smells toasty.",
+  "Pour in the broth and stir in the soy sauce and mirin. Bring to a boil, then turn the heat down and simmer for 8 minutes.",
+  "While the broth simmers, add the soba to the boiling water and cook for 5 minutes, or as the package says. Drain, rinse under cold water, and drain again.",
+  "Stir the spinach into the broth and cook for 1 minute, until it's wilted. Take the pot off the heat.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Divide the soba among 4 bowls and ladle the broth and mushrooms over it. Top with the green onions and sesame seeds."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Happy Baking Days' kinoko soba (soy, mirin and broth, mushrooms browned in sesame oil, spinach, noodles rinsed and sauced in the bowl); it has no rating and none of the named versions has 20, so this is a fallback. Its mushroom amount is only 1 cup for 4 people, so the mushroom weight follows J-Simple Recipes (shiitake and shimeji, about 11 oz for 2) and the broth is 6 cups for 4 bowls (the lead says 4). Vegetable broth stands in for the dashi in the other sources, which keeps it vegetarian. Its 10 to 15 minute simmer is shortened to 8 to keep the dinner at 30 minutes. Ankake versions thicken the broth with potato starch; this one doesn't.",
+ "sources": [
+  {
+   "name": "Happy Baking Days",
+   "title": "Kinoko Soba (Japanese Mushroom Soba Noodle Soup)",
+   "url": "https://happybakingdays.com/kinoko-soba-noodle-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "J-Simple Recipes",
+   "title": "Buckwheat Noodles with Mushrooms",
+   "url": "https://j-simplerecipes.com/recipes_us/noodles/buckwheat-noodles-with-mushroom.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Cabagges",
+   "title": "Mixed Mushroom Soba",
+   "url": "https://cabagges.world/recipes/mixed-mushroom-soba",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Mushroom Ankake Soba",
+   "url": "https://japanesecooking101.com/mushroom-ankake-soba-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

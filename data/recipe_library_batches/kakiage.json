@@ -1,0 +1,121 @@
+{
+ "dish_name": "Kakiage",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a medium pot with cold water, swirling and draining until the water runs almost clear. Add 1 3/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 12 minutes. Take the pot off the heat and leave it covered until you serve.",
+  "Meanwhile, cut the onion in half and slice it into thin strips. Cut the carrot into matchsticks about 2 inches long, trim the green beans and cut them into 1 inch pieces, and thinly slice the 4 green onions. Transfer everything into a large bowl.",
+  "Add 1/2 cup water, the soy sauce and the mirin to a small saucepan over medium heat. Bring it to a simmer, cook for 1 minute, then transfer it into a small bowl for dipping.",
+  "Pour the oil into a 10 inch skillet so it's about 3/4 inch deep. Heat it over medium-high to 340°F. No thermometer? Drop in a pinch of flour. It should sizzle right away. If things brown too fast later, turn the heat down.",
+  "Toss the vegetables with 1/4 cup of the flour until they're lightly coated. In a small bowl, stir the remaining 3/4 cup flour with 3/4 cup cold water and the salt. Leave a few lumps. Pour the batter over the vegetables and fold until no dry flour is left. Stop there. Any longer and the fritters come out heavy.",
+  "Scoop a scant 1/2 cup of the mixture onto a flat spatula, press it into a loose patty, and slide it into the oil. Add a second one beside it. Fry for 1 1/2 minutes, until the underside is golden and set. Flip and fry for 1 minute, until golden all over. Stand back a little. They'll spatter.",
+  "Transfer the fritters to a wire rack or a plate lined with paper towels. Repeat with the rest of the mixture, 2 at a time, to make 8 fritters in all. Let the oil come back up to temperature between batches.",
+  "Fluff the rice with a fork. Serve the fritters hot with the rice and the dipping sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is RecipeTin Japan's kakiage (batter folded through carrot, scallion and burdock, 170°C oil, 2 at a time), scaled for 4. None of the vegetable versions has 20 ratings, so this follows the fallback rule. Changes: the lead's tiny dried anchovies are left out to keep it vegetarian, burdock is swapped for onion and green beans (both in Norecipes and Chopstick Chronicles), and the batter uses water alone (the lead makes the egg optional). The sources serve it with a dashi dipping sauce, so the dip here is a quick soy and mirin version without dashi. Served with rice because the list sells it as dinner; it's the kakiage-don idea without the sauce poured over. Cooked fritters can be frozen for a month (RecipeTin).",
+ "sources": [
+  {
+   "name": "RecipeTin Japan",
+   "title": "Kakiage (Mixed Vegetable Tempura)",
+   "url": "https://japan.recipetineats.com/kakiage-mixed-vegetable-tempura/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chopstick Chronicles",
+   "title": "Japanese Kakiage Tempura (Crispy Vegetable Fritters)",
+   "url": "https://www.chopstickchronicles.com/japanese-kakiage-tempura/",
+   "rating": 4.75,
+   "rating_count": 12,
+   "read": true
+  },
+  {
+   "name": "Norecipes",
+   "title": "Kakiage Vegetable Tempura",
+   "url": "https://norecipes.com/kakiage-vegetable-tempura/",
+   "rating": 4.67,
+   "rating_count": 6,
+   "read": true
+  },
+  {
+   "name": "Chef JA Cooks",
+   "title": "Easy Kakiage Tempura",
+   "url": "https://chefjacooks.com/en/easy-kakiage/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Kakiage Don",
+   "url": "https://www.justonecookbook.com/kakiage/",
+   "rating": 4.5,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
