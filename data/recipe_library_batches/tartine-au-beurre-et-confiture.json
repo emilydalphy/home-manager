@@ -1,0 +1,63 @@
+{
+ "dish_name": "Tartine au Beurre et Confiture",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Jam",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Cut the baguette into 4 pieces about 6 inches long. Split each piece lengthwise.",
+  "If the bread isn't fresh from the bakery, lay the pieces cut side up on a baking sheet and toast them under the broiler or in a toaster oven for 1 to 2 minutes, until warm and lightly golden. Stay close. The broiler goes from golden to burnt fast.",
+  "Meanwhile, pour the milk into a small saucepan and warm it over medium-low heat for about 3 minutes, until steaming. Don't let it boil. Pour it into 4 mugs.",
+  "Spread the butter over the cut sides, about 1/2 tbsp on each half, right out to the edges.",
+  "Spoon about 1 tbsp of jam onto each buttered half and spread it flat.",
+  "Serve with the mugs of warm milk for dipping."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hoodoo Q's tartines are a split baguette, toasted if it isn't fresh, spread with butter and jam, and dipped in warm milk, hot chocolate or coffee; that is the lead and where the method comes from. Bonne Maman's tartine page agrees on thin French bread with unsalted butter and a jam spread but gives no amounts. Neither page has a rating, so this is a fallback lead. Amounts are Pomona's own, sized for four, since neither source gives any.",
+ "sources": [
+  {
+   "name": "Hoodoo Q",
+   "title": "Lundi recipes (tartines with butter and jam)",
+   "url": "https://hoodooq.blogspot.com/2011/09/lundi-recipes.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bonne Maman",
+   "title": "Tartines",
+   "url": "https://www.bonnemaman.co.uk/recipes/tartines",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

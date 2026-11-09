@@ -1,0 +1,82 @@
+{
+ "dish_name": "Fromage Blanc aux Fruits",
+ "cuisine": "French",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 7,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Fromage blanc",
+   "qty": "16 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Strawberries",
+   "qty": "1 lb",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the strawberries and cut off the tops. Slice them into a bowl.",
+  "Zest the lemon. You need 1/4 tsp of the zest.",
+  "In a medium bowl, stir the fromage blanc, cream, honey, vanilla and the lemon zest until smooth.",
+  "Spoon the fromage blanc into 4 shallow bowls.",
+  "Top each bowl with the strawberries and spoon any juice from the bowl over the top.",
+  "Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Ina Garten's honey vanilla fromage blanc is the lead for the cheese: fromage blanc stirred with cream, honey, vanilla and lemon zest and spooned over fruit, scaled here to half the amounts. Bobby Flay's version sugars the strawberries for an hour first and Taste France simmers them for 20 minutes, so neither fits a five minute breakfast; they agree on strawberries with lemon and vanilla. Taste France's pistachios are left out to keep it nut free. None of the three has 20 ratings at 4.0 or better (Taste France is 3.3 from 14), so this is a fallback lead. Fromage blanc can be hard to find in some stores.",
+ "sources": [
+  {
+   "name": "Food Network (Ina Garten)",
+   "title": "Honey Vanilla Fromage Blanc",
+   "url": "https://www.foodnetwork.com/recipes/ina-garten/honey-vanilla-fromage-blanc-recipe-1946290",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network (Bobby Flay)",
+   "title": "Strawberries with Fromage Blanc",
+   "url": "https://www.foodnetwork.com/recipes/bobby-flay/strawberries-with-fromage-blanc-recipe-1910089",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Taste France",
+   "title": "Fromage Blanc with Toasted Pistachios and Maple Syrup Drizzle",
+   "url": "https://tastefrance.com/us/recipes/fromage-blanc-toasted-pistachios-and-maple-syrup-drizzle",
+   "rating": 3.3,
+   "rating_count": 14,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

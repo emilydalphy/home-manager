@@ -1,0 +1,70 @@
+{
+ "dish_name": "Croissant Jambon Fromage",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Croissants",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Cream cheese",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "3 oz"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sliced ham",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Swiss cheese slices",
+   "qty": "4",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Line a baking sheet with foil.",
+  "Split the croissants lengthwise and set them on the sheet, cut side up.",
+  "In a small bowl, stir the cream cheese and Dijon together until smooth.",
+  "Spread the cream cheese mixture over the bottom halves.",
+  "Layer the ham and a slice of Swiss cheese on each bottom half, and close with the top halves.",
+  "Bake for 12 to 15 minutes, until the cheese has melted and the croissants are crisp at the edges.",
+  "Serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Six Sisters' Stuff (the lead, 5.0 from 1 rating) splits bakery croissants, spreads them with cream cheese and Dijon, fills them with ham and Swiss or cheddar and bakes them at 350°F; it also says they can be put together in the morning and baked later. Hungry Healthy Happy glazes with honey and Dijon, adds spinach and bakes 7 to 8 minutes. Neither has 20 ratings, so this is a fallback lead. The list says warmed for ten minutes, but the lead takes 12 to 15 minutes in the oven.",
+ "sources": [
+  {
+   "name": "Six Sisters' Stuff",
+   "title": "Baked Ham and Cheese Croissant Sandwiches",
+   "url": "https://www.sixsistersstuff.com/recipe/baked-ham-and-cheese-croissant-sandwiches/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry Healthy Happy",
+   "title": "Ham and Cheese Croissant",
+   "url": "https://hungryhealthyhappy.com/ham-and-cheese-croissant/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

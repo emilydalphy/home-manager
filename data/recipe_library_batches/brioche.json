@@ -1,0 +1,89 @@
+{
+ "dish_name": "Brioche",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 410,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Unsalted butter",
+   "qty": "9 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "All purpose flour",
+   "qty": "6 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The day before, or up to 3 days ahead: melt 8 tbsp of the butter and let it cool until it's only warm. In a large bowl, whisk the melted butter with 1 cup warm water (about 110°F), the sugar, the salt and the yeast.",
+  "Add 5 of the eggs and whisk until smooth.",
+  "Add 5 1/2 cups of the flour all at once and stir with a wooden spoon until no dry flour is left. The dough will be wet and lumpy. That's right.",
+  "Cover the bowl loosely, not airtight, and leave it at room temperature for 2 hours.",
+  "Refrigerate the dough for at least 3 hours, or up to 3 days.",
+  "On baking day, use the last 1 tbsp of butter to grease two loaf pans, each about 8 1/2 by 4 1/2 inches.",
+  "Flour the counter with a little of the extra 1/2 cup of flour. Cut the cold dough in half and put one half back in the fridge.",
+  "Knead the half on the counter for about 30 seconds, adding a little flour if it sticks. Cut it into 3 equal pieces and roll each into a rope about 13 inches long.",
+  "Pinch the 3 ropes together at one end, braid them, and tuck the ends under. Transfer the braid into one of the pans.",
+  "Take the second half out of the fridge and shape and braid it the same way, then put it in the other pan.",
+  "Cover the pans loosely and leave them at room temperature for 90 minutes, until puffy.",
+  "While they rise, heat the oven to 350°F with a rack in the middle.",
+  "Beat the last egg and brush it over both loaves.",
+  "Bake for 45 to 50 minutes, until deep golden brown. You're baking it to about 190°F in the middle, so if you have a thermometer, check it there. No thermometer? Tap the bottom of a loaf. It should sound hollow.",
+  "Cool the loaves in their pans on a rack for 15 minutes. Turn them out and cool completely before slicing.",
+  "Keep one loaf wrapped in a bag or foil at room temperature, where it keeps for a few days. Slice the other loaf, wrap it well and freeze it for up to 2 months. Thaw slices at room temperature."
+ ],
+ "advance_prep_notes": "Make the dough 3 hours to 3 days ahead; it needs 2 hours at room temperature, then 3 hours in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "method_notes": "Once Upon a Chef (the lead, 4.96 from 22 ratings) is a no knead dough that is stirred together, rested 2 hours, then chilled for up to 3 days before it is shaped and baked, which is how it fits a weekend bake. Pinch and Swirl chills a smaller tangzhong dough for 12 to 24 hours and shapes it as a rolled loaf; it agrees on 350°F and a golden top at about 190°F inside. The lead makes two loaves, so one goes in the freezer. Prep time counts the rising and chilling, since the dough has to be made ahead.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Brioche Bread",
+   "url": "https://www.onceuponachef.com/recipes/brioche.html",
+   "rating": 4.96,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pinch and Swirl",
+   "title": "Brioche Bread",
+   "url": "https://pinchandswirl.com/brioche-bread-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

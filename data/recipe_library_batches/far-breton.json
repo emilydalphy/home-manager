@@ -1,0 +1,106 @@
+{
+ "dish_name": "Far Breton",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Pitted prunes",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Black tea bag",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "5 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All purpose flour",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Up to 2 days ahead: steep the tea bag in 1/3 cup boiling water for 5 minutes, then remove the bag. Pour the tea into a small saucepan with the prunes.",
+  "Simmer the prunes over medium-low heat until most of the tea is absorbed. Cover and let them cool.",
+  "Heat the oven to 400°F. Use 1 tbsp of the butter to grease a 6 cup (1.5 liter) baking dish well.",
+  "Put the remaining 4 tbsp butter in a light colored saucepan over medium-low heat. Cook it, swirling now and then, until the milk solids turn golden brown and it smells nutty. Take the pan off the heat and let the butter cool.",
+  "In a large bowl, whisk the flour, sugar and salt together.",
+  "Make a well in the middle, add the eggs, and whisk, drawing in flour from the edges, until smooth.",
+  "Whisk in the milk a little at a time, then the vanilla.",
+  "Whisk in the cooled brown butter.",
+  "Scatter the prunes over the bottom of the dish.",
+  "Pour the batter through a fine sieve over the prunes.",
+  "Bake for 35 to 45 minutes, until it's risen and deep golden, with a slight wobble in the center. Cool it for at least 20 minutes.",
+  "Serve slightly warm or at room temperature. Cover and refrigerate leftovers for up to 3 days, and slice them cold. Don't freeze it."
+ ],
+ "advance_prep_notes": "The prunes can be simmered up to 2 days ahead, and the baked far keeps 3 days in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Sunday Baker (the lead, 4.6 from 12 ratings) uses a thin batter of flour, sugar, eggs and milk with browned butter, poured over simmered prunes and baked at 400°F; it is also where the 3 day fridge keeping time comes from. Brittany Tourism and The French Cooking Academy agree on the prunes under a thin custard batter but use more milk and a lower oven. The sources soak the prunes in brandy or rum; this one uses strong tea, the alcohol free option Sunday Baker names. The lead has fewer than 20 ratings, so this is a fallback lead. It makes a full dish, about 8 slices.",
+ "sources": [
+  {
+   "name": "Sunday Baker",
+   "title": "Far Breton (French Prune Flan)",
+   "url": "https://sundaybaker.co/far-breton/",
+   "rating": 4.6,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Brittany Tourism",
+   "title": "Breton Custard Cake (Far Breton) with Prunes",
+   "url": "https://www.brittanytourism.com/matching-what-i-want/food-drink/recipes/breton-custard-cake-far-breton-with-prunes-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "The French Cooking Academy",
+   "title": "Far Breton",
+   "url": "https://www.thefrenchcookingacademy.com/recipes/far-breton",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

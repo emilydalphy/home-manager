@@ -1,0 +1,98 @@
+{
+ "dish_name": "Croissants",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 330,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "All purpose flour",
+   "qty": "6 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 lb (4 sticks)",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp plus 3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The weekend before, or the day before: in a large bowl, whisk 2 of the eggs with enough warm water to make 2 cups. Stir in 1 tbsp of the sugar, 3 cups of the flour and the yeast. Leave it to work while you make the butter block.",
+  "In a stand mixer with the paddle, mix 28 tbsp (3 1/2 sticks) of the butter, 3/4 tsp of the salt and 1/2 cup of the flour on low speed until smooth. Don't beat air into it.",
+  "Shape the butter into an 8 inch square, wrap it, and refrigerate it for 30 minutes.",
+  "Melt 2 tbsp of the butter. Add it to the sponge with the remaining 3 tbsp sugar, 2 1/2 cups of the flour and the rest of the salt. Knead for 5 minutes, adding flour 2 tbsp at a time if it sticks.",
+  "Pat the dough into a 9 inch square, wrap it, and refrigerate it for 30 minutes.",
+  "Roll the dough into a 12 inch square on a floured counter.",
+  "Set the butter block in the middle like a diamond, so its corners point at the middle of the dough's sides. Fold the dough corners over the butter, pinch the seams shut, and turn the packet over.",
+  "Roll it into a rectangle about 20 by 10 inches. Fold it in thirds, like a letter. That's the first turn.",
+  "Turn the dough a quarter turn, roll it to 20 by 10 inches again, and fold it in thirds. That's the second turn. Wrap it and refrigerate it for 30 minutes.",
+  "Give the dough two more turns the same way, rolling and folding each time. Wrap it well and refrigerate it for at least 1 hour, or overnight.",
+  "Cut the dough in half. Roll one half into a 13 by 18 inch rectangle and trim 1/4 inch off every edge.",
+  "Cut the rectangle into six pieces, each 4 by 9 inches, then cut each piece in half diagonally. Cut a 1 inch notch into the middle of the short side of each triangle.",
+  "Roll each triangle up from the notched side to the point, with the tip tucked underneath. Set them on a parchment lined baking sheet with the ends curving toward each other.",
+  "Cover the sheet and refrigerate it for 30 minutes. Then leave it at room temperature for 1 to 1 1/2 hours, until the croissants look puffy and a fingertip leaves a dent.",
+  "Toward the end of the rise, heat the oven to 425°F.",
+  "Beat 1 egg with 1 tbsp water and brush it over the croissants.",
+  "Bake for 15 minutes. Turn the oven down to 350°F and bake for 10 to 15 minutes, until deep golden brown with no raw dough where the layers overlap.",
+  "Cool the croissants on the pan for 20 minutes.",
+  "To freeze the other half: roll, cut and shape it the same way. Freeze the shaped croissants on a tray for about 2 hours, until firm, then transfer them to a freezer bag, where they keep up to 2 months.",
+  "To bake from the freezer: thaw the croissants overnight in the fridge. Leave them at room temperature until they've doubled, then brush with 1 egg beaten with 1 tbsp water and bake the same way. Don't let them rise past double or the butter can leak out."
+ ],
+ "advance_prep_notes": "Laminate the dough the weekend before; it needs about 4 hours with chilling, then rests overnight, and shaped croissants freeze for up to 2 months.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "King Arthur's Baker's Croissants (the lead, 4.6 from 186 ratings) are a sponge dough folded around a butter block with four turns, which is the method and the ratios. Food52's best croissants recipe could not be read. Freezing shaped, unproofed croissants and thawing them overnight before the last rise comes from La Cuisine de Geraldine, since King Arthur only freezes the dough. The recipe makes 24, so half the dough is shaped and frozen. Prep time counts the chilling and rising.",
+ "sources": [
+  {
+   "name": "King Arthur Baking",
+   "title": "Baker's Croissants",
+   "url": "https://www.kingarthurbaking.com/recipes/bakers-croissants-recipe",
+   "rating": 4.6,
+   "rating_count": 186,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "La Cuisine de Geraldine",
+   "title": "Your Complete Guide to Freezing Croissants",
+   "url": "https://lacuisinedegeraldine.fr/en/your-complete-guide-to-freezing-croissants",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,111 @@
+{
+ "dish_name": "Beignets",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 150,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Active dry yeast",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Egg",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "All purpose flour",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 quarts",
+   "category": "pantry"
+  },
+  {
+   "item": "Powdered sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "The day before: in a large bowl, stir 3/4 cup lukewarm water, the yeast and the sugar. Leave it for 5 to 10 minutes, until frothy.",
+  "Whisk in the egg and the milk.",
+  "In the bowl of a stand mixer, stir 3 1/2 cups of the flour with the salt. Add the yeast mixture and the softened butter.",
+  "Knead with the dough hook until the dough pulls cleanly away from the sides of the bowl.",
+  "Transfer the dough to an oiled bowl, cover it, and leave it in a warm place for 1 to 2 hours, until doubled.",
+  "Cover the bowl tightly and refrigerate the dough until the next morning. It keeps up to 2 days.",
+  "Take the dough out of the fridge and leave it on the counter for about 1 hour, until it's no longer cold.",
+  "Dust the counter with some of the last 1/2 cup of flour. Roll the dough into a rectangle about 3/4 inch thick. Cut it into strips, then into squares about 2 inches across.",
+  "If you'd like some for later, lay the cut squares you won't fry on a baking sheet and freeze them until solid. Transfer them to a freezer bag and freeze for up to 1 month. Thaw them fully on the counter before frying.",
+  "Pour 2 to 3 inches of oil into a deep pan or Dutch oven. Heat it over medium-high to 350°F. No thermometer? A scrap of dough dropped in should bubble right away and turn golden in about 1 minute.",
+  "Fry 5 or 6 squares at a time for 2 to 3 minutes, turning once, until golden on both sides. Stand back a little. The oil will spatter.",
+  "Transfer the beignets to a plate lined with paper towels. Dust them with the powdered sugar through a fine sieve.",
+  "Serve warm."
+ ],
+ "advance_prep_notes": "Make the dough the day before; it rises 1 to 2 hours, then chills overnight and keeps up to 2 days.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "Jo Cooks (the lead, 4.6 from 213 ratings) uses a yeast dough with milk and egg that rises once, is rolled 3/4 inch thick and fried at 350°F; the make ahead and freezer notes come from the same page. Bless This Mess has no milk and more egg and rests the dough 4 to 18 hours in the fridge, rolled thinner, which is where the overnight chill comes from. Handle the Heat uses evaporated milk and an extra yolk. The lead makes about 32 squares, so freeze what you won't fry. Cooked beignets don't keep, so they are fried the same morning.",
+ "sources": [
+  {
+   "name": "Jo Cooks",
+   "title": "Beignets",
+   "url": "https://www.jocooks.com/recipes/beignets/",
+   "rating": 4.6,
+   "rating_count": 213,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bless This Mess",
+   "title": "Easy Authentic Beignets",
+   "url": "https://www.blessthismessplease.com/easy-authentic-beignets",
+   "rating": 4.41,
+   "rating_count": 10,
+   "read": true
+  },
+  {
+   "name": "Handle the Heat",
+   "title": "Beignets",
+   "url": "https://handletheheat.com/how-to-make-beignets/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
