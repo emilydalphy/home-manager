@@ -1,0 +1,72 @@
+{
+ "dish_name": "Mitarashi Dango",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Joshinko (Japanese rice flour)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Shiratamako (glutinous rice flour)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Potato starch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Soak 5 bamboo skewers in water. Put a large pot of water on to boil, and fill a big bowl with ice water.",
+  "In a bowl, mix the joshinko and shiratamako with a chopstick. Pour in 2/3 cup of boiling water a little at a time, stirring, until the flour clumps and comes together into a ball. Keep the dough on the dry side.",
+  "Knead the dough until it's smooth and soft, like an earlobe. Cut it into 16 equal pieces, about 20 g each, and roll each into a smooth ball.",
+  "Drop the balls into the boiling water all at once and stir now and then so they don't stick. When they float, cook them for 1 to 2 minutes.",
+  "Transfer the dango to the ice water. When they're cool, drain them and thread 3 on each skewer.",
+  "Meanwhile, whisk the sugar, mirin, soy sauce, potato starch and 2/3 cup of cold water in a small saucepan, off the heat. Set it over medium heat and whisk constantly for 1 to 2 minutes, until it's thick and glossy. Take it off the heat.",
+  "If you'd like some char, brown the skewers for a minute or two in a dry nonstick pan over medium heat, turning them once.",
+  "Pour the glaze over the dango and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead mixes two rice flours for a dumpling that is tender but still springy, and boils then chills the balls before skewering. Glaze is sugar, mirin and soy sauce thickened with potato starch. Other versions use only one flour or add silken tofu to the dough; this one sticks to the lead. All of it is plant based as written. Mochiko can replace the shiratamako, but the dumplings come out softer.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Mitarashi Dango",
+   "url": "https://www.justonecookbook.com/mitarashi-dango/",
+   "rating": 4.73,
+   "rating_count": 161,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

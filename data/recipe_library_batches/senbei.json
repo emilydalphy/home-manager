@@ -1,0 +1,82 @@
+{
+ "dish_name": "Senbei",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Mochiko (sweet rice flour)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "120 g (about 1 cup)"
+  },
+  {
+   "item": "Cooked short-grain white rice",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Black sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "White sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F and line two baking sheets with parchment.",
+  "Put the mochiko, cooked rice, salt and oil in a food processor and pulse until the mix looks coarse. Add 1/4 cup of water slowly while it runs. If you have no food processor, mash the rice into the flour and oil with a fork, then work in the water.",
+  "Transfer the dough to a bowl and press it until it holds together. Roll golf-ball-sized pieces, flatten each between two sheets of parchment to about 1/8 inch thick and cut out circles.",
+  "Lay the circles on the baking sheets. Bake for 10 minutes, flip them and bake for 8 to 10 minutes, until they're golden and crisp.",
+  "Stir the soy sauce and mirin in a small bowl. Brush both sides of each cracker and sprinkle with the black and white sesame seeds. Bake for 3 to 4 minutes, until the glaze is set and darker.",
+  "Cool the crackers completely on a rack. They crisp up as they cool.",
+  "Serve once cool. Keep leftovers in a closed container for a few days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The one published recipe found by name bakes a dough of mochiko, cooked rice, oil and water, then brushes the crackers with a soy and mirin glaze and bakes them again. Other versions fry or grill the crackers and glaze with soy sauce and sugar. The lead also mixes furikake into the dough; that is left out here because many furikake blends contain bonito, and this has to stay vegan. Only one unrated source could be read, so amounts follow it closely.",
+ "sources": [
+  {
+   "name": "Veggiekins",
+   "title": "The BEST Japanese Rice Crackers Recipe (Senbei)",
+   "url": "https://veggiekinsblog.com/2022/05/27/japanese-rice-crackers-senbei/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

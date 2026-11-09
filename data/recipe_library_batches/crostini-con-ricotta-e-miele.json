@@ -1,0 +1,76 @@
+{
+ "dish_name": "Crostini con Ricotta e Miele",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Baguette",
+   "qty": "1 small",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Whole-milk ricotta",
+   "qty": "1/2 cup (125 g)",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1 1/2 tsp leaves"
+  },
+  {
+   "item": "Flaky sea salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 pinch"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 320°F. Cut 12 slices from the baguette, about 1/4 inch thick, on a slant.",
+  "Lay the slices on a baking sheet and brush the tops with the olive oil. Bake for 4 to 5 minutes, until golden and crisp. Transfer them to a rack to cool.",
+  "Meanwhile, put the ricotta in a bowl and whisk it hard for 1 to 2 minutes, until it's smooth and fluffy.",
+  "Spread about 2 teaspoons of ricotta on each toast. Drizzle with the honey, scatter on the thyme leaves and add a tiny pinch of salt on each.",
+  "Serve right away, so the toasts stay crisp."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 5,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources keep this to toasted bread, ricotta and honey, with thyme or lemon zest as the only extras. The lead tops it with pine nuts; those are left off here to keep it nut-free. The lead whips the ricotta in a food processor; a hand whisk does it for this small amount. The toasts keep for a day in a closed container, and the ricotta keeps in the fridge for up to 3 days, so assemble just before eating.",
+ "sources": [
+  {
+   "name": "The Clever Meal",
+   "title": "Whipped Ricotta Crostini",
+   "url": "https://theclevermeal.com/ricotta-crostini/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Faith Fitness",
+   "title": "Ricotta Crostini",
+   "url": "https://www.foodfaithfitness.com/ricotta-crostini/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

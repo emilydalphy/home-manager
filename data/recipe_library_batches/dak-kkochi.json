@@ -1,0 +1,122 @@
+{
+ "dish_name": "Dak Kkochi",
+ "cuisine": "Korean",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken thighs",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 pinch"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 pinch"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Scallions (thick) or Korean leeks",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "8 thick scallions"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "2 cloves"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small knob",
+   "category": "produce",
+   "cook_qty": "1/2 tsp, grated"
+  },
+  {
+   "item": "Light corn syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  }
+ ],
+ "instructions": [
+  "Soak 8 bamboo skewers in water. Cut the chicken into 1 1/2 inch pieces.",
+  "Toss the chicken in a bowl with a pinch of salt, a pinch of pepper and 1 tbsp of the mirin. Let it sit for 10 minutes.",
+  "Meanwhile, mince the garlic and grate the ginger. In a small bowl, stir the soy sauce, oyster sauce, garlic, ginger, sugar, corn syrup and the remaining 3 tbsp mirin until the sugar dissolves.",
+  "Cut the white and light green parts of the scallions into 1 1/2 inch pieces. Thread the chicken and scallion pieces onto the skewers, alternating them and leaving a small gap between pieces.",
+  "Heat 1 tbsp of the oil in a large skillet over medium heat. Cook 3 or 4 skewers at a time for 2 to 3 minutes per side, until they're lightly charred and cooked through. Transfer them to a plate and add the rest of the oil for the next batch.",
+  "Return all the skewers to the pan and lower the heat to medium-low. Pour in the glaze and turn the skewers, brushing the glaze over them, until it thickens into a glossy coat, 2 to 3 minutes.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into a piece and it's done when there's no pink left.",
+  "Sprinkle with the sesame seeds and serve warm."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Sources agree on boneless thigh pieces threaded with Korean leek or scallion, seared, then brushed with a sticky glaze. The lead glazes with soy, oyster sauce, mirin and corn syrup, and cooks on the stove in 30 minutes; other versions marinate for 2 hours or more and finish on a grill, or use a gochujang glaze. Heat is left out here, so add gochujang or chili flakes at the table. The lead is written for 3, so amounts are scaled up by about a third.",
+ "sources": [
+  {
+   "name": "Beyond Kimchee",
+   "title": "Dakkochi (Korean Chicken Skewers)",
+   "url": "https://www.beyondkimchee.com/dakkochi-chicken-skewers/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Dak-kkochi (Korean Sweet and Spicy Chicken Skewers)",
+   "url": "https://tarasmulticulturaltable.com/dakkochi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

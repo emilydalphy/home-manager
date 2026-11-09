@@ -1,0 +1,132 @@
+{
+ "dish_name": "Takoyaki",
+ "cuisine": "Japanese",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Boiled octopus",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried bonito flakes (katsuobushi)",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup, plus a handful for topping"
+  },
+  {
+   "item": "Scallions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Pickled red ginger (beni shoga)",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp, plus extra to serve"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tin",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Dashi stock",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Tenkasu (tempura scraps)",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Takoyaki sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Japanese mayonnaise",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "about 3 tbsp"
+  },
+  {
+   "item": "Aonori (dried green seaweed)",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Grind 1/4 cup of the bonito flakes to a fine powder in a spice grinder or with the back of a spoon in a bowl. Set aside.",
+  "Slice the scallions thinly, mince the 1 tbsp pickled ginger and cut the octopus into 1/2 inch pieces. Keep them in separate piles by the stove.",
+  "In a bowl, whisk the flour, baking powder and salt. Add the eggs, soy sauce and dashi, and whisk until smooth. Transfer the batter to a pitcher or measuring cup with a spout.",
+  "Heat a takoyaki pan over medium heat for a few minutes. Brush the 2 tbsp oil generously over every mold and the flat top.",
+  "Pour in the batter so the molds overflow a little. Add 1 to 3 pieces of octopus to each mold and sprinkle with the ground bonito.",
+  "Top with the tenkasu, scallions and minced ginger. After about 3 minutes, when the bottoms are set, use two skewers to cut the batter between the molds. Turn each ball a quarter turn, tucking the loose batter back in.",
+  "Cook for 4 minutes. Turn the balls again, moving them around so they brown evenly, and cook for 4 minutes, until they're golden and the centers are cooked through.",
+  "Transfer the takoyaki to a plate. Drizzle with the takoyaki sauce and the mayonnaise, then sprinkle with the aonori and a handful of bonito flakes.",
+  "Serve hot with extra pickled ginger. The centers stay very hot, so let them cool for a minute before the first bite."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources use a flour, egg and dashi batter poured into a takoyaki pan, with boiled octopus, tenkasu, scallion and pickled ginger inside. The lead adds baking powder for a lighter ball and ground bonito in each mold; the other source skips both and uses less flour. Both finish with sauce, mayonnaise, aonori and bonito flakes. You need a takoyaki pan for this one. Boiled octopus is sold ready to use at Japanese grocery stores.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Takoyaki (Grilled Octopus Balls)",
+   "url": "https://www.justonecookbook.com/takoyaki-recipe/",
+   "rating": 4.67,
+   "rating_count": 168,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Takoyaki Recipe (Octopus Balls)",
+   "url": "https://japan.recipetineats.com/takoyaki-recipe-octopus-balls/",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
