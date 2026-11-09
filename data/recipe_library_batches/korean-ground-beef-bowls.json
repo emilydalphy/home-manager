@@ -1,0 +1,160 @@
+{
+ "dish_name": "Korean Ground Beef Bowls",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red apple",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Pickled ginger",
+   "qty": "1 small jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine hearts",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1 tbsp + 2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 1/2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 2 tsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White sesame seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice and put it in a saucepan with 2 1/2 cups water. Bring it to a boil, then turn the heat to the lowest setting, cover and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, grate 1 tbsp of the onion, 3 tbsp of the apple, the garlic and 1 tsp of the ginger into a bowl. Stir in 2 1/2 tbsp of the soy sauce, 1 tbsp of the sesame oil, the mirin, 1 tbsp of the brown sugar and the pepper. This is the beef sauce.",
+  "In a small bowl, stir together 2 tbsp of the soy sauce, the remaining 1 tbsp sesame oil, the remaining 2 tsp brown sugar and the rice vinegar. This is the drizzle sauce.",
+  "Cut the carrot into thin sticks, tear the romaine into bite-size pieces, and slice the green onion thin.",
+  "Heat 2 tsp of the oil in a large nonstick skillet over high heat. Add half of the spinach and toss for 30 seconds. Add the rest and toss for 1 minute, until wilted. Transfer it to a bowl.",
+  "Add the remaining 1 tbsp oil to the same skillet over high heat. Add the beef and break it up with a spoon. Cook for 4 minutes, until there's no raw pink left.",
+  "Pour in the beef sauce. Let it bubble hard, stirring now and then, for 4 minutes, until most of the liquid is gone. Then stir more often for 2 minutes, until the beef is lightly browned and still moist.",
+  "You're cooking the beef to 160°F, so if you have a thermometer, check it there. No thermometer? It's done when there's no pink left anywhere.",
+  "Mash the avocado with a fork. Spoon the rice into four bowls and top each with beef, spinach, carrot, pickled ginger and avocado. Tuck the romaine along the side and scatter the sesame seeds and green onion over the top.",
+  "Taste the beef. If it's flat, add a splash of soy sauce.",
+  "Serve with the drizzle sauce on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats is the only version of this dish with enough ratings; it uses grated onion, apple, garlic and ginger in a bulgogi-style sauce for ground beef, wilts spinach in the pan first, and serves a second drizzle sauce. Melanie Cooks, Gimme Delicious and Foodie Crush are simpler gochujang or soy and brown sugar versions with no ratings to speak of. This one follows RecipeTin Eats. The rice cooks while you prep, but it adds time, so the total is closer to 40 minutes than 25.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Korean Beef Bulgogi Rice Bowls - The easy way!",
+   "url": "https://www.recipetineats.com/korean-beef-bulgogi-rice-bowls-the-easy-way/",
+   "rating": 4.92,
+   "rating_count": 75,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Foodie Crush",
+   "title": "Korean Ground Beef Bowls",
+   "url": "https://www.foodiecrush.com/korean-ground-beef-bowls/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Gimme Delicious",
+   "title": "Korean Beef Bowls",
+   "url": "https://gimmedelicious.com/korean-beef-bowls/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

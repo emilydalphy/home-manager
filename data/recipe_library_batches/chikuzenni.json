@@ -1,0 +1,142 @@
+{
+ "dish_name": "Chikuzenni",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "6",
+   "category": "pantry"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Taro (satoimo)",
+   "qty": "9 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Burdock root (gobo)",
+   "qty": "1 small root",
+   "category": "produce"
+  },
+  {
+   "item": "Lotus root",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Boiled bamboo shoots",
+   "qty": "1 small can",
+   "category": "pantry"
+  },
+  {
+   "item": "Konnyaku",
+   "qty": "1 block",
+   "category": "pantry"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "10",
+   "category": "produce"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dashi granules",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 1/2 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the shiitake in a bowl with 1 cup of hot water and let them soak for 20 minutes while you do the rest of the prep.",
+  "Cut the chicken into 1 1/2-inch pieces. Toss them with 1/2 tbsp of the sake and 1/2 tbsp of the soy sauce and leave them in the bowl.",
+  "Peel the burdock and slice it thin. Peel the lotus root and cut it into 1/4-inch slices. Put both in a bowl of water with the rice vinegar.",
+  "Peel the taro and cut it into bite-size chunks. Peel the carrot and cut it into bite-size chunks at an angle. Drain the bamboo shoots and cut them into bite-size pieces. Cut half of the konnyaku block into 1/2-inch slices.",
+  "Bring a small pot of water to a boil. Add the konnyaku and boil for 3 minutes. Lift it out with a slotted spoon and set it aside. Add the snow peas to the same water for 30 seconds, then drain and rinse them under cold water.",
+  "Lift the shiitake out of their water and squeeze them over the bowl. That should be about 3/4 cup of mushroom liquid. Cut off the stems and throw them away, then halve the caps.",
+  "Heat 1 tbsp of the sesame oil in a large pot over medium-high heat. Add the chicken and cook for 3 minutes, until it's white on the outside. Transfer it to a plate.",
+  "Add the remaining 1/2 tbsp sesame oil to the pot. Drain the burdock and lotus root and add them with the shiitake, taro, carrot, bamboo shoots and konnyaku. Stir for 3 minutes.",
+  "Stir the dashi granules into 2 cups of hot water. Pour it into the pot with the mushroom liquid. Bring it to a simmer and skim off the foam.",
+  "Add 3 tbsp sake, the mirin, sugar, 2 tbsp soy sauce and the salt. Return the chicken to the pot. The liquid should cover about 4/5 of the food.",
+  "Cover with a lid set slightly open, or a round of parchment cut to fit, and simmer over medium-low for 10 minutes. Take the cover off and simmer for 10 minutes, until a skewer slides easily into the taro and lotus root.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check a piece there. No thermometer? Cut a piece open: it's done when there's no pink left.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Scatter the snow peas over the top and serve.",
+  "To keep leftovers, let the pot cool, then store in an airtight container in the fridge for up to 5 days. For the freezer, pick out the konnyaku first, since it turns rubbery, and freeze for up to 1 month. Reheat in a pot over low heat with a splash of water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook sears the chicken, stir-fries the vegetables in sesame oil, and simmers everything in dashi, sake, mirin, sugar and soy sauce under a drop lid. RecipeTin Eats follows the same order with a shorter vegetable list and a little less seasoning. This one follows Just One Cookbook, with dashi granules for the dashi and the snow peas added at the end. It makes a big pot that keeps for days.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Chikuzenni / Nishime (Simmered Chicken and Vegetables)",
+   "url": "https://www.justonecookbook.com/chikuzenni-simmered-chicken-and-vegetables/",
+   "rating": 4.62,
+   "rating_count": 52,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Chikuzenni (Simmered Chicken and Vegetables) Two Ways",
+   "url": "https://japan.recipetineats.com/chikuzenni-simmered-chicken-and-vegetables/",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

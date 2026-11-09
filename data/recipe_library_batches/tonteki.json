@@ -1,0 +1,104 @@
+{
+ "dish_name": "Tonteki",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Boneless pork loin chops, 1/2 inch thick",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ponzu",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Grate half of the onion into a small bowl and set it aside.",
+  "Shred half of the cabbage and cut the tomatoes into wedges. Divide them among four plates.",
+  "In a small bowl, whisk the ponzu, sake and soy sauce.",
+  "Pat the chops dry. Cut a few slits through the tissue between the meat and the fat on both sides of each chop, so they stay flat in the pan.",
+  "Sprinkle the salt and pepper over both sides of the chops. Dust them with the flour and shake off the extra.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat. Add 2 chops and cook for 3 to 4 minutes per side, until golden. Transfer them to a plate and repeat with the remaining 1 tbsp oil and chops.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check a chop there. No thermometer? Cut into the thickest chop: it's done when the juices run clear and the center is no longer raw.",
+  "Pour the sauce and the grated onion into the same skillet and bring it to a boil over medium-high heat. Cook for 2 minutes, then return the chops and spoon the sauce over them for 1 minute.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Slice the chops into bite-size pieces and lay them on the cabbage and tomato. Spoon the extra sauce over the cabbage."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook slits the chops, dusts them with flour, sears them, and finishes them in a pan sauce of ponzu, sake and soy sauce with grated onion, served on shredded cabbage. A second source (a Worcestershire, ketchup and honey sauce with fried garlic chips) is the more Yokkaichi-style version and differs mainly in the sauce. This one follows Just One Cookbook, scaled to four chops.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Tonteki (Japanese Pork Steak)",
+   "url": "https://www.justonecookbook.com/tonteki/",
+   "rating": 4.8,
+   "rating_count": 30,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Tonteki (Japanese Pork Steak)",
+   "url": "https://norecipes.com/tonteki-japanese-pork-steak/",
+   "rating": 4.88,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

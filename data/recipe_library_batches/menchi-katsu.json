@@ -1,0 +1,111 @@
+{
+ "dish_name": "Menchi Katsu",
+ "cuisine": "Japanese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1 5/8 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Nutmeg",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil for frying",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Tonkatsu sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Mince half of the onion. Heat the olive oil in a skillet over medium heat, add the onion and cook for 6 minutes, until it's golden. Transfer it to a large bowl and let it cool for 10 minutes.",
+  "Meanwhile, shred half of the cabbage and put it in a bowl in the fridge.",
+  "Add the beef, pork, 2 tbsp of the panko, 1 tbsp water, 1 of the eggs, the nutmeg, salt and pepper to the cooled onion. Knead by hand for 2 minutes, until the mixture is pale and sticky.",
+  "Divide the mixture into 6 portions. Roll each into a ball and toss it from hand to hand a few times to knock the air out. Flatten each into an oval patty about 3/4 inch thick. Put them on a plate and chill for 30 minutes.",
+  "Set out three plates: the flour on one, the remaining 2 eggs beaten on another, and the remaining 1 1/2 cups panko on the third. Coat each patty in flour, then egg, then press the panko on firmly.",
+  "Pour the frying oil into a heavy pot at least 3 inches deep and heat it over medium heat to 340°F. No thermometer? Drop in a pinch of panko: it should sizzle steadily and turn golden in about 30 seconds.",
+  "Lower in 2 or 3 patties. Leave them alone for 2 minutes, then flip and cook the other side for 3 minutes, until deep golden. Transfer them to a wire rack. Fry the rest in batches.",
+  "You're cooking the cutlets to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut the first one open: it's done when there's no pink left.",
+  "Taste the first cutlet. If it's flat, sprinkle a pinch more salt over the rest while they're hot.",
+  "Serve the cutlets with the shredded cabbage and the tonkatsu sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook cooks the onion first, kneads it into a beef and pork mixture with panko, milk, egg and nutmeg, chills the patties, and deep-fries them at 340°F. Japanese Cooking 101 skips cooking the onion and chills after breading. This one follows Just One Cookbook, with water in place of the milk to keep it dairy-free.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Menchi Katsu (Ground Meat Cutlet)",
+   "url": "https://www.justonecookbook.com/menchi-katsu/",
+   "rating": 4.54,
+   "rating_count": 52,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Menchi Katsu Recipe",
+   "url": "https://japanesecooking101.com/menchi-katsu-recipe/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

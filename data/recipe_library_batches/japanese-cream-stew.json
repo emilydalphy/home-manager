@@ -1,0 +1,120 @@
+{
+ "dish_name": "Japanese Cream Stew",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dashi granules",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "White miso",
+   "qty": "1 small tub",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the chicken into 1-inch pieces and pat them dry. Toss them with 1/4 tsp of the salt and a pinch of the pepper.",
+  "Cut the onion into large wedges and the carrots into bite-size chunks. Peel the potatoes and cut them into 1-inch pieces. Cut the broccoli into small florets, using about half of a large head.",
+  "In a measuring cup, stir the dashi granules into 1 cup of hot water. Add the chicken broth, miso and onion powder and stir until the miso dissolves.",
+  "Heat a large heavy pot over medium-high heat. Add the butter and let it melt. Add the chicken in one layer and cook for 4 minutes, until it starts to brown on the underside.",
+  "Add the onion, carrots and potatoes. Stir for 2 minutes, until everything is coated in the butter.",
+  "Sprinkle the flour over the pot and stir for 1 minute, until there are no white streaks left.",
+  "Pour in the broth mixture, stirring as you add it. Bring it to a boil, then turn the heat to medium-low, cover and simmer for 10 minutes, stirring now and then. The potatoes and carrots should be almost tender.",
+  "Add the broccoli, cover and cook for 3 minutes.",
+  "Pour in the milk and the remaining 1/4 tsp salt. Bring it to a gentle boil, stirring so the bottom doesn't catch, then turn the heat to low and cook for 2 minutes, until the stew has thickened.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check a piece there. No thermometer? Cut a piece open: it's done when there's no pink left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the stew into bowls and serve."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats builds the stew from browned chicken, onion, carrot and potato, stirs in flour, simmers in dashi and stock, and adds the milk last with no cream. Japanese Cooking 101 makes a separate white sauce and adds it at the end, which takes a second pan. This one follows RecipeTin Eats, with quantities raised to a pound of chicken and a bit more broth and milk for a family table. Neither source has 20 ratings, so the lead is a fallback.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Japanese Chicken Cream Stew",
+   "url": "https://japan.recipetineats.com/japanese-chicken-cream-stew/",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Cream Stew Recipe",
+   "url": "https://japanesecooking101.com/cream-stew-recipe/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

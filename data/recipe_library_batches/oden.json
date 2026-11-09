@@ -1,0 +1,111 @@
+{
+ "dish_name": "Oden",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Daikon",
+   "qty": "1 piece, about 4 inches",
+   "category": "produce"
+  },
+  {
+   "item": "Konnyaku",
+   "qty": "1 block",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Assorted oden fish cakes",
+   "qty": "1 package, about 1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Atsuage (fried tofu)",
+   "qty": "1 package",
+   "category": "dairy"
+  },
+  {
+   "item": "Hanpen (fish cake)",
+   "qty": "1 package",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dashi granules",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Karashi (Japanese hot mustard)",
+   "qty": "1 small tube",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the daikon and slice it into 1-inch rounds. Trim the sharp edges off each round and cut a shallow cross into one flat side. Put the rounds in a large pot, cover with cold water, bring to a boil, then simmer for 20 minutes. Drain.",
+  "Meanwhile, lower the eggs into a pot of boiling water and boil for 8 minutes. Transfer them to cold water, then peel.",
+  "Score the konnyaku in a crosshatch on one side and cut it into triangles. Boil it in water for 3 minutes, then drain.",
+  "Put the fish cakes in a colander and pour boiling water over them to rinse off the oil. Cut the larger pieces into bite-size pieces. Cut the atsuage into bite-size pieces and the hanpen in half.",
+  "Set a large wide pot over medium-high heat. Add 6 cups of water, the dashi granules, soy sauce, sake, mirin and salt and stir until the granules dissolve.",
+  "Add the daikon, konnyaku and eggs. Bring it to a boil, then turn the heat to low and simmer, uncovered, for 20 minutes.",
+  "Add the fish cakes and the atsuage and simmer for 10 minutes.",
+  "Add the hanpen and simmer for 3 minutes.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Ladle the oden into bowls with some broth. Serve with the karashi in a small dish on the side.",
+  "To keep leftovers, let the pot cool with everything in the broth. Store in an airtight container in the fridge for up to 3 days. Take out the eggs and konnyaku before freezing, and freeze the rest for up to 1 month. Reheat over low heat and don't let it boil, or the fish cakes go soft and the broth turns cloudy."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 55,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook simmers daikon, konnyaku and eggs in a seasoned dashi first, then adds the fish cakes and fried tofu, and finishes with the hanpen. RecipeTin Eats uses the same order with potatoes and a longer rest in the broth. This one follows Just One Cookbook, with dashi granules for the broth, no rice-cake pouches or kombu knots, and the karashi served on the side. It takes about an hour and a half on the stove, so it suits a big pot that keeps.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Oden (Japanese Fish Cake Stew)",
+   "url": "https://www.justonecookbook.com/oden/",
+   "rating": 4.78,
+   "rating_count": 59,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Oden (Simmered One Pot Dish)",
+   "url": "https://japan.recipetineats.com/oden-simmered-one-pot-dish/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

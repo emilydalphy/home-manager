@@ -1,0 +1,96 @@
+{
+ "dish_name": "Nikumaki",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Thinly sliced pork loin",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  }
+ ],
+ "instructions": [
+  "Bring a pot of water to a boil. Peel the carrots and cut them into thin sticks about 4 inches long. Trim the green beans.",
+  "Boil the carrots and green beans together for 2 minutes. Drain them, then pat them dry.",
+  "Lay out the pork slices and sprinkle the pepper over them. If the slices are small, overlap two side by side.",
+  "Put 3 carrot sticks and 2 green beans across one short end of each slice and roll the pork up tightly around them.",
+  "Spread the cornstarch on a plate. Roll each roll in it to coat lightly, and shake off the extra.",
+  "Heat 1 tbsp of the oil in a large skillet over medium heat. Add half of the rolls, seam side down, and cook for 4 minutes, turning every minute, until they're browned all over. Transfer them to a plate and repeat with the remaining 1 tbsp oil and rolls.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check a roll there. No thermometer? Cut one open: it's done when the pork is white all the way through.",
+  "Return all the rolls to the skillet. Pour in the mirin and soy sauce and turn the rolls in it for 2 minutes, until the sauce thickens and coats them.",
+  "Taste the sauce. If it's flat, add a splash of soy sauce.",
+  "Cut the rolls in half and spoon the pan sauce over them."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook's nikumaki wraps blanched carrot sticks in thin beef, coats the rolls in starch, browns them, and glazes with equal parts mirin and soy sauce. Pickled Plum's pork rolls wrap green beans, carrot and pepper in thin pork chops with a soy and sugar sauce. This one follows Just One Cookbook's method and sauce, with thin pork loin instead of beef (pork is the usual choice in Japan) and green beans from Pickled Plum.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Carrot Beef Rolls (Nikumaki)",
+   "url": "https://www.justonecookbook.com/carrot-beef-rolls/",
+   "rating": 4.62,
+   "rating_count": 31,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Teriyaki Pork Rolls",
+   "url": "https://pickledplum.com/pork-rolls-teriyaki-recipe/",
+   "rating": 4.7,
+   "rating_count": 12,
+   "read": true
+  },
+  {
+   "name": "Just Bento",
+   "title": "Beef and vegetable rolls (Yasai no nikumaki)",
+   "url": "https://justbento.com/handbook/recipe-collection-mains/beef-and-vegetable-rolls-yasai-no-nikumaki",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
