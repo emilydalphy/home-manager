@@ -1,0 +1,183 @@
+{
+ "dish_name": "Vegetable Sagu",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Potato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened grated coconut",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted chana dal",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Poppy seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "8 leaves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a fine strainer and rinse it under cold water. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Peel the carrot and potato and cut them into 1/2 inch cubes. Cut the green beans into 1/2 inch pieces. Put them in a medium pot with 1/2 cup of the peas, 1 tsp of the salt, 1/4 tsp of the turmeric and 2 cups water.",
+  "Bring it to a boil over high heat, then turn the heat to medium. Cook for 5 minutes, until the vegetables are partly tender. Drain them, keeping about 1/2 cup of the cooking water.",
+  "Meanwhile, cut the onion in half and roughly chop one half for the paste. Finely chop the other half. Chop the tomato and cut half the bell pepper into small pieces.",
+  "Put the coconut, chana dal, poppy seeds, cinnamon, cloves, pepper, ginger, garlic, the roughly chopped onion half, the green chilies and a handful of the cilantro in a blender. Add 1/4 cup water and blend to a smooth paste.",
+  "Heat the oil in a large deep skillet over medium heat. Add the mustard seeds and cumin seeds. When the mustard seeds start to pop, add the asafoetida and curry leaves.",
+  "Add the finely chopped onion and cook for 5 minutes, stirring, until golden.",
+  "Add the tomato, bell pepper, the last 1/4 tsp turmeric and 1 tsp of the salt. Cook for 2 minutes, until the tomato softens.",
+  "Add the ground paste. Cook for 4 to 5 minutes, stirring, until the paste smells toasty and the oil starts to separate at the edges.",
+  "Add the partly cooked vegetables and the saved cooking water. Stir, cover and cook for 5 minutes, until the vegetables are tender. Add a splash of water if it gets too thick.",
+  "Chop 2 tbsp of the cilantro and stir it in.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "method_notes": "Hebbar's Kitchen (the lead, 4.98 from 246) parboils the vegetables, grinds a coconut, roasted gram and whole spice paste, then cooks it with an onion and tomato base. Indian Veggie Delight and Archana's Kitchen agree on the coconut paste, mustard and curry leaf tempering, and a short simmer, and add mint. This version follows the lead without its 4 cashews so it stays nut-free; the roasted gram dal and poppy seeds carry the body. The 5 chilies are cut to 2 so the pot stays mild.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Mixed Vegetable Saagu (Sagu)",
+   "url": "https://hebbarskitchen.com/saagu-recipe-mixed-veg-sagu-recipe-vegetable-saagu-recipe/",
+   "rating": 4.98,
+   "rating_count": 246,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Indian Veggie Delight",
+   "title": "Vegetable Sagu (Karnataka Style)",
+   "url": "https://www.indianveggiedelight.com/veg-sagu-recipe-vegetable-saagu",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Mixed Vegetable Sagu (Karnataka Style)",
+   "url": "https://archanaskitchen.com/karnataka-style-mixed-vegetable-saagu-recipe-spicy-vegetable-coconut-gravy-recipe",
+   "rating": null,
+   "rating_count": 36758,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed"
+}

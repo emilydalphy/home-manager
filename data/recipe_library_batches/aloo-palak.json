@@ -1,0 +1,118 @@
+{
+ "dish_name": "Aloo Palak",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (10 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi (dried fenugreek leaves)",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a fine strainer and rinse it under cold water. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Peel the potatoes and cut them into 3/4 inch cubes. Put them in a bowl of cold water. Rinse the spinach in a colander, drain it well and roughly chop it.",
+  "Thinly slice the onion. Chop the garlic. Cut the green chili in half, scrape out the seeds and chop it.",
+  "Heat the oil in a large deep skillet over medium heat. Add the cumin seeds. After about 20 seconds they will sizzle and smell toasty.",
+  "Add the garlic and green chili and stir for 1 minute. Add the onion and cook for 6 to 7 minutes, stirring now and then, until light golden.",
+  "Drain the potatoes well and add them to the pan. Stir for 3 to 4 minutes. Add 3 tbsp water and cover. Cook for 8 to 10 minutes, stirring once or twice, until the potatoes are tender when you pierce them with a fork.",
+  "Add the turmeric, chili powder, garam masala, kasuri methi and the salt. Stir for 1 to 2 minutes, until it smells toasty.",
+  "Add the spinach in handfuls and stir over medium high heat for about 3 minutes, until it wilts. Cook until most of the liquid in the pan has gone.",
+  "Take the pan off the heat. Squeeze in the juice of half the lemon, about 1 1/2 tbsp, and cut the other half into wedges.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve over the rice, with the lemon wedges."
+ ],
+ "method_notes": "Swasthi's Recipes (the lead, 5 from 178) browns an onion in cumin and garlic, cooks the potatoes until tender, then wilts the spinach in last and finishes with lemon. Hebbar's Kitchen (5 from 52) adds tomatoes, more ground spices and spring onion. This version follows the lead and uses its optional garam masala and kasuri methi. The asafoetida is left out (optional in the source) so it stays gluten-free, and the green chili is deseeded and cut to 1 to keep it mild.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Aloo Palak (Spinach and Potato)",
+   "url": "https://www.indianhealthyrecipes.com/aloo-palak-recipe-quick-and-easy/",
+   "rating": 5.0,
+   "rating_count": 178,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Dry Aloo Palak",
+   "url": "https://hebbarskitchen.com/dry-aloo-palak-recipe-aalu-palak-ki-sabji/",
+   "rating": 5.0,
+   "rating_count": 52,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed"
+}

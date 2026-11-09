@@ -1,0 +1,133 @@
+{
+ "dish_name": "Bharwa Baingan",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Baby eggplants",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground fennel",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Amchur (dry mango powder)",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chickpea flour",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a fine strainer and rinse it under cold water. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Stir 1/2 tsp of the salt into a bowl of 3 cups water. Rinse the eggplants and trim the stems short, leaving the stems on. Slit each eggplant lengthwise into 4 parts, stopping at the stem so it stays in one piece. Put them in the salted water.",
+  "Finely chop the onion. Grate the ginger and the garlic. Finely chop the tomato.",
+  "Heat 3 tbsp of the oil in a large deep skillet over medium heat. Add the cumin seeds. After about 20 seconds they will sizzle and smell toasty.",
+  "Add the onion and cook for 8 to 9 minutes, stirring now and then, until light golden. Don't rush it. That's where the flavor starts.",
+  "Add the ginger and garlic and stir for 1 minute. Add the tomato and a pinch of salt. Cook for 3 to 4 minutes, until it breaks down.",
+  "Add the garam masala, fennel, chili powder, coriander, amchur and turmeric. Stir for 2 minutes, until it smells toasty.",
+  "Add the chickpea flour and stir for 1 minute. Taste it and add a pinch of salt if it needs it. Transfer it to a bowl and let it cool for about 5 minutes.",
+  "Take the eggplants out of the water one at a time. Spoon some of the cooled masala into each one and set them on a plate.",
+  "Heat the last 1 tbsp oil in the same skillet over medium heat. Add the asafoetida, then the stuffed eggplants. Cook for 3 minutes, turning them gently, until the skin changes color.",
+  "Add the leftover masala and 3/4 cup water and stir gently. Cover, turn the heat to medium low, and cook for 10 to 12 minutes, until the eggplants are tender all the way through and the gravy has thickened. Add a splash of water if it looks dry.",
+  "Chop 2 tbsp of the cilantro and scatter it over the top.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "method_notes": "Swasthi's Recipes (the lead, 5 from 51) cooks down an onion and tomato masala, uses some of it to stuff slit eggplants, then simmers them in the rest as a gravy. Hebbar's Kitchen has a Maharashtrian stuffed eggplant (Baingan Masala, 5 from 200) with a peanut, sesame and coconut stuffing, which is a different dish and is credited here only as a comparison. This version uses the lead's roasted chickpea flour option rather than powdered cashews or almonds, so it stays nut-free, and the chili powder is the mild Kashmiri kind.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Bharwa Baingan (Stuffed Eggplant Curry)",
+   "url": "https://www.indianhealthyrecipes.com/eggplant-curry/",
+   "rating": 5.0,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed"
+}

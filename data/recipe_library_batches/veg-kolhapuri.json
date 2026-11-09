@@ -1,0 +1,167 @@
+{
+ "dish_name": "Veg Kolhapuri",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Potato",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Cauliflower",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Poppy seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "5",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried Kashmiri chilies",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened grated coconut",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1/2 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a fine strainer and rinse it under cold water. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Peel the potato and carrot and cut them into thick 1 inch pieces. Cut the green beans into 1 inch pieces. Cut 1 1/2 cups of florets from the cauliflower, using about a quarter of the head. Put them all in a medium pot with 2 cups water and 1/2 tsp of the salt.",
+  "Bring it to a boil over high heat, then turn the heat to medium. Cook for 10 minutes, until the vegetables are almost tender. Drain them and set them aside.",
+  "Meanwhile, heat a large deep skillet over medium low heat with no oil. Add the sesame seeds, poppy seeds, coriander seeds and cumin seeds. Stir for about 1 minute, until they smell toasty. Transfer them to a bowl.",
+  "In the same dry skillet, add the cinnamon, cloves, cardamom, peppercorns, dried chilies and coconut. Stir for 1 to 2 minutes, until the coconut turns pale gold. Add them to the bowl and let everything cool for about 5 minutes.",
+  "Grind the cooled spices in a spice grinder or blender to a fine powder, with no water. Set it aside.",
+  "Finely chop the onion and the tomatoes. Cut half the bell pepper into 1/2 inch pieces. Grate the ginger and the garlic.",
+  "Heat the oil in the same skillet over medium heat. Add the onion and cook for 5 minutes, stirring, until soft and golden at the edges.",
+  "Add the ginger and garlic and stir for 1 minute. Add the tomatoes and cook for 4 minutes, until they break down. Add the bell pepper and cook for 1 minute.",
+  "Add the ground masala, the turmeric and 1/2 tsp of the salt. Stir for 2 to 3 minutes, until the oil starts to separate at the edges.",
+  "Add the drained vegetables and 1 1/4 cups water. Chop 3 tbsp of the cilantro and stir in most of it. Cover and simmer over medium low heat for 10 minutes, until the sauce is thick and the vegetables are tender.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Scatter the rest of the cilantro over the top. Serve over the rice, with the red pepper flakes on the table for anyone who wants more heat."
+ ],
+ "method_notes": "Hebbar's Kitchen (the lead, 5 from 261) parboils the vegetables, roasts and grinds a sesame, poppy, coconut and whole spice masala, cooks it into an onion and tomato base and simmers the vegetables in it. Only this page was read in full. This version follows the lead, scaled to 4 servings, with 3 Kashmiri chilies in the masala for a mild base and red pepper flakes at the table for the heat Kolhapuri is known for. Rice replaces the naan or roti so it stays gluten-free.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Veg Kolhapuri",
+   "url": "https://hebbarskitchen.com/veg-kolhapuri-recipe-restaurant-style/",
+   "rating": 5.0,
+   "rating_count": 261,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed"
+}

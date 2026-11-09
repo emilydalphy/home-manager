@@ -1,0 +1,124 @@
+{
+ "dish_name": "Amti",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Toor dal",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "8 leaves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Goda masala",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Kokum",
+   "qty": "6 pieces",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened grated coconut",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Put 1 cup of the toor dal in a strainer and rinse it under cold water until the water runs mostly clear. Transfer it to a medium pot with 3 cups water and 1/4 tsp of the turmeric. Let it soak for 15 minutes while you start the rice.",
+  "Put the rice in a fine strainer and rinse it under cold water. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Bring the dal to a boil over high heat and skim off the foam. Partly cover, turn the heat to medium low and cook for 30 minutes, stirring now and then, until the dal is soft and falls apart when you press it against the side of the pot. If you have a pressure cooker, cook it there for 5 whistles instead.",
+  "Meanwhile, cut the green chili in half, scrape out the seeds and finely chop it. Chop 3 tbsp of cilantro.",
+  "Whisk the cooked dal until mostly smooth. Keep it on low heat.",
+  "Heat the oil in a large deep pan over medium heat. Add the mustard seeds. When they start to pop, add the cumin seeds, asafoetida and curry leaves. After about 20 seconds the seeds will sizzle and smell toasty.",
+  "Add the green chili and the last 1/4 tsp turmeric and stir for 30 seconds over low heat.",
+  "Add the whisked dal and stir it into the tempering. Bring it to a boil.",
+  "Add the goda masala, chili powder, jaggery, kokum, coconut and the salt. Stir well. Add 1/2 cup water.",
+  "Simmer for 5 minutes, until the spices smell cooked and it's the thickness of a loose soup. Add a splash of water if it gets too thick.",
+  "Take the pan off the heat and stir in the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "method_notes": "Hebbar's Kitchen (the lead, 4.99 from 233) tempers mustard, cumin, hing and curry leaves, stirs in whisked toor dal and simmers it with goda masala, jaggery, kokum and coconut. Only this page was read in full; its notes allow tamarind juice if kokum is hard to find. This version follows the lead, with oil instead of ghee so it stays dairy-free. The toor dal is simmered on the stove for 30 minutes, which makes the total about 50 minutes; a pressure cooker brings it to about 30.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Maharashtrian Amti Dal (Toor Dal Amti)",
+   "url": "https://hebbarskitchen.com/amti-recipe-maharashtrian-amti-dal/",
+   "rating": 4.99,
+   "rating_count": 233,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed"
+}

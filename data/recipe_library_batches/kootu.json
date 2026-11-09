@@ -1,0 +1,182 @@
+{
+ "dish_name": "Kootu",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Yellow moong dal",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fenugreek seeds",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "12 leaves",
+   "category": "produce"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Poppy seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened grated coconut",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Potato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Butternut squash",
+   "qty": "1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind paste",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Rinse the moong dal in a strainer until the water runs mostly clear. Transfer it to a medium pot with 2 cups water. Bring it to a boil over high heat, then turn the heat to medium low, partly cover, and cook for 20 minutes, until the dal is soft and falls apart when you press it against the side of the pot.",
+  "Meanwhile, put the rice in a fine strainer and rinse it under cold water. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Peel the carrot and potato and cut them into 1/2 inch cubes. Cut the green beans into 1 inch pieces. Peel the squash and cut it into 1/2 inch cubes. Chop the tomato. Stir the tamarind paste into 1/4 cup warm water.",
+  "Heat 1 tbsp of the oil in a medium skillet over medium low heat. Add the chana dal, urad dal, coriander seeds, cumin seeds, fenugreek seeds, pepper, cinnamon, 2 of the dried chilies and 6 of the curry leaves. Stir for about 2 minutes, until the dals turn golden and it smells toasty.",
+  "Add the asafoetida, poppy seeds and coconut. Stir for 1 minute, until the coconut smells toasty. Transfer everything to a blender and let it cool for a few minutes.",
+  "Add 1/2 cup water to the blender and blend to a smooth paste. Scrape down the sides once if you need to. Set it aside.",
+  "Heat 1 tbsp of the oil in a large pot over medium heat. Add the carrot and potato and cook for 2 minutes, stirring. Add the green beans, the peas (about 1/4 cup), the turmeric and 1 tsp of the salt. Stir for 1 minute.",
+  "Add 2 cups water. Cover and cook for 8 minutes, until the potato is almost tender. Add the squash and cook for 2 minutes.",
+  "Add the tamarind water, the tomato and the jaggery. Cook for 5 minutes, until the tomato softens and the squash is tender.",
+  "Whisk the cooked dal until mostly smooth. Stir it into the pot with the ground paste. Simmer for 3 minutes, adding a splash of water if it's thicker than a loose stew.",
+  "Heat the last 1 tbsp oil in a small pan over medium heat. Add the mustard seeds. When they start to pop, add the last dried chili and the last 6 curry leaves. After about 20 seconds the leaves will crackle. Pour it over the kootu.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "method_notes": "Hebbar's Kitchen (the lead) grinds a roasted spice and coconut paste, simmers mixed vegetables with tamarind and jaggery, stirs in cooked dal and finishes with a mustard tadka. Archana's Kitchen steams the vegetables and stirs them into mashed moong dal with a ground coconut and chili paste, with no tamarind. This version follows the lead, with split yellow moong dal in place of toor so it cooks on the stove in 20 minutes. To keep it nut-free and dairy-free, the lead's peanuts are left out and the ghee is oil. Bottle gourd is left out and the pumpkin is butternut squash. Dried chilies are cut to 3 for the pot.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Mixed Vegetable Kootu",
+   "url": "https://hebbarskitchen.com/kootu-recipe-mixed-vegetable-kootu/",
+   "rating": 5.0,
+   "rating_count": 69,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Mixed Vegetable Poricha Kootu",
+   "url": "https://archanaskitchen.com/mixed-vegetable-poricha-kootu-steamed-vegetable-in-coconut-and-lentil-curry",
+   "rating": null,
+   "rating_count": 1970,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed"
+}
