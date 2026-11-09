@@ -1,0 +1,136 @@
+{
+ "dish_name": "Chicken a la King",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sliced button mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "2 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice following the package directions.",
+  "Pat the chicken dry and season it with 1/2 tsp of the salt and 1/4 tsp of the pepper. Heat the oil in a large lidded skillet over medium-high. Brown the thighs for 4 to 5 minutes per side, until deep golden. Transfer them to a cutting board and rest for 5 minutes.",
+  "Meanwhile, finely dice the bell pepper, half the onion and 2 ribs of celery. Chop the mushrooms roughly.",
+  "Melt the butter in the same skillet over medium-high. Add the pepper, onion, celery, mushrooms, 1/2 tsp of the salt and 1/4 tsp of the pepper. Stir to coat, lower the heat to medium, cover, and cook for 6 minutes, until softened.",
+  "Sprinkle the flour over the vegetables and stir for 1 minute.",
+  "Add the broth a splash at a time, stirring until smooth after each splash.",
+  "Stir in the garlic powder, paprika, the remaining 1 tsp salt and the remaining 1/2 tsp pepper. Simmer for 2 to 3 minutes, until slightly thickened.",
+  "Stir in the peas and the cream and bring to a simmer. Cook for 5 minutes.",
+  "Cut the chicken into bite-size pieces. Stir it into the sauce with any juices from the board and heat it through for 2 minutes. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check a piece there. No thermometer? Cut a piece open: there should be no pink left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Anthony Kitchen (4.59 from 39) is the lead: a butter and flour sauce with broth and cream, loaded with peppers, celery, onion and mushrooms, with peas stirred in at the end. Its chicken is already cooked; here it's browned thighs, the way Self Proclaimed Foodie does it, so the dish needs no rotisserie chicken. Self Proclaimed Foodie and She Wears Many Hats both use milk and stock instead of cream; the cream version is written because it's the lead.",
+ "sources": [
+  {
+   "name": "The Anthony Kitchen",
+   "title": "Easy Chicken a la King",
+   "url": "https://www.theanthonykitchen.com/chicken-a-la-king/",
+   "rating": 4.59,
+   "rating_count": 39,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Self Proclaimed Foodie",
+   "title": "Chicken a la King",
+   "url": "https://selfproclaimedfoodie.com/chicken-a-la-king/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "She Wears Many Hats",
+   "title": "Chicken a la King",
+   "url": "https://shewearsmanyhats.com/chicken-a-la-king-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

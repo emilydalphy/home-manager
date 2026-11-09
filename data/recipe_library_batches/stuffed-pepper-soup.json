@@ -1,0 +1,113 @@
+{
+ "dish_name": "Stuffed Pepper Soup",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Lean ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mild Italian sausage (gluten-free)",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice and 1 cup of water in a small pot. Bring it to a boil, then lower the heat as far as it goes, cover, and cook for 15 minutes. Turn off the heat and leave it covered.",
+  "Meanwhile, dice the onion. Chop both peppers into bite-size pieces. Mince the garlic.",
+  "Heat a large pot or Dutch oven over medium-high. Add the beef, the sausage (out of its casings) and the onion. Break the meat up with a spoon and cook for 8 to 10 minutes, until it's browned and there's no pink left. Add the garlic for the last minute.",
+  "Spoon off most of the fat.",
+  "Add the broth, diced tomatoes with their juices, crushed tomatoes, peppers, Worcestershire, Italian seasoning and black pepper. Bring to a boil, then lower to medium-low.",
+  "Simmer uncovered for 25 to 30 minutes, until the peppers are tender and the soup has thickened a little.",
+  "Chop 2 tbsp of parsley. Taste the soup. If it's flat, add a pinch more salt.",
+  "Spoon the rice into bowls, ladle the soup over it, and sprinkle with the parsley.",
+  "Leftovers keep in the fridge for 3 to 4 days and in the freezer for up to 3 months. Store the soup apart from any extra rice, and add hot rice to each bowl."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies (4.98 from 272) is the lead: ground beef and Italian sausage browned with onion, simmered in broth and two kinds of tomato with green and red peppers, with rice added at the end. Amounts here are two thirds of the source's 10 servings. The source stirs the rice into the pot; here it goes into the bowls, which is the page's own advice for leftovers. Worcestershire and the sausage are written as gluten-free.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Stuffed Pepper Soup",
+   "url": "https://www.spendwithpennies.com/stuffed-pepper-soup/",
+   "rating": 4.98,
+   "rating_count": 272,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

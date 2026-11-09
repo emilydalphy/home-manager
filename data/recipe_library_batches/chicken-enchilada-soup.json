@@ -1,0 +1,151 @@
+{
+ "dish_name": "Chicken Enchilada Soup",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornmeal",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Red enchilada sauce",
+   "qty": "1 can (10 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fire-roasted diced tomatoes",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Mexican-style corn",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced green chiles",
+   "qty": "1 can (4 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground chipotle chili powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tortilla chips",
+   "qty": "1 bag",
+   "category": "pantry"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pat the chicken dry and season both sides with 1/2 tsp of the salt and the pepper. Heat 1 tbsp of the oil in a large pot over medium-high. Brown the chicken for 3 minutes per side. It won't be cooked through yet. Transfer it to a plate.",
+  "Dice the onion. Lower the heat to medium, add the remaining 1 tbsp oil and the onion, and cook for 5 minutes, until soft.",
+  "Mince the garlic. Add it with the cumin and the chipotle powder and stir for 30 seconds, until it smells toasty.",
+  "In a bowl, whisk the broth with the cornmeal until smooth. Pour it into the pot and scrape up the browned bits.",
+  "Add the enchilada sauce, the black beans (drained and rinsed), the tomatoes with their juices, the corn (drained) and the green chiles (drained). Stir and bring to a simmer.",
+  "Return the chicken and any juices to the pot. Partly cover and simmer on medium-low for 15 to 20 minutes, stirring now and then. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: there should be no pink left.",
+  "Transfer the chicken to a cutting board and rest it for 5 minutes. Shred it with two forks and return it to the pot.",
+  "Stir in the sugar and the remaining 1/2 tsp salt. Cover and let it sit off the heat for 5 minutes.",
+  "Chop 2 tbsp of cilantro. Taste the soup. If it's flat, add a pinch more salt.",
+  "Serve with the tortilla chips, the sour cream and the cilantro. Leftovers keep in the fridge for up to 5 days and in the freezer for up to 3 months."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Well Plated's version (4.95 from 20) is the lead, thickened with cornmeal and built on enchilada sauce, fire-roasted tomatoes, black beans and corn. It is written for a slow cooker, so the stovetop method here (brown the chicken, soften the onion, simmer about 20 minutes) follows the order in Cooking Classy (5.0 from 7), which also thickens with masa. The lead has no cream or cheese, so the soup is thick rather than creamy; sour cream goes on top, as the source suggests. Check the enchilada sauce label for gluten.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Slow Cooker Chicken Enchilada Soup",
+   "url": "https://www.wellplated.com/slow-cooker-chicken-enchilada-soup/",
+   "rating": 4.95,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Cheesy Chicken Enchilada Soup",
+   "url": "https://www.cookingclassy.com/cheesy-chicken-enchilada-soup/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "The Food Charlatan",
+   "title": "Chicken Enchilada Soup",
+   "url": "https://thefoodcharlatan.com/chicken-enchilada-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

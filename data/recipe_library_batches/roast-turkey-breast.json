@@ -1,0 +1,101 @@
+{
+ "dish_name": "Roast Turkey Breast",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Bone-in turkey breast, skin on",
+   "qty": "5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh sage",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "16 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Take the turkey out of the fridge 45 minutes before it goes in the oven. Heat the oven to 390°F with a rack in the lower middle.",
+  "Smash 12 garlic cloves with the side of a knife. Spread them in the middle of a baking dish just big enough for the turkey, along with 4 rosemary sprigs, 8 sage sprigs and 10 thyme sprigs.",
+  "Mince the remaining 4 garlic cloves. In a small bowl, stir together the oil, 1 1/4 tsp of the salt, 1/2 tsp of the pepper, the minced garlic, and 1 tbsp each of finely chopped sage, rosemary, thyme and parsley.",
+  "Pat the turkey dry. Slide an upturned teaspoon under the skin to loosen it all over the breast without tearing it.",
+  "Spread about two thirds of the herb oil under the skin on the top half of the breast. Turn the turkey over and rub all but 2 tbsp of the rest over the underside.",
+  "Set the turkey skin side up on the herbs. Rub the last 2 tbsp of herb oil lightly over the skin. If you'd like to get ahead, it can wait in the fridge for up to 24 hours at this point. Take it out 45 minutes before roasting.",
+  "Sprinkle the remaining 1/2 tsp salt and 1/2 tsp pepper over the top and sides. Put it in the oven and lower the temperature to 350°F.",
+  "Roast for 1 1/2 hours, spooning the pan juices over the turkey every 30 minutes. If the skin is deep golden before it's done, cover it loosely with foil. You're cooking it to 160°F in the thickest part, and it rises to 165°F as it rests, so if you have a thermometer, check a few spots. No thermometer? Cut into the thickest part: the juices should run clear, with no pink left.",
+  "Transfer the turkey to a platter, cover it loosely with foil, and rest it for 15 to 20 minutes.",
+  "Meanwhile, lift the herbs and garlic out of the pan, squeezing their juices back into it. Pour the pan juices into a jug.",
+  "Slice the turkey thinly, starting at the fatter end, and include some skin in each slice. Taste the pan juices. If they're flat, add a pinch more salt.",
+  "Serve the turkey with the pan juices spooned over. Keep any leftover turkey whole, wrapped, in the fridge for up to 4 days, and slice it as you need it for sandwiches."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 100,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats (4.94 from 46) is the lead: a herb and garlic paste under and over the skin, a bed of herbs and garlic in the pan, and a 350°F roast with basting every 30 minutes. This Farm Girl Cooks and Peel with Zeal also roast at 325 to 350°F to 165°F and rest 10 to 20 minutes, with the herb paste under the skin. The lead's butter is replaced with olive oil to keep it dairy-free. Written for a 5 lb breast, which is why there is turkey left for the week's sandwiches; the fridge time is from This Farm Girl Cooks.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Garlic Herb Butter Roasted Turkey Breast",
+   "url": "https://www.recipetineats.com/garlic-herb-butter-roasted-turkey-breast/",
+   "rating": 4.94,
+   "rating_count": 46,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "This Farm Girl Cooks",
+   "title": "Herbed Bone-In Turkey Breast with Pan Gravy and Vegetables",
+   "url": "https://www.thisfarmgirlcooks.com/herbed-bone-in-turkey-breast/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Peel with Zeal",
+   "title": "Roasted Turkey Breast Bone-In",
+   "url": "https://peelwithzeal.com/roasted-turkey-breast-bone-in",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

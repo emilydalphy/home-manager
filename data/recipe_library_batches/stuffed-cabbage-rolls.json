@@ -1,0 +1,135 @@
+{
+ "dish_name": "Stuffed Cabbage Rolls",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Green cabbage",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Lean ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Long-grain brown rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F with a rack in the lower third. Rub a 9 by 13 inch baking dish with 1 tbsp of the olive oil.",
+  "Put the rice and 2 cups of water in a medium pot. Bring it to a boil, then lower the heat and simmer uncovered for 25 minutes. The rice will still be a little firm. Drain it, rinse it under cold water, and transfer it to a large bowl. Keep the pot.",
+  "Meanwhile, set the cabbage on a board with the stem facing up. Cut a square around the core, about 1/2 inch out from it and slanting in, then loosen it and pull it out.",
+  "Pour about 2 inches of water into a large pot and bring it to a simmer. Lower the cabbage in core side down, cover, and cook for 15 minutes. Lift it out with tongs and let it cool for 10 to 15 minutes, until you can handle it.",
+  "Meanwhile, finely chop the onion. Heat 2 tbsp olive oil in the empty rice pot over medium-low and cook the onion for 10 minutes, until soft. Mince the garlic, add it, and cook for 1 minute. Transfer it all to the bowl with the rice.",
+  "Chop 4 tbsp of parsley. Add the beef, the egg, 1 tsp of the oregano, 1/2 tsp of the nutmeg, 1/4 tsp of the pepper, 1 tsp of the salt and 2 tbsp of the parsley to the rice. Mix with your hands until just combined. Any longer and the filling comes out dense.",
+  "Peel off 12 large whole leaves from the cooled cabbage. Cut a V out of the thick rib at the base of each leaf.",
+  "Chop the rest of the cabbage into 1/4 inch strips and spread them over the bottom of the baking dish.",
+  "Set about 2 heaping tablespoons of filling near the stem end of a leaf. Fold in the sides and roll it up, then set it seam side down in the dish. Repeat with the other leaves. Shape any leftover filling into meatballs about 1 inch across and tuck them between the rolls.",
+  "Pour the tomato sauce into the empty filling bowl. Fill the sauce can 1/4 full of water, swirl it, and pour that in too. Add the crushed tomatoes, garlic powder, bay leaves, vinegar, honey, the remaining 1/2 tsp oregano, the remaining 1/2 tsp nutmeg, the remaining 1/4 tsp pepper, the remaining 1 tsp salt and the remaining 2 tbsp parsley. Stir gently.",
+  "Pour the sauce over the rolls, lifting a few of them so some sauce runs underneath.",
+  "Cover the dish tightly with foil and set it on a rimmed baking sheet. Bake for 1 1/2 hours, until the cabbage is nearly fork-tender. You're cooking the filling to 160°F in the middle, so if you have a thermometer, check one roll there. No thermometer? Cut one roll open: it's done when there's no pink left in the beef.",
+  "Take off the foil and ladle the hot sauce from the bottom of the dish over each roll. Cover again and let it rest for 30 minutes.",
+  "Take out the bay leaves. Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve 3 rolls per person with plenty of the sauce spooned over. Leftovers keep in the fridge for up to 4 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 120,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Well Plated (4.72 from 35) is the only version that would load; the other big cabbage roll pages blocked the reader. It bakes the rolls in a tomato sauce lightly sweetened with honey and sharpened with red wine vinegar, over a bed of chopped cabbage. Brown rice is part cooked first so it finishes in the oven. Written for 12 rolls, 3 per person. The source says to refrigerate up to 4 days; freezing is not in the source, so the recipe doesn't claim it.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Cabbage Rolls",
+   "url": "https://www.wellplated.com/cabbage-rolls/",
+   "rating": 4.72,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

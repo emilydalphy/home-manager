@@ -1,0 +1,129 @@
+{
+ "dish_name": "Smothered Chicken",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Celery seed",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Poultry seasoning",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice following the package directions, so it's ready when the chicken is.",
+  "Pat the chicken dry. In a large bowl, whisk the flour with the garlic powder, onion powder, paprika, celery seed, poultry seasoning, salt and pepper. Spoon 3 tbsp of this mix into a small bowl for the gravy.",
+  "Press each piece of chicken into the rest of the flour mix until it's coated all over, then shake off the extra.",
+  "Heat the oil in a large deep skillet with a lid over medium. Brown the chicken in two batches, about 4 to 5 minutes per side, until deep golden. It won't be cooked through yet. Transfer it to a plate and leave the oil and browned bits in the pan.",
+  "Chop the onion. Add it to the pan and cook for 2 minutes. Mince the garlic, add it, and cook for 1 minute. Transfer the onion and garlic to a bowl.",
+  "Stir the 3 tbsp of reserved flour mix into the oil in the pan and cook for 1 minute.",
+  "Slowly whisk in the broth, working out any lumps. Simmer for 2 minutes. Stir in the milk and cook for 3 minutes, until the gravy is thick enough to coat a spoon.",
+  "Return the chicken, onion and garlic to the pan and spoon the gravy over the chicken. Cover, lower the heat so the gravy barely bubbles, and cook for 30 to 35 minutes, turning the chicken once or twice. You're cooking it to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Pierce a thigh: the juices should run clear and the meat should pull away from the bone easily.",
+  "Taste the gravy. If it's flat, add a pinch more salt.",
+  "Serve the chicken and gravy over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "I Heart Recipes (4.9 from 95, read from the visible rating) is the lead: floured thighs browned in oil, then simmered in an onion gravy made from the leftover seasoned flour, broth and milk. Jo Cooks (4.77 from 34) braises it in the oven with cream, and Chef Lola's Kitchen (4.63 from 16) finishes it on the stove with cream; both agree on browning first and a flour-thickened onion gravy. The lead's 1 lb of chicken was raised to 2 lbs for four people with the same gravy.",
+ "sources": [
+  {
+   "name": "I Heart Recipes",
+   "title": "Southern Smothered Chicken",
+   "url": "https://iheartrecipes.com/southern-smothered-chicken-recipe/",
+   "rating": 4.9,
+   "rating_count": 95,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Smothered Chicken",
+   "url": "https://www.jocooks.com/recipes/smothered-chicken/",
+   "rating": 4.77,
+   "rating_count": 34,
+   "read": true
+  },
+  {
+   "name": "Chef Lola's Kitchen",
+   "title": "Creamy Smothered Chicken and Gravy",
+   "url": "https://cheflolaskitchen.com/easy-smothered-chicken-and-gravy-recipe/",
+   "rating": 4.63,
+   "rating_count": 16,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

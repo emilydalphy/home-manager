@@ -1,0 +1,106 @@
+{
+ "dish_name": "Beef Tips and Gravy",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef sirloin tips",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sliced cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Egg noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put a large pot of water on to boil for the noodles.",
+  "Cut the beef into bite-size pieces if it isn't already, and pat it dry. Season it with the salt and pepper.",
+  "Heat 1 tbsp of the oil in a large Dutch oven or deep skillet over medium-high. Add half the beef in a single layer and leave it alone until it's browned and lets go of the pan, 2 to 3 minutes per side. Transfer it to a bowl. Add 1 tbsp oil and brown the rest the same way.",
+  "Add 2 tbsp of oil to the same pot. Cook the mushrooms for 3 minutes. Chop the onion, add it, and cook for 4 minutes, until the onion is soft and the mushrooms are golden. Mince the garlic, add it, and cook for 1 minute. Transfer it all to the bowl with the beef.",
+  "Pour the broth into the empty pot and scrape up the browned bits. Add the Worcestershire and soy sauce and bring to a boil, then lower to a simmer.",
+  "Cook the noodles following the package directions.",
+  "Mix the cornstarch with 1/4 cup of cold water in a small bowl. Slowly pour it into the simmering broth while stirring, and cook for 1 minute, until it thickens.",
+  "Return the beef, mushrooms and onion to the pot with any juices from the bowl. Simmer gently for 10 minutes, until the beef is tender and no longer red in the middle.",
+  "Taste it. If it's flat, add a pinch more salt. Chop 2 tbsp of parsley.",
+  "Serve over the noodles with the parsley sprinkled on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Small Town Woman (4.87 from 65) is the only version that would load; Cozy Cook and Seasoned Mom blocked the reader. It browns sirloin tips in batches, builds the gravy in the same pot with mushrooms, onion, broth, Worcestershire and soy sauce, thickens it with cornstarch, and simmers the beef for about 10 minutes. Butter is replaced with olive oil to keep it dairy-free, and the optional red wine is left out.",
+ "sources": [
+  {
+   "name": "Small Town Woman",
+   "title": "One Skillet Savory Beef Tips and Gravy",
+   "url": "https://www.smalltownwoman.com/one-skillet-savory-beef-tips-and-gravy/",
+   "rating": 4.87,
+   "rating_count": 65,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,114 @@
+{
+ "dish_name": "Ham and Bean Soup",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Dried navy beans",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Meaty ham bone",
+   "qty": "1 (about 1 1/2 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cooked ham",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 8 hours ahead: Sort through the beans and rinse them. Put them in a large pot with 8 cups of cold water and the baking soda, and soak at room temperature. In a hurry? Bring the beans and water to a boil, turn off the heat, cover, and let them sit for 1 hour.",
+  "Drain the beans and rinse them well.",
+  "Chop the onion. Heat the oil in the same pot over medium and cook the onion for 5 minutes, until soft.",
+  "Add the beans, 8 cups of fresh water, the ham bone and the tomatoes with their juices. Bring to a boil, then lower the heat to a steady simmer, partly cover, and cook for 2 hours, until the beans are soft. Stir now and then.",
+  "Take the ham bone out and let it cool for a few minutes. Cut the meat off the bone, chop it, and return it to the pot. Dice the cooked ham and add that too.",
+  "Add the chili powder, basil, garlic powder, salt and pepper. Simmer for 30 minutes. For a thicker soup, mash a scoop of beans against the side of the pot.",
+  "Taste it. If it's flat, add a pinch more salt. The ham is salty, so go slowly.",
+  "Leftovers keep in the fridge for 3 to 4 days and in the freezer for up to 3 months. Reheat on the stove with a splash of water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 150,
+ "advance_prep_notes": "soak the beans overnight (at least 8 hours)",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Amanda's Cookin' (5.0 from 20) is the lead: soaked white beans simmered with ham, tomatoes, onion and chili powder. Striped Spatula starts the onion in oil and uses a meaty ham bone with diced ham stirred in at the end, which is what the bone and the oil here come from. Both cook 2 to 3 hours. The shortcut canned bean versions finish in under an hour but aren't the ham bone soup the list describes.",
+ "sources": [
+  {
+   "name": "Amanda's Cookin'",
+   "title": "Ham and Bean Soup",
+   "url": "https://amandascookin.com/ham-and-bean-soup/",
+   "rating": 5.0,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Striped Spatula",
+   "title": "Ham and Bean Soup",
+   "url": "https://stripedspatula.com/ham-and-bean-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Ham and Bean Soup",
+   "url": "https://www.spendwithpennies.com/ham-and-bean-soup/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
