@@ -1,0 +1,121 @@
+{
+ "dish_name": "Porcupine Meatballs",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Long-grain white rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lean ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 cup finely diced for the meatballs, 1/2 cup for the sauce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried parsley",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "3/4 cup diced"
+  },
+  {
+   "item": "Gluten-free Worcestershire sauce",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Celery seed",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a medium bowl and cover it with 1/2 cup hot tap water. Let it soak for 20 to 25 minutes.",
+  "Meanwhile, heat the oven to 375°F. Finely dice the onion and put half of it in a large bowl. Dice the bell pepper. Mince the garlic.",
+  "Add the beef, 2 of the garlic cloves, the dried parsley, the pepper and 3/4 tsp of the salt to the large bowl. Mix gently.",
+  "Add the rice and its soaking water to the beef. Mix until the rice is spread through the meat.",
+  "Shape the mixture into 10 meatballs, about 1/3 cup each. Put them in a 9x13 inch baking dish.",
+  "In a separate bowl, stir the diced tomatoes and tomato sauce together. In a small cup, stir the cornstarch into 2 tbsp cold water, then stir it into the tomatoes.",
+  "Stir the remaining onion, the last garlic clove, the bell pepper, the Worcestershire sauce, the sugar, the celery seed and the remaining 1/2 tsp salt into the sauce. Pour it around the meatballs.",
+  "Cover the dish tightly with foil and bake for 1 hour.",
+  "Take off the foil and bake for 20 to 25 minutes, until the tops are just browning and the rice is tender.",
+  "You're cooking the beef to 160°F in the middle, so if you have a thermometer, check one meatball there. No thermometer? Cut one open. It's done when there's no pink left and the rice is soft.",
+  "Taste the sauce. If it's flat, add a pinch more salt. Spoon the meatballs and sauce into bowls and serve.",
+  "Leftovers keep in an airtight container in the fridge for up to 3 days. Reheat them covered in a 350°F oven or in a pan over medium heat until hot all the way through."
+ ],
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 85,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Tara Teaspoon is the lead (4.75 from 28): rice soaked in hot water first, then mixed into the beef, meatballs baked in a chunky tomato sauce for an hour covered and 20 to 25 minutes uncovered. Insanely Good (4.6 from 24) browns the meatballs and simmers them in plain tomato sauce with brown sugar for an hour on the stove; it confirms the rice-in-the-meat method. To keep it gluten-free the lead's 1 tbsp flour thickener is 2 tsp cornstarch and the Worcestershire is gluten-free. The lead's cayenne is left out. At about 1 hour 55 minutes it is over 60 minutes, but it is a hands-off bake that keeps for 3 days.",
+ "sources": [
+  {
+   "name": "Tara Teaspoon",
+   "title": "Classic Porcupine Meatballs With Rice Cooked Inside",
+   "url": "https://tarateaspoon.com/classic-porcupine-meatballs-with-rice/",
+   "rating": 4.75,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Insanely Good Recipes",
+   "title": "Porcupine Meatballs",
+   "url": "https://insanelygoodrecipes.com/porcupine-meatballs/",
+   "rating": 4.6,
+   "rating_count": 24,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

@@ -1,0 +1,103 @@
+{
+ "dish_name": "Taco Casserole",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Lean ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Taco seasoning",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tortilla chips",
+   "qty": "2 cups",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups broken"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Green onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Sliced black olives",
+   "qty": "1 can (2.25 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded cheddar or Monterey Jack cheese",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "1/2 cup shredded"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Drain and rinse the beans, drain the olives, chop the bell pepper and green onions, chop the tomato and shred the lettuce.",
+  "Heat a large skillet over medium-high heat. Add the beef and cook for about 8 minutes, breaking it up, until no pink is left. Spoon off any extra fat.",
+  "Add the beans, the salsa and the taco seasoning. Turn the heat to medium and cook for 3 minutes, stirring, until it's hot.",
+  "Break the tortilla chips into pieces. Spread 1 1/4 cups of them over the bottom of an 8x8 inch baking dish.",
+  "Spoon the beef mixture over the chips. Scatter the bell pepper, the green onions, the olives and the cheese on top.",
+  "Bake, uncovered, for 20 minutes, until the cheese has melted.",
+  "Top with the tomato, the lettuce and the remaining 1/4 cup broken chips. Taste it. If it's flat, add a pinch more salt.",
+  "Leftovers keep in an airtight container in the fridge for up to 3 days. Keep the lettuce and tomato off until you serve."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Amanda's Cookin' is the lead (5 from 44): taco-seasoned beef with black beans and salsa, spooned over broken tortilla chips, topped with vegetables and cheese, baked at 350°F for 20 minutes, then finished with fresh tomato, lettuce and a few more chips. The source makes 8 servings; this is cut in half. Other versions layer tortillas or refried beans instead of chips; this one keeps the chips because the lead does. The base is mild, and there is no chili in it.",
+ "sources": [
+  {
+   "name": "Amanda's Cookin'",
+   "title": "Easy Taco Casserole",
+   "url": "https://amandascookin.com/taco-casserole/",
+   "rating": 5.0,
+   "rating_count": 44,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Budget Bytes",
+   "title": "Taco Casserole",
+   "url": "https://www.budgetbytes.com/taco-casserole/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

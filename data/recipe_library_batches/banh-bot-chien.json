@@ -1,0 +1,117 @@
+{
+ "dish_name": "Banh Bot Chien",
+ "cuisine": "Vietnamese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Rice flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tapioca starch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free tamari",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 3 hours ahead: whisk 2 cups rice flour, 2 tbsp tapioca starch, 1 tsp salt and 3 cups warm water in a large nonstick pot, off the heat, until smooth. Whisk in 2 tsp of the oil.",
+  "Set the pot over medium-low heat and whisk constantly, scraping the bottom and sides, for about 12 minutes. When more than half the liquid has cooked off, turn off the heat and stir until it's a thick, stiff paste.",
+  "Meanwhile, bring a few inches of water to a boil in a steamer or a wide pot with a rack. Oil an 8 inch square metal pan with a little of the oil.",
+  "Press the batter into the oiled pan and smooth the top. Steam it, covered, for 25 to 35 minutes. Push a toothpick into the center. It's done when it comes out clean.",
+  "Let the cake cool in the pan, then cover it and refrigerate for at least 1 hour. It keeps in the fridge, wrapped tightly, for up to 3 days.",
+  "In the morning, stir 1 tbsp of the tamari, the rice vinegar and the sugar together in a small bowl until the sugar dissolves. This is the dipping sauce.",
+  "Turn the cake out and cut it into pieces about 1 inch by 2 inches and 1/2 inch thick. Transfer them to a bowl and toss with the remaining 1 tbsp tamari. Slice the green onions and beat the eggs in a bowl.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet over medium-high heat. Add half of the pieces in a single layer and fry for about 3 minutes, until the underside is golden and lets go of the pan. Flip them and fry the other side for about 3 minutes.",
+  "Lower the heat to medium and pour 2 of the beaten eggs over the pieces. Scatter a few of the green onions on top, cover, and cook for 2 minutes, until the egg is set. Transfer to a platter.",
+  "Wipe the skillet, heat the last 1 tbsp of the oil, and repeat with the rest of the pieces and eggs. Scatter the remaining green onions over both batches and serve with the dipping sauce.",
+  "Leftover fried cakes keep in an airtight container in the fridge for up to 2 days. Reheat them in a skillet over medium heat, or in a 350°F air fryer for 3 to 5 minutes. The microwave makes them soft."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "make the rice cake the night before (steam it, then chill at least 1 hour)",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "method_notes": "No version of this dish had both 4.0 or better and 20+ ratings (Asian Inspirations is 3.5 from 39), so this follows The Savory Chopstick, which is small-sample but the clearest on the make-ahead cake and its fridge life. Every source cooks the rice flour and tapioca batter to a thick paste, steams it, chills it, then cuts and fries it before the egg goes over. The sources dress it with oyster sauce, soy and pickles; here oyster sauce is replaced with gluten-free tamari and the chicken powder is left out so it stays gluten-free and dairy-free, and the pickles (a separate recipe) are left off. Fifteen.net says the cake keeps 1 to 2 days, The Savory Chopstick says up to 3, which is what is written.",
+ "sources": [
+  {
+   "name": "The Savory Chopstick",
+   "title": "The Best Vietnamese Fried Rice Cake",
+   "url": "https://www.thesavorychopstick.com/banh-bot-chien/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Asian Inspirations",
+   "title": "Bot Chien",
+   "url": "https://asianinspirations.com.au/recipes/fried-rice-flour-cake-bot-chien/",
+   "rating": 3.5,
+   "rating_count": 39,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Fifteen.net",
+   "title": "Banh Bot Chien Recipe",
+   "url": "https://www.fifteen.net/recipes/banh-bot-chien/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "MM Bon Appetit",
+   "title": "Banh bot chien",
+   "url": "https://mmbonappetit.com/banh-bot-chien/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

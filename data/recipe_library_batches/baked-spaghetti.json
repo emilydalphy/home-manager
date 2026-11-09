@@ -1,0 +1,99 @@
+{
+ "dish_name": "Baked Spaghetti",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Lean ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pasta sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Mozzarella cheese, shredded",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan cheese, shredded",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F and grease a 9x13 inch baking dish. Bring a large pot of salted water to a boil.",
+  "Dice the bell pepper and the onion, mince the garlic and chop the parsley.",
+  "Cook the spaghetti in the boiling water until just al dente, following the package time. Drain it.",
+  "Meanwhile, heat a large skillet over medium-high heat. Add the beef, the bell pepper, the onion, the garlic and the salt. Break the beef up as it cooks and cook for about 8 minutes, until the beef is browned and no pink is left. Spoon off any extra fat.",
+  "Stir in the pasta sauce, the diced tomatoes with their juices and the Italian seasoning. Simmer, uncovered, for 5 to 10 minutes, until thickened.",
+  "Stir the drained spaghetti and the parsley into the sauce.",
+  "Transfer it to the baking dish. Scatter the mozzarella and the Parmesan over the top.",
+  "Bake for 25 to 30 minutes, until it's hot and the cheese is browned and bubbling.",
+  "Taste it. If it's flat, add a pinch more salt. Cut it into squares to serve.",
+  "Leftovers keep in an airtight container in the fridge for up to 4 days. Reheat a square in the microwave until hot all the way through."
+ ],
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies is the lead (4.98 from 513): beef, pepper and onion cooked in a skillet, simmered in jarred sauce and diced tomatoes, tossed with the spaghetti, topped with mozzarella and Parmesan and baked at 375°F. The source is a 16 oz pound of spaghetti for 8; this is cut to 12 oz of spaghetti with the sauce scaled to match, so it still makes a full pan with leftovers. Other versions mix in an egg and milk or layer a cottage cheese filling; this one keeps to the lead.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Baked Spaghetti",
+   "url": "https://www.spendwithpennies.com/baked-spaghetti-casserole/",
+   "rating": 4.98,
+   "rating_count": 513,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

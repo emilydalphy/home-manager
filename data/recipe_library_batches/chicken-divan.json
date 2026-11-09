@@ -1,0 +1,96 @@
+{
+ "dish_name": "Chicken Divan",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Broccoli",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Rotisserie chicken",
+   "qty": "1 small",
+   "category": "meat/seafood",
+   "cook_qty": "2 cups cubed meat"
+  },
+  {
+   "item": "Condensed cream of chicken soup",
+   "qty": "1 can (10.75 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Cheddar cheese, shredded",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 450°F. Bring a large pot of salted water to a boil.",
+  "Chop the broccoli into small florets. Pull the meat off the rotisserie chicken and cut it into bite-size cubes. That should be about 2 cups.",
+  "Boil the broccoli for 3 to 5 minutes, until it's bright green and tender but still crisp. Drain it well.",
+  "In a large bowl, stir together the chicken, the soup, the sour cream, 1 cup of the cheddar, the milk, the salt and the pepper. Fold in the broccoli.",
+  "Transfer the mixture to a 9x13 inch baking dish and sprinkle the remaining 1/2 cup cheddar over the top.",
+  "Melt the butter and toss it with the panko in a small bowl. Scatter it over the cheese.",
+  "Bake for 20 minutes, until it's bubbling at the edges and the crumbs are golden.",
+  "Taste it. If it's flat, add a pinch more salt. Spoon it into bowls and serve."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Jo Cooks is the lead (4.32 from 107): cooked chicken and blanched broccoli folded into a cream of chicken soup, sour cream and cheddar sauce, topped with buttered panko and baked hot at 450°F for 20 minutes. Carlsbad Cravings shows no rating; it builds the sauce from scratch with butter, flour, broth and Parmesan and bakes at 350°F, which takes about an hour. The lead's amounts are kept as written, so this is a generous 4 servings with some left over for a lunch. The chicken is a rotisserie chicken so the dish stays near 40 minutes.",
+ "sources": [
+  {
+   "name": "Jo Cooks",
+   "title": "Chicken Divan",
+   "url": "https://www.jocooks.com/recipes/chicken-divan/",
+   "rating": 4.32,
+   "rating_count": 107,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Carlsbad Cravings",
+   "title": "World's BEST Recipe for Chicken Divan",
+   "url": "https://carlsbadcravings.com/chicken-divan/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

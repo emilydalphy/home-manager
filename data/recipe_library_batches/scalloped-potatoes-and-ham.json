@@ -1,0 +1,93 @@
+{
+ "dish_name": "Scalloped Potatoes and Ham",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cooked ham, diced (gluten-free)",
+   "qty": "1 1/2 cups",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sharp cheddar cheese, shredded",
+   "qty": "2/3 cup",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F and grease a 3-quart baking dish. Dice the onion. Slice the potatoes about 1/8 inch thick.",
+  "Melt the butter in a large saucepan over medium-low heat. Add the onion and cook for about 5 minutes, until tender.",
+  "Add the thyme and cook for 1 minute. Off the heat, whisk the cornstarch into the cold milk until no lumps are left.",
+  "Pour the milk into the pan and add the broth, 1/2 tsp of the salt and the pepper. Set the pan over medium heat and whisk until it boils. Boil for 1 minute, until it's thick enough to coat a spoon.",
+  "Spread a third of the potatoes in the baking dish. Add a third of the ham and a third of the sauce.",
+  "Repeat the layers twice, ending with sauce. Sprinkle the remaining 1/2 tsp salt over the layers as you go.",
+  "Cover the dish with foil and bake for 50 minutes.",
+  "Take off the foil and bake for 10 minutes. Scatter the cheddar over the top and bake for 15 to 25 minutes, until the potatoes are tender when you push a knife in and the top is bubbling.",
+  "Let it sit for 15 minutes. Taste it. If it's flat, add a pinch more salt. Spoon it onto plates and serve.",
+  "Leftovers keep in an airtight container in the fridge for up to 4 days. Reheat a portion in the microwave until hot all the way through."
+ ],
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 80,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies is the lead (4.93 from 467): a white sauce of onion, butter, flour, thyme, milk and broth, layered with Yukon Gold slices and diced ham and baked covered for 50 minutes then uncovered, with cheese for the last 15. Other versions add peas or use canned soup; this one keeps to the lead. To keep it gluten-free the lead's flour is replaced with cornstarch (2 tbsp for the 2/3 scale), whisked into cold milk so it doesn't lump, and the broth and ham must be gluten-free. The lead is scaled to two thirds for 4 servings. It's over 60 minutes, but it's a hands-off bake that reheats well.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Scalloped Potatoes and Ham",
+   "url": "https://www.spendwithpennies.com/scalloped-potatoes-and-ham/",
+   "rating": 4.93,
+   "rating_count": 467,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}
