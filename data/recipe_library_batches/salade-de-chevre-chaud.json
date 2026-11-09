@@ -1,0 +1,114 @@
+{
+ "dish_name": "Salade de Chevre Chaud",
+ "cuisine": "French",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Goat cheese rounds",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Red leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "9 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely dice the shallot and use 2 tbsp of it. Mince the garlic clove very finely. Shake the shallot, garlic, Dijon, balsamic, olive oil and salt in a jar and set it aside.",
+  "Tear the lettuce into 4 bowls. Cut the tomatoes into wedges and tuck them around the lettuce. Snip the chives.",
+  "Cut the goat cheese into 8 even rounds about 1/2 inch thick. Put the flour, the beaten eggs and the panko in three shallow dishes. Coat each round in flour, then egg, then panko, pressing the crumbs on.",
+  "Melt 2 tbsp of the butter in a large non-stick skillet over medium-high heat. Cook half the rounds for about 1 minute per side, until golden. Transfer them to a plate, wipe out the pan, and repeat with the remaining 2 tbsp butter and rounds.",
+  "Shake the dressing again and drizzle it over the salads. Top each bowl with 2 warm rounds, scatter the chives over and serve right away."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats (5.0 from 17 ratings, so the fallback applies) is the lead: crumbed goat cheese rounds pan-fried in butter over lettuce and tomato with a balsamic vinaigrette, doubled to serve 4 as a main. The list says toasts; the lead crumbs and fries the cheese, while Taste of France (4.4 from 7) grills it on baguette slices with honey. The lead's bacon is left out to keep it vegetarian, and its walnuts and pine nuts to keep it nut-free.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Warm French Goat's Cheese Salad (Salade de Chevre Chaud)",
+   "url": "https://recipetineats.com/warm-french-goats-cheese-salad-salade-de-chevre-chaud/",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste France",
+   "title": "Salade chevre chaud",
+   "url": "https://www.tastefrance.com/recipes/everyday-recipes/warm-goats-cheese-salad-salade-de-chevre-chaud",
+   "rating": 4.4,
+   "rating_count": 7,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

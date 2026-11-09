@@ -1,0 +1,89 @@
+{
+ "dish_name": "Salade de Betteraves",
+ "cuisine": "French",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Beets",
+   "qty": "1 3/4 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Microgreens",
+   "qty": "1 small container",
+   "category": "produce",
+   "cook_qty": "1 1/2 oz"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Up to 2 days ahead, heat the oven to 400°F. Rub the 4 medium unpeeled beets with 1 tbsp of the olive oil, 1/4 tsp salt and 1/4 tsp pepper, wrap each one in foil and roast on a baking sheet for 55 to 60 minutes. A large beet may need longer. They're done when a knife slides in easily.",
+  "After the beets have cooled, rub off the skins (gloves keep your hands from staining). Keep them in a covered container in the fridge for up to 3 days.",
+  "Finely chop the shallot. Shake it in a jar with the remaining 3 tbsp olive oil, the vinegar, Dijon, 1/4 tsp salt and 1/4 tsp pepper until it thickens. The vinaigrette keeps in the fridge for up to a week.",
+  "Slice the beets and fan them out on a platter. Spoon the vinaigrette over, top with the microgreens and torn parsley leaves, and serve with lemon wedges. Dressed beets are best eaten within a few hours, so for packed lunches pack the vinaigrette in a small jar and add it just before eating."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 60,
+ "advance_prep_notes": "roast the beets up to 2 days ahead",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Obviously French's beetroot salad has no ratings yet, so the fallback applies: oven-roasted beets sliced and dressed with a shallot and Dijon vinaigrette, with microgreens, parsley and lemon. The roasting takes an hour, so it's the make-ahead step and the day-of work is about 15 minutes. The lead's toasted pine nuts are left out to keep it nut-free, and its half teaspoon of wholegrain mustard is folded into the Dijon (the author says Dijon matters more). Hell's Kitchen and Masala Herb dress boiled or grated beets the same way.",
+ "sources": [
+  {
+   "name": "Obviously French",
+   "title": "Beetroot Salad",
+   "url": "https://obviouslyfrench.com/beetroot-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

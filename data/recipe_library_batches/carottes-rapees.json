@@ -1,0 +1,81 @@
+{
+ "dish_name": "Carottes Rapees",
+ "cuisine": "French",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the carrots and grate them on the fine holes of a box grater, or in a food processor with the grating disc. Set them aside.",
+  "Juice the lemon. In a large bowl, whisk 1 tbsp of the juice with the Dijon, vegetable oil, olive oil, salt and pepper until it thickens slightly. Keep the rest of the juice for the end.",
+  "Chop 2 tbsp of the parsley and thinly slice the green onions. Add them to the bowl with the carrots and toss well.",
+  "Taste it and add a little more lemon juice or salt if it needs it. Let it sit for 15 minutes before serving so the flavors come together.",
+  "Serve cold or at room temperature. For packed lunches, keep it in a covered container in the fridge for up to 3 days, and toss it again before eating."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Once Upon a Chef (4.84 from 166 ratings) is the lead: fine shreds of carrot in a lemon and Dijon vinaigrette with parsley and green onion, resting 15 to 30 minutes. It keeps up to 3 days in the fridge, and the carrots soften as they sit. The lead's 1 to 2 tsp of honey is left out to keep this vegan, and the dressing does not need it. David Lebovitz and Pardon Your French make the same salad with a little less oil and add raisins or nuts.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "French Grated Carrot Salad with Lemon Dijon Vinaigrette",
+   "url": "https://www.onceuponachef.com/recipes/french-grated-carrot-salad.html",
+   "rating": 4.84,
+   "rating_count": 166,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}
