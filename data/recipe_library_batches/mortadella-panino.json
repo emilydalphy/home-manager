@@ -1,0 +1,58 @@
+{
+ "dish_name": "Mortadella Panino",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Ciabatta rolls",
+   "qty": "4",
+   "category": "produce",
+   "cook_qty": "4 rolls"
+  },
+  {
+   "item": "Sliced mortadella, plain without pistachios",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  }
+ ],
+ "instructions": [
+  "Slice each ciabatta roll in half horizontally, leaving one side attached.",
+  "Lay about 2 oz of mortadella on the bottom half of each roll, twisting and ruffling the slices so they sit loose instead of flat.",
+  "Close the rolls and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Christina's Cucina (the lead, 5.0 from 3, so a fallback lead) keeps it to crusty rolls and loosely folded mortadella, with cheese and pistachios as optional extras that I left out to keep it dairy-free and nut-free. Nonna Box adds pesto and artichokes, and Ricardo and Italian Food Forever press it hot with provolone or Asiago. Buy plain mortadella, since some deli versions have pistachios in them.",
+ "sources": [
+  {
+   "name": "Christina's Cucina",
+   "title": "Mortadella (Sandwich - Panino)",
+   "url": "https://www.christinascucina.com/?p=39553",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nonna Box",
+   "title": "Panino Italiano",
+   "url": "https://www.nonnabox.com/italian-sandwich-panino-recipe",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Ricardo",
+   "title": "Mortadella and Provolone Panini",
+   "url": "https://www.ricardocuisine.com/en/recipes/6398-mortadella-and-provolone-panini",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

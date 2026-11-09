@@ -1,0 +1,116 @@
+{
+ "dish_name": "Gnocchi Soup",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Potato gnocchi, shelf-stable",
+   "qty": "16 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "2 cups",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the olive oil in a large pot over medium. Dice the onion, celery and carrots, then cook them with half the salt for about 5 minutes, until softened.",
+  "Mince the garlic and stir it in with the thyme and pepper. Cook for 30 seconds, then sprinkle over the flour and stir for 1 minute.",
+  "Slowly pour in the broth, stirring as you go. Add the remaining salt and the chicken, cut into quarters. Bring to a boil, then lower the heat, cover and simmer for 5 minutes.",
+  "Stir in the gnocchi, cover and simmer for 8 to 10 minutes, until the gnocchi are tender and the chicken is cooked through. The chicken is done at 165\u00b0F if you want to check with a thermometer. Without one, cut into the thickest piece and look for no pink.",
+  "Lift the chicken onto a board, shred it with two forks and return it to the pot.",
+  "Stir in the spinach and cook for 1 to 2 minutes, until wilted. Serve hot.",
+  "Leftovers keep in the fridge for up to 3 days in a covered container. Reheat in a pot over medium low, adding a splash of broth or water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Real Food Whole Life (the lead, 5.0 from 10, so a fallback lead) builds the soup from softened vegetables, a spoonful of flour, broth, whole chicken and shelf-stable gnocchi, then shreds the chicken at the end. Jo Cooks (4.79 from 14) also thickens with flour and needs no dairy. Foodiecrush and Here's Your Dinner use evaporated milk or cream. To keep the soup dairy-free, I use olive oil in place of butter and leave out the cream and Parmesan. The flour and the gnocchi starch give it body. It runs about 35 minutes, 5 over the list's half hour. Check the gnocchi label for milk.",
+ "sources": [
+  {
+   "name": "Real Food Whole Life",
+   "title": "Creamy Chicken Gnocchi Soup (Easy)",
+   "url": "https://realfoodwholelife.com/recipes/gnocchi-chicken-soup/",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Chicken Gnocchi Soup",
+   "url": "https://www.jocooks.com/recipes/chicken-and-gnocchi-dumpling-soup/",
+   "rating": 4.79,
+   "rating_count": 14,
+   "read": true
+  },
+  {
+   "name": "Foodiecrush",
+   "title": "Gnocchi Soup with Chicken",
+   "url": "https://www.foodiecrush.com/gnocchi-soup-with-chicken/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,97 @@
+{
+ "dish_name": "Insalata Tricolore",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Radicchio",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Belgian endive",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Baby arugula",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "2 oz wedge",
+   "category": "dairy",
+   "cook_qty": "shaved"
+  }
+ ],
+ "instructions": [
+  "Cut the core out of the radicchio and chop the leaves into bite-size pieces. Chop the endive the same way and coarsely chop the arugula.",
+  "Put the radicchio, endive and arugula in a large bowl and season with a pinch of the salt and pepper.",
+  "In a small bowl, whisk the Dijon, red wine vinegar and olive oil with the remaining salt and pepper.",
+  "Pour the dressing over the greens and toss until they are lightly coated.",
+  "Use a vegetable peeler to shave the Parmesan over the top and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions I could read had ratings (Food Network showed none, Flavor the Moments had 0 reviews), so Bobby Flay's is a fallback lead, chosen for the classic three greens, mustard and red wine vinegar dressing. Flavor the Moments uses the same greens with a plain red wine vinaigrette. Valerie Bertinelli adds fennel, shallot and lemon, which I left out. Chop and dress just before serving, because arugula wilts.",
+ "sources": [
+  {
+   "name": "Food Network (Bobby Flay)",
+   "title": "Tri Colore Salad",
+   "url": "https://www.foodnetwork.com/recipes/bobby-flay/tri-colore-salad-recipe-1945637",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Flavor the Moments",
+   "title": "Italian Tricolore Salad",
+   "url": "https://flavorthemoments.com/?p=52967",
+   "rating": null,
+   "rating_count": 0,
+   "read": true
+  },
+  {
+   "name": "Food Network (Valerie Bertinelli)",
+   "title": "Tri Colore Salad",
+   "url": "https://www.foodnetwork.com/recipes/valerie-bertinelli/tri-colore-salad-12882571",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

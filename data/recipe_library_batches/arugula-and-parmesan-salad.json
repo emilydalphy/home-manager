@@ -1,0 +1,72 @@
+{
+ "dish_name": "Arugula and Parmesan Salad",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Arugula",
+   "qty": "5 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "2 oz wedge",
+   "category": "dairy",
+   "cook_qty": "about 1/2 cup shavings"
+  }
+ ],
+ "instructions": [
+  "Squeeze 1 tablespoon of juice from the lemon into a large salad bowl. Whisk in the olive oil, salt and pepper.",
+  "Add the arugula and toss until every leaf is lightly coated.",
+  "Use a vegetable peeler to shave about 1/2 cup of shavings from the Parmesan wedge.",
+  "Scatter the shavings over the salad, toss gently and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Once Upon a Chef (the lead, 5.0 from 35) whisks a plain lemon and olive oil dressing in the bowl, tosses the arugula in it and finishes with shaved Parmigiano-Reggiano. Tyler Florence uses the same three parts with a bit more oil and tastes before the cheese goes on. I follow the lead's ratio of 3 parts oil to 1 part lemon. Shave the cheese from a wedge, since pre-grated doesn't melt into the leaves the same way.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Arugula Salad with Lemon, Olive Oil, and Parmigiano-Reggiano",
+   "url": "https://www.onceuponachef.com/recipes/arugula-salad-with-shaved-parmesan-lemon-olive-oil.html",
+   "rating": 5.0,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network (Tyler Florence)",
+   "title": "Arugula Salad with Olive Oil, Lemon, and Parmesan Cheese",
+   "url": "https://www.foodnetwork.com/recipes/tyler-florence/arugula-salad-with-olive-oil-lemon-and-parmesan-cheese-recipe-1943201",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

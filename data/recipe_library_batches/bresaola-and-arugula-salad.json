@@ -1,0 +1,85 @@
+{
+ "dish_name": "Bresaola and Arugula Salad",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Thinly sliced bresaola",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Baby arugula",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "2 oz wedge",
+   "category": "dairy",
+   "cook_qty": "shaved"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Arrange the bresaola on a serving platter in an even layer, overlapping the slices slightly.",
+  "Squeeze 1 tablespoon of juice from the lemon into a bowl. Add the arugula, olive oil, salt and pepper and toss until coated.",
+  "Pile the dressed arugula on top of the bresaola.",
+  "Use a vegetable peeler to shave the Parmesan over the top and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "America's Test Kitchen (the lead, 4.0 from 10, so a fallback lead) lays the bresaola on a plate, tosses the arugula in olive oil and lemon and piles it on with shaved Parmigiano. I doubled its two serving amounts for 4. The Italian Recipe Book dresses the bresaola itself with lemon, and Lidia Bastianich (Grana Padano) uses a whole lemon with zest. None of the others has ratings. I used the lead's method with a slightly bigger squeeze of lemon, to match the list's lemony line.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Arugula Salad with Bresaola and Parmigiano",
+   "url": "https://www.americastestkitchen.com/recipes/16924-arugula-salad-with-bresaola-and-parmigiano",
+   "rating": 4.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Italian Recipe Book",
+   "title": "Bresaola and Arugula Salad with Lemon Dressing",
+   "url": "https://www.italianrecipebook.com/bresaola-arugula-salad-with-lemon-dressing/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Grana Padano (Lidia Bastianich)",
+   "title": "Bresaola and Arugula Salad",
+   "url": "https://www.granapadano.it/en-en/?p=38253",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
