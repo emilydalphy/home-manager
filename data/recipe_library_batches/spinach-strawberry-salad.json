@@ -1,0 +1,116 @@
+{
+ "dish_name": "Spinach Strawberry Salad",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Baby spinach",
+   "qty": "10 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Strawberries",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Pecans",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Poppy seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Toast the pecans in a dry skillet over medium heat 3 to 4 minutes, shaking the pan often, until they smell nutty. Transfer them to a plate to cool, then chop roughly.",
+  "Slice half the red onion very thinly and soak it in a bowl of cold water while you prep the rest, which softens its bite.",
+  "In a jar, shake together the balsamic vinegar, olive oil, poppy seeds, honey, Dijon, salt and pepper until it holds together.",
+  "Hull and quarter the strawberries. Crumble the feta into rough pieces.",
+  "Put the spinach and strawberries in a large bowl. Drain the onion and add it. Pour in about half the dressing and toss, so the leaves are lightly coated and not wet through.",
+  "Add the feta and pecans, toss gently and serve right away with the rest of the dressing on the side.",
+  "For packed lunches, keep the dressing in its own jar and pack the pecans separately. The undressed salad keeps in the fridge up to 4 days, and the dressing up to 5."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 5,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "WellPlated is the lead (4.69 from 649): spinach, strawberries, red onion, feta and pecans with a balsamic poppy seed dressing, tossed with half the dressing first so the leaves aren't swimming. Love and Lemons uses a white wine vinegar and shallot dressing and makes the same point about keeping the dressing apart for make ahead; the creamier mayonnaise and yogurt dressings from Cooking Classy and Chef Savvy were not used. The pecans are toasted in a skillet rather than the oven to save time, and the amounts are cut from 6 servings to 4.",
+ "sources": [
+  {
+   "name": "WellPlated",
+   "title": "Spinach Strawberry Salad {With Poppy Seed Dressing!}",
+   "url": "https://www.wellplated.com/spinach-strawberry-salad/",
+   "rating": 4.69,
+   "rating_count": 649,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Strawberry Spinach Salad",
+   "url": "https://www.loveandlemons.com/strawberry-spinach-salad/",
+   "rating": 4.88,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Easy Strawberry Spinach Salad",
+   "url": "https://www.cookingclassy.com/strawberry-spinach-salad/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

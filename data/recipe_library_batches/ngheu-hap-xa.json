@@ -1,0 +1,127 @@
+{
+ "dish_name": "Ngheu Hap Xa",
+ "cuisine": "Vietnamese",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Manila clams",
+   "qty": "3 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "3 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer. Put 1 1/2 cups rice and 2 cups water in a small pot, bring to a boil, cover and turn the heat to low. Cook 15 minutes, then take it off the heat and leave it covered while you cook the clams.",
+  "Stir 3 tbsp salt into 8 cups of cold water in a large bowl. Add the clams, scrub them lightly and let them soak 15 minutes so they release their sand.",
+  "Peel the tough outer layers off the lemongrass, bruise the stalks with the back of a knife and slice the pale bottom halves thinly. Cut the ginger into thin matchsticks. Mince the garlic. Slice 1 Thai chili thinly for the sauce and slice the second Thai chili for the table.",
+  "Make the dipping sauce: stir 2 tbsp fish sauce, 2 tbsp sugar and 1/4 cup water until the sugar dissolves. Add the juice of 1 lime, the garlic and the sliced Thai chili. Cut the other lime into wedges.",
+  "Lift the clams out of the soaking water without pouring the sand back over them, rinse them and throw out any that stay open when tapped.",
+  "Heat the oil in a wide pot with a lid over medium high. Add the lemongrass and ginger and cook about 1 minute, until fragrant. Add 1/2 cup water, 1 tbsp fish sauce, 1/2 tbsp sugar and the pepper and bring to a simmer.",
+  "Add the clams, cover and steam 5 to 8 minutes, shaking the pot now and then. Lift out the clams as they open and throw out any that stay shut.",
+  "Return all the clams to the pot and spoon the broth over them. Taste the broth. If it's flat, add a squeeze of lime.",
+  "Pile the clams and broth into a big bowl and scatter the cilantro and mint over them. Serve with the rice, the dipping sauce, the lime wedges and the sliced Thai chili for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "About 30 minutes, with the rice cooking while the clams soak and steam. Nobody read had 20 or more ratings (Feed the Pudge 5.0 from 3, Delightful Plate 5.0 from 2, Mai Yummy none), so this follows Mai Yummy, the version written for nghêu hấp sả ớt by name, as a fallback lead. The sources agree on lemongrass, ginger and fish sauce with a quick covered steam and a nước chấm on the side; they differ on the liquid (beer, coconut juice or water) and on the soak, from 5 minutes to a couple of hours. This one uses plain water, which keeps it gluten free, and a 15 minute salt soak. The lemongrass and ginger are cooked in oil first, as Feed the Pudge and Delightful Plate do. Chili goes in the sauce and on the side so the base stays mild. The rice is added so it is a meal.",
+ "sources": [
+  {
+   "name": "Mai Yummy",
+   "title": "Nghêu Hấp Sả Ớt (Steamed Clams With Lemongrass & Chilli)",
+   "url": "https://maiyummy.wordpress.com/2015/07/14/ngheu-hap-sa-ot-steamed-clams-with-lemongrass-and-chilli/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Feed the Pudge",
+   "title": "Ngheu Hap Sa / Steamed Clams with Lemongrass",
+   "url": "https://feedthepudge.com/ngheu-hap-sa-steamed-clams-with-lemongrass/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Delightful Plate",
+   "title": "Steamed Clams with Thai Basil and Lemongrass",
+   "url": "https://delightfulplate.com/steamed-clams-thai-basil-lemongrass/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,99 @@
+{
+ "dish_name": "Roasted Red Pepper Soup",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Red bell peppers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Vine tomatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Cut the peppers into 2 inch pieces, discarding the stems and seeds. Quarter the tomatoes and cut the onion into wedges. Leave the garlic cloves in their skins.",
+  "Spread the vegetables and garlic in a single layer on a large rimmed baking sheet, using two sheets if they are crowded. Toss with the oil, 3/4 tsp salt and the pepper.",
+  "Roast 45 minutes, turning everything halfway, until the edges are charred and the tomatoes have collapsed.",
+  "Squeeze the garlic out of its skins into a blender. Add the roasted vegetables with all the juices from the pan and the 2 cups broth. Blend until smooth, in two batches if needed, holding the lid down with a towel. Add a splash of water if you'd like it thinner.",
+  "Pour the soup into a pot and warm it over medium about 5 minutes, until it is steaming and just bubbling. Take it off the heat and stir in the vinegar and the last 1/4 tsp salt.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot. For packed lunches, cool the soup, then keep it in the fridge up to 5 days or in the freezer up to 3 months. Reheat it until steaming, then pour it into a thermos that you've warmed with boiling water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 50,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "About 60 minutes, almost all of it hands off in the oven, so it suits making on a weekend and packing for the week. Healthy Living James (4.96 from 45) is the lead: roast tomatoes, red peppers, onion and garlic in one tin, then blend with stock, no cream. It uses a stock pot, so this version uses real vegetable broth and a little more oil to help the edges brown. A teaspoon of red wine vinegar after the heat is off comes from Sinful Kitchen, which finishes its soup the same way. Veggie Society roasts the peppers under a broiler and simmers the soup with smoked paprika, and Marin Mama Cooks adds carrots and celery; none of that is in here.",
+ "sources": [
+  {
+   "name": "Healthy Living James",
+   "title": "Easy Red Pepper and Tomato Soup",
+   "url": "https://healthylivingjames.co.uk/easy-red-pepper-and-tomato-soup/",
+   "rating": 4.96,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sinful Kitchen",
+   "title": "Roasted Red Pepper and Tomato Soup (Vegan)",
+   "url": "https://sinfulkitchen.com/roasted-red-pepper-tomato-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Veggie Society",
+   "title": "Roasted Red Pepper Tomato Soup ~ Vegan",
+   "url": "https://veggiesociety.com/healthy-roasted-red-pepper-tomato-soup-vegan-recipe/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

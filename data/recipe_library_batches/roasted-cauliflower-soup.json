@@ -1,0 +1,124 @@
+{
+ "dish_name": "Roasted Cauliflower Soup",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "4 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Nutritional yeast",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Celery salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F and line a large baking sheet with parchment.",
+  "Cut the cauliflower into slices about 1/2 inch thick. Toss with 2 tbsp of the oil, 1/4 tsp salt and the pepper and spread in a single layer. Roast 35 minutes, flipping the pieces halfway, until deeply golden.",
+  "About 10 minutes before the cauliflower is done, grate the carrot, dice the onion and 1 stalk of celery, and mince the garlic. Heat the last 1 tbsp oil in a large pot over medium and cook the onion, carrot and celery about 5 minutes, until soft. Stir in the garlic, celery salt, Italian seasoning and thyme and cook 1 minute.",
+  "Chop the roasted cauliflower roughly and add it to the pot with the broth, the nutritional yeast and the remaining 1/2 tsp salt. Bring to a boil, then cover, lower the heat and simmer 10 minutes, until everything is very tender.",
+  "Blend until smooth, in batches, holding the lid down with a towel. Return the soup to the pot and add a splash of broth or water if it's too thick.",
+  "Off the heat, stir in 1 to 2 tbsp lemon juice. Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot. For packed lunches, cool the soup and keep it in the fridge up to 5 days or in the freezer up to 3 months. Reheat it with a splash of water until steaming."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "About an hour, mostly roasting, so it is a weekend soup to pack for the week. The Cheeky Chickpea (5.0 from 34) is the lead: roast the cauliflower first for a nutty flavor, then simmer it with onion, carrot, celery, nutritional yeast and herbs and finish with lemon. The lead uses a vegetarian soup base in water; this uses plain vegetable broth, and blends all of the soup rather than part of it so it is smooth. The First Mess (4.86 from 28) roasts whole heads of garlic and potatoes for creaminess, which was not used.",
+ "sources": [
+  {
+   "name": "The Cheeky Chickpea",
+   "title": "Incredible Roasted Vegan Cauliflower Soup (Easy Recipe)",
+   "url": "https://thecheekychickpea.com/roasted-vegan-cauliflower-soup/",
+   "rating": 5.0,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The First Mess",
+   "title": "Creamy Roasted Cauliflower Soup with Potatoes",
+   "url": "https://thefirstmess.com/2013/02/20/vegan-roasted-cauliflower-soup-recipe/",
+   "rating": 4.86,
+   "rating_count": 28,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hedi Hearts",
+   "title": "Vegan Roasted Cauliflower Soup",
+   "url": "https://hedihearts.com/easy-roasted-cauliflower-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

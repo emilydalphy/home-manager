@@ -1,0 +1,124 @@
+{
+ "dish_name": "Mushroom Barley Soup",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Pearl barley",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion, the carrots and 2 stalks of celery. Slice the mushrooms and mince the garlic.",
+  "Heat the oil in a large pot over medium high. Add the onion, carrots and celery with 1/2 tsp salt and cook 5 to 7 minutes, stirring now and then, until they begin to soften.",
+  "Add the mushrooms and cook 8 to 10 minutes, stirring now and then, until they have given off their liquid and turned golden brown.",
+  "Stir in the garlic and Italian seasoning and cook 30 seconds. Add the broth, 3 cups water, the barley and the soy sauce. Bring to a boil, then lower the heat, partly cover and simmer 25 to 30 minutes, until the barley is tender but still a little chewy.",
+  "Off the heat, stir in the vinegar, the pepper and the remaining 1/2 tsp salt. Chop 2 tbsp of the parsley and stir it in. Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot. The barley keeps drinking the broth, so the soup thickens as it sits. Keep it in the fridge up to 5 days or in the freezer up to 3 months, and add a splash of broth or water when you reheat it until it's steaming."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "About 55 minutes, hands on for about 25 of them, and it reheats well, so it suits a weekend batch. Nothing found had 20 or more ratings, so this is a fallback lead: Salt & Lavender (5.0 from 8) sautés onion, carrot and celery, then mushrooms, and simmers with broth, water and pearl barley. A little soy sauce (The Nosher) and a splash of red wine vinegar at the end (The Yummy Vegan) add depth and brightness. Connoisseurus Veg and Monkey and Me make creamy versions with cashews or coconut; those were left out.",
+ "sources": [
+  {
+   "name": "Salt & Lavender",
+   "title": "Vegan Mushroom Barley Soup",
+   "url": "https://www.saltandlavender.com/vegan-mushroom-barley-soup/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Nosher",
+   "title": "Vegetarian Mushroom Barley Soup",
+   "url": "https://www.myjewishlearning.com/the-nosher/vegetarian-mushroom-barley-soup-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Yummy Vegan",
+   "title": "Mushroom Barley Soup",
+   "url": "https://theyummyvegan.com/blog/mushroombarleysoup",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

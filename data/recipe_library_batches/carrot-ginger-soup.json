@@ -1,0 +1,107 @@
+{
+ "dish_name": "Carrot Ginger Soup",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Carrots",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "4 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the carrots and slice them into 1/4 inch coins. Chop the onion, mince the garlic and grate 2 tbsp of ginger.",
+  "Heat the oil in a large pot over medium. Cook the onion about 4 minutes, until soft. Stir in the ginger, garlic, cumin and cinnamon and cook 1 minute, until fragrant.",
+  "Add the carrots, the broth and the salt. Bring to a boil, then cover, lower the heat and simmer 15 to 20 minutes, until the carrots are easily pierced with a fork.",
+  "Blend until smooth, in batches or with an immersion blender, holding the lid down with a towel. Return the soup to the pot and add a splash of broth or water if it's too thick.",
+  "Off the heat, stir in 2 tsp lemon juice and the pepper. Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot. For packed lunches, cool the soup and keep it in the fridge up to 4 days or in the freezer up to 3 months. Reheat it with a splash of water until steaming."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "About 35 minutes. No version found had 20 or more ratings (the best had 3 to 5), so this is a fallback lead: Vegan Family Recipes (5.0 from 3) softens onion, garlic and ginger, simmers carrots in vegetable broth and blends. Strength and Sunshine adds a little cumin, cinnamon and lemon, which are used here, with the lemon stirred in at the end. Ginger is raised to 2 tbsp because the lead's amount is very small for a soup named for it. The Modern Proper version gets its creaminess from coconut milk, which was left out; the carrots blend smooth on their own.",
+ "sources": [
+  {
+   "name": "Vegan Family Recipes",
+   "title": "Easy Ginger Carrot Soup",
+   "url": "https://www.veganfamilyrecipes.com/easy-ginger-carrot-soup/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Strength and Sunshine",
+   "title": "Vegan Carrot Ginger Soup",
+   "url": "https://strengthandsunshine.com/vegan-carrot-ginger-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Modern Proper",
+   "title": "Carrot Ginger Soup",
+   "url": "https://themodernproper.com/carrot-ginger-soup",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
