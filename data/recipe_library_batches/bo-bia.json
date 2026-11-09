@@ -1,0 +1,48 @@
+{
+ "dish_name": "Bo Bia",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {"item": "Jicama", "qty": "1 small", "category": "produce"},
+  {"item": "Carrots", "qty": "1 large", "category": "produce"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Thai basil", "qty": "1 bunch", "category": "produce", "cook_qty": "1/2 cup leaves"},
+  {"item": "Rice paper wrappers", "qty": "1 package", "category": "pantry", "cook_qty": "12 wrappers"},
+  {"item": "Gluten-free tamari", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 tsp"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Gluten-free hoisin sauce", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Peanut butter", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Cornstarch", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Roasted peanuts", "qty": "1 small bag", "category": "pantry", "cook_qty": "1 tbsp chopped"},
+  {"item": "Sriracha", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the jicama and the carrot and cut both into thin matchsticks. You want about 3 cups of jicama and 1 cup of carrot.",
+  "Mince 3 of the garlic cloves. Heat 1 tbsp of the vegetable oil in a large skillet over medium heat. Add the garlic and cook for 30 seconds, until it smells sweet.",
+  "Add the jicama and cook for 2 minutes. Add the carrot and the tamari and cook for 3 to 5 minutes, stirring now and then, until the jicama is just tender and still crisp in the middle. Take the pan off the heat, stir in the sesame oil, and transfer the vegetables to a plate to cool.",
+  "Wipe out the skillet. Beat the eggs with the salt. Heat 1 tsp of the remaining oil over medium-low heat and pour in half the eggs, tilting the pan so they spread thin. Cook for about 30 seconds on each side, until just set, and slide the sheet onto a cutting board. Repeat with the rest of the eggs.",
+  "Roll up each egg sheet and slice it into thin ribbons.",
+  "Make the sauce: mince the remaining 2 garlic cloves. In a small pan over medium heat, cook them in the last 1 tsp oil for 30 seconds. Stir in the hoisin and the peanut butter and cook for 30 seconds. Whisk the cornstarch into 3/4 cup of water and pour it in. Cook for about 1 minute, stirring, until it thickens slightly. Transfer it to a bowl and top with the chopped peanuts.",
+  "Fill a wide shallow dish with warm water. Dip a rice paper wrapper in it for 5 to 10 seconds, until it's pliable but not floppy. It keeps softening as it sits. Lay it flat on a damp plate.",
+  "Put 3 or 4 basil leaves, a few egg ribbons and about 3 tbsp of the jicama mixture on the lower third. Roll it over once, fold in the sides, then roll it up tightly. Set it seam side down on a tray and cover it with a damp towel. Repeat to make 12 rolls.",
+  "Serve with the peanut sauce and put the sriracha on the table for anyone who wants heat.",
+  "To pack it for lunch, wrap the rolls in damp paper towels in an airtight container and keep them in the fridge for up to 1 day. Pack the sauce separately."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No readable version had 20 ratings, so this is a fallback. Cooking Therapy (5 from 14) leads, with its sauteed jicama and carrot, thin egg omelet cut in ribbons, Thai basil, and hoisin and peanut butter sauce. Every source also uses Chinese sausage and dried shrimp; both are left out to keep the roll vegetarian (Hungry Huy and Delightful Plate show the egg and jicama are the base). Gluten-free tamari and gluten-free hoisin are named on the list because regular ones contain wheat; the sauce uses 3/4 cup water, not the lead's 1 cup, so it is not too thin.",
+ "sources": [
+  {"name": "Cooking Therapy", "title": "Bo Bia (Chinese Sausage Spring Rolls)", "url": "https://www.cooking-therapy.com/bo-bia/", "rating": 5.0, "rating_count": 14, "read": true, "lead": true},
+  {"name": "Hungry Huy", "title": "Bo Bia (Vietnamese Spring Rolls)", "url": "https://www.hungryhuy.com/cach-lam-bo-bia-recipe-vietnamese-spring-rolls-with-chinese-sausage-jicama-carrot-egg/", "rating": 4.67, "rating_count": 9, "read": true},
+  {"name": "Delightful Plate", "title": "Vietnamese Fresh Spring Rolls with Jicama and Egg (Bo Bia)", "url": "https://delightfulplate.com/vietnamese-fresh-spring-rolls-jicama-egg-bo-bia/", "rating": null, "rating_count": null, "read": true},
+  {"name": "Vicky Pham", "title": "Vietnamese Jicama, Carrot, Egg and Chinese Sausage Spring Rolls", "url": "https://vickypham.com/blog/vietnamese-jicama-and-carrot-spring-rolls-goi-cuon-bo-bia/", "rating": null, "rating_count": null, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

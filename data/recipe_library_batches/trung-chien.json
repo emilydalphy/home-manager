@@ -1,0 +1,45 @@
+{
+ "dish_name": "Trung Chien",
+ "cuisine": "Vietnamese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {"item": "Eggs", "qty": "6", "category": "dairy"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Dried wood ear mushrooms", "qty": "1 small bag", "category": "pantry", "cook_qty": "1/2 oz"},
+  {"item": "Glass noodles", "qty": "1 small bundle", "category": "pantry", "cook_qty": "3/4 oz"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "4 scallions"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/2 cup chopped"},
+  {"item": "Shallots", "qty": "2", "category": "produce"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/2 tsp"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the rice in a pot until the water runs mostly clear. Add 2 cups of water and bring it to a boil over high heat. Cover, turn the heat to low, and cook for 12 minutes. Take it off the heat and leave it covered for 5 minutes.",
+  "While the rice cooks, put the wood ear mushrooms in a bowl of hot water. Cut the glass noodles into 2 to 3 inch pieces and put them in a second bowl of warm water. Let both soak for 10 minutes.",
+  "Meanwhile, mince the scallions and chop the cilantro to make 1/2 cup. Thinly slice the shallots.",
+  "Drain the mushrooms, cut off any hard knots, and slice them thinly. Drain the noodles and squeeze them dry.",
+  "In a large bowl, beat the eggs with the fish sauce, brown sugar and black pepper. Stir in the scallions, cilantro, mushrooms and noodles.",
+  "Heat 1 tbsp of the oil in a 10 inch nonstick pan over medium heat. Add half the shallots and cook for 1 minute, until they smell sweet.",
+  "Pour in half the egg mixture and spread it out. Tilt the pan so the egg fills the edges. Turn the heat to medium-low and cook for 3 to 5 minutes, until the top is almost set.",
+  "Slide a spatula under the omelet and flip it. Cook the other side for 1 to 2 minutes, then transfer it to a cutting board.",
+  "Repeat with the remaining 1 tbsp oil, shallots and egg mixture for the second omelet.",
+  "Cut each omelet into wedges like a pizza. Serve with the rice.",
+  "To pack it for lunch, keep the omelet wedges and the rice in separate containers in the fridge for up to 3 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No readable version had 20 ratings, so this is a fallback. Fifteen.net (5 from 2 votes) leads with its meatless omelet of eggs, wood ear, glass noodles, scallion, cilantro, shallot and fish sauce, brown sugar and pepper; its amounts were not given, so the seasoning follows the same page's pork version, scaled to six eggs. Cook with Chung, Savour the Pho and La Academie agree that fish sauce and scallion are the core and that it is served with steamed rice. Ground pork was left out since the dish is the egg omelet; use fish sauce labelled gluten-free to keep it gluten-free.",
+ "sources": [
+  {"name": "Fifteen.net", "title": "Trung Chien (Vietnamese Egg Omelet)", "url": "https://www.fifteen.net/recipes/trung-chien/", "rating": 5.0, "rating_count": 2, "read": true, "lead": true},
+  {"name": "Cook with Chung", "title": "Easy Vietnamese Egg Omelette (Trung Chien)", "url": "https://cookwithchung.com/vietnamese-egg-omelette-trung-chien/", "rating": 5.0, "rating_count": 3, "read": true},
+  {"name": "Savour the Pho", "title": "Vietnamese Omelet (Trung Chien)", "url": "https://savourthepho.com/trung-chien-vietnamese-egg-omelette-recipe/", "rating": 5.0, "rating_count": 1, "read": true},
+  {"name": "La Academie", "title": "Trung Chien (Egg Omelet)", "url": "https://www.lacademie.com/vietnamese-egg-omelet-recipe/", "rating": 5.0, "rating_count": 1, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

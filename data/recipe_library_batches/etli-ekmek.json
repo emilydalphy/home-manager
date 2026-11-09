@@ -1,0 +1,42 @@
+{
+ "dish_name": "Etli Ekmek",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "ingredients": [
+  {"item": "All-purpose flour", "qty": "3 1/2 cups", "category": "pantry"},
+  {"item": "Ground beef", "qty": "3/4 lb", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Italian frying peppers", "qty": "2", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 475°F (245°C). Turn two rimmed baking sheets upside down on two racks, one in the upper third and one in the lower third, so they heat up with the oven.",
+  "In a large bowl, stir 3 cups of the flour with 1 tsp of the salt. Add 3/4 cup plus 1 tbsp warm water and mix until it comes together. Knead on the counter for 5 minutes, until the dough is smooth and firm. Cover it with a damp towel and let it rest for 25 minutes. If you'd like to skip the wait, make the dough the night before, keep it covered in the fridge, and let it sit out for 20 minutes before rolling.",
+  "Meanwhile, finely chop the onion and the peppers. Cut the tomatoes in half, scoop out the seeds, and chop them finely too. Aim for pieces about 1/8 inch across.",
+  "Put the chopped vegetables in a bowl with the beef, the remaining 1 tsp salt and the black pepper. Mix with your hands until it looks like a loose, even paste. If liquid collects in the bottom of the bowl, pour it off so the topping doesn't make the dough soggy.",
+  "Chop 1/4 cup of the parsley and cut the lemon into wedges. Set both aside.",
+  "Cut the dough in half. Dust the counter with some of the remaining 1/2 cup flour and roll one half into a long, thin oval, about 16 inches by 8 inches. It should be thin enough to see the counter's color through the edges. Transfer it onto a sheet of parchment paper, then roll the second half the same way.",
+  "Spread half the topping over each piece of dough, pressing it into a thin, even layer all the way to the edges.",
+  "Take the hot baking sheets out of the oven. Slide each piece of parchment onto a sheet and return them to the oven.",
+  "Bake for 12 minutes, swapping the sheets between the racks after 6 minutes. The edges should be golden brown and the meat cooked through. You're cooking the beef to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the center of the topping: it's done when there's no pink left.",
+  "Cut each flatbread into rectangles and scatter the parsley over the top. Serve with the lemon wedges.",
+  "To pack it for lunch, let the pieces cool, then keep them in the fridge for up to 3 days. Reheat them on a baking sheet in a 400°F oven for 5 minutes, until the bottom is crisp again."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Honest time is about 57 minutes because the yeast-free dough has to rest 25 minutes, so it is over a 30 minute lunch unless the dough is made the day before. None of the three readable versions had ratings (Tatonia, Lezzet and Nefis Yemek Tarifleri), so Tatonia leads because it is the quick no-yeast dough and bakes at 475°F for 12 minutes; Lezzet adds the black pepper and the 8 to 10 minute very hot bake, and Nefis says a Konya version uses no oil or spice beyond salt. Sheet pans are preheated for a crisp bottom, as the sources lean on a stone oven. Reheating note is Pomona's own.",
+ "sources": [
+  {"name": "Tatonia", "title": "Etli Ekmek (Konya style)", "url": "https://tatonia.com/en/recipe/etli-ekmek-konya-usulu", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Lezzet", "title": "Konya Usulu Etli Ekmek", "url": "https://www.lezzet.com.tr/yemek-tarifleri/hamurisi-tarifleri/ekmek-tarifleri/konya-usulu-etli-ekmek", "rating": null, "rating_count": null, "read": true},
+  {"name": "Nefis Yemek Tarifleri", "title": "Etli Ekmek (Konya)", "url": "https://www.nefisyemektarifleri.com/etli-ekmek-konya-5671455/", "rating": null, "rating_count": null, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

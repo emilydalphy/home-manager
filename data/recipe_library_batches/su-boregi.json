@@ -1,0 +1,41 @@
+{
+ "dish_name": "Su Boregi",
+ "cuisine": "Turkish",
+ "main_protein": "cheese",
+ "ingredients": [
+  {"item": "All-purpose flour", "qty": "2 cups", "category": "pantry"},
+  {"item": "Eggs", "qty": "3", "category": "dairy"},
+  {"item": "Feta cheese", "qty": "8 oz", "category": "dairy"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Butter", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tbsp plus 3/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "In a large bowl, whisk the eggs with 1 tbsp of the oil and 3/4 tsp of the salt. Add 1 3/4 cups of the flour a little at a time, stirring until a dough forms. Knead for 8 minutes, until it is smooth and firm. Cut it into 6 equal balls, cover them, and let them rest for 20 minutes.",
+  "Meanwhile, crumble the feta into a bowl and stir in 1/4 cup chopped parsley. Melt the butter in a small pan over low heat, then take it off the heat and stir in the remaining 2 tbsp oil. Heat the oven to 350°F (180°C).",
+  "Roll each ball into a round about 5 inches across, dusting with the remaining 1/4 cup flour as you go. Stack the rounds in two piles of three, with a dusting of flour between each, and let them rest for 10 minutes.",
+  "Roll each pile out to about 9 inches across and rest it for 10 minutes. Then separate the sheets and roll each one on its own into a thin rectangle a little bigger than a 9 by 13 inch baking dish.",
+  "Bring a large pot of water to a boil with 1 tbsp of the salt. Set a bowl of ice water next to the stove.",
+  "Keep 2 sheets raw. Lower the other 4 sheets into the boiling water, 2 at a time, and simmer them for 30 to 40 seconds. Transfer them to the ice water, then drain them flat on a clean towel.",
+  "Brush the baking dish generously with the butter mixture. Lay in 1 raw sheet and brush it with butter. Add 2 boiled sheets, brushing each one, trimming the edges to fit.",
+  "Spread the feta mixture evenly over the top. Add the other 2 boiled sheets, brushing each with butter. Finish with the second raw sheet and brush the top with the rest of the butter.",
+  "Cut the borek into 8 squares with a sharp knife, cutting through the top layers only. Bake for 40 to 45 minutes, until the top and the edges are deep golden and crisp.",
+  "Let it cool for 15 minutes before you cut through and lift out the squares. Serve warm or at room temperature.",
+  "To pack it for lunch, keep the squares in an airtight container in the fridge for up to 5 days, or freeze them for up to 3 months. Reheat on a baking sheet in a 350°F oven for 10 minutes, until the top is crisp again."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 60,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No readable version had 20 ratings, so this is a fallback led by Cup of Yum (5 from 16 ratings), the most complete page: egg dough rolled in stacks, four boiled sheets between raw top and bottom sheets, butter and oil between layers. Cooking Gorgeous (5 from 8) and Mezze agree on blanching sheets briefly and baking until crisp; Spice Traveller and Cooking Gorgeous both say ready-made filo tends to fall apart in the water, so this uses a homemade dough, halved for a 9 by 13 pan with six sheets. It takes about an hour and 45 minutes, so it is a make-ahead lunch rather than a 30 minute one; the storage times are shorter than the lead's one week and five months to stay on the safe side.",
+ "sources": [
+  {"name": "Cup of Yum", "title": "Su Boregi (Water Borek)", "url": "https://cupofyum.com/recipes/su-boregi-water-borek", "rating": 5.0, "rating_count": 16, "read": true, "lead": true},
+  {"name": "Cooking Gorgeous", "title": "Su Boregi - Water Borek", "url": "https://cookingorgeous.com/blog/su-boregi-water-borek/", "rating": 5.0, "rating_count": 8, "read": true},
+  {"name": "Mezze", "title": "Su Boregi (Water Borek, Layered, Soft)", "url": "https://mezze.my/su-boregi-water-borek-layered-soft/", "rating": null, "rating_count": null, "read": true},
+  {"name": "Spice Traveller", "title": "Easy Turkish Water Borek", "url": "https://spicetraveller.com/easy-turkish-water-borek/", "rating": null, "rating_count": null, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

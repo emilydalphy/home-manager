@@ -1,0 +1,40 @@
+{
+ "dish_name": "Makarna Salatasi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {"item": "Elbow macaroni", "qty": "8 oz", "category": "pantry"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Frozen peas", "qty": "3/4 cup", "category": "frozen"},
+  {"item": "Frozen corn", "qty": "3/4 cup", "category": "frozen"},
+  {"item": "Dill pickles", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 cup diced"},
+  {"item": "Plain yogurt", "qty": "1 small tub", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Salt", "qty": "1 tbsp plus 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with 4 quarts of water, add 1 tbsp of the salt, and bring it to a boil over high heat.",
+  "Meanwhile, dice the carrots into small cubes, about 1/4 inch. Dice enough pickles to make 1/2 cup and chop 1/4 cup of the parsley. Keep 2 tbsp of the pickle brine from the jar.",
+  "Add the macaroni to the boiling water and cook it for the time on the package, until it's tender but not mushy. When there are 4 minutes left, add the carrots. When there is 1 minute left, add the peas and the corn.",
+  "Drain everything in a colander and rinse it under cold water until it's completely cool. Shake the colander well, then let it drain for a minute. A wet salad turns watery.",
+  "In a large bowl, stir the yogurt, mayonnaise, pickle brine, the remaining 1/2 tsp salt and the black pepper until smooth.",
+  "Add the pasta, the vegetables and the diced pickles. Fold gently until everything is coated, then fold in the parsley.",
+  "Cover and chill for at least 30 minutes. Serve cold.",
+  "To pack it for lunch, keep it in an airtight container in the fridge for up to 3 days. If it looks dry, stir in a spoonful of yogurt before you eat it."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No readable version had 20 ratings, so this is a fallback. It is led by Turkish Food and Recipes (no rating), the only readable page with pickles, corn and yogurt together, using its elbow pasta, carrot, peas, corn, pickles, mayonnaise and yogurt. Cooking Gorgeous (5 from 1 vote) supplies the larger yogurt share, the parsley and the 3 day storage; Parsons Nose adds the splash of pickle brine. Sources agree on cooling the pasta fully and dressing it close to serving, and differ on yogurt to mayonnaise ratio, so the dressing here sits between the leads.",
+ "sources": [
+  {"name": "Turkish Food and Recipes", "title": "Turkish Style Pasta Salad (Turk Usulu Makarna Salatasi)", "url": "https://www.turkishfoodandrecipes.com/2010/09/turkish-style-pasta-salad-turk-usulu.html", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Cooking Gorgeous", "title": "Makarna Salatasi - Healthy Turkish Pasta Salad", "url": "https://cookingorgeous.com/blog/makarna-salatasi-healthy-turkish-pasta-salad/", "rating": 5.0, "rating_count": 1, "read": true},
+  {"name": "Parsons Nose", "title": "Turkish Pasta Salad (Makarna Salatasi)", "url": "https://parsonsnose.co.uk/recipes/turkish-pasta-salad-makarna-salatasi", "rating": null, "rating_count": null, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

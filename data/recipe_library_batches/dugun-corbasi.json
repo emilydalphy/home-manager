@@ -1,0 +1,41 @@
+{
+ "dish_name": "Dugun Corbasi",
+ "cuisine": "Turkish",
+ "main_protein": "lamb",
+ "ingredients": [
+  {"item": "Lamb neck", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Plain yogurt", "qty": "1 small tub", "category": "dairy", "cook_qty": "1/3 cup"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Cornstarch", "qty": "1 1/2 tbsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Butter", "qty": "3 tbsp", "category": "dairy"},
+  {"item": "Sweet paprika", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Aleppo pepper flakes", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "The day before, or at least 3 hours ahead: put the lamb neck in a large pot with 6 cups of water and 1 tsp of the salt. Bring it to a boil over high heat, then skim off the foam that rises. Turn the heat to low, partly cover the pot, and simmer for about 1 1/2 hours, until the meat falls off the bone.",
+  "Transfer the lamb to a plate and let it cool for 10 minutes. Pull the meat off the bones, discard the bones and any fat, and shred the meat into small pieces.",
+  "Strain the broth into a clean pot. That should be about 5 cups. If it's short, add hot water to make 5 cups. If you're making this ahead, stop here. Chill the meat and the broth separately for up to 2 days.",
+  "In a bowl, whisk the yogurt, cornstarch, egg yolk, the juice of half the lemon and 1 cup of cold water until smooth. Keep the egg white for another use.",
+  "Heat the broth over medium heat until it's steaming but not boiling. Ladle about 1 cup of the hot broth into the yogurt mixture, whisking the whole time.",
+  "Pour the yogurt mixture slowly into the pot, stirring in one direction. Keep the heat at medium-low and keep stirring until the soup thickens slightly, 3 to 4 minutes. Don't let it boil hard or it can split.",
+  "Add the shredded lamb and the remaining 1/2 tsp salt. Simmer gently for 2 minutes. Taste it. If it's flat, add a pinch more salt. Take the pot off the heat.",
+  "In a small pan, melt the butter over medium heat. Stir in the paprika and cook for 20 seconds, until it smells toasty. Take the pan off the heat.",
+  "Ladle the soup into bowls and spoon the paprika butter over the top. Put the Aleppo pepper on the table for anyone who wants heat.",
+  "Leftovers keep in the fridge for up to 3 days. Reheat gently over low heat, stirring, and don't let the soup boil."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 105,
+ "advance_prep_notes": "cook the lamb and broth up to 2 days ahead",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "Nefis Yemek Tarifleri (4.86 from 78) leads: lamb neck broth finished with a yogurt, flour and egg yolk terbiye and butter with pepper flakes. Sofra and Milk Street use the same flour, yogurt, egg and lemon finish; the English wedding soup pages (Food.com, That's Nerdalicious) skip the yogurt, so they were not followed. Flour is swapped for cornstarch so the soup stays gluten-free, and the lead's pressure cooker is replaced with a stovetop simmer, which makes it a make-ahead soup rather than a 30 minute lunch. The pepper flakes go on the table to keep the base mild.",
+ "sources": [
+  {"name": "Nefis Yemek Tarifleri", "title": "Dugun Corbasi", "url": "https://www.nefisyemektarifleri.com/dugun-corbasi/", "rating": 4.86, "rating_count": 78, "read": true, "lead": true},
+  {"name": "Sofra", "title": "Dugun Corbasi", "url": "https://www.sofra.com.tr/tarif/corbalar/dugun_corbasi-20100218", "rating": null, "rating_count": null, "read": true},
+  {"name": "177 Milk Street", "title": "Turkish Wedding Soup", "url": "https://www.177milkstreet.com/recipes/turkish-wedding-soup", "rating": 3.0, "rating_count": null, "read": true}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

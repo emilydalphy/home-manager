@@ -1,0 +1,49 @@
+{
+ "dish_name": "Hu Tieu",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {"item": "Pork shoulder", "qty": "3/4 lb", "category": "meat/seafood"},
+  {"item": "Rice stick noodles", "qty": "8 oz", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "6 cups", "category": "pantry"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "4 scallions"},
+  {"item": "Bean sprouts", "qty": "1 small bag", "category": "produce", "cook_qty": "1 cup"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Fried shallots", "qty": "1 small tub", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "White pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Toasted sesame oil", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Limes", "qty": "1", "category": "produce"},
+  {"item": "Red chili", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with water and bring it to a boil over high heat for the noodles.",
+  "Meanwhile, slice the pork across the grain as thin as you can, about 1/8 inch. Slice the scallions, keeping the white parts and the green parts separate. Mince the garlic, chop 1/4 cup of cilantro, and cut the lime into wedges. Thinly slice the chili and put it in a small dish for the table.",
+  "Heat the vegetable oil in a large pot over medium heat. Add the scallion whites and cook for 1 minute, until soft. Add the garlic and cook for 30 seconds, until it smells sweet.",
+  "Add the broth and bring it to a boil. Stir in the fish sauce, soy sauce, sugar and white pepper. Turn the heat to medium-low and simmer for 8 minutes.",
+  "While the broth simmers, cook the noodles in the boiling water for the time on the package, usually 5 to 7 minutes. Drain them, rinse them under cold water, and divide them among 4 bowls.",
+  "Add the pork to the simmering broth and stir to separate the slices. Cook for 2 to 3 minutes, until the pork is pale all the way through with no pink left.",
+  "Taste the broth. If it's flat, add a pinch of salt. Take the pot off the heat and stir in the sesame oil.",
+  "Ladle the pork and the broth over the noodles. Top with the bean sprouts, fried shallots, cilantro and scallion greens. Serve with the lime wedges, and put the sliced chili on the table for anyone who wants heat.",
+  "To pack it for lunch, keep the noodles in one container and the broth with the pork in another, in the fridge for up to 2 days. Reheat the broth until it's steaming and pour it over the noodles."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No readable Hu Tieu page had a rating, so this is a fallback. Fork and Salt (Cham style, thin pork shoulder in a seasoned, garlicky broth, with garnishes) leads because it is the only version that is a light pork soup rather than a bone broth simmered for hours. Custrd agrees on a quick broth with fish sauce and sugar; Wok With Sam and Fifteen.net show the long bone broth, dried shrimp and offal that were not followed. Shrimp and squid are left out since the dish is a pork and noodle soup, and the Chinese celery is left out as hard to find. Honest time is about 32 minutes.",
+ "sources": [
+  {"name": "Fork and Salt", "title": "Hu Tieu (Cham-Style Noodle Soup)", "url": "https://forkandsalt.com/recipes/cham/hu-tieu", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Custrd", "title": "Pork Hu Tieu", "url": "https://custrd.com/recipes/cs-pork-hu-tieu", "rating": null, "rating_count": null, "read": true},
+  {"name": "Wok With Sam", "title": "Hu Tieu Nam Vang", "url": "https://wokwithsam.com/hu-tieu-nam-vang-vietnamese-pork-shrimp-clear-noodle-soup/", "rating": null, "rating_count": null, "read": true},
+  {"name": "Fifteen.net", "title": "Hu Tieu Nam Vang", "url": "https://www.fifteen.net/recipes/hu-tieu-nam-vang/", "rating": 5.0, "rating_count": 2, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
