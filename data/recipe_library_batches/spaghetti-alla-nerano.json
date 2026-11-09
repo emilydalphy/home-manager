@@ -1,0 +1,94 @@
+{
+ "dish_name": "Spaghetti alla Nerano",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "14 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Provolone",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add the salt and bring it to a boil over high heat.",
+  "Meanwhile, slice the zucchini into thin rounds, about 1/8 inch, and pat them dry with paper towels. Finely grate the 4 oz of provolone into a bowl. Tear 1/4 cup of the basil leaves.",
+  "Heat a 12-inch skillet over medium-high and add 6 tbsp of the oil. When a zucchini slice sizzles right away, fry about a third of the slices in a single layer for 2 to 3 minutes per side, until deep golden. Transfer them to a plate lined with paper towels. Fry the rest in two more batches.",
+  "When the water boils, cook the spaghetti for 2 minutes less than the package says. Scoop out 1 1/2 cups of the pasta water, then drain.",
+  "Transfer about a third of the fried zucchini into a bowl with 1/4 cup of the pasta water. Mash it with a fork into a rough cream.",
+  "Pour the oil out of the skillet. Return it to medium heat with the remaining 2 tbsp of oil and the garlic cloves, lightly smashed. Cook for 1 minute, until the garlic is golden, then take the garlic out.",
+  "Add the spaghetti, the zucchini cream, the rest of the fried zucchini and 1/2 cup of the pasta water. Toss over low heat for 1 minute.",
+  "Take the pan off the heat. Add the provolone a handful at a time, tossing as it melts. Add pasta water a splash at a time until the sauce is creamy and coats the pasta.",
+  "Stir in the torn basil and the pepper. Taste it. If it's flat, add a pinch more salt.",
+  "Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Pasta Project's Nerano (5 from 79 ratings) fries thin zucchini slices in olive oil, makes a cream from some of them, and melts grated provolone into the spaghetti and zucchini off the heat with starchy pasta water. Cooking With Ayeh and Recipes from Italy agree on frying in batches, finishing the pasta in the pan and adding the cheese off the heat, and Food Network adds butter and Parmesan. This follows the lead; the cream is mashed with a fork instead of blended, so no blender is needed. It's a frying-heavy dish: expect about 34 minutes, a little over 30.",
+ "sources": [
+  {
+   "name": "The Pasta Project",
+   "title": "Spaghetti alla Nerano (fried zucchini pasta recipe)",
+   "url": "https://www.the-pasta-project.com/spaghetti-alla-nerano/",
+   "rating": 5.0,
+   "rating_count": 79,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking With Ayeh",
+   "title": "Spaghetti alla Nerano (Creamy Zucchini Pasta)",
+   "url": "https://cookingwithayeh.com/spaghetti-alla-nerano/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Recipes from Italy",
+   "title": "Spaghetti alla Nerano",
+   "url": "https://www.recipesfromitaly.com/authentic-spaghetti-alla-nerano-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

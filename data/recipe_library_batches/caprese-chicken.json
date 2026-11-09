@@ -1,0 +1,124 @@
+{
+ "dish_name": "Caprese Chicken",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mozzarella",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the 1.5 lbs of chicken thighs dry with paper towels. Rub them with the salt, oregano, dried basil and pepper.",
+  "Mince the garlic. Cut the mozzarella into 1/2-inch slices. Halve about 1/2 cup of the cherry tomatoes and leave the rest whole.",
+  "Heat a 12-inch skillet over medium-high for a minute, then add the oil. Lay the chicken in the pan and leave it alone for 4 minutes, until the underside is deep brown and lets go of the pan. Flip and brown the other side for 4 minutes. Transfer the chicken to a plate.",
+  "Pour off all but 1 tbsp of fat. Lower the heat to medium, add the garlic, and cook for 30 seconds.",
+  "Add the 1/3 cup of balsamic vinegar and the brown sugar. Scrape up the browned bits and let it bubble for 2 minutes, until it thickens a little.",
+  "Add the whole cherry tomatoes and cook for 2 minutes, until they start to burst.",
+  "Return the chicken and any juices to the pan. Cover and cook over medium-low for 6 minutes. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Lay a slice of mozzarella on each piece, cover, and cook for 2 minutes, until the cheese softens.",
+  "Scatter the halved tomatoes over the top and 1/4 cup of torn basil. Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve with the pan sauce spooned over each piece."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 21,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cafe Delites (4.98 from 41 ratings) sears chicken thighs seasoned with oregano and basil, makes a garlic, balsamic and brown sugar glaze with cherry tomatoes, and tops it with fresh mozzarella and basil. Little Broken and The Girl Who Ate Everything cook the same dish on the stovetop, and Little Broken uses thighs too. FoodieCrush (4.73 from 295) would rank higher on volume but spreads store-bought basil pesto on the chicken, which holds pine nuts, so it is not the base here. This follows the lead but finishes it on the stovetop with boneless thighs in place of 30 minutes of baking bone-in thighs, so it fits about 30 minutes.",
+ "sources": [
+  {
+   "name": "Cafe Delites",
+   "title": "Balsamic Caprese Chicken",
+   "url": "https://cafedelites.com/balsamic-glazed-caprese-chicken-recipe/",
+   "rating": 4.98,
+   "rating_count": 41,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Little Broken",
+   "title": "20-Minute Easy Skillet Chicken Caprese",
+   "url": "https://www.littlebroken.com/20-minute-easy-skillet-chicken-caprese/",
+   "rating": 4.9,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "The Girl Who Ate Everything",
+   "title": "Caprese Chicken Skillet",
+   "url": "https://www.the-girl-who-ate-everything.com/caprese-chicken-skillet/",
+   "rating": 4.47,
+   "rating_count": 13,
+   "read": true
+  },
+  {
+   "name": "FoodieCrush",
+   "title": "One-Pan, 30-Minute Caprese Chicken",
+   "url": "https://www.foodiecrush.com/caprese-chicken-recipe/",
+   "rating": 4.73,
+   "rating_count": 295,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

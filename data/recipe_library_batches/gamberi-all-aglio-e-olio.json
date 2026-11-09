@@ -1,0 +1,97 @@
+{
+ "dish_name": "Gamberi all'Aglio e Olio",
+ "cuisine": "Italian",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Italian parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/3 cup",
+   "category": "other"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the 1.5 lbs of peeled and deveined shrimp dry with paper towels. Season them with 1/2 tsp of the salt and the pepper.",
+  "Slice the garlic thinly. Chop 1/4 cup of parsley. Cut the lemon in half, squeeze 1 tbsp of juice from one half into a small bowl, and cut the other half into wedges.",
+  "Put a 12-inch skillet over medium-low heat and add the oil and garlic. Cook for 1 to 2 minutes, until the garlic is pale gold and smells fragrant. Don't let it brown. Transfer the garlic to a small bowl, leaving the oil in the pan.",
+  "Turn the heat up to medium-high. Add half of the shrimp in a single layer and cook for 1 1/2 minutes per side, until pink and curled into a loose C. Transfer them to a plate and cook the other half the same way.",
+  "Pour the wine into the empty pan and scrape up the browned bits. Let it bubble for 1 minute, until it's reduced by half.",
+  "Return the shrimp and the garlic to the pan with the lemon juice and toss for 30 seconds. Take the pan off the heat and stir in the parsley.",
+  "Taste it. If it's flat, add a pinch more of the remaining 1/2 tsp of salt.",
+  "Serve with the lemon wedges. Put the red pepper flakes on the table for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No gamberi aglio e olio page with a real number of ratings turned up: GialloZafferano's garlic and chili shrimp (unrated) cooks shrimp 3 to 4 minutes a side in garlic and olive oil, Cookpad's Gamberi Aglio, Olio e Peperoncino fries the garlic first, then the chili, then the shrimp, and CDKitchen's Gamberi con Aglio finishes with lemon, white wine and parsley. This follows GialloZafferano for the oil-and-garlic base and shrimp timing, with CDKitchen's wine and lemon for a small pan sauce, and the chili moved to the table. RecipeTin Eats' Garlic Prawns is a butter-and-garlic dish, not this one, so it is not the lead. There's no pasta, so it stays gluten-free.",
+ "sources": [
+  {
+   "name": "GialloZafferano",
+   "title": "Garlic and Chili Shrimp",
+   "url": "https://www.giallozafferano.com/recipes/garlic-and-chili-shrimp.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cookpad (Angie's Italian Cooking)",
+   "title": "Gamberi Aglio, Olio e Peperoncino",
+   "url": "https://cookpad.com/eng/recipes/10057162",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "CDKitchen",
+   "title": "Gamberi Con Aglio (Shrimp With Garlic Sauce)",
+   "url": "https://www.cdkitchen.com/recipes/recs/1022/Gamberi-Con-Aglio-Shrimp-With112270.shtml",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

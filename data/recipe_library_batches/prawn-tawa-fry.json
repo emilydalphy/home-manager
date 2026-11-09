@@ -1,0 +1,108 @@
+{
+ "dish_name": "Prawn Tawa Fry",
+ "cuisine": "Indian",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the 1.5 lbs of peeled and deveined shrimp dry with paper towels and transfer them into a large bowl.",
+  "Grate the garlic and the 2 tsp of ginger into the bowl. Cut the lemon in half and squeeze one half over the shrimp, about 2 tbsp. Cut the other half into wedges.",
+  "Add the chili powder, turmeric, pepper, garam masala and salt. Toss until every shrimp is coated, and let it sit for 10 minutes.",
+  "Heat a 12-inch skillet over medium-high for a minute. Add 2 tbsp of the coconut oil and half of the curry leaves.",
+  "Add half of the shrimp in a single layer. Cook for 2 minutes, until the underside is browned, then flip them and cook the other side for 2 minutes. They're done when they're pink and curled into a loose C. Transfer them to a plate.",
+  "Add the remaining 2 tbsp of oil and curry leaves, and cook the rest of the shrimp the same way.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with rice and the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Yummy Tummy's Prawns Tawa Fry is the by-name version: shrimp coated in turmeric, pepper, chili, garam masala and lemon, then browned in coconut oil with curry leaves for about 2 minutes a side. Kannamma Cooks roasts the shrimp on a griddle with a ground masala and a cooked onion and tomato, and Shanaz Rafiq's Mangalorean version fries a tamarind and dried-chili masala first. This follows the lead for 1.5 lbs, with a milder chili amount and a 10 minute rest in place of 30 minutes to keep it quick. No tawa prawn page from the trusted Indian cooks exists, and Swasthi's Prawns Fry (4.97 from 52) is a different onion-and-cumin stir fry, so it is not used.",
+ "sources": [
+  {
+   "name": "Yummy Tummy",
+   "title": "Prawn Tawa Roast (Tawa Prawns)",
+   "url": "https://www.yummytummyaarthi.com/prawns-tawa-fry/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kannamma Cooks",
+   "title": "Prawns Tawa Fry",
+   "url": "https://www.kannammacooks.com/prawns-tawa-fry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Shanaz Rafiq",
+   "title": "Mangalorean Prawn Tawa Fry",
+   "url": "https://www.shanazrafiq.com/2025/07/mangalore-style-prawn-tawa-fry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
