@@ -1,0 +1,119 @@
+{
+ "dish_name": "Taiwanese Popcorn Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless chicken thighs, skin on",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "3 cloves"
+  },
+  {
+   "item": "Five-spice powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1/2 tsp"
+  },
+  {
+   "item": "Egg",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 1/2 tbsp"
+  },
+  {
+   "item": "Tapioca starch",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 large bunch",
+   "category": "produce",
+   "cook_qty": "1 1/2 cups leaves"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Cut the chicken into 1-inch cubes. Mince the garlic. Mix the chicken with the soy sauce, wine, garlic and 1 tbsp of the five-spice powder in a large bowl and leave it for 20 minutes.",
+  "While it marinates, stir the salt, white pepper, garlic powder and the remaining 1/2 tsp five-spice powder together in a small bowl. Pick the basil leaves off the stems and dry them completely, since water makes hot oil spit.",
+  "Stir the egg and rice flour into the chicken until it looks like a wet batter. Put the tapioca starch in a wide dish and press the chicken pieces into it one at a time until coated all over. Set them on a tray and leave them for 5 to 7 minutes so the coating sticks.",
+  "Heat the oil in a heavy pot or deep skillet over medium-high heat to 350°F. A thermometer is optional. Without one, drop in a pinch of starch: it should sizzle right away and float.",
+  "Fry the basil leaves in 2 small batches for 30 seconds to 1 minute, until crisp. Lift them out with a slotted spoon onto a plate lined with paper towels.",
+  "Fry the chicken in 3 batches for 4 to 5 minutes each, until deep golden and the chicken reaches 165°F in the middle. A thermometer is optional. Without one, cut a piece open: there should be no pink. Lift each batch onto a rack or paper towels. For extra crunch, put all the chicken back in the oil for 1 minute at the end.",
+  "While it is still hot, toss the chicken with the seasoning mix. Pile it on a plate and top with the fried basil."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Tiffy Cooks (5 from 4 ratings, so a fallback lead): thigh pieces marinated in soy, wine, garlic and five-spice, battered with egg and rice flour, coated in tapioca starch and fried with Thai basil. Vicky Pham's version agrees on the egg and starch coating and a seasoning salt tossed on hot, with cornstarch and no wine. Tiffy gives no amounts for the seasoning mix, so these are set to taste, and the chili powder and paprika are left out to keep it mild.",
+ "sources": [
+  {
+   "name": "Tiffy Cooks",
+   "title": "Crispy Juicy Taiwanese Popcorn Chicken 鹽酥雞",
+   "url": "https://tiffycooks.com/taiwanese-popcorn-chicken-extra-crispy-juciy/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Taiwanese Popcorn Chicken",
+   "url": "https://vickypham.com/blog/taiwanese-popcorn-chicken/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

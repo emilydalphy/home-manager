@@ -1,0 +1,124 @@
+{
+ "dish_name": "Tomato Beef Brisket Stew",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef brisket",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 inch"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 pods"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the brisket into 2-inch chunks, trimming off any thick pieces of hard fat. Peel the potatoes and cut them into large chunks. Chop 2 of the tomatoes small and cut the third into big wedges. Cut the green onions into 2-inch lengths and slice the ginger.",
+  "Heat 1 tbsp of the oil in a large heavy pot over high heat. Add the green onions and ginger and stir for 30 seconds. Add the brisket, sprinkle it with 1/2 tsp salt and stir for 3 minutes, until the fat starts to melt and the edges are browned. Move the brisket to a bowl.",
+  "Turn the heat to medium and add the remaining 1 tbsp oil and the chopped tomatoes. Cook for 4 minutes, until they fall apart into a sauce. Put the brisket back in and stir for 1 minute.",
+  "Turn the heat to high. Add 2 1/2 cups hot water, the star anise, cinnamon stick, 2 tsp sugar, 3 tbsp oyster sauce, 4 tsp light soy sauce, the remaining 1/2 tsp salt and the tomato wedges. Bring to a boil, then cover, turn the heat to low and simmer for 1 hour 15 minutes, stirring now and then.",
+  "While the stew simmers, rinse the rice until the water runs mostly clear. Put it in a pot with 2 1/4 cups water, bring to a boil, then cover, turn the heat to low and cook for 15 minutes. Leave it covered for 10 minutes.",
+  "Add the potatoes to the stew, cover and simmer for 20 minutes, until the brisket is tender enough to pull apart with a fork and the potatoes are soft in the middle.",
+  "Take out the star anise and cinnamon stick. Turn the heat to high and boil, uncovered, for 5 minutes, until the sauce is thick enough to coat the back of a spoon. Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the stew over the rice and serve.",
+  "Let leftovers cool, then keep them covered in the fridge for up to 4 days or freeze them for up to 3 months. Reheat in a pot over low heat with a splash of water, stirring now and then."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 110,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version agrees on the same shape: brisket browned with green onion and ginger, tomatoes cooked into a sauce, star anise and cinnamon in the pot, potatoes added near the end. The Cantonese Cook (the only version with a rating, 5 from one vote) is the lead for the ingredients and ratios, scaled from 6 servings to 4. Its 25 minute simmer is too short for brisket, so the braise time comes from Woks of Love and Yun's Family Table, which both simmer for 1 to 1 1/2 hours. The sources are thinly rated, so this is a fallback lead. It makes a big pot that keeps.",
+ "sources": [
+  {
+   "name": "The Cantonese Cook",
+   "title": "Braised Beef Brisket with Tomatoes",
+   "url": "https://thecantonesecook.com/braised-beef-brisket-with-tomatoes/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Woks of Love",
+   "title": "Hearty Tomato Beef Stew",
+   "url": "https://woksoflove.com/hearty-tomato-beef-stew/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Yun's Family Table",
+   "title": "Asian Tomato Beef Stew",
+   "url": "https://yunsfamilytable.com/recipes/asian-tomato-beef-stew/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

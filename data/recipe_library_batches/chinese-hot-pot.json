@@ -1,0 +1,181 @@
+{
+ "dish_name": "Chinese Hot Pot",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef broth, low sodium",
+   "qty": "7 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Thinly sliced beef for hot pot (ribeye or sirloin)",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Napa cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "half the head"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh shiitake mushrooms",
+   "qty": "6 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Enoki mushrooms",
+   "qty": "1 package (7 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Mung bean vermicelli",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "4 oz"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "8 cloves"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "3 slices"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 pod"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame paste (or tahini)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Sha cha sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Chinese black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "for the adults"
+  }
+ ],
+ "instructions": [
+  "Halve the onion and smash 4 of the garlic cloves. Put the broth, onion, smashed garlic, ginger, wine, bay leaves, star anise, 2 tbsp of the soy sauce and the salt in a large pot. Bring to a boil, then cover partly and simmer for 30 minutes.",
+  "While the broth simmers, soak the vermicelli in warm water for 10 minutes, then drain. Fan the beef out on a plate.",
+  "Cut half the napa cabbage into 2-inch pieces and halve the bok choy. Slice the shiitake caps and trim the base off the enoki, then pull the enoki apart. Cut the tofu into 1-inch cubes. Arrange the vegetables, tofu and noodles on plates.",
+  "Set out small bowls of the sesame paste, the remaining 4 tbsp soy sauce, sha cha, black vinegar and sesame oil, with the remaining 4 garlic cloves minced, the green onions sliced and the cilantro chopped. Each person mixes their own sauce, for example 1 tbsp sesame paste thinned with 1 tbsp warm water, 1 tbsp soy sauce, 1/2 tbsp sha cha, 1/2 tbsp vinegar, 1 tsp sesame oil and 1 clove of garlic, topped with green onion and cilantro.",
+  "Strain the broth to take out the onion, garlic, ginger and spices. Set a wide pot of the hot broth on a burner at the table and bring it to a boil. Put the chili oil on the table for the adults to add to their own bowls.",
+  "Everyone cooks their own food in the boiling broth. The beef takes 30 seconds to 1 minute, until no longer pink. Enoki take 30 to 45 seconds, shiitake 2 to 3 minutes, and the cabbage, bok choy and tofu 2 to 3 minutes. Cook the vermicelli last, for 2 minutes. If the broth gets low, top it up with boiling water.",
+  "Lift each piece out, dip it in your sauce and eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead for the broth is Pups with Chopsticks (5 from 22 ratings): beef broth simmered with garlic, ginger, onion, Shaoxing wine, bay, star anise and soy. The Woks of Life (5 from 17) agrees that the sauce and a pot of hot broth are what matter, and sets out the add-ins and the sesame paste, soy and sha cha sauce. The lead simmers the broth for an hour; here it is 30 minutes using boxed broth to fit a weeknight, and the heat is kept in a chili oil at the table.",
+ "sources": [
+  {
+   "name": "Pups with Chopsticks",
+   "title": "Ultimate Chinese Hot Pot Guide on How to Hot Pot at Home",
+   "url": "https://pupswithchopsticks.com/chinese-hot-pot-recipe-guide/",
+   "rating": 5.0,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Chinese Hot Pot: Do It At Home Like a Pro!",
+   "url": "https://thewoksoflife.com/chinese-hot-pot-at-home/",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true
+  },
+  {
+   "name": "Made With Lau",
+   "title": "Dad's Hot Pot at Home: A Chinese Chef's Secrets",
+   "url": "https://www.madewithlau.com/recipes/ultimate-guide-to-hot-pot",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

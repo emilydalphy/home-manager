@@ -1,0 +1,95 @@
+{
+ "dish_name": "Daikon and Pork Rib Soup",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork ribs (spareribs, cut into 2-inch pieces)",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Daikon",
+   "qty": "1 large (about 2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Dried red dates (jujubes)",
+   "qty": "10",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the pork ribs in a large pot, cover them with water and bring to a boil over high heat. Boil for 1 minute, then drain and throw out the water. Rinse the ribs under cold water 2 to 3 times and rinse out the pot.",
+  "Put the ribs back in the pot with 10 cups fresh water. Bring to a boil, then turn the heat to low and simmer for 30 minutes, skimming off any foam.",
+  "While the ribs simmer, peel the daikon and carrots and cut them into 2-inch chunks. Rinse the red dates.",
+  "Add the dates, daikon and carrots to the pot. Bring back to a boil, then turn the heat to low and simmer for 1 hour, until the daikon is very tender and looks see-through.",
+  "In the last 20 minutes, rinse the rice, put it in a pot with 2 1/4 cups water and bring to a boil. Cover, turn the heat to low and cook for 15 minutes. Leave it covered until the soup is ready.",
+  "Stir the fish sauce and the white pepper into the soup. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the soup into bowls so each one gets ribs, dates, daikon and carrots. Pour the tamari into a small dish for dipping the ribs. Serve with the rice.",
+  "Let leftovers cool, then keep them covered in the fridge for up to 4 days or freeze for up to 3 months. Reheat gently on the stove until steaming."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 100,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Onolicious Hawaii's pork rib soup (4.7 from 38 ratings): ribs parboiled for a minute, simmered 30 minutes, then daikon, carrots and red dates for another hour or two, finished with fish sauce and white pepper. Other cooks (Spice the Plate, Erica Lovelace) agree on blanching the ribs for a clear broth, and add ginger, goji berries, vinegar or bone broth, which this version leaves out. Soy sauce is swapped for tamari at the table to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Onolicious Hawaii",
+   "title": "Chinese Pork Rib Soup",
+   "url": "https://onolicioushawaii.com/pork-rib-soup/",
+   "rating": 4.7,
+   "rating_count": 38,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spice the Plate",
+   "title": "Pork Rib Soup with Daikon",
+   "url": "https://www.spicetheplate.com/pork/pork-rib-soup-daikon/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Erica Lovelace Cooks",
+   "title": "Pork Bone and Daikon Soup",
+   "url": "https://www.ericalovelacecooks.com/blog/pork-bone-and-daikon-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

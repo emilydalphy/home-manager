@@ -1,0 +1,118 @@
+{
+  "dish_name": "Clay Pot Rice",
+  "cuisine": "Chinese",
+  "main_protein": "chicken",
+  "ingredients": [
+    {
+      "item": "Jasmine rice",
+      "qty": "2 cups",
+      "category": "pantry"
+    },
+    {
+      "item": "Chinese sausage (lap cheong)",
+      "qty": "2 links",
+      "category": "meat/seafood"
+    },
+    {
+      "item": "Chicken thighs (boneless, skinless)",
+      "qty": "1 lb",
+      "category": "meat/seafood"
+    },
+    {
+      "item": "Dried shiitake mushrooms",
+      "qty": "1 package",
+      "category": "produce",
+      "cook_qty": "3 mushrooms"
+    },
+    {
+      "item": "Fresh ginger",
+      "qty": "1 piece",
+      "category": "produce",
+      "cook_qty": "2 tbsp minced"
+    },
+    {
+      "item": "Green onions",
+      "qty": "1 bunch",
+      "category": "produce",
+      "cook_qty": "2"
+    },
+    {
+      "item": "Oyster sauce",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "5 tbsp"
+    },
+    {
+      "item": "Light soy sauce",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "3 1/2 tbsp"
+    },
+    {
+      "item": "Dark soy sauce",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 1/2 tsp"
+    },
+    {
+      "item": "Shaoxing wine",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 1/2 tbsp"
+    },
+    {
+      "item": "Sugar",
+      "qty": "1 bag",
+      "category": "pantry",
+      "cook_qty": "3 1/2 tsp"
+    },
+    {
+      "item": "Toasted sesame oil",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "2 tsp"
+    },
+    {
+      "item": "Vegetable oil",
+      "qty": "3 tbsp",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Put the dried mushrooms in a bowl, cover with hot water and soak for 15 minutes. Slice the sausage thinly on an angle. Mince 2 tbsp ginger and thinly slice the green onions.",
+    "In a large bowl, mix the ginger, 3 tbsp oyster sauce, 1 1/2 tbsp light soy sauce, the wine, 1 1/2 tsp sugar, the dark soy sauce and the sesame oil. Cut the chicken thighs into 1-inch pieces and toss them in the marinade. Squeeze the water out of the mushrooms, cut off the stems, quarter the caps and add them to the chicken. Marinate for 30 minutes.",
+    "Rinse the rice 2 to 3 times and drain it well. In a small bowl, stir together 2 tbsp oyster sauce, 2 tbsp light soy sauce and 2 tsp sugar for the sauce.",
+    "Over low heat, brush 1 tbsp of the oil over the bottom and sides of a heavy pot with a tight lid. Add the rice and 1 3/4 cups boiling water and level the rice. Turn the heat to medium, cover and bring to a boil. Take the lid off and cook for about 5 minutes, until most of the water is gone.",
+    "Spread the chicken, mushrooms and sausage over the rice, cover, turn the heat to low and cook for 15 minutes, until you hear it sizzling and crackling.",
+    "Drizzle the remaining 2 tbsp oil in a ring around the inside edge of the pot, cover and cook for 2 minutes.",
+    "Turn the heat to medium. Using oven mitts, tilt and turn the pot to about a 20 degree angle for 2 minutes on each side so the bottom crisps. Turn the heat to low and cook for 2 to 4 minutes, until the chicken reaches 165°F. A thermometer is optional. Without one, cut a piece open: there should be no pink.",
+    "Scatter the green onions on top. Stir everything together, scraping up the crispy rice from the bottom, and spoon the sauce over each bowl. Serve."
+  ],
+  "default_servings": 4,
+  "prep_time_minutes": 30,
+  "cook_time_minutes": 40,
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "The lead is Two Plaid Aprons (5 from 10 ratings, so a fallback lead): chicken thigh marinated in oyster sauce, soy, wine and ginger, laid over the rice with Chinese sausage and shiitake once most of the water is absorbed, then oil around the edge and a tilted scorch for the crispy bottom. Made With Lau agrees on the layout and adds a rice soak and a separate mushroom marinade; here the mushrooms go into the chicken marinade to keep it simple. A heavy lidded pot stands in for the clay pot.",
+  "sources": [
+    {
+      "name": "Two Plaid Aprons",
+      "title": "Claypot Chicken Rice (煲仔饭)",
+      "url": "https://twoplaidaprons.com/claypot-chicken-rice/",
+      "rating": 5.0,
+      "rating_count": 10,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Made With Lau",
+      "title": "Dad's Clay Pot Rice: The Chinese Restaurant Way",
+      "url": "https://www.madewithlau.com/recipes/clay-pot-rice",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "origin": "seed"
+}

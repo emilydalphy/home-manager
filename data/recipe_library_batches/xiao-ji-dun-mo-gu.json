@@ -1,0 +1,147 @@
+{
+ "dish_name": "Xiao Ji Dun Mo Gu",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs and drumsticks, cut into 2-inch pieces",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "1 package (1 oz)",
+   "category": "produce",
+   "cook_qty": "1 oz"
+  },
+  {
+   "item": "Glass noodles (mung bean)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "3 oz"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 inch"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "4 cloves"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 pods"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Five-spice powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the dried mushrooms in a bowl, cover with 2 cups hot water and soak for 20 minutes. Put the glass noodles in a separate bowl of warm water to soak for 20 minutes.",
+  "Cut the potatoes into wedges and slice the onion thickly. Slice the ginger into 3 slices and slice the garlic. Cut 2 of the green onions into 2-inch lengths and slice the other 2 for the end.",
+  "Put the chicken in a pot, cover with cold water and add the wine, a few of the green onion lengths and the ginger slices. Bring to a boil and boil for 2 to 3 minutes, skimming off the foam. Drain, rinse the chicken and set it aside.",
+  "Heat the oil in a wok or large skillet over medium-high heat. Add the green onion lengths, ginger, garlic, bay leaves and star anise and stir for 30 seconds. Add the chicken and sear for 2 to 3 minutes. Add the light soy sauce, dark soy sauce, oyster sauce and five-spice powder and stir for 1 minute.",
+  "Spread the onion over the bottom of a heavy pot. Scrape the chicken and everything from the wok over it. Squeeze the mushrooms, slice them and strain their soaking liquid through a fine strainer. Pour in the soaking liquid and enough hot water to just cover the chicken.",
+  "Bring to a boil, then cover and simmer on low for 15 minutes. Add the potatoes and simmer for 5 minutes. Add the mushrooms and simmer for 15 minutes, until the chicken reaches 165°F in the thickest part. A thermometer is optional. Without one, pierce a thigh: the juices should run clear.",
+  "Drain the glass noodles and stir them in. Simmer for 5 minutes, until they turn see-through and the sauce thickens a little. Taste it and add salt if it needs it.",
+  "Spoon into bowls and top with the sliced green onions and sesame seeds."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 50,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Woks of Love (no rating shown, so a fallback lead): chicken blanched, then seared with ginger, garlic, bay and star anise, seasoned with two soy sauces, oyster sauce and five-spice and braised on a bed of onion with potatoes and dried mushrooms. Xiaomizhou and a few Chinese-language versions add the glass noodles in the last 5 minutes, which is how the Northeast dish is usually eaten, so they are added here. The doubanjiang, dried chilies and lemon zest in the lead are left out to keep it mild, and shiitake stand in for the hazel mushrooms of the original.",
+ "sources": [
+  {
+   "name": "Woks of Love",
+   "title": "Chicken Stew with Mushrooms (小鸡炖蘑菇): Northeast Classic",
+   "url": "https://woksoflove.com/chicken-stew-with-mushrooms-xiao-ji-dun-mo-gu/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Xiaomizhou",
+   "title": "Chicken and Mushroom Stew: Northeast Chinese Comfort Food",
+   "url": "https://xiaomizhou.net/posts/chicken-mushroom-stew-northeast-chinese-comfort-food/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
