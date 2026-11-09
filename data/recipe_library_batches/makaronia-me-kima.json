@@ -1,0 +1,147 @@
+{
+ "dish_name": "Makaronia me Kima",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cloves",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4 leaves"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tbsp of the salt, cover and bring it to a boil over high heat while you start the sauce.",
+  "Dice the onion and mince the garlic. Chop the parsley leaves, which should be about 1/4 cup, and chop 4 mint leaves.",
+  "Heat the olive oil in a large deep skillet over medium heat. Add the onion and a pinch of salt, and cook for 4 minutes, until soft.",
+  "Stir in the garlic, cinnamon, allspice, cloves and oregano. Cook for 30 seconds, until you can smell them.",
+  "Add the beef and 3/4 tsp of the salt. Break it up with a wooden spoon, then let it sit for a minute so it browns. Cook for 7 minutes, stirring now and then, until there's no pink left.",
+  "Stir in the tomato paste and cook for 1 minute, until it darkens a shade.",
+  "Pour in the wine and scrape up the browned bits from the bottom of the pan. Cook for 1 to 2 minutes, until most of the wine is gone.",
+  "Add the crushed tomatoes, the sugar and the pepper. Bring to a simmer, turn the heat to medium-low and cook uncovered for 15 minutes, stirring now and then, until the sauce is thick enough to leave a path when you drag a spoon across the pan.",
+  "When the sauce has simmered for 5 minutes, add the spaghetti to the boiling water. Cook for 10 minutes, or to the package time, until al dente. Drain it.",
+  "Take the sauce off the heat and stir in the mint and parsley.",
+  "Divide the spaghetti among four bowls and spoon the sauce over it.",
+  "Taste the sauce. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 27,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Erren's Kitchen (the lead, 4.81 from 36) softens red onion and garlic, blooms cinnamon, allspice, cloves and oregano, browns the beef, cooks down tomato paste and wine, and simmers crushed tomatoes with a little sugar for 25 minutes before finishing with mint and parsley. Elenisaltas (4.7 from 31) adds carrot, celery and bay and simmers about 30 minutes, and Serving Dumplings (4.69 from 16) simmers 15 minutes. This version simmers 15 minutes to fit the target, uses 1/4 tsp cloves instead of 1/2 tsp to keep it kid friendly, and leaves out the cheese, so it is dairy-free. The honest total is about 35 minutes, a few over the 30 minute target.",
+ "sources": [
+  {
+   "name": "Erren's Kitchen",
+   "title": "Greek Style Meat Sauce (Makaronia Me Kima)",
+   "url": "https://www.errenskitchen.com/greek-style-meat-sauce/",
+   "rating": 4.81,
+   "rating_count": 36,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Eleni Saltas",
+   "title": "Makaronia me Kima (Spaghetti with meat sauce)",
+   "url": "https://elenisaltas.com/2017/12/28/makaronia-me-kima-spaghetti-with-meat-sauce/",
+   "rating": 4.7,
+   "rating_count": 31,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Serving Dumplings",
+   "title": "Greek Style Spaghetti",
+   "url": "https://www.servingdumplings.com/recipe/greek-style-spaghetti/",
+   "rating": 4.69,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

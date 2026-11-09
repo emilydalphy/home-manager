@@ -1,0 +1,92 @@
+{
+ "dish_name": "Kotopoulo Riganato",
+ "cuisine": "Greek",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemons",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Kalamata olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Set a rack in the upper third of the oven and put a rimmed sheet pan on it. Heat the oven to 450°F with the pan inside. The oven takes about 15 minutes, so use that time for the next two steps.",
+  "Juice 2 of the lemons into a large bowl. That should be about 1/4 cup. Mince the garlic, then whisk it into the juice with the olive oil, 2 tsp of the oregano, 1 tsp of the salt and the pepper.",
+  "Pat the chicken thighs dry with paper towels. Add them to the bowl and turn them until every piece is coated. Let them sit in the marinade while the oven heats.",
+  "Wearing oven mitts, pull the hot pan halfway out of the oven. Lay the thighs on it in a single layer with a little room between them, and pour the marinade over the top. They'll sizzle when they hit the pan. Roast for 9 minutes.",
+  "Scatter the cherry tomatoes and the olives around the chicken, and add a pinch of salt over the tomatoes. Roast for 10 minutes, until the tomatoes have split and the chicken is browned at the edges.",
+  "You're cooking the thighs to 175°F in the middle, so if you have a thermometer, check the thickest one there. No thermometer? Cut into the thickest thigh. It's done when the juices run clear and there's no pink left.",
+  "Switch the oven to broil and cook for 2 minutes, until the edges of the chicken turn deep brown. Stay close, since the broiler works fast.",
+  "Take the pan out and sprinkle the remaining 1 tsp oregano over it. Spoon the pan juices, tomatoes and olives over the thighs.",
+  "Cut the last lemon in half. Taste a spoonful of the pan juices. If it's flat, add a pinch more salt, or a squeeze of the lemon."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lemon Blossoms (the lead) marinates bone-in thighs in lemon juice, olive oil, garlic, oregano and a spoonful of yogurt, bakes them at 375°F for about 45 minutes, and adds feta, tomatoes and olives partway through. Miakouppa's kotopoulo riganato is the stovetop take: chicken fried in olive oil with a lot of oregano, then simmered in lemon juice. This version keeps the lead's marinade ratios and the tomatoes and olives, but uses boneless thighs at 450°F so it finishes in about 22 minutes, and leaves out the yogurt and feta to stay dairy-free. Total about 34 minutes, a few over the 30 minute target.",
+ "sources": [
+  {
+   "name": "Lemon Blossoms",
+   "title": "Baked Greek Chicken (Greek Lemon Chicken)",
+   "url": "https://www.lemonblossoms.com/blog/greek-lemon-oven-roasted-chicken-thighs/",
+   "rating": 4.82,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mia's Kouppa",
+   "title": "Chicken with lemon and oregano (Kotopoulo riganato)",
+   "url": "https://miakouppa.com/recipe-chicken-with-lemon-and-oregano-kotopoulo-riganato",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

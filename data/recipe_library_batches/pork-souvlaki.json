@@ -1,0 +1,115 @@
+{
+ "dish_name": "Pork Souvlaki",
+ "cuisine": "Greek",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork tenderloin",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemons",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Wooden skewers",
+   "qty": "1 pack",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Put the rice on first. Rinse the rice, then add it to a medium pot with 2 1/4 cups water and 1/2 tsp of the salt. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on until the pork is ready.",
+  "Trim the silver skin and fat from the pork and cut it into 1-inch cubes. Pat them dry and transfer them to a large bowl.",
+  "Zest 1 of the lemons with a fine grater, using 1 tsp. Juice 2 of the lemons. That should be about 5 tbsp.",
+  "Mince the garlic and chop enough thyme leaves to make 1 tbsp. Add them to the pork with the zest, 3 tbsp of the lemon juice, 1/4 cup of the olive oil, the vinegar, the oregano, 1 tsp of the salt and the pepper. Mix well and let it sit for 15 minutes.",
+  "While the pork sits, lay the wooden skewers in a baking dish and cover them with water. If you have metal skewers, use those and skip the soaking.",
+  "Whisk the remaining 1/4 cup olive oil with the remaining 2 tbsp lemon juice and a pinch of salt. This is the dressing for the end.",
+  "Set a rack about 4 inches from the broiler and heat the broiler on high. Line a rimmed baking sheet with foil.",
+  "Thread the pork onto the skewers. Lay the skewers on the baking sheet.",
+  "Broil for 5 minutes, until the edges are browned. Flip the skewers and broil for 5 minutes.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check a cube there. No thermometer? Cut into one cube. It's done when the juices run clear and the center is white, with at most a faint blush of pink.",
+  "Let the skewers rest for 3 minutes. Cut the last lemon into wedges. Fluff the rice and divide it among four plates, lay the skewers on top and spoon the dressing over them.",
+  "Taste a piece of pork with the dressing. If it's flat, add a pinch more salt, or a squeeze of lemon."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 22,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Healthy Foodie (the lead, 4.59 from 93) marinates pork tenderloin cubes in olive oil, lemon juice and zest, red wine vinegar, garlic, oregano and thyme, then grills the skewers for 10 to 12 minutes to 145°F. Simply Delicious (4.63 from 74) uses lemon, garlic, oregano and rosemary for 30 minutes, and Real Greek Recipes (4.46 from 33) finishes with a ladolemono of lemon juice and olive oil, which is borrowed here for the dressing. This version cuts the lead's 4 to 12 hour marinade to 15 minutes with 1-inch cubes, broils instead of grilling, and serves over rice instead of pita to stay gluten-free and dairy-free. The honest total is about 34 minutes, a few over the 30 minute target.",
+ "sources": [
+  {
+   "name": "The Healthy Foodie",
+   "title": "Authentic Greek Pork Souvlaki",
+   "url": "https://thehealthyfoodie.com/greek-pork-souvlaki/",
+   "rating": 4.59,
+   "rating_count": 93,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Delicious",
+   "title": "Greek Pork Souvlaki",
+   "url": "https://simply-delicious-food.com/greek-pork-souvlaki/",
+   "rating": 4.63,
+   "rating_count": 74,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Real Greek Recipes",
+   "title": "Greek Souvlaki Recipe",
+   "url": "https://realgreekrecipes.com/greek-souvlaki-recipe/",
+   "rating": 4.46,
+   "rating_count": 33,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

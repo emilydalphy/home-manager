@@ -1,0 +1,110 @@
+{
+ "dish_name": "Midia Saganaki",
+ "cuisine": "Greek",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Mussels",
+   "qty": "3 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 stalk"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the mussels in a large bowl of cold water. Pull off any beards (the small hairy tufts at the hinge) and scrub the shells. Throw away any with cracked shells, or any that stay open when you tap them on the counter. Drain them.",
+  "Finely dice the onion, the carrot, the celery stalk and the bell pepper into pieces about 1/4 inch.",
+  "Mince the garlic and halve the cherry tomatoes. Chop the parsley leaves. That should be about 1/2 cup.",
+  "Heat the olive oil in a large pot over medium-high heat. Add the onion and 1/4 tsp of the salt, and cook for 3 minutes, until soft.",
+  "Add the carrot, celery and bell pepper. Cook for 3 minutes, stirring now and then, until they start to soften.",
+  "Stir in the garlic and cook for 30 seconds, until you can smell it. Don't let it brown.",
+  "Add the cherry tomatoes, the wine, the pepper and the remaining 1/4 tsp salt. Turn the heat to high and bring it to a boil.",
+  "Add the mussels and cover the pot. Cook on high for 6 to 8 minutes, giving the pot a gentle shake halfway. The shells are ready when they've opened wide.",
+  "Take the pot off the heat. Throw away any mussels that didn't open.",
+  "Stir in the parsley, then ladle the mussels and the broth into four bowls.",
+  "Taste the broth. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 16,
+ "cook_time_minutes": 16,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "My Greek Dish (the lead, 4.87 from 477) chops onion, carrot, celery, pepper and parsley fine, sautés them in plenty of olive oil, adds cherry tomatoes, white wine and the mussels, and steams everything covered for 8 to 10 minutes. Pepperscale's taverna version builds a longer sauce with fish stock and tomato paste. The lead lists feta as optional, so it is left out here to keep the dish dairy-free, which makes this a tomato and wine mussel pot rather than one with feta. Bread is left off the serving line to keep it gluten-free. Total about 32 minutes.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Mussels Saganaki recipe (Greek Midia Saganaki)",
+   "url": "https://mygreekdish.com/?p=339",
+   "rating": 4.87,
+   "rating_count": 477,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "PepperScale",
+   "title": "Taverna-Style Mussels Saganaki",
+   "url": "https://pepperscale.com/taverna-style-mussels-saganaki/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

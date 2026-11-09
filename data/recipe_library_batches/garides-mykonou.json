@@ -1,0 +1,131 @@
+{
+ "dish_name": "Garides Mykonou",
+ "cuisine": "Greek",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Ouzo",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Feta",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion and mince the garlic. Chop the parsley leaves. That should be about 3 tbsp.",
+  "Cut the red pepper into thin strips and halve the cherry tomatoes.",
+  "Pat the shrimp dry with paper towels and transfer them to a bowl.",
+  "Heat the olive oil in a large deep skillet over medium-high heat. Add the onion and 1/4 tsp of the salt, and cook for 4 minutes, until soft and starting to brown at the edges.",
+  "Add the red pepper, cherry tomatoes, oregano and paprika. Cook for 3 minutes, stirring often, until the tomatoes begin to slump.",
+  "Stir in the tomato paste and cook for 1 minute, until it darkens a shade. Add the garlic and cook for 30 seconds.",
+  "Pour in the tomato sauce, then add 3/4 tsp of the salt and the pepper. Simmer for 3 minutes.",
+  "Toss the shrimp with the remaining 1/4 tsp salt. Take the skillet off the heat and pour in the ouzo. Stand back, since it can flame.",
+  "Put the skillet back on medium-low heat. Add the shrimp in a single layer and spoon some sauce over them. Cover and cook for 4 minutes.",
+  "Uncover and crumble the feta over the top. Cover again and cook for 3 minutes, until the shrimp are pink and opaque all the way through and the feta has softened.",
+  "Take the skillet off the heat and sprinkle the parsley over it. Put the red pepper flakes on the table for anyone who wants heat.",
+  "Taste the sauce. If it's flat, add a pinch more salt. Go lightly, since the feta is salty."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mia's Kouppa (the lead, 4.98 from 40) cooks onion, red pepper, cherry tomatoes, oregano and paprika, cooks down tomato paste and tomato sauce, then simmers the shrimp with ouzo and finishes with feta under a lid. My Greek Dish (4.76 from 627) is a quicker version that sears the shrimp separately and deglazes with ouzo. This version follows the lead scaled from 3 to 4 servings, with the sauté times shortened to fit the target, the chili moved to red pepper flakes on the table, and parsley added at the end as in the second version. Total about 30 minutes.",
+ "sources": [
+  {
+   "name": "Mia's Kouppa",
+   "title": "Shrimp saganaki (Greek shrimp with tomato and feta)",
+   "url": "https://miakouppa.com/shrimp-saganaki",
+   "rating": 4.98,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Greek Dish",
+   "title": "Greek Shrimp Saganaki recipe with Feta cheese (Garides Saganaki)",
+   "url": "https://www.mygreekdish.com/?p=7264",
+   "rating": 4.76,
+   "rating_count": 627,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

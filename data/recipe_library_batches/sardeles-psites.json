@@ -1,0 +1,80 @@
+{
+ "dish_name": "Sardeles Psites",
+ "cuisine": "Greek",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Whole fresh sardines, scaled and gutted",
+   "qty": "2 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Set a rack about 4 inches from the broiler. Line a large rimmed baking sheet with foil, put it on the rack, and heat the broiler on high so the sheet gets hot.",
+  "Juice 2 of the lemons into a small bowl. That should be about 6 tbsp. Whisk in 1/2 cup of the olive oil until it thickens slightly. Cut the third lemon into quarters.",
+  "Rinse the sardines under cold water and pat them very dry, inside and out. Transfer them to a bowl.",
+  "Add the remaining 1/4 cup olive oil and the salt to the sardines, and turn them gently until coated.",
+  "Wearing oven mitts, pull out the hot sheet. Lay the sardines on it in a single layer with a little space between them. Stand back a little. They'll spatter.",
+  "Broil for 3 minutes, until the skin blisters and browns at the edges. Flip them with a thin spatula and broil for 2 minutes.",
+  "The sardines are done when the flesh is opaque and pulls easily away from the backbone. You're cooking to 145°F, so if you have a thermometer, check the thickest one. No thermometer? Press the thickest part with a fork. It should flake.",
+  "Transfer the sardines to a platter. Whisk the dressing again, pour it over them, and sprinkle with the oregano. Set the lemon quarters alongside.",
+  "Taste a sardine. If it's flat, add a pinch more salt, or a squeeze of lemon."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 8,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Real Greek Recipes (the lead) coats whole sardines in olive oil and salt, grills them hot for about 5 minutes total, and pours over a ladolemono of 4 parts olive oil to 3 parts lemon juice with dried oregano and lemon quarters. Other versions stuff the fish with herbs or add chili, but the lemon and oregano finish is the common thread. This version scales the lead to 4 servings, uses the oven broiler on a hot sheet instead of a grill, and skips the lead's 1 hour chill and cold soak to keep it to about 18 minutes (ask the fishmonger to scale and gut the fish). The lead has 7 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Real Greek Recipes",
+   "title": "Grilled Sardines Greek Style",
+   "url": "https://realgreekrecipes.com/grilled-sardines/",
+   "rating": 4.72,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Girls Can Grill",
+   "title": "Crispy Grilled Sardines with Simple Ingredients",
+   "url": "https://girlscangrill.com/recipe/seafood/crispy-grilled-sardines-with-simple-ingredients/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Bittman Project",
+   "title": "Grilled Sardines with Lemon and Thyme",
+   "url": "https://bittmanproject.com/recipe/grilled-sardines-with-lemon-and-thyme/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

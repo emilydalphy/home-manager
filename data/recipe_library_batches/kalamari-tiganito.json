@@ -1,0 +1,81 @@
+{
+ "dish_name": "Kalamari Tiganito",
+ "cuisine": "Greek",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Cleaned calamari",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Flour",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Semolina flour",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the calamari tubes into rings about 1/2 inch thick. If the tentacles are large, cut them in half. Spread everything on paper towels and pat it very dry.",
+  "In a large bowl, mix the flour, semolina, salt, pepper, paprika and oregano.",
+  "Pour the vegetable oil into a heavy pot so it's about 2 inches deep. Heat it over medium-high until it reaches 350°F, about 6 minutes. If you have a thermometer, check it there. No thermometer? Drop in a pinch of the flour mix. It should sizzle right away and float.",
+  "Meanwhile, cut the lemons into wedges.",
+  "Working in 3 batches, toss one third of the calamari in the flour mix until each ring is coated. Lift the pieces into a sieve and shake off the extra flour.",
+  "Lower that batch into the hot oil a few pieces at a time. Fry for 2 to 3 minutes, until pale gold. Stand back a little. They'll spatter. The longer they fry, the chewier they get.",
+  "Transfer the batch to a plate lined with paper towels, and sprinkle with a pinch of salt. Coat and fry the other 2 batches the same way, coating each right before it goes in the oil.",
+  "Taste a ring. If it's flat, add a pinch more salt. Serve right away with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "My Greek Dish (the lead, 4.78 from 591) dusts cleaned calamari rings in bread flour and semolina seasoned with salt, pepper, paprika and oregano, with no batter, and fries them for 2 to 3 minutes. Other Greek versions agree on the thin flour coating and a short fry, since longer frying makes the squid rubbery. Flour amounts follow the lead, and the oil temperature (350°F) is added as a target with a flour-pinch check. Served with lemon only, as in the lead, so it stays dairy-free (tzatziki is the usual extra). Total about 22 minutes.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Crispy Fried Calamari recipe (Kalamarakia Tiganita)",
+   "url": "https://www.mygreekdish.com/?p=5818",
+   "rating": 4.78,
+   "rating_count": 591,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

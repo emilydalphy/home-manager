@@ -1,0 +1,108 @@
+{
+ "dish_name": "Xifias Souvlaki",
+ "cuisine": "Greek",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Swordfish steaks",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemons",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Wooden skewers",
+   "qty": "1 pack",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Put the rice on first. Rinse the rice, then add it to a medium pot with 2 1/4 cups water and 1/2 tsp of the salt. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on until the fish is ready.",
+  "Meanwhile, lay the wooden skewers in a baking dish and cover them with water. If you have metal skewers, use those and skip this step.",
+  "Cut the swordfish into 1-inch cubes and pat them dry with paper towels. Transfer them to a medium bowl.",
+  "Juice 2 of the lemons into two separate bowls, one juice per bowl. Each should be about 3 tbsp. Add one of the juices to the fish along with the oregano, 2 tbsp of the olive oil and 1/2 tsp of the salt. Toss to coat, and let it sit for 15 minutes.",
+  "While the fish sits, make the sauce. Warm the remaining 4 tbsp olive oil in a small pan over medium-low heat. Mince the garlic, add it, and cook for 2 minutes, until soft and fragrant but not browned.",
+  "Take the sauce pan off the heat and stir in the second lemon juice, a pinch of salt and the pepper. Set it aside.",
+  "Set a rack about 4 inches from the broiler and heat the broiler on high. Line a rimmed baking sheet with foil.",
+  "Thread the fish onto the skewers, leaving a small gap between the cubes. Thread the cherry tomatoes onto 2 or 3 separate skewers. Lay everything on the baking sheet.",
+  "Broil for 3 minutes. Flip the skewers and broil for 3 minutes, until the fish is opaque and the tomatoes have split and charred in spots.",
+  "You're cooking the swordfish to 145°F in the middle, so if you have a thermometer, check a cube there. No thermometer? Cut into one cube. It's done when it's white all the way through and flakes apart.",
+  "Fluff the rice and divide it among four plates. Lay the skewers on top and spoon the sauce over the fish.",
+  "Cut the last lemon into wedges. Taste the sauce on a piece of fish. If it's flat, add a pinch more salt, or a squeeze of lemon."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 22,
+ "cook_time_minutes": 8,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cooking for Keeps (the lead, unrated) tosses 1-inch swordfish cubes in lemon juice, oregano and a little olive oil for 20 minutes, grills them with cherry tomatoes for 2 to 3 minutes, and finishes with a warm garlic and lemon oil. Souvlaki for the Soul marinates in oil, lemon, garlic and chili flakes for 45 minutes and threads onion and tomato on the skewers. This version follows the lead (marinade cut to 15 minutes, scaled to 1 1/2 lbs for four), broils the skewers under the oven broiler instead of a grill, and serves with rice as the lead does. No version found had 20 or more ratings, so this is a fallback lead. Total about 30 minutes.",
+ "sources": [
+  {
+   "name": "Cooking for Keeps",
+   "title": "Swordfish Souvlaki (Lemon and Garlic Swordfish Skewers)",
+   "url": "https://www.cookingforkeeps.com/easyrecipe-print/8952-0",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Souvlaki for the Soul",
+   "title": "Swordfish Souvlaki",
+   "url": "https://souvlakiforthesoul.com/swordfish-souvlaki/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kalofagas",
+   "title": "Swordfish Souvlaki",
+   "url": "https://kalofagas.ca/2010/06/24/swordfish-souvlaki-%CE%BE%CE%B9%CF%86%CE%AF%CE%B1%CF%82-%CF%83%CE%BF%CF%85%CE%B2%CE%BB%CE%AC%CE%BA%CE%B9",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
