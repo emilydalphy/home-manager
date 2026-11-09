@@ -1,0 +1,114 @@
+{
+ "dish_name": "Turkey Skillet Lasagna",
+ "cuisine": "Italian",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "No-boil lasagna noodles",
+   "qty": "8 sheets",
+   "category": "pantry"
+  },
+  {
+   "item": "Ricotta",
+   "qty": "1 1/4 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "2 tbsp grated",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Dice the onion until you have about 1 cup. Mince the garlic. Break the noodle sheets into pieces about 1 inch wide.",
+  "Heat 1 tbsp of the oil in a 12 inch skillet over medium-high heat. Add the turkey, onion and salt. Cook for 6 to 7 minutes, breaking up the meat, until no pink is left and the onion is soft. If fat has pooled in the pan, spoon it off.",
+  "Push the meat to one side. Add the remaining 1 tbsp oil to the empty side, then the garlic and Italian seasoning. Stir for 30 seconds, until you can smell them, then stir them into the meat.",
+  "Add the whole bag of spinach a handful at a time, stirring until it has wilted, about 2 minutes.",
+  "Pour in 2 cups of water and the marinara sauce. Add the noodle pieces and press them under the liquid so they're all covered.",
+  "Bring it to a boil, then turn the heat to medium. Cover and cook for 10 minutes.",
+  "Stir, scraping the bottom of the pan so nothing sticks. Cover and cook for 10 minutes, until the noodles are tender when you poke one with a fork.",
+  "Take the skillet off the heat. Dollop the ricotta over the top and scatter on the mozzarella. Cover for 3 minutes, until the mozzarella is slightly melted.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls with the Parmesan on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 32,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No page for turkey skillet lasagna has 20 ratings, so this is a fallback lead: Posh Journal's skillet lasagna with ground turkey (5.0 from 17), which browns the turkey and onion, wilts in spinach, simmers broken no-boil noodles in jarred sauce and water, then stirs in ricotta and mozzarella off the heat. Life Is But a Dish adds cottage cheese and Simple and Savory uses fewer noodles and less sauce; neither changes the method. The lead says 6 servings, so this makes 4 generous ones. It runs about 42 minutes, since the noodles need 20 covered minutes.",
+ "sources": [
+  {
+   "name": "Posh Journal",
+   "title": "Skillet Lasagna Recipe",
+   "url": "https://poshjournal.com/skillet-lasagna-recipe",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Life Is But a Dish",
+   "title": "Ground Turkey Skillet Lasagna with Cottage Cheese",
+   "url": "https://www.lifeisbutadish.com/ground-turkey-skillet-lasagna-with-cottage-cheese/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Simple and Savory",
+   "title": "One Pot Ground Turkey and Spinach Lasagna",
+   "url": "https://simpleandsavory.com/turkey-spinach-lasagna/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

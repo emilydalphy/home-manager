@@ -1,0 +1,91 @@
+{
+  "dish_name": "Pasta alla Norcina",
+  "cuisine": "Italian",
+  "main_protein": "pork",
+  "ingredients": [
+    {
+      "item": "Penne",
+      "qty": "12 oz",
+      "category": "pantry"
+    },
+    {
+      "item": "Pork sausage",
+      "qty": "12 oz",
+      "category": "meat/seafood"
+    },
+    {
+      "item": "Onion",
+      "qty": "1 small",
+      "category": "produce"
+    },
+    {
+      "item": "Olive oil",
+      "qty": "2 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Dry white wine",
+      "qty": "1/2 cup",
+      "category": "pantry"
+    },
+    {
+      "item": "Heavy cream",
+      "qty": "1 cup",
+      "category": "dairy"
+    },
+    {
+      "item": "Pecorino Romano",
+      "qty": "1/2 cup finely grated",
+      "category": "dairy"
+    },
+    {
+      "item": "Salt",
+      "qty": "1 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Black pepper",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Bring a large pot of water to a boil over high heat. Add the salt.",
+    "Meanwhile, take the sausage out of its casings and finely chop the onion.",
+    "Heat the oil in a large deep skillet over medium heat. Add the sausage and cook for 5 to 6 minutes, breaking it into small pieces, until it's browned.",
+    "Add the onion and cook for about 3 minutes, until soft.",
+    "Pour in the wine and scrape up the browned bits. Let it bubble for 2 to 3 minutes, until it has reduced by half.",
+    "Stir in the cream and the pepper. Simmer for 3 to 4 minutes, until it's slightly thickened. Cover and take the skillet off the heat.",
+    "Cook the penne in the boiling water for the time on the package, until al dente. Scoop out 1/2 cup of the pasta water, then drain the pasta.",
+    "Put the skillet back over low heat. Add the penne and 6 tbsp of the pecorino. Toss until the sauce coats the pasta. If it's too thick, loosen it with a splash of the pasta water.",
+    "Taste it. If it's flat, add a pinch more salt.",
+    "Serve with the remaining 2 tbsp pecorino on top."
+  ],
+  "default_servings": 4,
+  "prep_time_minutes": 10,
+  "cook_time_minutes": 20,
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "No version of this dish with 20 or more ratings fits a 30 minute dinner, so this is a fallback lead: Mission Food's Pasta alla Norcina (5.0 from 3, 25 minutes), which browns pork sausage with onion, reduces white wine, adds cream and tosses it all with penne and pecorino. America's Test Kitchen's version (5.0 from 158) takes 75 minutes, with a seared pork patty and food-processed mushrooms, so it was only read as a second view. Great Italian Chefs matches the lead's method, with garlic and single cream instead of onion and heavy cream. The salt comes from the pasta water, the sausage and the pecorino, so the sauce is seasoned with pepper only.",
+  "sources": [
+    {
+      "name": "Mission Food",
+      "title": "Pasta alla Norcina (Creamy Pasta with Sausage)",
+      "url": "https://mission-food.com/wprm_print/pasta-alla-norcina-creamy-pasta-with-sausage",
+      "rating": 5.0,
+      "rating_count": 3,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Great Italian Chefs",
+      "title": "Pasta alla Norcina",
+      "url": "https://www.greatitalianchefs.com/recipes/pasta-alla-norcina-recipe",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "origin": "seed"
+}

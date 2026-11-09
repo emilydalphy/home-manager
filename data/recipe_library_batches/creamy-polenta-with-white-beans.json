@@ -1,0 +1,95 @@
+{
+ "dish_name": "Creamy Polenta with White Beans",
+ "cuisine": "Italian",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Polenta",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Nutritional yeast",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Grape tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Bring 3 1/2 cups of water and 1 tsp of the salt to a boil in a medium pot over high heat. This takes about 6 minutes.",
+  "Meanwhile, slice the mushrooms, halve the tomatoes, and rinse and drain the beans.",
+  "Turn the heat under the pot to low. Slowly pour in the polenta, whisking as you go. Cook for 20 minutes, stirring every few minutes, until it's thick and creamy. Stand back a little, it will spatter.",
+  "While the polenta cooks, heat 1 tbsp of the oil in a large skillet over medium-high heat. Add the mushrooms and cook for 5 minutes without stirring much, until they're browned.",
+  "Add the garlic powder and onion powder and stir for 20 seconds, until you can smell them. Add the tomatoes and the remaining 1/4 tsp salt. Cook for 5 minutes, stirring now and then, until the tomatoes soften and start to burst.",
+  "Stir in the beans and the spinach. Turn the heat to low, cover, and cook for 5 minutes, until the spinach has wilted.",
+  "Take the skillet off the heat and stir in the balsamic vinegar.",
+  "When the polenta is done, stir in the nutritional yeast and the remaining 1 tbsp oil.",
+  "Taste both. If either is flat, add a pinch more salt.",
+  "Spoon the polenta into bowls and top with the beans and vegetables."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 26,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only From My Bowl (the lead, 5.0 from 38) is a polenta-with-white-beans page with enough ratings; it makes creamy grits with nutritional yeast, then tops them with mushrooms, tomatoes, spinach and beans. It uses 1/2 cup of milk in the polenta, which I replaced with water so the dish stays vegan and dairy-free. The topping is flavored with garlic powder and onion powder as the lead does, not fresh garlic, so it is savory more than garlicky. The honest time is about 36 minutes because cornmeal polenta takes 20 minutes of cooking after the water boils.",
+ "sources": [
+  {
+   "name": "From My Bowl",
+   "title": "Creamy Polenta with White Beans (High-Protein Polenta Recipe)",
+   "url": "https://frommybowl.com/?p=29678",
+   "rating": 5.0,
+   "rating_count": 38,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

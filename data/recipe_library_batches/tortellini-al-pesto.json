@@ -1,0 +1,104 @@
+{
+ "dish_name": "Tortellini al Pesto",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Cheese tortellini",
+   "qty": "20 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Basil pesto",
+   "qty": "1 jar (6 to 7 oz)",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "White balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1/2 cup grated",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil over high heat. Add the salt.",
+  "Meanwhile, finely dice the shallot and mince the garlic. Zest the lemon to get 3/4 tsp, then juice it to get 2 tbsp.",
+  "Add the tortellini to the boiling water and cook for the time on the package, until they float and are tender. Scoop out 1 cup of the water the tortellini cooked in, then drain them.",
+  "Return the empty pot to medium heat and add the oil. Add the shallot and cook for 2 to 3 minutes, until soft. Add the garlic and cook for 30 seconds. Take the pot off the heat.",
+  "In a large bowl, whisk together the pesto, the white balsamic vinegar and 1/4 cup of the cooking water until smooth.",
+  "Add the tortellini, the shallot and garlic, the lemon zest, the lemon juice and half of the Parmesan. Toss gently with a pinch of pepper.",
+  "Taste it. If it's flat, add a pinch more salt. If it's too thick, stir in a splash of the cooking water.",
+  "Serve with the rest of the Parmesan on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No tortellini and pesto page has 20 ratings, so this is a fallback lead: No Spoon Necessary's Pesto Tortellini (4.5 from 2), which uses fresh cheese tortellini with jarred pesto, a softened shallot and garlic, lemon, white balsamic and Parmesan. The Toasty Kitchen and Organic Kitchen versions are simpler (tortellini tossed with pesto and Parmesan, one with spinach wilted in the water). I left out the lead's red pepper flakes, optional cream and garnishes to keep the base mild. The pesto usually contains pine nuts.",
+ "sources": [
+  {
+   "name": "No Spoon Necessary",
+   "title": "Pesto Tortellini",
+   "url": "https://www.nospoonnecessary.com/pesto-tortellini/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Toasty Kitchen",
+   "title": "Pesto Tortellini",
+   "url": "https://thetoastykitchen.com/wprm_print/pesto-tortellini",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "The Organic Kitchen",
+   "title": "Tortellini with Fresh Basil Pesto",
+   "url": "https://www.theorganickitchen.org/tortellini-with-fresh-basil-pesto/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

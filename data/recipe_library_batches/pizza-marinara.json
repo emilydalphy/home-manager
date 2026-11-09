@@ -1,0 +1,82 @@
+{
+ "dish_name": "Pizza Marinara",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Pizza dough",
+   "qty": "2 balls (8 oz each)",
+   "category": "other"
+  },
+  {
+   "item": "Whole peeled tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Take the dough balls out of the fridge and leave them on the counter, covered, for 30 minutes. Set a pizza stone or steel on the rack in the upper third of the oven. A heavy baking sheet turned upside down works too.",
+  "Heat the oven to 500°F (260°C). Give a stone or steel 45 minutes, or a baking sheet 20 minutes.",
+  "Meanwhile, crush 1 cup of the tomatoes by hand in a bowl, leaving some chunks. Stir in the salt.",
+  "Slice the garlic as thin as you can.",
+  "Flour a rimless baking sheet or a pizza peel. Stretch one dough ball with your hands into a 12 inch circle, with the middle thin and the rim slightly thicker. Set it on the floured sheet.",
+  "Spread half of the tomato mixture over the dough, stopping a little short of the rim. Scatter on half of the garlic, then 3/4 tsp of the oregano. Drizzle on 2 tbsp of the oil.",
+  "Slide the pizza onto the hot stone. Bake for 7 to 10 minutes, until the edge is puffed and lightly charred in spots.",
+  "Let it rest for 30 seconds, then slice. Make the second pizza the same way.",
+  "Taste a slice. If it's flat, add a pinch of salt and a little more oil.",
+  "Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Coley Cooks (the lead, no ratings) and Ooni both build a pizza marinara from stretched dough, hand-crushed tomatoes, sliced garlic, dried oregano and olive oil, with no cheese. Ooni adds fresh basil and bakes in a very hot oven for 1 to 2 minutes; Coley Cooks bakes at 500°F for 7 to 10 minutes, which suits a home oven. Store-bought dough makes it quick but not a 30 minute dinner, since the oven needs to heat and the dough needs to sit out. Check the dough label if you need it to be dairy-free and vegan.",
+ "sources": [
+  {
+   "name": "Coley Cooks",
+   "title": "Neapolitan Pizza Marinara",
+   "url": "https://coleycooks.com/pizza-marinara/",
+   "rating": null,
+   "rating_count": 0,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ooni",
+   "title": "Marinara Pizza",
+   "url": "https://eu.ooni.com/blogs/recipes/marinara-pizza",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

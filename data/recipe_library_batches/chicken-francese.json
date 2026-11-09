@@ -1,0 +1,104 @@
+{
+ "dish_name": "Chicken Francese",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken breasts",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup + 1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the ends off the lemon and squeeze them into a small bowl. That should be about 1 tbsp of juice. Slice the rest of the lemon into thin rounds and pick out any seeds. Chop 2 tbsp of the parsley.",
+  "Lay one chicken breast flat and hold your hand on top. Slice it in half through the side so you have two thin cutlets. Do the same with the other 3 breasts.",
+  "Put the cutlets between two sheets of parchment or plastic wrap. Pound them with a rolling pin or the bottom of a pan until they're about 1/4 inch thick.",
+  "In one shallow dish, stir together 1/2 cup of the flour, 1 tsp of the salt and the pepper. Beat the eggs in a second shallow dish.",
+  "Coat a cutlet in the flour and shake off the extra. Dip it in the egg and let the extra drip off. Set it on a plate and do the rest the same way.",
+  "Heat the oil in a 12 inch skillet over medium-high for about 2 minutes, until it shimmers. Add 4 cutlets and don't crowd them. Cook for 3 minutes, until the underside is golden, then flip and cook the other side for 3 minutes. Transfer them to a paper towel lined plate and cook the rest.",
+  "You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check the thickest cutlet. No thermometer? Cut into the thickest one. It's done when there's no pink left.",
+  "Pour off most of the oil and wipe out any burnt bits, leaving a thin film in the pan. Lay the lemon slices in the pan over medium-high heat and cook for 30 seconds on each side.",
+  "Add the butter. When it melts, sprinkle in the remaining 1 tbsp flour and whisk for 30 seconds.",
+  "Pour in the wine, the broth, the 1 tbsp lemon juice and the remaining 1/2 tsp salt. Scrape up the browned bits and simmer for 2 minutes, until it's slightly thickened.",
+  "Return the cutlets to the pan and spoon the sauce over them. Simmer for 3 to 4 minutes, until they're hot through.",
+  "Take the pan off the heat and scatter the parsley over the top. Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve right away with the lemon slices and the pan sauce spooned over the chicken."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Jo Cooks (the lead) and Well Plated both flour the cutlets first, then dip them in egg, fry them in batches for about 3 minutes a side, and build the sauce in the same pan from wine, broth and lemon. Jo Cooks seasons the flour, adds a spoonful of flour to the butter to thicken the sauce, and lets the cutlets simmer in it briefly; Well Plated skips the thickener and finishes the sauce with butter and parsley instead. Spend With Pennies adds Parmesan to the egg, which I left out. The lead's measures are kept.",
+ "sources": [
+  {
+   "name": "Jo Cooks",
+   "title": "Chicken Francese",
+   "url": "https://www.jocooks.com/recipes/chicken-francese/",
+   "rating": 4.64,
+   "rating_count": 148,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Chicken Francaise",
+   "url": "https://www.wellplated.com/chicken-francaise/",
+   "rating": 4.88,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

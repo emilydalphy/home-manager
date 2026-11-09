@@ -1,0 +1,82 @@
+{
+ "dish_name": "Fettuccine ai Funghi",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Fettuccine",
+   "qty": "10.5 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried porcini mushrooms",
+   "qty": "1.5 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "7 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Mascarpone",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Boil 1 cup of water. Put the dried porcini in a heatproof bowl, pour the hot water over them, and leave them for 10 to 15 minutes.",
+  "Meanwhile, bring a large pot of water to a boil over high heat. Add 2 tsp of the salt.",
+  "Pull the stems off the shiitake and slice the caps. Chop them roughly.",
+  "Cook the fettuccine in the boiling water until it's 1 minute short of done. Scoop out 3/4 cup of the pasta water, then drain the pasta.",
+  "Melt the butter in a large skillet over medium heat. Add the shiitake and a pinch of salt. Cook for 4 to 5 minutes, until they're tender and lightly browned.",
+  "Lift the porcini out of their water and squeeze them dry. Chop them roughly, add them to the skillet and cook for 1 minute.",
+  "Pour in the cream and scrape the bottom of the pan. Cook for about 2 minutes, until the cream has cooked down.",
+  "Add the mascarpone and 1/3 cup of the pasta water. Stir until the sauce is creamy.",
+  "Add the pasta and toss over medium heat for 2 to 3 minutes. If the sauce is too thick, add a splash of the remaining pasta water.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve right away in warm bowls."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Skinny Spatula's Tagliatelle Funghi (4.94 from 65) is the lead, written here with fettuccine: browned shiitake and soaked porcini finished with cream and mascarpone in a loose sauce. Food.com's Fettuccine al Funghi (unrated) is a quicker cream and butter version with fresh mushrooms and nutmeg. I kept the lead's mushrooms and its cream and mascarpone, and the sauce is loosened with pasta water. There is no cheese or herb in the lead, so none was added.",
+ "sources": [
+  {
+   "name": "Skinny Spatula",
+   "title": "Tagliatelle Funghi",
+   "url": "https://skinnyspatula.com/tagliatelle-funghi-pasta-mushrooms/",
+   "rating": 4.94,
+   "rating_count": 65,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Fettuccine Al Funghi",
+   "url": "https://www.food.com/recipe/fettuccine-al-funghi-87685",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

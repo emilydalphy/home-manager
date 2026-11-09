@@ -1,0 +1,79 @@
+{
+ "dish_name": "Gnocchi with Brown Butter and Sage",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Gnocchi",
+   "qty": "16 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh sage",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1/4 cup grated",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of salted water to a boil over high heat.",
+  "Pick the leaves off 2 or 3 sprigs of sage.",
+  "Melt the butter in a large skillet over medium-high heat. Add the sage leaves and cook for about 2 minutes, until the butter turns light brown and smells nutty. Transfer the butter and sage to a small bowl. Watch it closely, since brown butter can burn quickly.",
+  "Add the gnocchi to the boiling water and cook until they float, about 2 minutes. Scoop out 1/4 cup of the cooking water, then drain the gnocchi well.",
+  "Heat the oil in the same skillet over medium-high heat. Add the gnocchi in a single layer, working in two batches if they don't fit. Leave them alone for 5 to 6 minutes, until the underside is golden.",
+  "Pour the brown butter and sage back into the skillet along with the cooking water. Toss with the gnocchi for 1 to 2 minutes, until the butter coats them.",
+  "Season with 1/4 tsp pepper and a pinch of salt. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the Parmesan on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies (the lead, 4.92 from 25) boils the gnocchi, browns the butter with sage, then pan-fries the gnocchi until golden before tossing everything together with Parmesan. Lena's Kitchen Blog skips the pan-frying and just tosses boiled gnocchi in the butter, and Foodess loosens the butter with stock. I use a splash of the gnocchi cooking water to turn the butter into a sauce, with no new ingredients. Refrigerated gnocchi crisps better than the shelf-stable kind.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Brown Butter Sage Gnocchi",
+   "url": "https://spendwithpennies.com/brown-butter-sage-gnocchi",
+   "rating": 4.92,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lena's Kitchen Blog",
+   "title": "Easy Brown Butter Sage Gnocchi",
+   "url": "https://lenaskitchenblog.com/easy-browned-butter-sage-gnocchi/",
+   "rating": 4.34,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
