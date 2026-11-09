@@ -1,0 +1,94 @@
+{
+ "dish_name": "Mozzarella Sticks",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "String cheese sticks",
+   "qty": "12",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Dry bread crumbs",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cooking spray",
+   "qty": "1 can",
+   "category": "pantry"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: line a baking sheet with parchment. Put the 3 tbsp flour in a shallow bowl. Beat the eggs with 1 tbsp water in a second bowl. Stir the bread crumbs, Italian seasoning, garlic powder and pepper together in a third.",
+  "Roll each string cheese stick in the flour, then in the egg, then in the crumbs. Dip it in the egg and the crumbs a second time. Set the sticks on the baking sheet, cover and freeze for at least 2 hours.",
+  "Heat the oven to 400°F.",
+  "Spray the tops of the frozen sticks with cooking spray.",
+  "Bake for 6 to 8 minutes, until the coating is golden. Take them out as soon as they're golden. Any longer and the cheese leaks out.",
+  "While they bake, warm the marinara in a small pot over medium-low heat for 3 to 4 minutes, until it's steaming.",
+  "Let the sticks stand for 3 to 5 minutes. Serve with the warm marinara."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 8,
+ "advance_prep_notes": "freeze at least 2 hours ahead, or the night before",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "The sources agree on freezing string cheese, breading it in flour, egg and crumbs, and baking hot and fast. Taste of Home (15 ratings, no star value shown) coats twice in egg and crumbs and bakes at 400°F for 6 to 8 minutes; Umami Girl and For the Love of Cooking use a shorter bake or a broiler. I followed Taste of Home. No version had 20 ratings, so this is a fallback lead. It is a baked version, not deep-fried.",
+ "sources": [
+  {
+   "name": "Taste of Home",
+   "title": "Crispy Baked Mozzarella Sticks",
+   "url": "https://www.tasteofhome.com/recipes/mozzarella-sticks/",
+   "rating": null,
+   "rating_count": 15,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "For the Love of Cooking",
+   "title": "Baked Mozzarella Sticks",
+   "url": "https://fortheloveofcooking.net/2014/10/baked-mozzarella-sticks.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

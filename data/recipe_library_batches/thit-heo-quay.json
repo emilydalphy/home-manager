@@ -1,0 +1,125 @@
+{
+ "dish_name": "Thit Heo Quay",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork belly, skin on",
+   "qty": "2 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Chinese five-spice powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Thai chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the middle.",
+  "Put about 1 1/2 quarts of water in a medium pot over high heat. Add the ginger cut into thin coins, 2 of the scallions, and the shallot cut into wedges, and bring to a boil.",
+  "Add the pork belly and turn the heat down so it simmers. Cook for 10 minutes, then transfer it to a baking sheet and let it cool for 5 minutes, until you can handle it.",
+  "Cut shallow slits across the meat side of the belly, not the skin.",
+  "Mix the five-spice, sugar, salt and vinegar in a small bowl. Rub it all over the pork, including the skin.",
+  "Pat the skin very dry with paper towels. Set the pork skin side up on a baking sheet lined with a wire rack, or directly on the sheet.",
+  "Roast for 35 minutes.",
+  "Meanwhile, rinse the rice and cook it according to the package. Pour 1/4 cup of the tamari into a small bowl and slice the chili for the table.",
+  "Switch the oven to broil on high and broil the pork for 15 minutes, until the skin is puffed and crisp. Rotate the pan if one side browns faster. Stand back a little, since the skin can pop.",
+  "Transfer the pork to a cutting board and let it rest for 10 minutes. Scrape off any burnt spots with a knife.",
+  "Slice the pork into bite-size pieces, cutting through the skin with a heavy knife. Serve with the rice and the tamari for dipping, with the sliced chili on the table for anyone who wants heat.",
+  "Leftover pork keeps in the fridge for up to 1 week and in the freezer for up to 3 months. Reheat it on a baking sheet in a 400°F oven for 10 minutes, until the skin crisps again."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 75,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on drying the skin and seasoning with five-spice, then roasting hot and finishing under the broiler. They differ on the skin: Vicky Pham blanches the belly for 10 minutes, Runaway Rice and Viet World Kitchen salt and dry it overnight, Savour the Pho boils only the skin and roasts at 320°F. I followed Vicky Pham's version because it is the one that fits a single afternoon, and left out her chicken bouillon powder and Shaoxing wine (both can contain gluten). Tamari for dipping and the chili come from Viet World Kitchen. The lead has no ratings, so this is a fallback lead. Honest time is about 85 minutes, mostly hands off, and it makes a batch that keeps.",
+ "sources": [
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Crispy Roasted Pork Belly (Thit Heo Quay)",
+   "url": "https://vickypham.com/blog/vietnamese-chinese-crispy-roasted-pork-belly-thit-heo-quay/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Savour the Pho",
+   "title": "Easiest Crispy Pork Belly - Thịt Heo Quay (Quick Method)",
+   "url": "https://savourthepho.com/crispy-pork-belly-recipe/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Viet World Kitchen",
+   "title": "Crisp Roasted Pork Belly Recipe (Thit Heo Quay)",
+   "url": "https://www.vietworldkitchen.com/blog/2010/03/crisp-roasted-pork-belly-recipe-thit-heo-quay.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Runaway Rice",
+   "title": "Crispy Roast Pork (Thit Heo Quay)",
+   "url": "https://runawayrice.com/main-dishes/crispy-roast-pork-thit-heo-quay/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,52 @@
+{
+ "dish_name": "Cheese and Crackers",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Cheddar cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole grain crackers",
+   "qty": "1 box",
+   "category": "pantry"
+  },
+  {
+   "item": "Seedless grapes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Apples",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Take the cheddar out of the fridge 15 minutes before you serve it.",
+  "Slice the cheddar thin, about the size of a cracker.",
+  "Wash the grapes and pull them into small bunches. Cut the apple into thin slices.",
+  "Arrange the cheese and crackers on a board with the grapes and apple slices on the side. Serve with the grapes and apple."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The only version I could read by this name is Snackworks' Family Night Cheese and Cracker Board, which pairs cheese and crackers with grapes, apple slices and other extras, and suggests letting the cheese sit out for 15 minutes. I kept the cheddar, crackers, grapes and apple and left out the meats, dips and jam. The page has no rating, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Snackworks",
+   "title": "Family Night Cheese and Cracker Board",
+   "url": "https://www.snackworks.com/recipes/family-night-cheese-cracker-board-399094/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

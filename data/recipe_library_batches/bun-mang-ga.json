@@ -1,0 +1,117 @@
+{
+ "dish_name": "Bun Mang Ga",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "2 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bamboo shoot strips",
+   "qty": "2 cans (8 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vermicelli",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put 9 cups of water in a large pot over high heat and bring it to a boil.",
+  "Meanwhile, drain and rinse the bamboo shoots. Cut any long strips in half, then boil them in a small pot of water for 5 minutes and drain.",
+  "Finely mince the shallots and the ginger. Pat the chicken dry and rub 1 tsp of the salt over it.",
+  "Heat 1 1/2 tbsp of the oil in a large skillet over medium-high heat. Lay in half of the chicken skin side down and cook for 5 minutes, until the skin is deep golden. Transfer it to the pot of boiling water, then do the same with the rest of the chicken.",
+  "Turn the heat under the pot to medium-low so it simmers gently. Skim off any foam.",
+  "Wipe out the skillet and heat the remaining 1 1/2 tbsp oil over medium heat. Add the shallots and ginger and cook for 2 minutes, until soft and fragrant.",
+  "Add the bamboo, 1/2 tsp of the salt and 1 tsp of the sugar. Stir for 3 minutes, until the bamboo smells toasty, then add it all to the pot.",
+  "Simmer for 30 minutes, until the chicken is tender. You're cooking it to 175°F at the thickest part of a thigh, so if you have a thermometer, check it there. No thermometer? Cut next to the bone in the thickest thigh: it's done when the juices run clear.",
+  "While the broth simmers, cook the rice vermicelli according to the package. Rinse it under cold water, drain well, and divide it among 4 big bowls.",
+  "Transfer the chicken to a cutting board. Add the remaining 2 tsp salt, the remaining 1 tbsp sugar and 3 tbsp fish sauce to the broth a little at a time, tasting as you go. Taste it. If it's flat, add a pinch more salt.",
+  "Pull the chicken meat off the bones in big pieces and discard the bones. Slice the scallions and cut the limes into wedges.",
+  "Put the chicken on the noodles and ladle the hot broth and bamboo over the top. Serve with the scallions, the black pepper and the lime wedges, with the sliced Thai chilies on the table for anyone who wants heat.",
+  "Leftover broth, chicken and bamboo keep in the fridge for 4 days and in the freezer for 3 months. Keep them apart from the noodles. Reheat the broth on the stove until it simmers, then pour it over freshly cooked noodles."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on a chicken broth simmered with shallot and sweet-salty seasoning, bamboo shoot sauteed or cooked in the pot, and rice noodles in the bowl. They differ on the chicken (Viet World Kitchen uses leg quarters simmered for an hour, Vicky Pham stir-fries cut-up chicken and simmers 30 minutes) and on dried versus brined bamboo. I followed Vicky Pham's method with bone-in thighs, jarred or canned bamboo to keep it near an hour, and left out her chicken bouillon powder (it can hide gluten) and the dried mushrooms from Viet World Kitchen. The lead is rated 5 from 1 review, so this is a fallback lead. Honest time is about 60 minutes.",
+ "sources": [
+  {
+   "name": "Vicky Pham",
+   "title": "Chicken Bamboo Noodle Soup (Bún Măng Gà)",
+   "url": "https://vickypham.com/blog/chicken-bamboo-noodle-soup/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Viet World Kitchen",
+   "title": "Chicken and Bamboo Shoot Noodle Soup Recipe (Bun Mang Ga)",
+   "url": "https://www.vietworldkitchen.com/blog/2010/01/chicken-and-bamboo-shoot-noodle-soup-recipe-bun-mang-ga.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

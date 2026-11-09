@@ -1,0 +1,59 @@
+{
+ "dish_name": "Pigs in a Blanket",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Crescent roll dough",
+   "qty": "1 tube (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Mini smoked sausages",
+   "qty": "1 package (14 oz)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F and line two baking sheets with parchment.",
+  "Pat 24 of the mini sausages dry with paper towels.",
+  "Unroll the crescent dough and separate it into 8 triangles. Cut each triangle into 3 thin triangles with a sharp knife or pizza cutter.",
+  "Set a sausage on the wide end of each small triangle and roll it up toward the point. Place them seam side down on the sheets, about 1 inch apart.",
+  "Beat the egg with 1 tbsp water in a small bowl. Brush it lightly over the dough, keeping it from pooling around the sausages.",
+  "Bake for 12 to 15 minutes, until golden brown.",
+  "Let them cool for 5 minutes before serving. The sausages stay hot inside."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on cutting crescent dough into thin triangles, rolling a mini sausage in each and baking at 375°F until golden. Small Town Woman adds a sliver of cheese and an egg wash with bagel seasoning; the other keeps it to two ingredients. I kept the egg wash and left out the cheese and seasoning. The lead is rated 5 from 64 votes.",
+ "sources": [
+  {
+   "name": "Small Town Woman",
+   "title": "Mini Pigs in a Blanket",
+   "url": "https://www.smalltownwoman.com/pigs-in-a-blanket/",
+   "rating": 5,
+   "rating_count": 64,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Momcrieff",
+   "title": "Mini Hot Dog Crescent Rolls (2 Ingredients)",
+   "url": "https://momcrieff.com/pigs-in-a-blanket-mini-crescent-dogs-2-ingredients/",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,146 @@
+{
+ "dish_name": "Ga Xoi Mo",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken leg quarters",
+   "qty": "4 (about 3 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Gluten-free tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp + 2 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp + 2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Star anise",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "3 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "At least 4 hours ahead, or the night before: mince the shallot and 3 of the garlic cloves. Stir them in a large bowl with 2 tbsp of the tamari, 1 1/2 tsp of the sugar, 1/2 tsp of the salt and a pinch of white pepper. Pat the chicken dry, rub the mixture over it, cover and refrigerate.",
+  "When you're ready to cook, put 8 cups of water in a large pot with the ginger cut into 2 slices, the star anise and the cinnamon stick. Bring it to a boil over high heat.",
+  "Add the chicken and boil for 15 minutes.",
+  "While the chicken boils, rinse the rice. Mince the 2 remaining garlic cloves and mix the garlic into the rice in a medium pot with 1 1/2 tbsp of the oil, the tomato paste, 2 tsp of the tamari, 1/2 tsp of the sugar and the remaining 1/2 tsp salt.",
+  "Add 2 1/4 cups water to the rice pot and bring it to a boil over high heat. Cover, turn the heat to the lowest setting and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes.",
+  "Transfer the chicken to a wire rack set over a baking sheet and pat it dry with paper towels. Brush the skin with the remaining 1 tbsp tamari and let it dry for 10 minutes.",
+  "Meanwhile, make the dipping sauce. Mince the last garlic clove. Stir it in a small bowl with the fish sauce, the juice of the lime, the remaining 2 tbsp sugar and 1/4 cup water until the sugar dissolves. Slice the cucumber and tomatoes onto a platter and slice the chili for the table.",
+  "Pour the remaining oil, about 3 cups, into a deep 12-inch skillet or a Dutch oven and heat it over medium-high until a pinch of flour sizzles at once, about 350°F. Make sure the chicken skin is dry.",
+  "Lay 2 chicken quarters in the oil and fry for 2 minutes. Stand back, since it will spatter.",
+  "Ladle the hot oil over the tops of the chicken for 5 to 6 minutes, until the skin is golden and crisp. You're cooking it to 175°F at the thickest part of a thigh, so if you have a thermometer, check it there. No thermometer? Cut next to the bone: it's done when the juices run clear.",
+  "Transfer the chicken to the wire rack and repeat with the other 2 quarters.",
+  "Fluff the rice with a fork. Taste it. If it's flat, add a pinch more salt.",
+  "Serve the chicken with the red rice, the cucumber and tomatoes, and the dipping sauce, with the sliced chili on the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "advance_prep_notes": "marinate at least 4 hours ahead, or the night before",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "The sources agree that this dish is chicken marinated, boiled until nearly done, then fried so the skin turns crisp, served on tomato rice with cucumber and tomato. Whiskey & Booch ladles hot oil over the chicken and brushes the skin before frying; Fifteen fries the legs and ladles oil over them too. I followed Whiskey & Booch with tamari in place of its Maggi seasoning and left out the bouillon powder (both can contain gluten), skipped the annatto oil, and cooked the rice on the stove. The source names nuoc cham without giving amounts, so the dipping sauce is a standard fish sauce, lime and sugar mix. Neither version has enough ratings, so this is a fallback lead (Fifteen is 5 from 2 votes). Honest time is about 65 minutes after the marinade.",
+ "sources": [
+  {
+   "name": "Whiskey & Booch",
+   "title": "Vietnamese Fried Chicken (Cơm Gà Xối Mỡ)",
+   "url": "https://www.whiskeyandbooch.com/blog/viet-fried-chicken",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Fifteen",
+   "title": "Cơm Gà Xối Mỡ Recipe (Vietnamese Fried Chicken Rice)",
+   "url": "https://www.fifteen.net/recipes/com-ga-xoi-mo/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

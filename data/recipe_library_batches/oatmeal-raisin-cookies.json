@@ -1,0 +1,104 @@
+{
+ "dish_name": "Oatmeal Raisin Cookies",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Rolled oats",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Raisins",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Let the butter soften on the counter. In a large bowl, beat it with the brown sugar and the sugar for 2 minutes, until smooth and a little fluffy.",
+  "Beat in the egg, then the vanilla.",
+  "Stir in the oats, baking soda, cinnamon and salt. Fold in the flour until just combined, then fold in the raisins.",
+  "Press plastic wrap onto the surface of the dough and refrigerate for 1 hour.",
+  "In the last 15 minutes of chilling, heat the oven to 350°F and line two baking sheets with parchment.",
+  "Scoop the dough in 1 oz portions, about 1 1/2 tbsp each, and roll them into balls. Place them 2 inches apart on the sheets without flattening them. That should be about 15 cookies.",
+  "Bake for 9 to 11 minutes, until the edges are golden and the centers still look slightly soft.",
+  "Cool the cookies on the sheet for 1 minute, then transfer them to a wire rack to cool completely.",
+  "Keep them in an airtight container for up to 3 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on brown sugar for chew, rolled oats and baking until the centers still look slightly soft. Scientifically Sweet chills the dough for an hour and bakes small cookies; Bake from Scratch chills 30 minutes and makes 18 large ones, and Food Network blends the raisins into the dough. I followed Scientifically Sweet and left out its teaspoon of molasses. The lead is rated 5 from 6 votes, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Scientifically Sweet",
+   "title": "Chewy Oatmeal Raisin Cookies",
+   "url": "https://scientificallysweet.com/chewy-oatmeal-raisin-cookies/",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bake from Scratch",
+   "title": "Chewy Oatmeal-Raisin Cookies",
+   "url": "https://bakefromscratch.com/chewy-oatmeal-raisin-cookies/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

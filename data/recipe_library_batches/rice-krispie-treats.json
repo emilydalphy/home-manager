@@ -1,0 +1,70 @@
+{
+ "dish_name": "Rice Krispie Treats",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "9 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Gelatin-free mini marshmallows",
+   "qty": "16 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crispy rice cereal",
+   "qty": "7 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Butter a 9 by 9 inch baking dish with 1 tbsp of the butter and line it with parchment.",
+  "Melt the remaining 8 tbsp butter in a large pot over medium-low heat. Add 6 cups of the marshmallows and stir until they're melted and smooth. Don't let them scorch.",
+  "Take the pot off the heat and stir in the vanilla and the salt.",
+  "Fold in the cereal, then the remaining 2 cups marshmallows. Stir just until the cereal is coated and the new marshmallows begin to soften but stay chunky.",
+  "Transfer the mixture to the pan, cover it with parchment or plastic wrap and press it into an even layer.",
+  "Let it cool to room temperature, about 1 hour, then cut it into 16 squares.",
+  "Keep the squares in an airtight container at room temperature for 2 days, or freeze them in layers with wax paper between for up to 6 weeks. Let frozen squares stand for 15 minutes before serving."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on melting butter, stirring in marshmallows, folding in the cereal and pressing it into a pan. Sugar Spun Run saves some marshmallows to fold in at the end for gooey pockets, and adds vanilla and salt; Kellogg's original uses 3 tbsp butter and a 13 by 9 pan. I followed Sugar Spun Run (4.94 from 175 votes) and used gelatin-free marshmallows so it stays vegetarian. Storage times are from Kellogg's.",
+ "sources": [
+  {
+   "name": "Sugar Spun Run",
+   "title": "Rice Krispie Treats",
+   "url": "https://sugarspunrun.com/rice-krispie-treats/",
+   "rating": 4.94,
+   "rating_count": 175,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kellogg's Rice Krispies",
+   "title": "The Original Rice Krispies Treats Recipe",
+   "url": "https://www.ricekrispies.us/recipes/the-original-treats-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
