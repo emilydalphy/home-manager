@@ -1,0 +1,125 @@
+{
+ "dish_name": "Cocido Madrileno",
+ "cuisine": "Spanish",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Dried chickpeas",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef shank",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "2",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Serrano ham in a chunk",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Slab bacon",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Beef marrow bones",
+   "qty": "2 pieces",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Spanish chorizo",
+   "qty": "1 link (6 oz)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1/2 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fideos or thin soup noodles",
+   "qty": "3 oz",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, put the chickpeas in a large bowl, cover them with plenty of warm water and stir in 1 tsp of the salt. Leave them on the counter overnight.",
+  "Drain the chickpeas. Put the beef shank cut into 2 inch chunks, the ham, bacon, marrow bones and chorizo in a large pot, and cover with about 3 quarts of water.",
+  "Bring it to a boil over high heat and skim off the foam that rises. Turn the heat to low and cook with the lid cracked for 1 hour.",
+  "Add the chickpeas, the chicken thighs, 2 whole peeled garlic cloves, the onion left whole and the carrots cut in thirds. Bring back to a simmer, cover and cook for 1 hour 15 minutes, until the chickpeas are tender.",
+  "Peel the potatoes and halve them. Add them to the pot with 2 tsp salt and cook for 25 minutes, until a knife slides in easily.",
+  "Meanwhile, cut the cabbage into wedges and boil them in a separate pot of salted water for 20 minutes. Drain well.",
+  "Slice the last garlic clove. Heat the olive oil in a large skillet over medium heat, add the garlic for 30 seconds, then add the cabbage and cook for 5 minutes, turning, until lightly browned.",
+  "Lift the meats, bones, chorizo, chickpeas, carrots and potatoes onto platters and keep them warm. Take the onion out of the pot. Pour the broth through a strainer into a saucepan and bring it to a boil.",
+  "Add the noodles to the broth and cook for 5 minutes. Slice the meats and chorizo, and pull the chicken from its bones.",
+  "Let everything cool completely. The broth keeps in the fridge for 4 days. The meats, chickpeas and carrots keep for 4 days, and the broth, meats and chickpeas freeze for 3 months. Freeze them without the potatoes and noodles. Reheat in the broth on the stove.",
+  "Serve the broth with the noodles first, then the chickpeas, cabbage, carrots and potatoes on a platter, then the sliced meats and chorizo."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 185,
+ "advance_prep_notes": "soak the chickpeas overnight, the night before",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Devour Tours leads: the meats and bones start in cold water, the chickpeas and vegetables join after an hour, and the broth is served first with noodles, then the chickpeas and vegetables, then the meats. Spain.info agrees and adds the soaking in salted warm water, the chicken, the separately boiled cabbage fried with garlic, and the stick noodles. Both also make small croquettes and serve a tomato sauce, which are left out here. Neither page showed a rating, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Devour Tours",
+   "title": "The Ultimate Traditional Cocido Madrileno Recipe",
+   "url": "https://devourtours.com/blog/cocido-madrileno-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain.info",
+   "title": "Cocido madrileno",
+   "url": "https://www.spain.info/en/recipe/cocido-madrileno/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

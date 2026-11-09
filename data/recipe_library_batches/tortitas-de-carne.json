@@ -1,0 +1,107 @@
+{
+ "dish_name": "Tortitas de Carne",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeno",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a saucepan with 2 1/4 cups water and 1/2 tsp of the salt. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered until you serve.",
+  "While the rice cooks, put the tomatoes, the jalapeno with its stem removed and 2 of the garlic cloves in a medium pot. Cover with water, bring to a boil and cook for 8 minutes, until the tomatoes are soft and the skins split.",
+  "Mince one quarter of the onion and grate the last garlic clove. Chop 2 tbsp of the parsley. In a bowl, mix them with the ground beef, eggs, breadcrumbs, 1 tsp salt and the pepper. Mix with your hands just until combined.",
+  "Wet your hands and shape the meat into 12 patties about 3 inches wide and 1/2 inch thick.",
+  "Transfer the tomatoes, jalapeno and garlic to a blender with 1/2 cup of the cooking water and 1/2 tsp salt. Blend until smooth. The skins can stay in.",
+  "Heat 3 tbsp of the oil in a large deep skillet over medium-high heat. Add 6 patties and cook for 3 minutes a side, until browned. Transfer them to a plate and repeat with the other 6.",
+  "Cut the rest of the onion into strips. Add the last 1 tbsp oil to the skillet and cook the onion over medium heat for 4 minutes, until soft.",
+  "Pour in the blended sauce and simmer for 5 minutes, until it darkens slightly. Taste and add salt if it's flat.",
+  "Add the patties and spoon some sauce over them. Cover and simmer over medium-low heat for 15 minutes, turning them once. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into one: it's done when there's no pink left.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cookpad's Tortitas de carne (MarceCamberos) leads for the dish: patties fried until lightly golden, then simmered in a blended tomato and chile sauce, served with rice or beans. That version uses shredded meat bound with egg; here it is ground beef with egg and breadcrumbs, as in Guerita Rodriguez's albondigas en salsa roja, which also sautes onion before the sauce goes in. The jalapeno is the only chile, kept whole in the blend with no seeds removed, so the sauce is mild. No rating appeared on any page, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Cookpad Mexico (MarceCamberos)",
+   "title": "Tortitas de Carne",
+   "url": "https://cookpad.com/mx/recetas/15525518",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cookpad Mexico (Guerita Rodriguez)",
+   "title": "Albondigas con Salsa Roja",
+   "url": "https://cookpad.com/mx/recetas/2907388",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

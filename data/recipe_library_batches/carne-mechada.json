@@ -1,0 +1,139 @@
+{
+ "dish_name": "Carne Mechada",
+ "cuisine": "Spanish",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Boneless beef chuck roast",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cooked ham",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1/2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Pitted green olives",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free beef broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rub the vinegar over the roast, then rub the salt and pepper over all sides.",
+  "Chop the ham, onion, bell pepper, 1 of the carrots, the garlic, the olives, the capers and 1 tbsp parsley. Mix them in a bowl with the oregano.",
+  "With a long thin knife, cut six slits evenly around the roast, each going halfway into the meat. Push an equal share of the filling into each slit.",
+  "Heat the oil in a heavy pot over medium-high heat. Brown the roast for 4 minutes a side, until deep brown all over.",
+  "Add the broth and tomato sauce and bring it to a boil. Turn the heat to low, cover and cook for 2 hours, turning the roast once halfway through.",
+  "Cut the potatoes and the other 4 carrots into chunks. Add them to the pot, cover and cook for 30 minutes, until the roast is fork-tender and the vegetables are soft.",
+  "Transfer the roast to a board and let it rest for 10 minutes. Slice it across the grain, keeping the filling in each slice.",
+  "Let any leftovers cool, then keep the meat and vegetables in the cooking liquid in the fridge for 4 days or in the freezer for 3 months. Reheat gently in the liquid.",
+  "Serve sliced, with the potatoes, carrots and the cooking liquid spooned over."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 175,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hawaiian Electric's Carne Mechada (stuffed meat) leads: a boneless roast with a ham, onion, olive and caper filling pushed into a deep slit, browned, then simmered in tomato sauce for 2 1/2 hours with potatoes and carrots. Margarita's International Recipes agrees on a ham, olive, onion and pepper filling in several cuts and a 2 hour simmer in beef stock. The list promises a braise in wine, but none of the pages used wine, so none is added; the liquid is broth and tomato sauce. The salt pork in the lead is left out and the filling stays ham only. No rating appeared, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Hawaiian Electric",
+   "title": "Carne Mechada (Stuffed Meat)",
+   "url": "https://www.hawaiianelectric.com/recipes/find-a-recipe/carne-mechada-(stuffed-meat)",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Margarita's International Recipes",
+   "title": "Carne Mechada (Stuffed Beef)",
+   "url": "https://marga.org/food/int/dr/carne.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Dominican Cooking",
+   "title": "Carne Mechada (Braised Beef Roll)",
+   "url": "https://www.dominicancooking.com/carne-mechada-braised-beef-roll",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

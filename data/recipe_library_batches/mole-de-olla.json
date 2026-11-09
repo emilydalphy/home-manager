@@ -1,0 +1,142 @@
+{
+ "dish_name": "Mole de Olla",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Bone-in beef shank",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Beef marrow bones",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried guajillo chiles",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried ancho chile",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried epazote",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn on the cob",
+   "qty": "2 ears",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow potatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the beef shank, marrow bones, half of the onion, 1 garlic clove with its skin on, 2 of the bay leaves and the salt in a large pot. Add water to cover by 2 inches.",
+  "Bring it to a boil over high heat. Skim off the foam that rises, then turn the heat to medium-low so it's at a steady simmer and cook for 1 hour.",
+  "Meanwhile, pull the stems and seeds from the guajillo and ancho chiles and put them in a bowl. Cover them with hot water and soak for 10 minutes.",
+  "Drain the chiles and blend them with the tomatoes, one quarter of the onion, the other garlic clove, the last bay leaf, the peppercorns, the oregano and 1 1/2 cups water. Blend until smooth.",
+  "Strain the sauce into the pot, pressing it through with a spoon. Simmer for 1 hour, until the beef is fork-tender. If it still resists, check it every 15 minutes.",
+  "Take out the onion half, the garlic and the bay leaves. Cut the corn into thirds, the carrots and potatoes into chunks, and the zucchini into chunks. Trim and halve the green beans.",
+  "Add the corn, carrots, potatoes and epazote, and add water if the vegetables aren't covered. Simmer for 10 minutes.",
+  "Add the zucchini and green beans and simmer for 10 minutes, until the potatoes are tender but not falling apart. Taste and add salt if it's flat.",
+  "Chop the remaining quarter of the onion and cut the limes into wedges. Warm the tortillas in a dry skillet over medium heat, 20 seconds a side.",
+  "Let the pot cool completely, then pack it into glass containers. The red sauce stains plastic. It keeps in the fridge for 4 days and in the freezer for 2 to 3 months. Reheat in a pot over medium heat and stir gently so the vegetables stay whole.",
+  "Serve in bowls with the chopped onion, lime wedges and warm tortillas."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 175,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Maricruz Avalos leads: beef shank and marrow bones simmered first, a blended guajillo and ancho sauce strained in, then corn, carrots, potatoes, zucchini and green beans. Confessions of a Foodie browns the meat and toasts seeds for a deeper pot, and adds beef bouillon; that is left out here to keep it gluten-free. The corn masa dumplings and xoconostle both sources mention as optional are left out. Neither page showed a rating, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Maricruz Avalos",
+   "title": "Traditional Mole de Olla",
+   "url": "https://www.maricruzavalos.com/?p=30863",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Confessions of a Foodie",
+   "title": "Mole de Olla (Mexican Beef Veggie & Chile Soup)",
+   "url": "https://www.confessionsofafoodie.me/2019/01/mole-de-olla-mexican-beef-chile-soup.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

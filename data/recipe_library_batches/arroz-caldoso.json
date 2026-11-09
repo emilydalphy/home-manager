@@ -1,0 +1,107 @@
+{
+ "dish_name": "Arroz Caldoso",
+ "cuisine": "Spanish",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Bomba or short-grain rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free fish stock",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cleaned squid",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Large shrimp, shell on",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Littleneck clams",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mussels",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Italian green pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ripe tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the stock in a saucepan and bring it to a simmer. Keep it hot.",
+  "Scrub the clams and mussels. Soak the clams in a bowl of cold water with 1 tbsp of the salt for 20 minutes, then drain.",
+  "Peel the shrimp and set the bodies aside. Add the shells to the hot stock, simmer for 10 minutes, then strain the stock and discard the shells.",
+  "Cut the squid into rings. Dice the green pepper, grate the tomatoes on a box grater down to the skins, and mince the garlic.",
+  "Heat the oil in a wide 12 inch pot or deep skillet over medium-high heat. Add the squid and cook for 3 minutes, until golden. Transfer it to a plate.",
+  "In the same pot, cook the green pepper over medium heat for 4 minutes. Add the garlic and cook for 30 seconds, then add the grated tomatoes, tomato paste and a pinch of salt. Cook for 10 minutes, stirring, until thick and darker.",
+  "Stir in the rice and cook for 1 minute so every grain is coated. Return the squid.",
+  "Pour in the hot stock and stir once. Bring to a boil and cook over medium-high heat for 12 minutes without stirring. The rice should still be in plenty of broth.",
+  "Add the shrimp, clams and mussels, pushing them into the rice. Cook for 4 minutes, until the clams and mussels open and the shrimp turn pink. Throw away any that stay closed.",
+  "Take the pot off the heat. Eat it right away. The rice keeps soaking up the broth, so it doesn't reheat well.",
+  "Serve in wide bowls with a spoon."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Directo al Paladar leads (about an hour): squid browned first, a tomato, garlic and green pepper sofrito, rice added with seafood broth, 12 minutes at a boil, then shrimp, clams and mussels for the last 4. Hola agrees on the order and adds tomato paste, 14 minutes for the rice and the shellfish added near the end. The sofrito in the lead cooks for an hour; here it is a quick 15 minute version. Neither page showed a rating, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Directo al Paladar",
+   "title": "Arroz caldoso de marisco",
+   "url": "https://www.directoalpaladar.com/recetas-de-arroces/arroz-caldoso-de-marisco/amp",
+   "rating": null,
+   "rating_count": 200,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hola",
+   "title": "Arroz caldoso de marisco",
+   "url": "https://www.hola.com/cocina/recetas/20221124221582/arroz-caldoso-marisco-alcachofas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

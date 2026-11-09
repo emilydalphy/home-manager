@@ -1,0 +1,110 @@
+{
+ "dish_name": "Rabo de Toro",
+ "cuisine": "Spanish",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Oxtail, cut in pieces",
+   "qty": "3 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "7 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "3 large",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3 large",
+   "category": "produce"
+  },
+  {
+   "item": "Leek",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato puree (passata)",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pat the oxtail dry and rub 2 tsp of the salt and the pepper over all of it.",
+  "Heat 3 tbsp of the oil in a Dutch oven over medium-high heat. Brown the oxtail in two batches, about 4 minutes a side, until deep brown all over. Transfer it to a plate.",
+  "Dice the onions and carrots, chop the leek and halve the garlic cloves. Add them to the Dutch oven with 1 tsp salt and cook over medium-low heat for 20 minutes, stirring often, until soft and browned.",
+  "Return the oxtail to the pot. Add the wine, tomato puree, cloves and bay leaves, and stir to scrape up the browned bits.",
+  "Bring it to a simmer, cover and cook over low heat for 4 hours, until the meat pulls easily from the bone. Check it now and then and add a splash of water if the sauce is sticking.",
+  "Transfer the oxtail to a plate and take out the bay leaves and cloves. Blend the vegetables and sauce in the pot with an immersion blender until smooth, then return the oxtail and reheat for 10 minutes.",
+  "While the oxtail reheats, cut the potatoes into 3/4 inch wedges. Heat the 1/4 cup oil in a large skillet over medium heat, add the potatoes and a pinch of salt, and cook for 15 minutes, turning, until golden and tender.",
+  "If you want to make it a day ahead, stop after the 4 hours, cool it and chill it. Blend and reheat it gently the next day. The sauce thickens in the fridge and loosens as it warms. It keeps in the fridge for 3 to 4 days and in the freezer for 3 months.",
+  "Serve with the fried potatoes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 285,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Recipes from Europe leads: oxtail seared, a pot of onion, carrot and leek cooked soft and brown, then red wine and tomato puree with cloves and bay, 4 hours on low, and the vegetables blended into the sauce. Krumpli adds sherry, beef stock and juniper and a flour dredge, none of which are used here, so the dish stays gluten-free. The sugar the lead calls optional is left out. Neither page showed a rating, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Recipes from Europe",
+   "title": "Rabo de Toro (Spanish Oxtail Stew)",
+   "url": "https://www.recipesfromeurope.com/?p=23717",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Krumpli",
+   "title": "Rabo de Toro (Spanish Braised Oxtail)",
+   "url": "https://www.krumpli.co.uk/?p=50390",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

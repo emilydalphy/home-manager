@@ -1,0 +1,102 @@
+{
+ "dish_name": "Cachopo",
+ "cuisine": "Spanish",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Thin beef or veal cutlets",
+   "qty": "1 1/2 lbs (4 pieces)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Serrano ham, thinly sliced",
+   "qty": "8 slices (4 oz)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Manchego cheese, thinly sliced",
+   "qty": "8 slices (6 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Light olive oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen french fries",
+   "qty": "1 1/2 lbs",
+   "category": "frozen"
+  }
+ ],
+ "instructions": [
+  "Put the cutlets between sheets of plastic wrap and pound them to about 1/4 inch thick. Rub 1 tsp of the salt and 1/2 tsp of the pepper over both sides.",
+  "Lay two cutlets side by side. On each, put 2 slices of cheese, then 4 slices of ham, then 2 more slices of cheese. Top each with a second cutlet and press the edges firmly together.",
+  "Put them on a plate and chill for 20 minutes.",
+  "Preheat the oven to 425°F and bake the fries following the package, starting them 25 minutes before you plan to fry.",
+  "Set up three shallow dishes. Put the flour in one. Beat the eggs with the milk in the second. Mix the breadcrumbs with the rest of the salt and pepper in the third.",
+  "Coat one cachopo in the flour, then the egg, then press it firmly into the breadcrumbs on both sides. Repeat with the other.",
+  "Heat 1/2 cup of the oil in a 12 inch skillet over medium-high heat until a breadcrumb sizzles right away.",
+  "Fry one cachopo for 4 to 5 minutes a side, until deep golden and the cheese has melted. You're cooking the beef to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? The meat should feel firm and the juices run clear.",
+  "Transfer it to a rack or paper towels and keep it warm in the oven. Fry the second cachopo with the remaining oil.",
+  "Cut each cachopo into four wedges.",
+  "Serve with the fries."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Turismo Asturias leads: two thin fillets sandwiching cheese and ham, sealed at the edges, floured, egged, breaded and fried in plenty of hot oil. Simon Majumdar agrees on the layers and adds Manchego, serrano, a milk and egg wash and a 20 minute chill so it holds together. The fillets are beef or veal cutlets, and the 4 pieces make 2 cachopos for 4 people. Neither page showed a rating, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Turismo Asturias",
+   "title": "Asturian Cachopo",
+   "url": "https://www.turismoasturias.es/en/descubre/gastronomia/recetas/cachopo-asturiano",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simon Majumdar",
+   "title": "Cachopo",
+   "url": "https://www.simonmajumdar.com/cachopo",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

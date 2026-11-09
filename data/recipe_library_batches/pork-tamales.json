@@ -1,0 +1,160 @@
+{
+ "dish_name": "Pork Tamales",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Boneless pork shoulder",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "3 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried guajillo chiles",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried ancho chiles",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried pasilla chiles",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried corn husks",
+   "qty": "20",
+   "category": "pantry"
+  },
+  {
+   "item": "Lard",
+   "qty": "5 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chile powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Masa harina for tamales",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oil in a Dutch oven over medium heat. Add the chopped onion, a pinch of salt and a few grinds of the pepper, and cook for 5 minutes, until the onion is tender.",
+  "Add 2 cups of the broth and the guajillo, ancho and pasilla chiles, with the stems and seeds removed. Bring it to a boil, cover, take it off the heat and leave it for 10 minutes.",
+  "Transfer the chiles and broth to a blender with the cumin, oregano, garlic and 1 tsp of the salt. Blend until completely smooth. The liquid is hot, so hold the lid down with a towel.",
+  "Cut the pork into 2 inch pieces and rub 1/2 tsp of the salt over it. Pour the sauce back into the Dutch oven, add the pork and the bay leaves, and bring it to a boil.",
+  "Turn the heat to medium-low, cover and cook for 1 hour 45 minutes, until the pork is very tender and the sauce is brick red. Stir now and then.",
+  "While the pork cooks, put the corn husks in a large bowl or the sink. Cover them with hot water, weight them with a plate and soak for 1 hour, until they bend without cracking.",
+  "Take out the bay leaves. Shred the pork with two forks right in the pot, stir in the vinegar and add salt if it needs it. Let the filling cool for 15 minutes.",
+  "In a stand mixer or with a hand mixer, beat the lard, baking powder, chile powder and 1/2 tsp salt on medium-high for 2 minutes, until light and fluffy.",
+  "Turn the mixer to low and add the masa harina a little at a time. Slowly pour in 1 1/4 cups of the broth and mix for 2 to 4 minutes.",
+  "Drop a 1/2 tsp dab of the dough into a cup of cold water. If it floats, it's ready. If it sinks, mix in the last 1/4 cup broth for 2 minutes and test again.",
+  "Pat the husks dry. Lay one flat with the smooth side up and spread about 3 tbsp of the dough on it, starting 1/2 inch from the wide end and leaving a 1 inch border on each side.",
+  "Spoon 2 heaping tbsp of the pork filling down the center. Fold in the two sides, then fold the narrow end up. Repeat until you have 16 tamales.",
+  "Set a steamer basket in a large pot with 1 to 2 inches of water. Stand the tamales in it with the open ends up, packed snugly. Bring to a boil over medium-high heat, cover and steam for 45 to 50 minutes, adding hot water if it runs low.",
+  "A tamale is done when the dough is firm and pulls cleanly away from the husk. Take the pot off the heat and let them sit for 10 minutes before unwrapping.",
+  "This makes 16 tamales. Cool any you don't eat, then keep them in their husks in a sealed container in the fridge for up to 4 days, or freeze them in a zip bag for up to 3 months. Reheat in the steamer for 15 minutes from the fridge or 25 minutes from frozen, with no need to thaw.",
+  "Serve with the lime wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 70,
+ "cook_time_minutes": 160,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Food Network Kitchen's red chile pork tamales (32 tamales) leads: a chile sauce of guajillo, ancho and pasilla, pork braised in it until it shreds, and a lard masa tested by floating a dab in water. This is a half batch, 16 tamales, so four people get four each. Cup of Yum and Tasty agree on the dried chile sauce, shredded pork, soaked husks and a steam of about an hour. Chicken broth is written as gluten-free, and masa harina for tamales is naturally gluten-free. None of the pages said how to store them, so the fridge and freezer times are the usual ones for steamed tamales. No rating was shown on any page, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Food Network Kitchen",
+   "title": "Red Chile Pork Tamales",
+   "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/red-chile-pork-tamales-7476147",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Tamales Rojos (Red Chile Pork Tamales)",
+   "url": "https://cupofyum.com/recipes/tamales-rojos-red-chile-pork-tamales",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Tasty",
+   "title": "Red Chile Pork Tamales",
+   "url": "https://tasty.co/recipe/red-chile-pork-tamales",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
