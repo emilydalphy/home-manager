@@ -1,0 +1,118 @@
+{
+ "dish_name": "Liang Pi",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Wide dried rice noodles",
+   "qty": "10 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Seitan",
+   "qty": "6 oz",
+   "category": "other"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "6 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Chinese black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil. Cook the rice noodles for the time on the package. Drain, rinse under cold water until cool, and drain well. Toss them with 1 tsp of the sesame oil.",
+  "While the noodles cook, mince the garlic and put it in a large bowl. Add 1 tbsp of the chili oil, the black vinegar, the light soy sauce, 1 1/2 tsp sesame oil and the sugar. Stir until the sugar dissolves.",
+  "Toast the sesame seeds in a dry skillet over medium heat for 2 minutes, until golden. Transfer them to a small plate.",
+  "Drop the bean sprouts into the boiling noodle water for 30 seconds. Transfer them to a bowl of cold water, then drain well.",
+  "Cut the cucumbers into thin matchsticks. Chop 1/3 cup of the cilantro. Slice the seitan into thin strips.",
+  "Add the noodles, seitan, bean sprouts, cucumbers and cilantro to the bowl with the dressing. Toss until everything is coated.",
+  "Divide among 4 bowls and sprinkle with the toasted sesame seeds. Serve with the rest of the chili oil in a small bowl.",
+  "To pack it for lunch, keep the dressing in a jar and the rest in a container. Both keep in the fridge for up to 2 days. Toss them together just before eating."
+ ],
+ "method_notes": "No version has 20 ratings. The sauce ratios follow tasteasianfood (5.0 from 4): chili oil, black vinegar and light soy with a little sesame oil and sugar, plus garlic. The quick method follows Baking Hermann and Mr Pantry, which skip making the noodle sheets from scratch and use bought liangpi or wide rice noodles with wheat gluten, bean sprouts, cucumber and cilantro. Wide dried rice noodles are used here because fresh liangpi is hard to find. Only 1 tbsp of chili oil goes in the dressing, and the rest goes on the table.",
+ "sources": [
+  {
+   "name": "tasteasianfood",
+   "title": "Liangpi (Spicy Cold Skin Noodles)",
+   "url": "https://tasteasianfood.com/liangpi/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Baking Hermann",
+   "title": "Liang Pi (Chinese Spicy Cold Skin Noodles)",
+   "url": "https://bakinghermann.com/liang-pi-chinese-spicy-cold-skin-noodles/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Mr Pantry",
+   "title": "Fast Liangpi (Cold Skin Noodles) Recipe",
+   "url": "https://www.mrpantry.com/recipes/liangpi-cold-skin-noodles",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

@@ -1,0 +1,94 @@
+{
+ "dish_name": "Flamiche",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {
+   "item": "Pie crust",
+   "qty": "1 (9-inch)",
+   "category": "frozen"
+  },
+  {
+   "item": "Leeks",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gruyère",
+   "qty": "3 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Nutmeg",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Trim the root ends and the dark green tops off the leeks and split them lengthwise. Rinse well between the layers, then slice thin. Grate the Gruyère.",
+  "Melt the butter in a large skillet over medium heat. Add the leeks and 1/4 tsp of the salt, cover, and cook for 25 to 30 minutes. Stir now and then, and add a splash of water if they stick. They're done when they're very soft and not browned.",
+  "While the leeks cook, prick the pie crust all over with a fork. Bake it for 10 minutes, then set it aside.",
+  "In a large bowl, whisk the eggs and milk. Whisk in the flour until smooth. Add the remaining 1/4 tsp salt, the pepper and the nutmeg.",
+  "Stir the cooked leeks into the custard. Pour it into the crust and sprinkle the Gruyère on top.",
+  "Bake in the middle of the oven for 30 minutes, until the center is set and the top is golden. Let it sit for 10 minutes before slicing.",
+  "Cut into wedges and serve warm or at room temperature.",
+  "To pack it for lunch, wrap leftover slices and keep them in the fridge for up to 3 days. Eat cold or warm on a baking sheet at 350°F for 10 to 15 minutes."
+ ],
+ "method_notes": "No version online has a rating count, so this follows Pita et Chocolat, which is closest to the classic flamiche: leeks cooked slowly in butter, a milk and egg custard set with a little flour, a pinch of nutmeg, cheese on top, and a blind-baked crust. Go French Yourself adds onion, garlic, cream and cumin, which are left out. Bacon versions were skipped to keep it vegetarian. Check that the pie crust is made without lard.",
+ "sources": [
+  {
+   "name": "Pita et Chocolat",
+   "title": "Leek Quiche (Flamiche aux Poireaux) - Easy French Leek Tart",
+   "url": "https://pitaetchocolat.com/en/recipes/leek-quiche-flamiche-aux-poireaux-easy-french-leek-tart/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Go French Yourself",
+   "title": "Flamiche aux Poireau: Leek Tart with Gruyere and Onions",
+   "url": "https://www.gofrenchyourself.com/home/flamiche-aux-poireau-leek-quiche-with-gruyere-and-onions",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

@@ -1,0 +1,150 @@
+{
+ "dish_name": "Lu Rou Fan",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 100,
+ "ingredients": [
+  {
+   "item": "Pork belly",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Star anise",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "6",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Sichuan peppercorns",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried tangerine peel",
+   "qty": "2 pieces",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small knob",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the pork belly into 1/2-inch pieces. Bring a pot of water to a boil, add the pork, and boil for 1 minute. Drain and rinse under running water to wash off the scum.",
+  "Meanwhile, put the eggs in a small pot and cover them with water. Bring to a boil, then turn off the heat, cover, and let them sit for 10 minutes. Cool them in cold water and peel.",
+  "Dice the onion and the mushrooms. Slice 2 thin pieces of the ginger. Tie the star anise, cinnamon stick, cloves, bay leaves, Sichuan peppercorns, tangerine peel and ginger slices in a square of cheesecloth.",
+  "Heat the oil in a large pot or wok over low heat. Add the sugar and stir until it starts to melt.",
+  "Add the onion and turn the heat to medium-high. Stir for 1 minute, then add the mushrooms and stir for 2 minutes.",
+  "Add the pork, Shaoxing wine, light soy sauce, dark soy sauce and 2 cups water. Stir and bring to a boil. Add the spice packet and the eggs.",
+  "Turn the heat to the lowest setting and simmer for 1 hour 30 minutes, stirring now and then, until the pork is fall-apart tender. Keep the heat low so the sauce doesn't dry out.",
+  "When the pork has about 25 minutes left, rinse the rice and cook it with 2 1/4 cups water, following the package directions.",
+  "Remove the spice packet. Turn the heat to medium-high and cook for 5 minutes, stirring now and then, until the sauce coats a spoon but is still loose.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the pork and sauce over the rice. Halve the eggs and serve with them.",
+  "Leftovers keep in the fridge for up to 4 days. Reheat in a pot over low heat with a splash of water. The pork and sauce freeze for up to 2 months, without the eggs."
+ ],
+ "method_notes": "The Woks of Life (4.88 from 47) leads. It blanches the pork belly, caramelizes sugar in a little oil, softens onion and shiitake, then braises everything with Shaoxing wine, two soy sauces and a tied spice packet for 90 minutes, finishing with a short boil to thicken. Two smaller sites (iHeartUmami, The Seasoned Wok) were read but have too few ratings to lead. They use the same soy and rock sugar base. It makes enough for dinner and a second meal, so it suits cooking once and eating twice.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Lu Rou Fan (Taiwanese Braised Pork Rice Bowl)",
+   "url": "https://thewoksoflife.com/lu-rou-fan-taiwanese-braised-pork-rice-bowl/",
+   "rating": 4.88,
+   "rating_count": 47,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "iHeartUmami",
+   "title": "Lu Rou Fan (Authentic Taiwanese slow braised pork over rice)",
+   "url": "https://iheartumami.com/lu-rou-fan/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "The Seasoned Wok",
+   "title": "Lu Rou Fan Recipe (Taiwanese Braised Pork Rice)",
+   "url": "https://www.theseasonedwok.com/lu-rou-fan-recipe-taiwanese-braised-pork-rice/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

@@ -1,0 +1,96 @@
+{
+ "dish_name": "Hong Kong Macaroni Soup",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Macaroni",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Deli ham",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small knob",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil for the macaroni. Add 1 tbsp of salt.",
+  "Meanwhile, heat 1 tsp of the oil in a medium pot over medium heat. Cut 2 scallions into 2-inch pieces and slice 2 thin pieces of the ginger. Cook them for 1 minute, until lightly browned.",
+  "Add the broth, 2 cups water, the light soy sauce and the oyster sauce. Bring to a boil, then cover and simmer over medium-low heat for 20 minutes.",
+  "While the broth simmers, cook the macaroni for the time on the package. Drain it and set it aside.",
+  "Slice the ham into strips. Thinly slice the 2 remaining scallions.",
+  "Heat the remaining 1 tbsp oil in a skillet over medium-high heat. Crack in the eggs and cook for 2 to 3 minutes, until the whites are set and the yolks are still soft.",
+  "Fish the ginger and scallion pieces out of the broth. Taste it. If it's flat, add a pinch more salt.",
+  "Divide the macaroni among 4 bowls. Top with the ham, ladle the hot broth over, and set a fried egg on each. Sprinkle with the sliced scallions."
+ ],
+ "method_notes": "Every version online has under 20 ratings, so this follows The Seasoned Wok (5.0 from 1), which serves 4: ginger and scallion browned in oil, then chicken broth and water simmered with a little light soy and oyster sauce for 20 minutes. Macaroni, deli ham and a fried egg go in the bowl. tasteasianfood makes its own chicken-bone broth for an hour, which is too long for a lunch. Bought broth is used here.",
+ "sources": [
+  {
+   "name": "The Seasoned Wok",
+   "title": "Hong Kong Macaroni Soup Recipe",
+   "url": "https://www.theseasonedwok.com/hong-kong-macaroni-soup-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "tasteasianfood",
+   "title": "Macaroni Soup",
+   "url": "https://tasteasianfood.com/macaroni-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

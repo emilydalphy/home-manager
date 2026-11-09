@@ -1,0 +1,110 @@
+{
+ "dish_name": "Chinese Eggplant Salad",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Chinese eggplants",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small knob",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Chinese black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pour about 2 inches of water into a pot that fits a steamer basket and bring it to a boil.",
+  "Meanwhile, cut each eggplant in half crosswise, then cut each half into 4 wedges.",
+  "Set half the wedges in the steamer in a single layer with space between them. Cover and steam for 10 to 12 minutes, until a knife slides in easily. Transfer to a platter and steam the rest.",
+  "While the eggplant steams, mince the garlic and 2 tsp of the ginger. Slice the white parts of 2 scallions thin and set the green parts aside. Put them in a heatproof bowl with the sesame seeds.",
+  "Heat the oil in a small pan over medium heat for about 1 minute, until it shimmers. Stand back a little and pour it over the garlic mixture. It will sizzle.",
+  "Stir in the light soy sauce, sesame oil, black vinegar, sugar, salt and 2 tbsp water.",
+  "Slice the green scallion parts thin. Spoon the sauce over the eggplant and sprinkle with the scallion greens.",
+  "Serve warm or cold, with the chili powder in a small bowl for anyone who wants heat.",
+  "To pack it for lunch, keep the eggplant and the sauce in separate containers in the fridge for up to 2 days. Spoon the sauce over just before eating."
+ ],
+ "method_notes": "No version has 20 ratings. This follows China Sichuan Food (5.0 from 13): eggplant wedges steamed about 10 minutes, then a garlic, ginger and scallion sauce with hot oil poured over, light soy, sesame oil, black vinegar and a little sugar. Cook Like Asian steams then tears the eggplant and stir-fries the garlic in oil, with rice vinegar. The fresh chilies in the lead are left out to keep the base mild, with chili powder on the side. Red House Spice has the most ratings but blocked the reader.",
+ "sources": [
+  {
+   "name": "China Sichuan Food",
+   "title": "Chinese Eggplant Salad (Steamed Eggplant with Spicy Garlic Sauce)",
+   "url": "https://www.chinasichuanfood.com/chinese-eggplant-salad-recipe/",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook Like Asian",
+   "title": "Easy and Quick Chinese Eggplant Salad With Garlic Sauce",
+   "url": "https://cooklikeasian.com/chinese-eggplant-salad/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

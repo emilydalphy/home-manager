@@ -1,0 +1,131 @@
+{
+ "dish_name": "Rou Jia Mo",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 135,
+ "ingredients": [
+  {
+   "item": "Pork belly",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small knob",
+   "category": "produce"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Black cardamom pod",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Sichuan peppercorns",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Active dry yeast",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 3 hours ahead: Put the pork belly in a medium pot, cover it with cold water, and bring it to a boil over high heat. When the outside turns opaque, after about 3 minutes, turn off the heat.",
+  "Transfer the pork to a bowl and rinse it under running water. Rinse out the pot.",
+  "Return the pork to the clean pot. Add 1 cup water, the Shaoxing wine, sugar, light soy sauce, dark soy sauce, 2 scallions cut in half, the ginger, star anise, cinnamon stick, cardamom pod, Sichuan peppercorns and bay leaf. Bring to a boil.",
+  "Turn the heat to low and simmer for 1 hour 30 minutes, until a fork slides in and out easily. Keep the heat low so the sauce doesn't boil away. Taste the sauce and add a pinch of salt if it's flat.",
+  "Let the pork cool in its sauce. Cover and refrigerate for up to 4 days.",
+  "In a large bowl, stir together the flour, yeast and 1/4 tsp salt. Add 1/3 cup warm water a little at a time, stirring until a smooth dough comes together. If it's dry, add another tbsp of warm water.",
+  "Knead the dough on the counter for 10 minutes, until smooth and springy. Cover it with a towel and let it sit at room temperature for 1 hour, until doubled.",
+  "Punch the dough down and knead it for 1 minute. Cut it into 4 equal pieces. Roll each into a long strip, fold it in half lengthwise, roll it up into a coil, and press it flat into a disc about 4 inches across. Cover with a towel and let the discs sit for 20 minutes.",
+  "Meanwhile, warm the pork and its sauce in the pot over medium-low heat for 10 minutes. Transfer the pork to a cutting board and chop it coarsely. Chop 1/4 cup of the cilantro.",
+  "Mix the chopped pork with the cilantro and 1/4 cup of the braising liquid in a bowl. Keep the rest of the sauce warm on low heat.",
+  "Heat a dry flat skillet over medium heat. Add 2 of the discs, cover, and cook 2 minutes per side. Uncover and cook about 1 minute per side, until golden. Repeat with the other 2 discs.",
+  "Split each one open and pile in the pork. Serve with the rest of the warm sauce in a small bowl.",
+  "Leftover pork keeps in the fridge for up to 4 days. Reheat it in a pot over medium-low heat with a splash of water. Wrap any leftover flatbreads in a zip-top bag for 2 days and warm them in a dry skillet."
+ ],
+ "advance_prep_notes": "braise the pork the night before (or at least 3 hours ahead)",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "method_notes": "The Woks of Life version (4.91 from 40) leads. It blanches the pork belly, braises it low for 90 minutes to 2 hours in Shaoxing wine, soy, rock sugar and whole spices, and says to braise it a day ahead. The bun is a plain yeast dough cooked in a dry covered skillet. Its recipe makes 12, so everything here is cut to a third for 4. Galangal is left out and the spices trimmed to suit a smaller pot. The braise is the long part, which is why it is set as a make-ahead first step.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Chinese Hamburger, Rou Jia Mo 肉夹馍",
+   "url": "https://thewoksoflife.com/chinese-hamburgers-rou-jia-mo/",
+   "rating": 4.91,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}
