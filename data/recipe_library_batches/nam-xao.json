@@ -1,0 +1,90 @@
+{
+ "dish_name": "Nam Xao",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Wipe the mushrooms clean with a damp paper towel and slice them 1/4 inch thick. Mince the garlic and the shallots, keeping them apart.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat. Add half the mushrooms in a single layer and leave them alone for 2 minutes. Stir and cook for 2 to 3 minutes, until golden and they've given up their liquid. Transfer to a bowl.",
+  "Add another 1 tbsp oil and cook the second half the same way. Leave the mushrooms in the pan this time.",
+  "Return the first batch to the pan. Push the mushrooms to the side, add the last 1 tbsp oil and the shallots and stir for 1 minute. Add the garlic and stir for 30 seconds.",
+  "Stir everything together. Add the soy sauce and pepper and cook for 1 minute, until the mushrooms look glossy and the liquid in the pan has thickened slightly.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve over the rice with the juices from the pan."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Wandering Chopsticks is the lead (it is the same dish by name): mushrooms sauteed in a hot pan with plenty of garlic and a few dashes of soy sauce, taken off as soon as they wilt. Luke Nguyen's recipe on SBS adds shallots, black pepper and 2 tbsp of light soy sauce for 200 g of shiitake, which gives the ratios here. Neither has ratings and RecipeTin Eats has no version, so the first one read leads. The mushrooms are cooked in two batches so they brown instead of steaming, and the pan juices are the sauce for the rice.",
+ "sources": [
+  {
+   "name": "Wandering Chopsticks",
+   "title": "Nam Matsutake Xao (Vietnamese Sauteed Japanese Pine Mushrooms)",
+   "url": "http://wanderingchopsticks.blogspot.com/2010/11/nam-matsutake-xao-vietnamese-sauteed.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Wild shiitake mushroom and choko leaf stir-fry (nam xao la su su)",
+   "url": "https://www.sbs.com.au/food/recipe/wild-shiitake-mushroom-and-choko-leaf-stir-fry-nam-xao-la-su-su/jd111ghc7",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Viet World Kitchen",
+   "title": "Lemongrass Chile Mushroom Stir-Fry (Nam Xao Xa Ot)",
+   "url": "https://www.vietworldkitchen.com/blog/2018/11/lemongrass-chile-mushroom-stir-fry.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

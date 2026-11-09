@@ -1,0 +1,153 @@
+{
+ "dish_name": "Banh Mi Xiu Mai",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Ground pork",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jicama",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "3/4 cup finely diced"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 2 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baguettes",
+   "qty": "4 small",
+   "category": "other"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Peel the jicama and dice it very small. You need 3/4 cup. Dice the half onion as small as you can and mince 3 of the garlic cloves.",
+  "In a large bowl, combine the pork, jicama, onion, the 3 minced garlic cloves, 1/2 tbsp fish sauce, 1/2 tsp salt, 1/2 tsp pepper, 1 tsp sugar and 1 tbsp cornstarch. Mix with your hands. Stop as soon as there are no streaks left. Any longer and the meatballs come out dense.",
+  "Wet your hands and roll the mix into 16 meatballs, about 1 1/2 inches wide. Set them on a plate.",
+  "Mince the last 2 garlic cloves. Slice the green onions thinly and pick the cilantro leaves.",
+  "Heat the sesame oil in a large deep skillet over medium heat. Add the 2 minced garlic cloves and stir for 30 seconds, until they smell fragrant. Add the tomato paste and stir for 20 seconds.",
+  "Add the crushed tomatoes, broth, 1 tbsp sugar, 1/2 tbsp fish sauce and 1/2 tsp pepper. Bring to a boil, then turn the heat to medium-low and cook for 3 minutes.",
+  "Add the meatballs one at a time, spooning a little sauce over each. Cover and cook for 6 minutes. Turn the meatballs over, cover and cook for 6 minutes.",
+  "While the meatballs cook, split the baguettes lengthwise, leaving one side joined. Toast them cut side down in a dry second skillet or a toaster oven for 1 to 2 minutes, until lightly golden.",
+  "Stir 2 tsp cornstarch into 2 tsp cold water until smooth. Stir it into the sauce and cook for 2 minutes, until the sauce thickens enough to coat a spoon. You're cooking the meatballs to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve 4 meatballs and a few spoonfuls of sauce in each baguette, with the green onions and cilantro on top and the rest of the sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Savory Sweet Spoon is the lead (5.0 from 50): ground pork and jicama meatballs poached in a tomato, tomato paste and fish sauce sauce, thickened with a cornstarch slurry. Runaway Rice cooks raw meatballs straight in the sauce and Banh Mi Labs uses crushed tomatoes, and this follows both to stay near 30 minutes: no pre-steaming or pre-cooking the onion, canned crushed tomatoes in place of fresh, and 1 tbsp cornstarch in the meatballs (from Runaway Rice) so raw balls hold in the sauce. Broth stands in for bouillon powder and water. Banh Mi Labs also pickles daikon and carrot for the sandwich, left out here for time.",
+ "sources": [
+  {
+   "name": "Savory Sweet Spoon",
+   "title": "Vietnamese Xiu Mai (Meatballs in Tomato Sauce)",
+   "url": "https://www.savorysweetspoon.com/xiu-mai-vietnamese-meatballs/",
+   "rating": 5.0,
+   "rating_count": 50,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Runaway Rice",
+   "title": "Vietnamese Meatballs (Xiu Mai)",
+   "url": "https://runawayrice.com/main-dishes/vietnamese-meatballs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Banh Mi Labs",
+   "title": "Banh Mi Xiu Mai (Vietnamese Pork Meatball Banh Mi)",
+   "url": "https://banhmilabs.com/banh-mi-xiu-mai/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Feed the Pudge",
+   "title": "Banh Mi Xiu Mai / Vietnamese Meatball Sandwich",
+   "url": "https://feedthepudge.com/banh-mi-xiu-mai-vietnamese-meatball-sandwich/",
+   "rating": 4.7,
+   "rating_count": 12,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

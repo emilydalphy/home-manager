@@ -1,0 +1,97 @@
+{
+ "dish_name": "Dau Hu Chien Sa Ot",
+ "cuisine": "Vietnamese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 14,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Firm tofu",
+   "qty": "1 lb",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "4 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1 large",
+   "category": "produce",
+   "cook_qty": "1 1/2 tbsp minced"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp + a pinch"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Cut the tofu into 1/2 inch slices and pat them very dry with paper towels.",
+  "Trim the lemongrass and mince only the pale white part. You need 6 to 7 tbsp. Mince the shallot and the garlic, keeping the garlic apart. Remove the seeds from 1 of the red chilies and mince it. Slice the other red chili for the table.",
+  "In a large bowl, gently toss the tofu with the lemongrass, shallot, the minced chili and 1/2 tsp salt. Let it stand for 10 minutes.",
+  "Heat 1/4 cup of the oil in a large nonstick skillet over medium heat. Wipe the lemongrass mix off each tofu slice back into the bowl, then lay half the slices in the skillet in a single layer.",
+  "Fry for 3 to 4 minutes per side, until golden and crisp. Transfer to a plate lined with paper towels, then fry the second half the same way.",
+  "Pour the oil out of the skillet and wipe out any dark bits. Add the last 1 tbsp oil and turn the heat to medium-low.",
+  "Add the lemongrass mix and stir for 3 minutes, until it turns lightly golden. Add the garlic and a pinch of salt and keep stirring for 2 minutes, until deep golden and crunchy. Keep the heat low so it doesn't burn.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Arrange the tofu on a platter and scatter the crisp lemongrass mix over it. Serve with the rice and the sliced chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Delightful Plate is the lead and is this dish by name: tofu tossed with minced lemongrass, shallot and chili, fried until crisp, then the aromatics toasted in the pan and scattered on top. Veggie Anh and Homecooked toss the fried tofu in soy sauce and sugar instead, which would add gluten and sweetness, so they are credited here only for the shape of the dish. The lead's two seeded chilies are cut to one in the pan with the other sliced at the table. No source had 20 or more ratings, and RecipeTin Eats has no version. About 30 minutes with the rice cooking alongside, the tofu fried in two batches.",
+ "sources": [
+  {
+   "name": "Delightful Plate",
+   "title": "Vietnamese Lemongrass Chili Tofu (Dau Hu Chien Sa Ot)",
+   "url": "https://delightfulplate.com/vietnamese-lemongrass-chili-tofu/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Veggie Anh",
+   "title": "Lemongrass Tofu (Dau phu xao sa ot)",
+   "url": "https://veggieanh.com/lemongrass-tofu/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Homecooked",
+   "title": "Dau Hu Sa Ot (Lemongrass Chili Tofu)",
+   "url": "https://www.homecooked.fun/r/tofu_lemongrass",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

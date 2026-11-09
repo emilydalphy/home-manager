@@ -1,0 +1,151 @@
+{
+ "dish_name": "Bun Bo Nam Bo",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 18,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Rice vermicelli",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Green leaf lettuce",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 bag (8 oz)",
+   "category": "produce",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fried shallots",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Put a large pot of water on to boil for the noodles.",
+  "Slice the beef thinly against the grain, about 1/8 inch thick. In a bowl, toss it with the oyster sauce, 4 minced garlic cloves and the pepper. Leave it while you prep everything else.",
+  "Whisk together the juice of the 2 limes (that should be about 1/4 cup), 1/3 cup warm water, 2 tbsp fish sauce, 1 tbsp sugar and 2 minced garlic cloves until the sugar dissolves. Set it aside.",
+  "Cook the vermicelli in the boiling water according to the package, usually 3 to 5 minutes. Drain it, rinse under cold water and drain again.",
+  "Meanwhile, cut the carrot and cucumber into thin matchsticks, tear the lettuce and pick the cilantro and mint leaves. Divide the noodles, lettuce, bean sprouts, carrot, cucumber and herbs among 4 bowls.",
+  "Trim the lemongrass and mince only the pale white part. Heat 1 tbsp of the oil in a large skillet or wok over medium heat. Add half of the lemongrass and stir for 30 to 40 seconds, until it smells fragrant and shrinks down.",
+  "Turn the heat to medium-high. Add half of the beef in a single layer and leave it alone for 20 to 30 seconds. Add 1 tbsp fish sauce and stir-fry for about 1 minute, until the beef is just cooked and no longer red. Transfer it to a plate.",
+  "Add the remaining 1 tbsp oil and the rest of the lemongrass, then cook the second half of the beef with the remaining 1 tbsp fish sauce the same way.",
+  "Top each bowl with beef, then fried shallots and peanuts. Spoon over the dressing, starting with about 3 tbsp per bowl, and serve the rest on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum is the lead (4.7 from 30, 30 minutes): thin beef marinated in oyster sauce, pepper and garlic, lemongrass fried first, the beef cooked in small batches over high heat, then served on vermicelli with a lime fish sauce dressing, fried shallots and peanuts. Take Two Eggs adds soy sauce, brown sugar and onion to the marinade and Summer & Spice uses a bigger dressing; both confirm the layout. Amounts are scaled from Cup of Yum's 1 lb for 2 to 3 people up to 1 1/2 lb for 4. The marinade is 15 minutes while the noodles and vegetables are prepped, and the base is mild with no chili.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Bun Bo Nam Bo (Vietnamese Beef Noodle Salad)",
+   "url": "https://cupofyum.com/recipes/bun-bo-nam-bo-vietnamese-beef-noodle-salad",
+   "rating": 4.7,
+   "rating_count": 30,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Take Two Eggs",
+   "title": "Bun Bo Nam Bo (Vietnamese beef noodle salad)",
+   "url": "https://takestwoeggs.com/bun-bo-nam-bo/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Summer & Spice",
+   "title": "Vietnamese Beef Noodle Salad (Bun Bo Nam Bo)",
+   "url": "https://summerandspice.com/recipe/vietnamese-beef-noodle-salad-bun-bo-nam-bo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

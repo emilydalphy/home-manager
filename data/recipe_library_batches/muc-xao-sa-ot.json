@@ -1,0 +1,106 @@
+{
+ "dish_name": "Muc Xao Sa Ot",
+ "cuisine": "Vietnamese",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 18,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Cleaned squid tubes",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "3 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Red chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Pat the squid dry. Cut the tubes open lengthwise and lay them flat. Lightly score the inside in a crosshatch, then cut into 1 1/2 inch pieces.",
+  "In a bowl, toss the squid with the fish sauce, sugar, 1/2 tsp salt and 1 tbsp of the oil. Let it stand for 10 minutes while you do the next step.",
+  "Trim the lemongrass and mince only the pale white part. Mince the shallots and the garlic.",
+  "Heat the remaining 2 tbsp oil in a large skillet or wok over medium-high heat. Add the shallots and garlic and stir for 30 seconds, until fragrant.",
+  "Add the lemongrass and stir for 1 to 2 minutes, until it turns golden and smells toasty.",
+  "Turn the heat to high. Add the squid and its marinade and stir-fry for 2 to 3 minutes, until the pieces are opaque and curled. Stand back a little. It will spit.",
+  "Add the gochugaru and toss for 20 seconds. Take the pan off the heat right away so the squid stays tender.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Slice the red chilies. Serve the squid over the rice with the juices from the pan, and put the chilies on the table for the adults."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Two cooks write this dish by name: Ola Squid (lemongrass, shallot, garlic, Korean chili powder, a quick marinade) and Mama Snow Cooks (squid with lemongrass and chili paste, 2 to 3 minutes on high). Neither has ratings, so the first one read leads, and RecipeTin Eats has no version. Both stir-fry for only a few minutes so the squid stays tender, which is why it goes in last. This follows Ola Squid, with its seasoning powder and MSG replaced by salt, and the chili powder cut to 1 tsp of gochugaru with sliced fresh chilies at the table so the pan stays mild. Fish sauce is gluten-free in most brands, so check the label.",
+ "sources": [
+  {
+   "name": "Ola Squid",
+   "title": "Stir-fried Squid with Lemongrass & Chili",
+   "url": "https://olasquid.com/en/squid-stir-fried-with-lemongrass-and-chili/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mama Snow Cooks",
+   "title": "Spicy Stir Fry Squid with Lemongrass",
+   "url": "https://mamasnowcooks.com/recipe/stir-fry/spicy-stir-fry-squid-with-lemongrass/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

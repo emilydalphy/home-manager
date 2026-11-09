@@ -1,0 +1,107 @@
+{
+ "dish_name": "Dau Hu Sot Nam",
+ "cuisine": "Vietnamese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Firm tofu",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Red chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Cut the tofu into 3/4 inch cubes and pat them very dry. Slice the cremini and the shiitake caps 1/4 inch thick. Slice the green onions, keeping the white parts apart from the green. Slice the chilies for the table.",
+  "Stir the cornstarch into 2 tbsp cold water until smooth and set it aside.",
+  "Heat 2 tbsp of the oil in a large nonstick skillet over medium-high heat. Add the tofu in a single layer and cook for 7 to 8 minutes, turning now and then, until golden on most sides. Transfer to a plate.",
+  "Add the last 1 tbsp oil to the skillet. Add the white parts of the green onions and stir for 30 seconds. Add the mushrooms and cook for 4 to 5 minutes, until they are golden and have released their liquid.",
+  "Add the soy sauce, sesame oil and 3/4 cup water. Bring to a simmer.",
+  "Stir the cornstarch mix again and add it to the pan. Stir for 1 minute, until the sauce thickens and turns glossy.",
+  "Return the tofu to the pan and fold it into the sauce for 1 minute. Take the pan off the heat and stir in the green parts of the green onions.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve over the rice with the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mon Ngon Moi Ngay's Dau Hu Xot Nam is the lead: fried tofu with mushrooms stir-fried in a soy and sesame oil sauce, thickened with a starch slurry and finished with green onion. It uses butter, which goes for the vegan tag, and boa ro (a leek), which green onion whites stand in for. Thanh Nien's version fries the tofu first and cooks a tomato into the sauce. Their sauces are small, so 3/4 cup of water is added to give four portions a spoonable sauce. Neither has ratings and RecipeTin Eats has no version.",
+ "sources": [
+  {
+   "name": "Mon Ngon Moi Ngay",
+   "title": "Dau hu xot nam",
+   "url": "https://monngonmoingay.com/dau-hu-xot-nam/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Thanh Nien",
+   "title": "Dau hu sot nam rom",
+   "url": "https://thanhnien.vn/dau-hu-sot-nam-rom-thom-ngon-de-lam-185631499.htm",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,116 @@
+{
+ "dish_name": "Ca Tim Nuong Mo Hanh",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Chinese eggplants",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/8 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 1/4 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Heat the oven to 450°F with a rack in the middle and line a rimmed baking sheet with parchment.",
+  "Trim the eggplants and cut each one lengthwise into 1/2 inch slices. Brush both sides with 1 1/2 tbsp of the oil and lay them on the sheet in a single layer. Sprinkle with a little salt.",
+  "Roast for 20 minutes, flipping the slices after 10 minutes. You're looking for deep golden edges and a center that's soft and creamy. A knife should slide in with no resistance.",
+  "While the eggplant roasts, finish the dressing. Mince the garlic and stir it into 1 1/2 tbsp soy sauce, 1 tbsp lime juice, 2 1/4 tsp sugar and 6 tbsp water until the sugar dissolves.",
+  "Slice the green parts of the green onions thinly. You need 3/4 cup. Crush the peanuts lightly.",
+  "About 5 minutes before the eggplant is done, make the scallion oil. Heat 3 tbsp oil in a small saucepan over medium heat until a slice of green onion sizzles right away. Add the green onions and 1/8 tsp salt and cook for 10 seconds, until fragrant. Take it off the heat.",
+  "Taste the dressing. If it's flat, add a pinch more sugar or a squeeze of lime.",
+  "Arrange the eggplant over the rice. Spoon over the dressing and the scallion oil, and scatter the peanuts on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Delightful Plate is the lead and is this dish by name: eggplant cooked until soft, topped with a salty-sweet dressing and a hot scallion oil, then crushed peanuts. Its 40 minutes on a grill pan, or 40 to 60 in the oven, is too slow, so the eggplants are cut into slices and roasted at 450°F as in Life of Simple Treats and Bakeit Glamorous, who both cook cut eggplant. Every source dresses it with fish sauce, so for the vegan tag the dressing uses soy sauce in its place, with the same lime, sugar, garlic and water. No source had 20 or more ratings, and RecipeTin Eats has no version. Total is about 30 minutes with the rice cooking alongside.",
+ "sources": [
+  {
+   "name": "Delightful Plate",
+   "title": "Vietnamese Grilled Eggplant with Scallion Oil (Ca Tim Nuong Mo Hanh)",
+   "url": "https://delightfulplate.com/vietnamese-grilled-eggplant-scallion-oil/",
+   "rating": 4.67,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Life of Simple Treats",
+   "title": "Vietnamese Eggplant with Scallion oil",
+   "url": "https://www.lifeofsimpletreats.com/blog/vietnamese-eggplant-with-scallion-oil",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Bake It Glamorous",
+   "title": "Ca tim nuong mo hanh (Grilled eggplant in spring onion oil)",
+   "url": "https://bakeitglamorous.com/2015/04/13/ca-tim-nuong-mo-hanh/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Helen's Recipes",
+   "title": "Grilled Eggplant - Ca tim nuong mo hanh",
+   "url": "https://helenrecipes.com/recipe-grilled-eggplant-ca-tim-nuong-mo-hanh/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
