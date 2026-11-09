@@ -1,0 +1,101 @@
+{
+ "dish_name": "Huevos al Albanil",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Roma tomatoes",
+   "qty": "1.5 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeños",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1/2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat a large dry skillet over medium-high heat. Add the tomatoes, the onion cut into thick slices, and 1 of the jalapeños. Cook for about 8 minutes, turning them, until they're charred in spots.",
+  "Add the garlic clove to the skillet for the last 2 minutes, until it has a few brown spots.",
+  "Transfer everything to a blender. Cut the stem end out of the tomatoes and the jalapeño's stem off, and remove the jalapeño's seeds and ribs. Add 1/2 tsp salt and 1/2 cup water.",
+  "Pulse in short bursts until it is chunky. Transfer it to a bowl.",
+  "Wipe out the skillet. Beat the 8 eggs with 1/2 tsp salt and the pepper.",
+  "Heat the 3 tbsp oil in the skillet over medium heat. Pour in the eggs and leave them for 15 seconds. Then stir and cook for about 3 minutes, until they're just set.",
+  "Add the blended tomato mixture and 1/2 cup water and stir well. Simmer over medium-low heat for 10 minutes, stirring now and then.",
+  "Meanwhile, slice the other jalapeño for the table, and warm the tortillas in a dry skillet or wrapped in a damp towel in the microwave.",
+  "Serve the eggs with the warm tortillas and the sliced jalapeño at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version found has 20 ratings of 4.0 or better (The Other Side of the Tortilla is 3.1 from 43, as the page shows it), so this leads with Maricruz Avalos's red salsa version, which roasts the tomatoes and chiles and simmers the scrambled eggs in the salsa for 10 minutes. Mexconnect cooks tomatillo salsa the same way and serves it with warm tortillas. The chile de arbol is dropped and the jalapeño is seeded to keep the base mild, with a second jalapeño at the table for heat.",
+ "sources": [
+  {
+   "name": "Maricruz Avalos",
+   "title": "Huevos al Albanil (Mexican scrambled eggs with salsa)",
+   "url": "https://www.maricruzavalos.com/huevos-al-albanil/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Other Side of the Tortilla",
+   "title": "Huevos al Albanil",
+   "url": "https://theothersideofthetortilla.com/2014/12/huevos-al-albanil/",
+   "rating": 3.1,
+   "rating_count": 43,
+   "read": true
+  },
+  {
+   "name": "Mexconnect",
+   "title": "Eggs In Green Salsa: Huevos Al Albanil",
+   "url": "https://mexconnect.com/?p=15562",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

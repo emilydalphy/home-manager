@@ -1,0 +1,71 @@
+{
+ "dish_name": "Mouhalabieh",
+ "cuisine": "Lebanese",
+ "main_protein": "dairy",
+ "ingredients": [
+  {
+   "item": "Whole milk",
+   "qty": "4 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Rose water",
+   "qty": "1 small bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "The night before: pour the 4 cups milk into a medium nonstick pot, off the heat. Add the 1/2 cup cornstarch and the 1/2 cup sugar, and whisk until the cornstarch is smooth.",
+  "Set the pot over medium heat and whisk until the sugar dissolves and the milk comes to a boil. Keep whisking so it doesn't stick to the bottom.",
+  "Turn the heat down to low and cook for 10 minutes, whisking often, until the pudding is thick enough to coat the back of a spoon.",
+  "Take the pot off the heat and stir in the 1 tsp rose water.",
+  "Pour the pudding into 4 bowls or jars. Let them cool on the counter for 30 minutes, then cover and refrigerate overnight.",
+  "In the morning, serve it cold straight from the fridge. Leftovers keep covered in the fridge for up to 5 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "make the pudding the night before and chill it overnight",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "method_notes": "Lead is Salt and Sweet's Mahalabia (5.0 from 62), which thickens 4 cups of milk with 1/2 cup cornstarch and 1/2 cup sugar; Simply Lebanese uses 7 tablespoons cornstarch and chills 2 to 4 hours. The pistachio garnish and the orange blossom water are left out to keep it nut-free and simple. Both sources say fridge life is 2 to 5 days; the lead also says it freezes, but cornstarch puddings can turn watery, so no freezing is given here.",
+ "sources": [
+  {
+   "name": "Salt and Sweet",
+   "title": "Milk Pudding (Mahalabia)",
+   "url": "https://thesaltandsweet.com/rice-pudding-mahalabia/",
+   "rating": 5.0,
+   "rating_count": 62,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Lebanese",
+   "title": "Rose Water Pudding (Mahalabia)",
+   "url": "https://simplyleb.com/recipe/rose-water-pudding/",
+   "rating": 4.67,
+   "rating_count": 15,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

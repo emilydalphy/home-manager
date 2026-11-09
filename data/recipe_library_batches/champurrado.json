@@ -1,0 +1,77 @@
+{
+ "dish_name": "Champurrado",
+ "cuisine": "Mexican",
+ "main_protein": "dairy",
+ "ingredients": [
+  {
+   "item": "Whole milk",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Piloncillo",
+   "qty": "1 cone",
+   "category": "pantry",
+   "cook_qty": "1/2 cup, chopped"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Mexican chocolate",
+   "qty": "1 tablet (3.1 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Masa harina",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  }
+ ],
+ "instructions": [
+  "Put 5 1/2 cups water, the 1 1/2 cups milk, the 1/2 cup piloncillo and the cinnamon stick in a medium saucepan over high heat. Stir until the piloncillo dissolves and it comes to a boil.",
+  "Turn the heat down to medium. Chop the chocolate into small pieces, add it, and stir until it melts.",
+  "Turn the heat down to low. Whisk in the 3/4 cup masa harina a little at a time, stirring constantly so it stays smooth.",
+  "Keep whisking over low heat for 12 to 15 minutes, until it's silky and thick.",
+  "Take the pot off the heat and remove the cinnamon stick. Pour into mugs and serve hot.",
+  "Leftovers keep in the fridge for up to 3 days. Reheat over low heat, whisking in a splash of water or milk to thin it."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has 20 ratings, so this leads with King Arthur's champurrado (4.4 from 9), which simmers masa harina with piloncillo and stone-ground chocolate. Mexican Food Journal (4.5 from 4) and Hola Jalapeno blend the masa with water first. King Arthur's amounts are doubled for 4 mugs, with 1 1/2 cups of milk in place of some water as its note allows. Check the chocolate label for nuts and gluten.",
+ "sources": [
+  {
+   "name": "King Arthur Baking",
+   "title": "Champurrado",
+   "url": "https://www.kingarthurbaking.com/recipes/champurrado-recipe",
+   "rating": 4.4,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mexican Food Journal",
+   "title": "Champurrado (Mexican Corn and Chocolate Drink)",
+   "url": "https://mexicanfoodjournal.com/champurrado-chocolate-atole/",
+   "rating": 4.5,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Hola Jalapeno",
+   "title": "Easy Champurrado Recipe",
+   "url": "https://www.holajalapeno.com/champurrado-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
