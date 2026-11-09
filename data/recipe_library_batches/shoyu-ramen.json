@@ -1,0 +1,98 @@
+{
+ "dish_name": "Shoyu Ramen",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Ground chicken",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 grated"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "8 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 mushrooms"
+  },
+  {
+   "item": "Fresh ramen noodles",
+   "qty": "1 lb",
+   "category": "other"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a small pot of water to a boil for the eggs. Fill a bowl with ice and water.",
+  "Grate the onion and the ginger on the small holes of a box grater into a large deep pan, off the heat. Add the chicken, 2 tbsp of the soy sauce and the oil.",
+  "Put the pan over medium-high heat. Break up the chicken as it cooks. Keep going until the liquid has cooked off and the chicken is deeply browned, with a dark layer stuck to the bottom of the pan, about 8 minutes.",
+  "Meanwhile, lower the eggs into the boiling water and turn the heat down to a steady simmer. Cook them for 6 1/2 minutes, then transfer them to the ice water.",
+  "Put a large pot of water on to boil for the noodles. Slice the green onions.",
+  "Add 8 cups of water, the dashi granules, the dried shiitake and the remaining 6 tbsp soy sauce to the chicken. Bring it to a boil, then skim off any foam. Turn the heat down to a gentle simmer and cook for 10 minutes.",
+  "Pour the broth through a fine-mesh sieve into a clean pot, pressing the solids. Transfer the chicken and the shiitake to a bowl, and slice the shiitake thinly. Keep the broth hot.",
+  "Peel the eggs and halve them. Cook the noodles in the large pot for the time on the package, then drain them well.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Divide the noodles between 4 bowls and ladle the hot broth over them. Top each bowl with the chicken, the sliced shiitake, 2 egg halves and the green onions."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one named, fast Shoyu Ramen was readable and rated: NoRecipes (5.0 from 2 votes), so it leads as the best-read real version and the fallback flag is set. It browns ground chicken with onion and ginger, then simmers it in dashi and soy and strains it, which is how it gets a deep broth in 20 minutes. RecipeTin Japan's ramen broth (4.67 from 15) makes a bones broth over 2 hours and seasons the bowl with konbu soy sauce and mirin, so it was not usable for a half-hour dinner. The powdered gelatin and pinch of baking soda in the lead are left out; the eggs are added from RecipeTin's topping list and the lead's own suggestion of a soft egg, and the lead's chicken is kept as a topping instead of thrown away.",
+ "sources": [
+  {
+   "name": "NoRecipes",
+   "title": "Shoyu Ramen",
+   "url": "https://norecipes.com/shoyu-ramen-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

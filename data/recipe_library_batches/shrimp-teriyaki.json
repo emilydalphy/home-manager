@@ -1,0 +1,127 @@
+{
+ "dish_name": "Shrimp Teriyaki",
+ "cuisine": "Japanese",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Raw large shrimp, peeled and deveined",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "2 crowns",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "2 tbsp juice"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer until the water runs clear. Put it in a pot with 2 1/4 cups of water and bring it to a boil. Turn the heat to low, cover, and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes.",
+  "Meanwhile, in a cup, stir the cornstarch into 1 tbsp of water. In a small saucepan, off the heat, whisk the soy sauce, brown sugar, lemon juice, the garlic, minced, the ginger and the sesame oil. Whisk in the cornstarch mixture.",
+  "Put the saucepan over medium-high heat and bring it to a boil. Turn the heat down to a gentle boil and cook for about 2 minutes, until it starts to thicken. Take it off the heat.",
+  "Cut the broccoli into florets and slice the green onions. Put the broccoli in a large skillet with 1/4 cup of water, cover, and cook over medium-high heat for 4 minutes until bright green. Transfer it to a plate and wipe out the skillet.",
+  "Pat the shrimp dry with paper towels. Heat the oil in the skillet over medium-high heat until it shimmers.",
+  "Add the shrimp in a single layer and cook for 1 1/2 minutes without moving them, until the underside is pink. Flip them and cook for 1 minute.",
+  "Pour in the sauce and toss for 1 minute, until the shrimp are pink and opaque and curled into a loose C. Take the pan off the heat.",
+  "Serve the shrimp and sauce over the rice with the broccoli, and scatter over the green onions and sesame seeds."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Self Proclaimed Foodie's teriyaki shrimp (5.0 from 10): a soy, brown sugar, lemon, garlic, ginger and sesame oil sauce thickened with cornstarch, served with rice and a steamed vegetable. No version has 20 ratings, so the fallback flag is set. That page grills the shrimp on skewers; Amanda's Cookin' (5.0 from 2) and Life Made Simple (4.75 from 4) cook them in a hot skillet and add the sauce at the end, which is the method used here so it is ready in under half an hour. All three sources agree the sauce goes on at the end because it turns sticky.",
+ "sources": [
+  {
+   "name": "Self Proclaimed Foodie",
+   "title": "Teriyaki Shrimp",
+   "url": "https://selfproclaimedfoodie.com/teriyaki-shrimp/",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Amanda's Cookin'",
+   "title": "Teriyaki Shrimp",
+   "url": "https://amandascookin.com/teriyaki-shrimp/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Life Made Simple",
+   "title": "Teriyaki Shrimp",
+   "url": "https://lifemadesimplebakes.com/teriyaki-shrimp/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

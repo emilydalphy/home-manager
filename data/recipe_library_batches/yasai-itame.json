@@ -1,0 +1,137 @@
+{
+ "dish_name": "Yasai Itame",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "1/2 head"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 sliced"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp minced"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegan oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer until the water runs clear. Put it in a pot with 2 1/4 cups of water and bring it to a boil. Turn the heat to low, cover, and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes.",
+  "Meanwhile, slice the onion half thinly. Cut the carrots into matchsticks and the half cabbage into 1-inch pieces. Pull the strings off the snow peas, slice the mushrooms, and mince the garlic and ginger.",
+  "Stir the oyster sauce and the soy sauce together in a small bowl.",
+  "Heat a wok or large skillet over medium-high heat and add 1 tbsp of the vegetable oil. Add the mushrooms in a single layer and leave them for 3 minutes until the underside is browned. Stir, cook for 2 minutes, then transfer them to a plate.",
+  "Add the remaining 1 tbsp vegetable oil, then the garlic and ginger. Stir for 20 seconds until they smell fragrant.",
+  "Add the onion and stir for 2 minutes. Add the carrots and cook until they start to soften, about 2 minutes.",
+  "Add the cabbage and snow peas and stir-fry for 2 minutes. Add the bean sprouts and the mushrooms.",
+  "Pour in the oyster and soy mixture, then add the salt and a pinch of pepper. Toss for 1 minute and take the pan off the heat. Drizzle with the sesame oil and toss once more.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Cup of Yum's stir-fried vegetables (4.7 from 141), whose method is garlic and ginger first, then the vegetables from hardest to softest, finished with oyster sauce, soy sauce, salt and toasted sesame oil. Mrs. Lin's style, Oishi Book and Japanese Cooking 101 versions agree on cabbage, carrot and bean sprouts and differ on pork and on how much seasoning. The source pork is replaced by browned mushrooms (the source suggests mushrooms) and its oyster sauce by a vegan oyster sauce; the vegetables and seasonings are about doubled so it is a main over rice, and the pork marinade with sake is left out.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Stir-Fried Vegetables (Yasai Itame)",
+   "url": "https://cupofyum.com/recipes/stir-fried-vegetables-yasai-itame",
+   "rating": 4.7,
+   "rating_count": 141,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Plantiful Cooking",
+   "title": "Yasai Itame (Japanese stir-fry vegetables)",
+   "url": "https://www.myplantifulcooking.com/yasai-itame/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Stir Fry Vegetables (Yasai Itame)",
+   "url": "https://japanesecooking101.com/yasai-itame-stir-fry-vegetables-recipe/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

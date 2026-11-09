@@ -1,0 +1,106 @@
+{
+ "dish_name": "Salmon Sushi Bowls",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Skinless salmon fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sushi rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp + 1 tsp"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 1/2 tbsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a fine-mesh strainer until the water runs clear. Put it in a small saucepan with 1 1/4 cups of water and 1 tsp of the rice vinegar. Bring it to a strong simmer over medium-high heat. Turn the heat to low, cover, and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, in a bowl, whisk the soy sauce, sesame oil, the remaining rice vinegar, the ginger, the garlic, grated, and the maple syrup. Transfer 4 tbsp of it to a small bowl for serving.",
+  "Cut the salmon into 1-inch cubes and toss it in the marinade left in the first bowl. Leave it for 20 minutes.",
+  "While the salmon sits, slice the cucumber into thin rounds, cut the carrots into thin matchsticks, and slice the green onions.",
+  "Heat a large nonstick or cast iron skillet over medium-high heat. Add the salmon with a slotted spoon and leave the extra marinade behind. Cook for 5 to 6 minutes, turning now and then, until lightly caramelized. You're cooking it to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a cube: it's done when it's opaque and flakes.",
+  "Slice the avocado. Divide the rice among 4 bowls and top with the salmon, cucumber, carrots and avocado. Scatter over the green onions and sesame seeds, and spoon the reserved sauce over each bowl."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Minimalist Baker's easy salmon sushi bowls (5.0 from 21): salmon cubes in a ginger, garlic, tamari and sesame oil marinade, seared and set on seasoned rice with cucumber, avocado and sesame. Kitchen Sanctuary and Spices in My DNA use a soy and ginger dressing and a broiled fillet, and add sriracha mayo, which is left out here. The marinade is scaled up by half so there's sauce for the bowls, the rice is the lead's 1 cup for 4, and the lead's cucumber salad is written as sliced cucumber and carrot, as its own note allows. At 35 minutes it is slightly over the 30 minute target because the rice needs 15 minutes of cooking and 10 of resting.",
+ "sources": [
+  {
+   "name": "Minimalist Baker",
+   "title": "Easy Salmon \"Sushi\" Bowls",
+   "url": "https://minimalistbaker.com/easy-salmon-sushi-bowls/",
+   "rating": 5.0,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,109 @@
+{
+ "dish_name": "Wafu Mushroom Pasta",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "King oyster mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Oyster mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Roasted nori sheets",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "1 sheet"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil and add the salt. Cook the spaghetti for 1 minute less than the time on the package. Before draining, scoop out 1 cup of the pasta water.",
+  "Meanwhile, cut the stems off the shiitake and slice the caps thinly. Halve the king oyster mushrooms lengthwise and slice them thinly. Tear the oyster mushrooms into strips. Chop the garlic, slice the green onions, and cut the nori into thin strips with scissors.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat. Add half the mushrooms in a single layer and leave them for 3 minutes until browned on the underside. Stir, cook for 2 minutes, and transfer them to a plate. Repeat with another 1 tbsp of oil and the rest of the mushrooms.",
+  "Return all the mushrooms to the skillet and add the last 1 tbsp of oil and the garlic. Stir for 30 seconds until the garlic smells fragrant. Add the pepper.",
+  "Add the soy sauce, the mirin and 1/2 cup of the pasta water. Stir and let it bubble for 1 minute.",
+  "Add the drained spaghetti and toss over medium heat, adding more pasta water a splash at a time, until the noodles are coated in a thin, glossy sauce.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Divide the pasta between 4 plates and scatter over the green onions and nori."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is NoRecipes' butter shoyu pasta with Japanese mushrooms (4.71 from 24): mushrooms browned in oil with garlic, then soy sauce and starchy pasta water tossed with spaghetti cooked a minute short. RecipeTin Japan's wafu mushroom pasta (5.0 from 3) adds mirin, green onion and nori, which are used here, plus optional bacon and butter. The lead's butter is left out and replaced with a little more olive oil so the dish is vegan, and the lead's parsley is replaced with the green onion and nori. Mushrooms are cooked in two batches so they brown.",
+ "sources": [
+  {
+   "name": "NoRecipes",
+   "title": "Butter Shoyu Pasta with Japanese Mushrooms",
+   "url": "https://norecipes.com/butter-soy-sauce-pasta/",
+   "rating": 4.71,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Wafu Mushroom Pasta",
+   "url": "https://japan.recipetineats.com/wafu-mushroom-pasta-japanese-style-mushroom-pasta/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

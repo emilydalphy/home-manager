@@ -1,0 +1,103 @@
+{
+ "dish_name": "Tsukimi Udon",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Frozen udon noodles",
+   "qty": "4 blocks",
+   "category": "frozen"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "5 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put a large pot of water on to boil for the udon. Thinly slice the green onions.",
+  "In a wide deep skillet with a lid, stir together 5 cups of water, the dashi granules, the soy sauce, the mirin and the sugar. Bring it to a simmer over medium-high heat.",
+  "Cook the frozen udon in the boiling water for the time on the package, usually 2 to 3 minutes, until the blocks loosen and the noodles are hot. Drain and divide between 4 deep bowls.",
+  "Turn the broth down to a gentle simmer. Crack each egg into a small cup and slide it into the broth, leaving space between them. Cover and cook for 3 minutes, until the whites are set and the yolks are still soft.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Ladle the broth over the noodles. Lift an egg out with a slotted spoon onto each bowl, and scatter over the green onions. Serve with the shichimi togarashi at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Non-Guilty Pleasures' tsukimi udon (5.0 from 3): udon in a dashi broth seasoned with soy sauce, mirin and a little sugar, topped with an egg and scallion. No tsukimi udon online has 20 ratings (Asian Inspirations 4.5 from 12, Food.com 4.5 from 8), so the fallback flag is set. The sources put a raw yolk or a cracked egg on the bowl; here the whole egg is poached in the broth so it is cooked through to a soft yolk, as Sudachi and Food.com's baked version do. Asian Inspirations makes a kombu broth with a 2 hour soak, which was too slow for a weeknight, and its vegetable and fish cake toppings are left out.",
+ "sources": [
+  {
+   "name": "Non-Guilty Pleasures",
+   "title": "Tsukimi Udon (Japanese Moon Viewing Noodle Soup)",
+   "url": "https://www.nonguiltypleasures.com/tsukimi-udon/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Asian Inspirations",
+   "title": "Moon Viewing Udon Soup (Tsukimi Udon)",
+   "url": "https://asianinspirations.com.au/recipes/moon-viewing-udon-soup-tsukimi-udon/",
+   "rating": 4.5,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food.com",
+   "title": "Tsukimi Udon (Full Moon Udon)",
+   "url": "https://www.food.com/recipe/tsukimi-udon-full-moon-udon-119575",
+   "rating": 4.5,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
