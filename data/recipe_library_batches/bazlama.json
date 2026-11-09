@@ -1,0 +1,90 @@
+{
+ "dish_name": "Bazlama",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 32,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "4 cups (500 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Water",
+   "qty": "1 1/2 cups, lukewarm",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Up to 3 days ahead: in a large bowl, stir together the lukewarm water, yeast, sugar, salt and olive oil.",
+  "Add the flour 1 cup at a time, stirring with a wooden spoon until the dough is too stiff to stir. Transfer it to a lightly floured counter and knead for 8 minutes, until it's soft and no longer sticks to your hands.",
+  "Put the dough back in the bowl, cover it with a clean towel and leave it for 1 hour, until it's puffy.",
+  "Fold the edges of the dough into the middle to push out the air. Cut it into 8 equal pieces, roll each into a ball and cover them with the towel.",
+  "On a lightly floured counter, roll each ball into a round about 6 inches across and 1/4 inch thick.",
+  "Heat a large dry skillet over medium heat. Put in 1 round and cook until the edges puff up, about 1 minute. Flip it and cook until the other edges puff. Keep flipping 3 more times, about 4 minutes in all, until the flatbread puffs up and has golden spots. Stack the finished flatbreads in a towel and cook the rest the same way.",
+  "Let the flatbreads cool completely. Wrap the flatbreads in a towel and keep them in a zip bag in the fridge for up to 3 days, or freeze them with a sheet of parchment between each for up to 3 months.",
+  "To serve, warm each flatbread in a dry skillet over medium heat for 30 seconds on each side, or 1 minute on each side if frozen. Serve warm with butter or white cheese."
+ ],
+ "advance_prep_notes": "make a batch up to 3 days ahead; keeps in the fridge or freezes",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "Yemek.com's bazlama (4.4 from 22 ratings) is a yeasted dough of flour, water, olive oil, sugar and salt, rolled thin and flipped several times in a dry pan until it puffs. Roaming Taste and Yemek.com's pan version add yogurt for a softer bread; the lead has none, so this keeps to the lead and halves its flour. Sources agree the cooked breads freeze well. The fridge time of 3 days is a normal range for yeast flatbreads and was not stated by the sources. The dough needs a 1 hour rise, which is hands off.",
+ "sources": [
+  {
+   "name": "Yemek.com",
+   "title": "Mayalı da Derler: Bazlama",
+   "url": "https://yemek.com/tarif/bazlama/",
+   "rating": 4.4,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Roaming Taste",
+   "title": "Flatbread (Bazlama)",
+   "url": "https://roamingtaste.com/bazlama-turkish-flatbread/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Hamuru Puf Puf: Tavada Bazlama",
+   "url": "https://yemek.com/tarif/tavada-bazlama",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

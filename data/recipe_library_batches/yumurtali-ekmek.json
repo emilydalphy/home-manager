@@ -1,0 +1,96 @@
+{
+ "dish_name": "Yumurtali Ekmek",
+ "cuisine": "Turkish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 14,
+ "ingredients": [
+  {
+   "item": "Thick-sliced stale bread",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Crack the eggs onto a large plate with a rim. Add the cumin, dried mint, salt and pepper, and beat gently with a fork until the yolks are broken up.",
+  "Lay the bread slices in the egg and leave them for 30 seconds. Turn them over and leave them another 30 seconds, until the egg has soaked in on both sides.",
+  "Heat 1 tbsp of the olive oil and 1 tbsp of the butter in a large skillet over medium heat, swirling until the butter melts.",
+  "Put in 4 slices and cook for 3 minutes, until the underside is golden. Flip them and cook the other side for 3 minutes.",
+  "Transfer them to a plate. Wipe out any burnt bits, then repeat with the remaining oil, butter and 4 slices.",
+  "Serve hot, with the chili flakes in a small bowl on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Turkeys for Life's eggy bread beats eggs with cumin and dried mint, then fries the soaked bread in olive oil and butter for 3 to 4 minutes a side. Yemek.com and Turkish Style Cooking use the same method with thyme or parsley, and Turkish Style Cooking adds milk. None of the three shows ratings, so this is a fallback and RecipeTin Eats has no Turkish egg bread. The chili flakes, optional in the lead, go on the table to keep the base mild.",
+ "sources": [
+  {
+   "name": "Turkeys for Life",
+   "title": "Eggy Bread (Yumurtalı Ekmek)",
+   "url": "https://www.turkeysforlife.com/2013/09/yumurtali-ekmek-eggy-bread.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Bir Taneyle Yetinemezsin: Yumurtalı Ekmek",
+   "url": "https://yemek.com/tarif/yumurtali-ekmek/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Turkish Style Cooking",
+   "title": "Yumurtalı Ekmek",
+   "url": "https://turkishstylecooking.com/yumurtali-ekmek-recipe.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

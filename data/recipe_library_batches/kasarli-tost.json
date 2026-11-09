@@ -1,0 +1,59 @@
+{
+ "dish_name": "Kasarli Tost",
+ "cuisine": "Turkish",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Kaşar cheese (or kasseri)",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Lay out 4 slices of bread. Cover each with 2 slices of the kaşar, about 1 oz each, then top with the other 4 slices of bread.",
+  "Spread half the butter (1 tbsp) over the tops of the 4 sandwiches.",
+  "Heat a large skillet over medium heat for 2 minutes. Put in 2 sandwiches, buttered side down, and press them flat with a spatula for the first minute.",
+  "Spread a quarter of the butter over the tops of those 2 sandwiches, then cook them for 3 minutes, until the bread is golden underneath.",
+  "Flip them and cook the other side for 3 minutes, until golden and the cheese has melted and stretches when you pull a corner apart.",
+  "Transfer them to a plate. Repeat with the remaining 2 sandwiches, spreading the rest of the butter over their tops and cooking them the same way.",
+  "Cut each sandwich in half and serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Yemek.com's kaşarlı tost is bread, kaşar and butter pressed in a toastie maker until the cheese melts. This version uses a skillet pressed with a spatula, since most kitchens have no tost press. The only rated version found has one rating, so it is a fallback and RecipeTin Eats has no Turkish tost. Kaşar is sold at Turkish and Middle Eastern shops; kasseri or a mild provolone melts the same way. Sucuk and the other fillings of Ayvalık tost are left out to keep it the plain cheese tost.",
+ "sources": [
+  {
+   "name": "Yemek.com",
+   "title": "Kaşarlı Tost Tarifi",
+   "url": "https://yemek.com/tarif/kasarli-tost",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Kaşarlı Ayvalık Tostu",
+   "url": "https://yemek.com/tarif/kasarli-ayvalik-tostu/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

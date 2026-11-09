@@ -1,0 +1,84 @@
+{
+ "dish_name": "Xoi Xeo",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Glutinous (sweet) rice",
+   "qty": "1 1/2 cups (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Split mung beans",
+   "qty": "1/2 cup (3.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Shallots",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 3 hours ahead: rinse the rice, put it in a bowl with the turmeric and cover it with water by 2 inches.",
+  "In a second bowl, rinse the split mung beans and cover them with water by 2 inches. Leave both bowls on the counter.",
+  "Set a pot with 2 inches of water on high heat and bring it to a boil. Line 2 stackable steamer baskets with damp cheesecloth or parchment with holes poked in it.",
+  "Drain the rice and toss it with 1/2 tsp of the salt. Spread it in the lower basket, set it over the pot and steam for 25 minutes, stirring once halfway.",
+  "As soon as the rice goes on, drain the mung beans, toss them with the remaining 1/4 tsp salt and spread them in the second basket. Stack it on top of the rice and steam for 15 to 20 minutes, until the beans are soft enough to mash.",
+  "Meanwhile, slice the shallots thinly. Heat the oil in a small skillet over medium heat and add the shallots. Fry for 6 to 8 minutes, stirring, until deep golden. Transfer them to a plate lined with paper towels.",
+  "When the rice is tender and chewy, transfer it to a bowl, stir in the 4 tbsp coconut milk, return it to the basket and steam for 3 minutes.",
+  "While the beans are still warm, transfer them to a bowl and mash with a fork until mostly smooth. Shape the mash into 2 balls.",
+  "Spoon the rice into 4 bowls. Slice thin pieces off the mung bean balls with a knife so the slices fall over the rice. Top with the fried shallots and serve right away."
+ ],
+ "advance_prep_notes": "soak the rice and mung beans the night before, at least 3 hours",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Delightful Plate's xôi xéo soaks sticky rice with turmeric and split mung beans, steams both with a little salt, folds coconut milk into the rice as the vegan option to chicken fat, and slices the mashed warm beans over the rice with fried shallots. Andrea Nguyen's write-up agrees on the slicing and the turmeric rice. Fried shallots are made at home here since store-bought ones often have wheat flour, and no peanut topping is used. No version shows ratings, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Delightful Plate",
+   "title": "Xôi Xéo (Vietnamese Sticky Rice with Hand-Cut Mung Bean)",
+   "url": "https://delightfulplate.com/vietnamese-sticky-rice-mung-bean-xoi-xeo",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pass the Fish Sauce (Andrea Nguyen)",
+   "title": "Sticky rice, buttery mung beans",
+   "url": "https://andreanguyen.substack.com/p/sticky-rice-buttery-mung-beans-and",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

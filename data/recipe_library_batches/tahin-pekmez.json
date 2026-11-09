@@ -1,0 +1,57 @@
+{
+ "dish_name": "Tahin Pekmez",
+ "cuisine": "Turkish",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 3,
+ "ingredients": [
+  {
+   "item": "Tahini",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Grape molasses (pekmez)",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread or flatbread (vegan)",
+   "qty": "1 small loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  }
+ ],
+ "instructions": [
+  "Stir the jar of tahini well, including the thick part at the bottom, so it's smooth.",
+  "Spoon the 1/3 cup tahini into a small bowl and pour in the pekmez.",
+  "Stir with a spoon for a swirled look, or keep stirring and scraping the sides until the color is even and there are no streaks.",
+  "Slice the bread and warm it in a toaster, or in a dry skillet over medium heat for 1 minute on each side.",
+  "Serve the bowl at room temperature with the warm bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Yemek.com's guide mixes tahini and pekmez 1 to 1, with nothing added, and Food.com's version uses twice as much molasses as tahini. Both are served at room temperature with bread, and several Turkish sources say the ratio is up to taste. This version follows the 1 to 1 lead. No version shows ratings, so this is a fallback, and the recipe has no cooking, only warming the bread.",
+ "sources": [
+  {
+   "name": "Yemek.com",
+   "title": "Tahin Pekmez Nasıl Yapılır? Karışım Oranı Nasıl Olmalı?",
+   "url": "https://yemek.com/tahin-pekmez-nasil-yapilir/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Tahin Pekmez",
+   "url": "https://www.food.com/recipe/tahin-pekmez-380677",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

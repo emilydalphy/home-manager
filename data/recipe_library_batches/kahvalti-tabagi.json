@@ -1,0 +1,99 @@
+{
+ "dish_name": "Kahvalti Tabagi",
+ "cuisine": "Turkish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "10",
+   "category": "produce"
+  },
+  {
+   "item": "Baby cucumbers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Small mild green peppers (sivri biber or padron)",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Kaşar cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Feta",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Black and green olives",
+   "qty": "1 cup (5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Kaymak or clotted cream",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sour cherry jam (or honey)",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pul biber (Turkish chili flakes)",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a medium pot of water to a boil. Lower in the eggs with a spoon and boil for 7 minutes, until the whites are set and the yolks are soft.",
+  "Meanwhile, halve the cherry tomatoes and slice the cucumbers into rounds. Slice the kaşar cheese and the drained feta into thin slices.",
+  "When the eggs are done, transfer them to a bowl of cold water for 2 minutes, then peel them.",
+  "Arrange the tomatoes, cucumbers and whole peppers on one side of a large platter. Add the kaşar cheese, feta and olives, and put the kaymak and the jam close together.",
+  "Halve the eggs lengthways and add them to the platter. Sprinkle the salt and the oregano over the eggs, olives and feta, then drizzle the olive oil over the vegetables, feta and olives.",
+  "Put the pul biber in a small bowl on the table. Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "SBS Food's Turkish breakfast plate (no rating shown) arranges tomatoes, cucumbers, peppers, kaşar, feta, olives, kaymak, jam and soft eggs, finished with olive oil, oregano and pul biber. Cooking Gorgeous and other guides agree on the same mix and add menemen or other breads. This version doubles it for 4, leaves out the acuka (it has walnuts), the sucuk and the bread (gluten), and the pul biber goes on the table to keep it mild. It is a fallback because no version shows 20 ratings.",
+ "sources": [
+  {
+   "name": "SBS Food",
+   "title": "Turkish Breakfast Plate (Kahvaltı Tabağı)",
+   "url": "https://www.sbs.com.au/food/recipe/turkish-breakfast-plate/jqmfqrq2e",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

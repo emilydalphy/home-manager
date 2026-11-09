@@ -1,0 +1,57 @@
+{
+ "dish_name": "Bal Kaymak",
+ "cuisine": "Turkish",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 3,
+ "ingredients": [
+  {
+   "item": "Kaymak or clotted cream",
+   "qty": "1 cup (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread or Turkish flatbread",
+   "qty": "1 small loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  }
+ ],
+ "instructions": [
+  "Take the kaymak out of the fridge 15 minutes before serving. Cold from the fridge it's too firm to spread.",
+  "Slice the bread and warm it in a toaster, or in a dry skillet over medium heat for 1 minute on each side.",
+  "Spoon the kaymak into a small bowl and the honey into another.",
+  "To eat, spread the kaymak on a slice of warm bread and drizzle honey over it.",
+  "Serve with the warm bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cooking Gorgeous describes bal kaymak as kaymak spread on bread or toast and drizzled with honey, and says to let firm kaymak sit 10 to 15 minutes before serving. Yemek.com's tahini and kaymak toast adds butter and tahini, which are left out here. Homemade kaymak keeps 2 days in the fridge and doesn't freeze; for store-bought, follow the label. The only version with a rating has 3, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Turkish Kaymak Recipe (Bal Kaymak)",
+   "url": "https://cookingorgeous.com/blog/turkish-kaymak-recipe-geymar/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Tahinli Kaymaklı Lezzet Şöleni",
+   "url": "https://yemek.com/tarif/tahinli-kaymakli-lezzet-soleni/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
