@@ -1,0 +1,64 @@
+{
+ "dish_name": "Patjuk",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 120,
+ "ingredients": [
+  {
+   "item": "Dried adzuki beans",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet rice flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup + 1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp + 2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The day before, or at least 2 hours ahead: pick over the 1 cup adzuki beans and rinse them. Put them in a large pot with 4 cups water and bring to a boil over medium-high heat. Turn the heat to medium and boil uncovered for 5 minutes, then drain.",
+  "Return the beans to the pot with 4 cups fresh water. Cover and cook over medium-low heat for 1 to 1 1/2 hours, until the beans are so soft that they crush when you press one between your fingers. Turn off the heat and leave the beans to cool in their liquid.",
+  "Blend the beans and all their liquid until smooth, in two batches. If it's too thick to blend, add a splash of water. Transfer the puree into a container and refrigerate it if you're making it a day ahead.",
+  "In a small bowl, mix 1/2 cup of the sweet rice flour, 2 tsp of the sugar and a pinch of salt. Stir in 4 tbsp boiling water. Once it's cool enough to touch, knead it into a smooth dough.",
+  "Roll the dough into a rope about 3/4 inch thick. Cut it into 3/4 inch pieces and roll each one into a small ball.",
+  "Pour the bean puree back into the pot. Stir 1 tbsp sweet rice flour into 1/2 cup water until smooth, then stir that into the pot with 3 tbsp sugar and the remaining salt.",
+  "Cook over medium-low heat, uncovered, for about 10 minutes, stirring often. Add a splash of water if it gets too thick. Taste it. If it's flat, add a pinch more salt.",
+  "Meanwhile, bring a medium pot of water to a boil and add the rice balls. Cook for 2 to 3 minutes, until they all float to the top. Transfer them to a bowl of cold water, then drain.",
+  "Ladle the porridge into bowls and add a few rice balls to each. Serve hot.",
+  "To keep it, cool the porridge and transfer it to a container, and keep the rice balls in a separate one. It keeps in the fridge for 4 days. To reheat, warm the porridge in a saucepan over low heat with a splash of water, then add the rice balls for the last 2 minutes to warm through."
+ ],
+ "advance_prep_notes": "Cook and puree the beans the day before, or at least 2 hours ahead.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Korean Bapsang's danpatjuk (4.66 from 35) is the sweet red bean porridge with chewy glutinous rice balls: adzuki beans are boiled and drained, simmered about 1 to 1 1/2 hours until very soft, pureed, thickened with a little sweet rice flour and sweetened. The Korea Herald and Saveur pages were not readable. Honey is replaced with extra sugar to keep it vegan, and the pine nut and chestnut garnishes are left out to keep it nut-free. The page gives no storage times, so the 4 day fridge time is a general guideline. The rice balls are kept apart because they turn firm in the fridge.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Danpatjuk (Sweet Red Bean Porridge)",
+   "url": "https://www.koreanbapsang.com/danpatjuk/",
+   "rating": 4.66,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

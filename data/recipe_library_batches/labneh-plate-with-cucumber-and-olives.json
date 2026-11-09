@@ -1,0 +1,78 @@
+{
+ "dish_name": "Labneh Plate with Cucumber and Olives",
+ "cuisine": "Lebanese",
+ "main_protein": "dairy",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Labneh",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Kalamata olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Za'atar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra-virgin olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Spoon the labneh onto a large plate. Spread it out with the back of the spoon, about 3/4 inch thick, and leave a little rim.",
+  "Thinly slice the 2 Persian cucumbers. Halve 1 cup of the cherry tomatoes and pit the olives if they still have their pits.",
+  "Arrange the cucumber, tomatoes and the 1/2 cup olives on and around the labneh.",
+  "Sprinkle the za'atar over the labneh, and a pinch of salt over the tomatoes.",
+  "Drizzle the olive oil over everything. Serve straight from the plate, with a spoon for the labneh."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Modern Nonna (5 from 4) spreads labneh on a plate and tops it with Persian cucumber, cherry tomatoes, Kalamata olives, za'atar and olive oil; Matbakh (5 from 5) spreads 1 cup of labneh with za'atar and olive oil and suggests cucumbers, tomatoes, mint and olives alongside. The Modern Nonna's smoked salmon, capers and herbs are left out, since the list promises a plate of labneh, cucumber and olives. Both sources serve it with pita; that is left out to keep the plate gluten free. Store-bought labneh is used, since homemade needs 12 hours of straining. Both pages have fewer than 20 ratings, so this is a fallback lead, and trusted cook RecipeTin Eats has no labneh plate.",
+ "sources": [
+  {
+   "name": "The Modern Nonna",
+   "title": "Labneh Breakfast Plate",
+   "url": "https://themodernnonna.com/labneh-breakfast-plate/",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Labneh With Za'atar and Olive Oil",
+   "url": "https://thematbakh.com/zaatar-labneh/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

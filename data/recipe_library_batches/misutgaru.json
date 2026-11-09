@@ -1,0 +1,73 @@
+{
+ "dish_name": "Misutgaru",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Misutgaru (Korean roasted multigrain powder)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 quart",
+   "category": "dairy",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ice cubes",
+   "qty": "1 tray",
+   "category": "other",
+   "cook_qty": "4"
+  }
+ ],
+ "instructions": [
+  "Put the 1/3 cup misutgaru in a large jar or pitcher.",
+  "Pour in 1/2 cup of the milk and stir until it forms a smooth paste with no lumps.",
+  "Stir in the honey.",
+  "Pour in the remaining 3 1/2 cups milk and stir well, or put the lid on the jar and shake it.",
+  "Divide it among 4 glasses and add an ice cube to each. Serve cold."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum (4.5 from 8) blends 2 Tbsp of misugaru with 1 1/2 cups of milk, honey and a little ice, and Honest Food Talks makes a paste with a little milk first so it doesn't clump, then adds the rest. Spoon University uses much less powder, 1 Tbsp to 2/3 cup of milk. This follows Cup of Yum's ratio for 4 cups of milk and Honest Food Talks' paste method. All three pages have fewer than 20 ratings, so this is a fallback lead. Some misutgaru blends contain peanuts or other nuts, so check the label before buying.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Misugaru Latte (Korean Multigrain Shake)",
+   "url": "https://cupofyum.com/recipes/misugaru-latte-korean-multigrain-shake",
+   "rating": 4.5,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Honest Food Talks",
+   "title": "Misugaru Latte Recipe | Korean Multigrain Shake",
+   "url": "https://www.honestfoodtalks.com/?p=8942",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Spoon University",
+   "title": "How to Make a Healthy Korean Multi-Grain Drink",
+   "url": "https://old.spoonuniversity.com/recipe/how-to-make-a-healthy-korean-multi-grain-drink-in-less-than-2-minutes",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

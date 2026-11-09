@@ -1,0 +1,86 @@
+{
+ "dish_name": "Onsen Tamago",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cooking sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  }
+ ],
+ "instructions": [
+  "Put the 4 eggs in a bowl of warm tap water and leave them for 10 minutes, so they aren't fridge cold.",
+  "Meanwhile, rinse the 1 cup rice in several changes of water until the water runs mostly clear. Drain it, then put it in a medium pot with 1 1/4 cups water.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to the lowest setting and cook for 15 minutes. Then leave it covered, off the heat, for 10 minutes.",
+  "While the rice cooks, make the sauce. In a small saucepan, off the heat, stir 1/2 tsp dashi granules into 1/2 cup water. Add the sake, the mirin and the soy sauce.",
+  "Set the sauce over medium heat and bring it to a boil. Take it off the heat and leave it to cool.",
+  "Bring 4 cups water to a boil in a thick-bottomed pot, then take it off the heat. Pour in 1 cup cold water. That brings the water to about 176°F, so if you have a thermometer, check it there. No thermometer? The water should be steaming but not bubbling.",
+  "Lower the eggs in with a ladle. Cover the pot and leave the eggs for 25 minutes if they're smaller, or 30 minutes if they're large.",
+  "Transfer the eggs into a bowl of cold water for 2 minutes. Thinly slice 2 scallions.",
+  "Fluff the rice with a fork and divide it among 4 bowls. Crack each egg into a small cup first, then slide it onto a bowl of rice. The white will still be loose and the yolk soft, and that's how it should be.",
+  "Spoon about 2 tbsp of the sauce around each egg and scatter the scallions over the top. Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Japan sits the room temperature eggs in boiled water cooled with chilled water, about 176°F, for 25 to 30 minutes by egg size, and finishes them in a sauce of dashi, sake, mirin and light soy sauce; that is the lead here. Norecipes uses a rice cooker and a sauce with salt and sugar. Neither gives a rice amount, so the rice is cooked on the stove in the time the eggs rest. Both pages have fewer than 20 ratings (5 from 3 and 5 from 5), so this is a fallback lead. Warm tap water stands in for the 2 hours the lead spends bringing eggs to room temperature. The sauce is brothy and mild, so there is no heat to move to the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Japan",
+   "title": "Onsen Tamago (Japanese-Style Soft-Boiled Egg)",
+   "url": "https://japan.recipetineats.com/onsen-tamago-japanese-style-soft-boiled-egg/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Norecipes",
+   "title": "Onsen Tamago (Hot Spring Eggs)",
+   "url": "https://norecipes.com/onsen-tamago-hot-spring-eggs/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

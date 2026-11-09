@@ -1,0 +1,70 @@
+{
+ "dish_name": "Hobakjuk",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Kabocha squash",
+   "qty": "1 (about 2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Sweet rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead: rinse the 1/2 cup sweet rice in a few changes of water, then cover it with cold water and leave it to soak.",
+  "Cut the kabocha in half with a sharp knife and scoop out the seeds. Put the halves cut side down on a microwave safe plate.",
+  "Microwave on high for 12 to 15 minutes, until a fork slides in easily. Let the squash cool for 10 minutes.",
+  "Scoop the flesh into a large pot and mash it with a potato masher or the back of a spoon until it's mostly smooth.",
+  "Drain the rice and put it in a blender with 1 cup water. Blend until it's very fine.",
+  "Pour the rice mixture and 3 cups water into the pot with the squash. Set it over medium heat and stir often for about 5 minutes, until the rice turns see-through and the porridge begins to thicken.",
+  "Cover, turn the heat to low and cook for 20 minutes, stirring now and then. Stir in a splash of water if it gets thicker than you like.",
+  "Stir in the salt and 2 tbsp brown sugar and cook for 3 to 4 minutes. Taste it. If it's flat, add a pinch more salt, or another spoon of brown sugar if you'd like it sweeter.",
+  "Ladle it into bowls and serve hot.",
+  "To keep it, cool the porridge and transfer it to airtight containers. It keeps in the fridge for 3 to 4 days, or in the freezer for up to 3 months. Thaw frozen portions overnight in the fridge.",
+  "To reheat, warm it in a saucepan over low heat, or in the microwave, until hot all the way through. Stir in a splash of water, since it thickens in the fridge."
+ ],
+ "advance_prep_notes": "Soak the sweet rice at least 1 hour ahead.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Korean Bapsang (4.71 from 24) boils the squash, purees it, blends soaked sweet rice with water and cooks the two together; the rice is soaked for 1 hour and the porridge simmers 20 minutes. The squash is cooked in the microwave, one of the alternatives in that page's notes. Beyond Kimchee (5 from 3) cooks chunks of squash and rice together in 4 cups of water and blends them, in about 35 minutes. The porridge is vegan and nut-free as written: Beyond Kimchee's honey is replaced with brown sugar, and the pine nut garnish is left out. Korean Bapsang gives no storage times, so the fridge and freezer times come from Beyond Kimchee.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Hobakjuk (Korean Pumpkin Porridge)",
+   "url": "https://www.koreanbapsang.com/?p=129",
+   "rating": 4.71,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "30-Minute Korean Pumpkin Porridge (Hobakjuk)",
+   "url": "https://www.beyondkimchee.com/korean-pumpkin-porridge",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

@@ -1,0 +1,100 @@
+{
+ "dish_name": "Kongnamul Gukbap",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Soybean sprouts",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Cooked short-grain rice",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried kelp (dasima)",
+   "qty": "1 piece (about 4 inches)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 small"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Korean red pepper flakes",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the piece of kelp and 8 cups water in a large pot. Bring it to a boil over medium-high heat, then turn the heat down so it bubbles gently. Cook for 15 minutes.",
+  "Meanwhile, rinse the soybean sprouts and drain them. Thinly slice the onion, mince the 3 garlic cloves and slice 2 scallions.",
+  "Lift the kelp out of the pot. Add the onion, garlic and salt, and simmer for 5 minutes.",
+  "Add the sprouts and cover the pot. Cook for 5 minutes, until the sprouts are tender but still have a little bite.",
+  "Stir in the cooked rice and bring the soup back to a boil. Crack each of the 4 eggs into a small cup, then slide them into the soup. Cover and cook for 2 minutes, until the whites are set and the yolks are still soft.",
+  "Take the pot off the heat and stir in the sesame oil. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the soup and rice into 4 bowls, with an egg in each. Top with the scallions and sesame seeds. Serve with the red pepper flakes in a small bowl on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every readable version builds the soup on an anchovy and kelp stock. Cooking Off the Cuff simmers the sprouts in that stock with garlic and salt, then layers rice, onion, kimchi and an egg in a bowl; the Gwangju News recipe adds onion, radish and sesame, and tops the rice bowl at the table. This version is vegetarian, so the anchovies are left out and the broth is kelp only; kimchi is also left out, since it is usually made with fish sauce. The red pepper is moved to the table to keep the soup mild. Neither page shows a rating, so this is a fallback lead, and the broth is lighter than the traditional anchovy one.",
+ "sources": [
+  {
+   "name": "Cooking Off the Cuff",
+   "title": "Soybean Sprout Soup with Rice (Kongnamul Gukbap)",
+   "url": "https://www.cookingoffthecuff.com/recipes/soybean-sprout-soup-with-rice",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gwangju News",
+   "title": "Kongnamul Gukbap: Soybean Sprouts Rice Soup",
+   "url": "https://gwangjunewsgic.com/food-drink/recipe/soybean-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}
