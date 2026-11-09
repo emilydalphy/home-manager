@@ -1,0 +1,103 @@
+{
+ "dish_name": "Ensalada de Nopales",
+ "cuisine": "Mexican",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Nopales (cactus paddles), cleaned of spines",
+   "qty": "4 paddles",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 green onions"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Wash the nopales and slice them into thin strips. If any spines are left, trim them off first.",
+  "Put the strips in a pot and cover them with water. Stir in 1/2 tsp of the salt, bring to a boil over medium-high heat and cook for 15 to 20 minutes, until tender and a dull olive green.",
+  "While they cook, chop the 3 green onions and dice the tomatoes. Chop the cilantro until you have 1/4 cup.",
+  "Drain the nopales and put them in a bowl of ice water for 5 minutes. Drain them again well.",
+  "In a large salad bowl, combine the nopales, green onions, tomatoes, cilantro and oregano.",
+  "Add the juice of the lime, the 2 tbsp oil, the remaining 1/2 tsp salt and the pepper. Toss to coat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve it cold or at room temperature. Leftovers keep in a covered container in the fridge for 3 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Bossy Kitchen (4.7 from 78) boils fresh paddles and dresses them with lime, oil, tomato, green onion and cilantro; the other versions add serrano or jalapeño and use jarred nopalitos. This follows the lead and leaves out its optional crumbled cheese to keep it vegan. Fresh paddles are sold cleaned at Mexican markets; with jarred nopalitos, rinse about 3 cups, skip the boiling and cooling and go straight to mixing.",
+ "sources": [
+  {
+   "name": "The Bossy Kitchen",
+   "title": "Authentic Mexican Cactus Leaves Salad (Ensalada de Nopales)",
+   "url": "https://www.thebossykitchen.com/authentic-mexican-cactus-leaves-salad-ensalada-de-nopales",
+   "rating": 4.7,
+   "rating_count": 78,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Ensalada de Nopales (Mexican Cactus Salad Recipe)",
+   "url": "https://mexicanmademeatless.com/ensalada-de-nopales-cactus-salad-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Ale Cooks",
+   "title": "Ensalada de Nopal (Cactus Salad) Made Easy",
+   "url": "https://www.alecooks.com/ensalada-de-nopal-cactus-salad-made-easy/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

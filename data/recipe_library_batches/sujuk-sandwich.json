@@ -1,0 +1,82 @@
+{
+ "dish_name": "Sujuk Sandwich",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Beef sujuk sausage",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 pack of 4",
+   "category": "pantry",
+   "cook_qty": "4 pitas"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Slice the sujuk into rounds a little under 1/4 inch thick.",
+  "Slice the tomatoes. Thinly slice the onion and tear the lettuce into pieces.",
+  "In a small bowl, whisk the 2 tbsp olive oil with 1 tbsp lemon juice.",
+  "Heat a large skillet over medium heat. It doesn't need oil, because the sujuk gives off its own fat.",
+  "Lay the sujuk in the pan in a single layer and cook for 3 to 4 minutes, until the underside is browned. Flip the rounds and cook the other side for 3 to 4 minutes, until the edges are crisp. Cook in two batches if they don't fit, and move them to a plate.",
+  "Warm each pita in the same pan for 20 seconds on each side. Split each one open to make a pocket.",
+  "Fill each pita with lettuce, the crisp sujuk, tomato and onion. Drizzle with the lemon dressing.",
+  "Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hadia's Lebanese Cuisine (the only rated page, 5 from 1 vote) stuffs sujuk into a pita pocket; Halal World Depot cooks chopped sujuk until crisp in a pan and dresses the sandwich with oil and lemon, and this one combines the two. Hadia's page uses cheese, which is left out to stay dairy-free. The list promised pickles, but neither source has them, so they are not added. Sujuk is spicy, so buy a mild one if the shop has it.",
+ "sources": [
+  {
+   "name": "Hadia's Lebanese Cuisine",
+   "title": "Sujuk (Homemade From Scratch)",
+   "url": "https://hadiaslebanesecuisine.com/newsite/?p=11348",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Halal World Depot",
+   "title": "Simply Delicious: Lebanese Sujuk Sandwich Recipe",
+   "url": "https://www.halalworlddepot.com/blogs/recipes/simply-delicious-lebanese-sujuk-sandwich-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

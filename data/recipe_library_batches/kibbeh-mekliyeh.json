@@ -1,0 +1,127 @@
+{
+ "dish_name": "Kibbeh Mekliyeh",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 55,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Lean ground beef",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fine bulgur",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lebanese 7 spice",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Ground white pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 cups for frying"
+  }
+ ],
+ "instructions": [
+  "Put the 1 1/2 cups bulgur in a bowl and cover it with 2 cups cold water. Leave it for 30 minutes, then drain it in a sieve and press out as much water as you can.",
+  "While the bulgur soaks, make the filling. Dice about three quarters of the onion. That should be about 1 cup. Keep the rest of the onion for the dough.",
+  "Heat 1 tbsp olive oil in a large skillet over medium heat. Add the diced onion and cook for 4 minutes, stirring now and then, until soft.",
+  "Add 8 oz of the beef and 1/2 tsp of the salt, and the 1/4 tsp black pepper. Break the beef up and cook for 5 minutes, until it's deep brown.",
+  "Stir in 1/2 tsp of the allspice, 1/2 tsp of the 7 spice and the cinnamon. Cook for 1 minute, until it smells toasty. Take the pan off the heat and stir in the pomegranate molasses.",
+  "Spread the filling on a plate and let it cool completely, about 15 minutes.",
+  "Grate the remaining quarter of the onion on the big holes of a box grater. Put it in a food processor with the remaining 12 oz beef, 2 tsp salt, the remaining 1/2 tsp allspice, the remaining 1/2 tsp 7 spice, the white pepper and the nutmeg. Pulse until it's a smooth paste.",
+  "Add the drained bulgur and pulse until the dough is smooth and sticky. No processor? Knead everything together by hand with wet hands for 5 to 7 minutes.",
+  "Set a bowl of cold water beside you. With wet hands, take a piece of dough a little bigger than a golf ball, about 3 tablespoons, and roll it smooth.",
+  "Press your thumb into the ball and turn it to make a thin-walled cup. Put a heaping tablespoon of the cool filling inside. Don't overfill it or the ball will split.",
+  "Pinch the opening closed and shape the ball into an oval with pointed ends. Set it on a tray and repeat to make about 16.",
+  "Chill the tray for 30 minutes so the balls hold together in the oil. To freeze some instead, freeze them on the tray with space between them for 3 hours, then move them to a freezer bag. They keep for 3 months. Thaw them in the fridge overnight before frying.",
+  "Pour 3 cups vegetable oil into a heavy pot or deep skillet and heat it over medium-high to 350°F. No thermometer? Drop in a small piece of dough. It should sizzle right away and float.",
+  "Fry 4 or 5 balls at a time for about 5 minutes, turning them once, until dark golden brown all over. Cut one open to check. It's done when the shell is cooked through with no raw meat in the middle.",
+  "Transfer the balls to paper towels to drain. Serve them hot.",
+  "Leftover kibbeh keeps in the fridge for 3 days. Reheat it in a 375°F oven for 10 minutes."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources make a lean beef and fine bulgur shell around a browned, spiced beef filling, and fry it in batches. They differ on the filling (one adds pomegranate molasses, the other lamb and a herb mix), so this follows the lead for the filling and shell. Pine nuts are left out of the filling to keep it nut-free. Raw balls freeze well on a tray first, as the second source describes. All ratings are small, so the lead is a fallback. Amounts are scaled down from about 20 balls to 16.",
+ "sources": [
+  {
+   "name": "The Matbakh",
+   "title": "Fried Kibbeh Balls",
+   "url": "https://thematbakh.com/wprm_print/fried-kibbeh-balls",
+   "rating": 5,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Alphafoodie",
+   "title": "Kibbeh Recipe (2 Ways)",
+   "url": "https://www.alphafoodie.com/kibbeh-recipe/",
+   "rating": 5,
+   "rating_count": 15,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

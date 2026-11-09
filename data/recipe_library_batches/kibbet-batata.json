@@ -1,0 +1,105 @@
+{
+ "dish_name": "Kibbet Batata",
+ "cuisine": "Lebanese",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Fine bulgur",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp leaves"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp leaves"
+  },
+  {
+   "item": "Lebanese 7 spice",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp cracked"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  }
+ ],
+ "instructions": [
+  "Put the 2/3 cup bulgur in a bowl and pour in enough boiling water to cover it by an inch. Cover the bowl and leave it for 20 minutes.",
+  "Peel the potatoes and cut them into big chunks. Put them in a pot, cover with cold water and stir in 1 tsp of the salt.",
+  "Bring the pot to a boil over high heat. Turn it down to medium and cook for 12 to 15 minutes, until a knife slides into a chunk with no resistance.",
+  "Quarter the onion. Put it in a food processor with the thyme leaves, basil leaves, 7 spice, 1 1/2 tsp salt, the pepper and 1 tbsp of the olive oil. Pulse until it's a coarse, thick paste. No processor? Mince everything as fine as you can and mash it together with a fork.",
+  "Drain the potatoes and mash them until smooth. Spread the mash on a tray and leave it for about 10 minutes, until it's no longer warm.",
+  "Drain the bulgur in a sieve and press out the water.",
+  "In a large bowl, mix the cooled potato, the bulgur and the herb paste with your hands until there are no lumps and it holds together.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spread the kibbeh about an inch thick on a platter and press a pattern into the top with the back of a spoon. Drizzle the remaining 2 tbsp olive oil over it.",
+  "Serve it cold. Leftovers keep in a covered container in the fridge for 3 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Plant Based Folk (5.0 from 33) and Zaatar and Zaytoun both make this as a cold, no-bake mashed potato and bulgur dish, so that's what is written. The list's line says it is baked in a tray, but that is not how the sources make kibbet batata; the baked version is a different dish (kibbeh bil sanieh, like the existing Baked Kibbeh). Amounts are the lead's, scaled from 6 servings to 4. Zaatar and Zaytoun adds walnuts, tomato and pomegranate molasses, which are left out to keep it nut-free and simple.",
+ "sources": [
+  {
+   "name": "Plant Based Folk",
+   "title": "Vegan Lebanese Potato Kibbeh (Kibbet Batata)",
+   "url": "https://plantbasedfolk.com/vegan-lebanese-potato-kibbeh-kibbet-batata/",
+   "rating": 5.0,
+   "rating_count": 33,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Zaatar and Zaytoun",
+   "title": "Kibbet Batata (Vegan Potato Kibbeh)",
+   "url": "https://zaatarandzaytoun.com/kibbet-batata/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Kibbet Batata (Potato Kibbeh)",
+   "url": "https://thematbakh.com/?p=22918",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

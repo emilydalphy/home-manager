@@ -1,0 +1,96 @@
+{
+ "dish_name": "Ceviche de Pescado",
+ "cuisine": "Mexican",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Firm white fish fillets (tilapia, mahi mahi or snapper), skinless",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Limes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/4 cup diced"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Corn tostadas",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "8 tostadas"
+  }
+ ],
+ "instructions": [
+  "Pat the fish dry and cut it into pieces about 1/2 inch across. Use fish that is very fresh or was frozen first, and keep it cold until now.",
+  "Put the fish in a glass bowl with 1 tsp salt. Juice the 3 limes. That should be about 1/3 cup. Pour it over the fish and stir so every piece is coated.",
+  "Cover the bowl and chill it for 30 minutes, stirring once halfway through, until the fish turns white and opaque.",
+  "While it chills, dice the onion until you have 1/4 cup and dice the tomato. Cut the jalapeño in half. Remove the seeds from one half and dice it finely. Dice the other half finely, seeds and all, and put it in a small bowl for the table.",
+  "Chop the cilantro until you have 1/2 cup.",
+  "Stir the onion, tomato, seeded jalapeño and cilantro into the fish. Cover and chill for 30 minutes more.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the ceviche onto the tostadas and serve with the bowl of jalapeño on the side. Leftovers keep in a covered container in the fridge for 1 day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mama Maggie's Kitchen (5.0 from 14) cubes tilapia, cures it in lime juice for 30 minutes, adds onion, tomato, jalapeño and cilantro, and chills it again. The other versions cure it for a similar hour or serve it right away. No version has 20 ratings, so the lead is a fallback. The cucumber and avocado that two sources list as optional are left out. Lime juice does not cook out every parasite, so the fish needs to be very fresh or previously frozen. Saltines are swapped for corn tostadas to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "In Mama Maggie's Kitchen",
+   "title": "Fish Ceviche (Ceviche de Pescado)",
+   "url": "https://inmamamaggieskitchen.com/fish-ceviche-ceviche-de-pescado/",
+   "rating": 5.0,
+   "rating_count": 14,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Muy Delish",
+   "title": "Mexican Ceviche De Pescado (Fish Ceviche)",
+   "url": "https://www.muydelish.com/?p=8405",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Mexican Ceviche de Pescado (Colima Style)",
+   "url": "https://www.maricruzavalos.com/mexican-ceviche-de-pescado/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

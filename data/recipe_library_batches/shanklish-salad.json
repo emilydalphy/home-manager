@@ -1,0 +1,76 @@
+{
+ "dish_name": "Shanklish Salad",
+ "cuisine": "Lebanese",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Shanklish cheese",
+   "qty": "9 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Dice the 3 tomatoes into small pieces and put them in a large bowl.",
+  "Mince half of the red onion. That should be about 1/2 cup. Add it to the bowl.",
+  "Chop the parsley leaves until you have 1/4 cup and add them to the bowl.",
+  "Crumble the 9 oz of shanklish into the bowl with your fingers, in small pieces.",
+  "Pour in the 1/4 cup olive oil and squeeze in the juice of half the lemon. Stir gently until everything is coated.",
+  "Don't add salt. The shanklish is salty enough.",
+  "If you have time, cover the bowl and chill it for 30 minutes. Otherwise serve it right away.",
+  "Serve it cold in bowls. Leftovers keep in a covered container in the fridge for 1 day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version is the same short list: shanklish, tomato, onion, olive oil, with parsley in most. They differ on extras and oil: one adds mint and lemon, one leaves out lemon and uses far less oil. This one follows the lead's list, adds the lemon from the second source, and uses a middle amount of oil. All the ratings are very small, so the lead is a fallback; no salt is added in either source. Bread is left off to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Enri Lemoine",
+   "title": "Shanklish Salad",
+   "url": "https://enrilemoine.com/en/2021/06/19/shanklish-salad-recipe-video/",
+   "rating": 5,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook Eat World",
+   "title": "Shangleesh Salad (Lebanese Breakfast Salad)",
+   "url": "https://www.cookeatworld.com/?p=11192",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
