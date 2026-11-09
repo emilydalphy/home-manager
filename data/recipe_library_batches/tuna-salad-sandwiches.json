@@ -1,0 +1,105 @@
+{
+ "dish_name": "Tuna Salad Sandwiches",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Canned tuna",
+   "qty": "2 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Dill pickles",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 rib"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tsp juice"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Butter lettuce",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "8 leaves"
+  }
+ ],
+ "instructions": [
+  "Toast the 8 slices of bread and set them aside.",
+  "Drain the tuna well, pressing the lid into the can to squeeze out the liquid.",
+  "Finely dice the celery rib, thinly slice the green onion, and chop the pickles. In a medium bowl, mix the mayonnaise, pickles, celery, green onion, Dijon and 1 tsp lemon juice.",
+  "Add the tuna and break it up gently with a fork. Stir until it's combined. Season with a pinch of salt and pepper, and taste it.",
+  "Lay 2 lettuce leaves on each of 4 slices of toast. Spoon a quarter of the tuna salad onto each, and close with the other slices.",
+  "Cut the sandwiches in half. The tuna salad keeps in an airtight container in the fridge for up to 2 days. To pack it for lunch, keep the filling and the bread in separate containers and build the sandwich when you eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies is the lead (4.94 out of 5 from 146 ratings) and RecipeTin Eats (4.87 from 38) agrees on canned tuna, mayonnaise, celery, pickle and Dijon. They differ in the green onion and lemon (lead) against dill and a spoon of pickle brine (RecipeTin). This follows the lead for the salad, and takes the lettuce from RecipeTin. The butter RecipeTin spreads on the bread is left out so the sandwich stays dairy-free.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Classic Tuna Salad",
+   "url": "https://www.spendwithpennies.com/classic-tuna-salad/",
+   "rating": 4.94,
+   "rating_count": 146,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Tuna Sandwich",
+   "url": "https://www.recipetineats.com/tuna-sandwich/",
+   "rating": 4.87,
+   "rating_count": 38,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

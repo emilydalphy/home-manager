@@ -1,0 +1,103 @@
+{
+ "dish_name": "Veggie Hummus Wraps",
+ "cuisine": "American",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Large flour tortillas",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Hummus",
+   "qty": "1 tub",
+   "category": "other",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Yellow bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Red cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "1/2 cup sliced"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce",
+   "cook_qty": "1 carrot"
+  }
+ ],
+ "instructions": [
+  "Cut the bell pepper into thin strips and the cucumber into thin sticks about as long as the tortilla is wide. Chop the tomatoes, then pat them dry with a paper towel.",
+  "Thinly slice 1/2 cup of the red cabbage. Peel 1 carrot and slice it into thin sticks. That should be about 1/2 cup.",
+  "Lay a tortilla flat. Spread 1/4 cup of the hummus down the middle, leaving about 2 inches clear at each end.",
+  "Layer a quarter of the spinach, pepper, cucumber, tomato, cabbage and carrot over the hummus. Keep the filling in a neat line so the wrap rolls cleanly.",
+  "Fold in the two ends, then roll the wrap up tightly from the bottom. Make the other 3 wraps the same way.",
+  "Cut each wrap in half. For a packed lunch, wrap each one tightly in foil and keep it in the fridge. Eat them within 2 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Karissa's Vegan Kitchen is the lead (5 out of 5, but only 5 votes), so this is a fallback lead. Elizabeth Rider, America's Test Kitchen and Simple Veganista all spread hummus on a wrap and roll raw vegetables in it. They differ in the vegetables and in what goes with it: a vinaigrette in two of them, avocado and sprouts in two. This follows Karissa's vegetables and plain build with no dressing. Sources disagree on keeping: same day to 3 days, so the shorter 2 days is written, and the tomato is patted dry to help.",
+ "sources": [
+  {
+   "name": "Karissa's Vegan Kitchen",
+   "title": "Hummus Wraps with Rainbow Veggies",
+   "url": "https://www.karissasvegankitchen.com/hummus-wraps/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Elizabeth Rider",
+   "title": "Loaded Veggie Hummus Wraps",
+   "url": "https://www.elizabethrider.com/hummus-wrap-recipe/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "America's Test Kitchen",
+   "title": "Veggie Wraps with Hummus",
+   "url": "https://www.americastestkitchen.com/recipes/11700-veggie-wraps-with-hummus",
+   "rating": 4.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Simple Veganista",
+   "title": "Hummus Veggie Wraps",
+   "url": "https://simple-veganista.com/?p=132",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

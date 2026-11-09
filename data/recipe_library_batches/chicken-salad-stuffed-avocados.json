@@ -1,0 +1,114 @@
+{
+ "dish_name": "Chicken Salad Stuffed Avocados",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Rotisserie chicken",
+   "qty": "1",
+   "category": "meat/seafood",
+   "cook_qty": "3 cups chopped meat"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Yellow mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "2 tbsp juice"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 onion"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Seedless red grapes",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pull the meat off the rotisserie chicken, leaving the skin behind, and chop it. That should be about 3 cups.",
+  "Dice a quarter of the red onion and the 2 celery stalks, chop 3 tbsp of the parsley, and halve the grapes.",
+  "In a large bowl, whisk together the mayonnaise, mustard, 2 tbsp lemon juice, salt and pepper.",
+  "Add the chicken, onion, celery, 2 tbsp of the parsley and the grapes, and stir until everything is coated.",
+  "Halve the avocados and remove the pits. Scoop about 2 spoonfuls out of each half, leaving a cup. Chop what you scooped out and stir it into the chicken salad.",
+  "Fill each avocado half with a large spoonful of the chicken salad and sprinkle with the last 1 tbsp parsley. Serve right away.",
+  "To make it ahead, stop after the chicken salad and keep it in an airtight container in the fridge for up to 3 days. Fill the avocados right before you eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Food Republic is the lead (4.9 out of 5 from 33 ratings) and the other versions (Cookin' with Mima, Hunker) agree on chicken, mayonnaise, celery, onion and parsley piled into avocado halves; they differ in the yogurt, nuts, grapes and cranberries. This follows the lead, scaled to 3 cups of chicken. Greek yogurt is replaced with a little more mayonnaise to keep it dairy-free, and the walnuts are left out for nut-free. The avocado is left in its skin, as the other versions do.",
+ "sources": [
+  {
+   "name": "Food Republic",
+   "title": "Chicken Salad-Stuffed Avocados",
+   "url": "https://www.foodrepublic.com/1400469/chicken-salad-stuffed-avocados-recipe",
+   "rating": 4.9,
+   "rating_count": 33,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cookin' with Mima",
+   "title": "Stuffed Avocado Chicken Salad",
+   "url": "https://www.cookinwithmima.com/stuffed-avocado-chicken-salad/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Hunker",
+   "title": "Chicken Salad-Stuffed Avocado",
+   "url": "https://www.hunker.com/13773689/no-cook-chicken-salad-stuffed-avocado-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

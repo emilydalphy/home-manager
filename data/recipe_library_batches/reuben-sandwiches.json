@@ -1,0 +1,84 @@
+{
+ "dish_name": "Reuben Sandwiches",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Rye bread",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Butter",
+   "qty": "8 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Thousand Island dressing",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Shredded Swiss cheese",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Sliced deli corned beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sauerkraut",
+   "qty": "1 jar (16 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  }
+ ],
+ "instructions": [
+  "Spoon the sauerkraut into a strainer and press out the liquid with the back of a spoon, then squeeze it in your hands. That should be about 2 cups.",
+  "Lay 4 slices of rye on a board. Sprinkle 1/2 cup of the Swiss over each, then spread 1 tbsp of the dressing over the cheese. Divide the corned beef and sauerkraut among them.",
+  "Spread the remaining 4 tbsp dressing over one side of each of the other 4 slices, and close the sandwiches with the dressing side down. Spread 1 tbsp butter over the top of each sandwich.",
+  "Heat a large skillet over medium heat for 1 minute. Set 2 sandwiches in the pan, buttered side down, and cook for 3 minutes, until golden.",
+  "Spread 1 tbsp butter over the new top of each, flip them, and cook for 2 to 3 minutes, until golden and the cheese has melted. Transfer them to a plate.",
+  "Cook the other 2 sandwiches the same way. Cut each in half and serve hot. Reubens are best fresh. To reheat a leftover, use a skillet over medium-low heat for a few minutes per side, not the microwave."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Jo Cooks is the lead (4.7 out of 5 from 13 votes), so this is a fallback lead; no Reuben page read had 20 ratings. Amanda's Cookin' and Food Republic agree on rye, corned beef, Swiss, sauerkraut and a creamy dressing, griddled in butter over medium heat. They differ in the dressing (a homemade Russian or sauce against bottled Thousand Island). This follows the lead with bottled Thousand Island. Swiss cheese and butter are the dish, so it isn't dairy-free.",
+ "sources": [
+  {
+   "name": "Jo Cooks",
+   "title": "Classic Reuben Sandwich",
+   "url": "https://www.jocooks.com/recipes/classic-reuben-sandwich/",
+   "rating": 4.7,
+   "rating_count": 13,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Amanda's Cookin'",
+   "title": "Reuben Sandwich",
+   "url": "https://amandascookin.com/reuben-sandwich/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "Food Republic",
+   "title": "Reuben Sandwich Recipe",
+   "url": "https://www.foodrepublic.com/2011/06/21/reuben-sandwich-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,92 @@
+{
+ "dish_name": "Cucumber Sandwiches",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Cream cheese",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "4 oz"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tsp chopped"
+  },
+  {
+   "item": "Fresh chives",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 tsp chopped"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "White sandwich bread",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  }
+ ],
+ "instructions": [
+  "Set the cream cheese out on the counter to soften while you do the next step.",
+  "Slice about half of the cucumber thinly. That should be about 24 slices.",
+  "In a small bowl, beat the cream cheese and mayonnaise with a fork until smooth. Stir in the dill, chives, garlic powder, salt and pepper.",
+  "Spread the cream cheese mixture on one side of each of the 8 slices of bread, all the way to the edges.",
+  "Layer the cucumber over 4 of the slices and top with the other 4, spread side down. Trim off the crusts if you like.",
+  "Cut each sandwich into 3 pieces. Serve right away, or cover and keep in the fridge for up to 24 hours. Let them sit out for about 20 minutes before serving."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies is the lead (4.99 out of 5 from 372 ratings) and Kitchen Treaty (5 from 1) agrees on cream cheese with mayonnaise, dill, chives and garlic powder under thin cucumber on soft white bread. They differ in how much mayonnaise goes in and in whether the crusts come off. This follows the lead, cut down to 8 slices of bread. The lead makes 30 small sandwiches, so the amounts are scaled to about a third.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Cucumber Sandwiches",
+   "url": "https://www.spendwithpennies.com/cucumber-sandwiches/",
+   "rating": 4.99,
+   "rating_count": 372,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kitchen Treaty",
+   "title": "Cucumber Sandwiches",
+   "url": "https://www.kitchentreaty.com/cucumber-sandwiches/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
