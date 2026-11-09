@@ -1,0 +1,132 @@
+{
+ "dish_name": "Sopa de Verduras",
+ "cuisine": "Mexican",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Russet potato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Dice the carrots, potato, zucchini and 2 stalks of celery into pieces about 1/2 inch across. Halve the green beans.",
+  "Roughly chop the tomatoes. Put them in a blender with half the onion, the garlic and 1 cup of the broth. Blend until completely smooth.",
+  "Heat the oil in a large pot over medium heat. Pour in the blended tomato mixture and cook for 5 minutes, stirring, until it turns a darker orange red and thickens a little.",
+  "Add the carrots, potato, zucchini, celery, green beans, corn and peas, then the remaining 3 cups broth and 1 tsp salt. Bring to a simmer, turn the heat to medium-low, and cook for 15 minutes, until the potato is fork-tender.",
+  "While it simmers, dice the avocado, chop 2 tbsp of the cilantro and cut the lime into wedges.",
+  "Taste it. If it's flat, add a pinch more salt. Serve with the avocado, cilantro and a squeeze of lime."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Ale Cooks' healthy version (lead, one rating) blends tomato, onion and garlic into a base, then simmers diced carrot, potato, zucchini, celery, corn, peas and green beans in it for about 20 minutes, finishing with avocado, cilantro and lime. Cup of Yum and Mexican Made Meatless use the same tomato and vegetable idea; Cup of Yum adds tomato sauce and broccoli, and Mexican Made Meatless uses chayote, cabbage and a clear broth. Cut to a half batch for 4, and no source has 20 ratings, so this is a fallback lead. Use a vegetable broth labeled gluten-free.",
+ "sources": [
+  {
+   "name": "Ale Cooks",
+   "title": "Healthy Sopa de Verduras (Mexican Vegetable Soup)",
+   "url": "https://www.alecooks.com/easy-and-healthy-sopa-de-verduras",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Sopa de Verduras (Mexican Vegetable Soup)",
+   "url": "https://cupofyum.com/recipes/sopa-de-verduras-mexican-vegetable-soup/print",
+   "rating": null,
+   "rating_count": 0,
+   "read": true
+  },
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Caldo de Verduras (Traditional Mexican Vegetable Soup)",
+   "url": "https://mexicanmademeatless.com/caldo-de-verduras-mexican-vegetable-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

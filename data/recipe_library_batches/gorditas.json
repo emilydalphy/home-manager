@@ -1,0 +1,77 @@
+{
+ "dish_name": "Gorditas",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Masa harina",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetarian refried beans",
+   "qty": "1 can (16 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded quesadilla cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mild salsa verde",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, stir the masa harina and salt together. Work in 1 cup warm water with your hands, then the second cup, until the masa is fully wet. Knead for 7 minutes, until it's moist and doesn't stick to your hands.",
+  "Roll a small ball and press it flat with a finger. If the edges crack, knead in water 1 tbsp at a time. Cover the bowl with a kitchen towel and let the dough rest for 15 minutes.",
+  "While the dough rests, warm the refried beans in a small pot over medium-low heat, stirring, for 5 minutes. Keep them on low.",
+  "Divide the dough into 8 equal balls. Flatten each into a patty about 1/2 inch thick, thicker than a tortilla. Smooth any cracked edges with a wet finger.",
+  "Heat a comal or cast-iron skillet over medium-high heat and brush it lightly with the oil. Cook the gorditas 3 or 4 at a time, 2 minutes on the first side, until the edges look set and the underside has color. Flip and cook for 3 to 4 minutes, until golden and puffed. Transfer them to a plate.",
+  "Use a small knife to slice each gordita open along one side, about halfway through. Stuff each with an eighth of the beans and 3 tbsp of the cheese. That should be 1 1/2 cups of cheese in all.",
+  "Put the stuffed gorditas back on the skillet over medium heat for 1 to 2 minutes, until the cheese melts.",
+  "Sprinkle 1 tbsp of the remaining cheese on the skillet, set a gordita on top, and cook for 30 seconds, until the cheese is crisp and medium brown. Repeat with the other 7.",
+  "Serve hot with the salsa verde.",
+  "To store, cool them completely. They keep in an airtight container in the fridge for 3 days, or wrapped tightly in the freezer for 2 months. Reheat in a dry skillet over medium heat, about 3 minutes per side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Familia Kitchen's La Chiquita-style gorditas (lead, 5.0 from 5 ratings) are a masa harina and water dough, cooked on a comal, split, stuffed with refried beans and quesadilla cheese, then crisped with a little cheese on the outside. Kiwilimon fries a lard-and-masa-dough version filled with mashed black beans, which is the other way cooks make it. Use refried beans labeled vegetarian, since many contain lard. Total is 50 minutes, over the 30-minute lunch target, but they pack and reheat well; no source has 20 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Familia Kitchen",
+   "title": "Gorditas with Beans & Queso, Like the Ones at Chicago's La Chiquita",
+   "url": "https://familiakitchen.com/gorditas-with-queso-beans-like-the-ones-at-chicagos-la-chiquita/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kiwilimon",
+   "title": "Bean Gorditas",
+   "url": "https://us.kiwilimon.com/amp/recipe/main-courses/mexican/bean-gorditas",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

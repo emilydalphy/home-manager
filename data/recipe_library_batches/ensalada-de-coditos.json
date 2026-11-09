@@ -1,0 +1,88 @@
+{
+ "dish_name": "Ensalada de Coditos",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Elbow macaroni",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Cooked ham",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Pickled jalapeños",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 jalapeños"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil and add a pinch of salt. Cook the macaroni for the time on the package, until tender.",
+  "Meanwhile, cut the ham into small cubes and slice 2 green onions. Seed and chop 2 of the pickled jalapeños. Seed and chop the tomatoes.",
+  "Drain the macaroni and rinse it under cold water until cool. Shake it dry and transfer it to a large bowl.",
+  "Add the ham, green onions and chopped jalapeños to the macaroni and stir until mixed.",
+  "Add the mayonnaise, crema and a splash of pickle juice from the jalapeño jar. Stir, then add 1 tsp salt and the pepper and stir again.",
+  "Stir in the mustard, then gently fold in the tomatoes. Taste it. If it's flat, add a pinch more salt.",
+  "Chill for 20 minutes. Chop the third jalapeño and put it on the table. Serve cold, or pack it in a lidded container. It keeps in the fridge for up to 3 days, so stir it before serving."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mexican Made Meatless (lead, 5.0 from 36 ratings) mixes cooked elbow macaroni with mayonnaise, crema, mustard, pickled jalapeños, green onion and tomato, then chills it. Only that one source could be read, so there is no comparison. The lead uses vegan ham and vegan mayonnaise; regular ham, mayonnaise and crema are used here, which that page also allows. The list promises corn but the lead has none, so none is added. Pasta water is salted lightly, with the rest of the salt in the dressing.",
+ "sources": [
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Mexican Macaroni Salad Recipe | Ensalada de Coditos",
+   "url": "https://mexicanmademeatless.com/mexican-macaroni-salad-ensalada-de-coditos/",
+   "rating": 5.0,
+   "rating_count": 36,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

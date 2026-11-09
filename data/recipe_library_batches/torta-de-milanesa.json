@@ -1,0 +1,133 @@
+{
+ "dish_name": "Torta de Milanesa",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Thin beef sandwich steaks",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Seasoning salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bolillo rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Pickled jalapeños",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat 1 tbsp of the oil in a small saucepan over medium heat. Chop half the red onion, add it, and cook for 3 minutes, until soft.",
+  "Take the pan off the heat. Add the drained black beans and mash them with a fork or potato masher. Add 1/2 cup water, set it back on medium heat, and simmer for 5 minutes, until thick. Stir in 2 tbsp chopped cilantro, 1/4 tsp salt and 1/4 tsp pepper. Keep it warm on low.",
+  "While the beans simmer, thinly slice the rest of the red onion and the tomato, shred about 2 cups of the lettuce, slice the avocados, and halve the rolls lengthwise.",
+  "Pour the milk into a shallow dish. In a second dish, stir the breadcrumbs together with the seasoning salt.",
+  "Cut the steaks into 4 even pieces and pat them dry. Season both sides with 1/2 tsp salt and 1/4 tsp pepper. Dip each piece in the milk, then press both sides firmly into the breadcrumbs.",
+  "Heat 2 tbsp of the oil in a large skillet over medium-high heat. Fry 2 pieces at a time for 2 to 3 minutes per side, until deep golden and cooked through. Transfer them to a paper towel plate. Add the last 2 tbsp oil and fry the remaining 2 pieces.",
+  "Toast the cut sides of the rolls in a dry skillet or on a griddle for 1 minute. Spread the cut sides with the mayonnaise, then spread the beans on the bottom halves.",
+  "Add a milanesa to each roll, then the lettuce, tomato, onion, avocado and a few pickled jalapeños. Serve with the rest of the jalapeños on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "La Cocina de Leslie's beef version is the lead: thin steaks dipped in milk, pressed into seasoned breadcrumbs and pan-fried, then piled into a toasted roll with crema or mayonnaise and the usual toppings. Ricardo Cuisine adds a pan of mashed black beans spread on the roll, which is where the beans come from. Isabel Eats makes it with chicken and the same toppings, which fits the pickled jalapeños. The page for the lead shows no ratings, so this is a fallback lead. Total is 40 minutes, over the 30-minute lunch target; the beans cook while you bread the steaks.",
+ "sources": [
+  {
+   "name": "La Cocina de Leslie",
+   "title": "Torta de Milanesa de Res (Breaded Steak Sandwich)",
+   "url": "https://www.lacocinadeleslie.com/2010/07/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ricardo Cuisine",
+   "title": "Torta de Milanesa con Frijoles y Aguacate",
+   "url": "https://ricardocuisine.com/en/recipes/7358-torta-de-milanesa-con-frijoles-y-aguacate-breaded-beef-sandwich-with-refried-black-beans-and-avocado",
+   "rating": null,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Isabel Eats",
+   "title": "Torta de Milanesa",
+   "url": "https://www.isabeleats.com/torta-de-milanesa/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

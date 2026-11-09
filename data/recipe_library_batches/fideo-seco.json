@@ -1,0 +1,103 @@
+{
+ "dish_name": "Fideo Seco",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Fideo noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chipotle peppers in adobo",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "2 peppers"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Roughly chop the 3 tomatoes. Put them in a blender with a quarter of the onion, the garlic, 1 chipotle pepper and a spoonful of its adobo sauce, 1 tsp salt and a pinch of pepper. Blend until smooth.",
+  "Heat the oil in a large deep skillet over medium heat. Add the fideo and stir often for 3 to 4 minutes, until it's deep golden brown and smells toasty. Don't walk away, because it goes from golden to burnt quickly.",
+  "Stand back and pour in the blended sauce. It will spit. Stir and simmer for 3 minutes, until most of the sauce has been absorbed.",
+  "Pour in the broth and stir. Bring it to a simmer, then turn the heat to low, cover, and cook for 10 minutes, stirring once or twice, until the noodles are tender and the liquid is gone.",
+  "While the noodles cook, slice the avocado, chop 2 tbsp of the cilantro and cut the lime into wedges. Chop the second chipotle pepper and put it in a small bowl for anyone who wants more heat.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lime. Serve with the avocado, cilantro and lime wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mexican Made Meatless (lead, 5.0 from 45 ratings) toasts the fideo, adds a blended tomato and chipotle sauce, then vegetable broth, and cooks it dry rather than soupy. Tara's Multicultural Table agrees on the method and gives the faster covered simmer of 12 to 15 minutes, so the times follow that. Both top it with avocado and cilantro; crema and cheese are left off to keep it dairy-free, and one chipotle goes in the pot with the second left for the table.",
+ "sources": [
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Mexican Fideo Seco Recipe (Sopa Seca de Fideo)",
+   "url": "https://mexicanmademeatless.com/?p=85641",
+   "rating": 5.0,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Sopa Seca (Mexican Dry Noodle Soup)",
+   "url": "https://tarasmulticulturaltable.com/sopa-seca-mexican-dry-noodle-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

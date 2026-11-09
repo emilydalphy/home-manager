@@ -1,0 +1,112 @@
+{
+ "dish_name": "Pambazos",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Dried guajillo chiles",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "5 chiles"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gold potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh Mexican chorizo",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bolillo rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Queso fresco",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "1 small tub",
+   "category": "dairy",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Mild salsa verde",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1/2-inch cubes. Put them in a saucepan, cover with cold water, add a pinch of salt, and bring to a boil. Reduce to a simmer and cook for 8 to 10 minutes, until fork-tender. Drain.",
+  "Meanwhile, stem and seed the guajillos. Put them in a heatproof bowl, cover with boiling water, and let them soak for 15 minutes, until soft.",
+  "Heat a dry skillet over medium heat. Roast the tomato, a quarter of the onion and the garlic clove for 5 minutes, turning, until browned in spots.",
+  "Drain the chiles. Blend them with the roasted tomato, onion and garlic, 1/2 tsp salt and 1/4 cup water until smooth. Strain into a wide shallow dish.",
+  "Wipe out the skillet. Add the chorizo over medium heat and cook for 5 minutes, breaking it up, until the fat turns red and there's no pink left. Add the potatoes and cook for 4 minutes, stirring and mashing a few, until golden in places. Transfer to a bowl.",
+  "Split the rolls lengthwise without cutting all the way through. Dip the whole roll in the chile sauce, coating every side, then fill with the chorizo and potato.",
+  "Heat 2 tbsp of the oil in the skillet over medium heat. Fry 2 pambazos for 2 to 3 minutes per side, until the bread has color. Transfer to a plate and fry the other 2 with the remaining 2 tbsp oil.",
+  "Shred about 1 cup of the lettuce and crumble the queso fresco. Open each pambazo and add the lettuce, 1 tbsp queso fresco, 1 tbsp crema and 1 tbsp salsa verde. Serve with the rest of the salsa verde."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mexican Made Meatless (lead, 5.0 from 9 ratings) gives the pambazos method: a filling of chorizo and potato, a guajillo salsa the rolls are dipped in, then fried until crisp and topped with lettuce, crema and cheese. Kiwilimon agrees and roasts a tomato, onion and garlic into the salsa, and uses real chorizo, so the pork chorizo here follows it and the soy chorizo in the lead is swapped out. No source has 20 ratings, so this is a fallback lead. Total is 45 minutes, over the 30-minute lunch target.",
+ "sources": [
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Pambazos Recipe | Potato and Chorizo Pambazos",
+   "url": "https://mexicanmademeatless.com/?p=14158",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kiwilimon",
+   "title": "Potato and Chorizo Pambazo",
+   "url": "https://us.kiwilimon.com/amp/recipe/main-courses/potato-and-chorizo-pambazo",
+   "rating": 4.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

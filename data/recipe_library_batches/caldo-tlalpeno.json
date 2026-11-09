@@ -1,0 +1,120 @@
+{
+ "dish_name": "Caldo Tlalpeno",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chipotle peppers in adobo",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 pepper"
+  },
+  {
+   "item": "Gluten-free chicken stock",
+   "qty": "5 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Rotisserie chicken",
+   "qty": "1 small",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oil in a large pot over medium heat. Slice the tomato and dice a quarter of the onion, then add both and cook for 3 to 4 minutes, until the onion is soft. Add the garlic and cook for 30 seconds.",
+  "Transfer to a blender. Add the chipotle pepper with the seeds scraped out, 1/2 cup of the stock, 1/4 tsp salt and a pinch of pepper. Blend until smooth.",
+  "Pour the blend back into the pot and cook over medium heat for 5 minutes, stirring, until it darkens and thickens.",
+  "Add the remaining 5 cups stock, the carrots sliced into thin rounds, the green beans cut in half, and the drained chickpeas. Bring to a boil, then turn the heat to medium-low and simmer for 15 minutes, until the carrots are tender.",
+  "While it simmers, pull the meat off the rotisserie chicken and shred it. That should be about 2 cups.",
+  "Stir in the chicken and simmer for 5 minutes, until hot.",
+  "Dice the avocado, chop 2 tbsp of the cilantro and cut the lime into wedges. Taste the soup. If it's flat, add a pinch more salt.",
+  "Ladle into bowls. Serve with the avocado, cilantro and lime wedges. It keeps in the fridge for 4 days; reheat it on the stove until hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No Dash of Gluten's quick version (lead, no ratings) builds a blended chipotle and tomato base, simmers carrots, green beans and chickpeas in chicken stock, and finishes with shredded rotisserie chicken, avocado, cilantro and lime. Food Faith Fitness agrees on the vegetables and chipotle but poaches the chicken first, which takes 90 minutes. The lead's queso fresco, fried tortilla strips and bouillon are left out, which keeps it dairy-free and gluten-free, and it needs a plain rotisserie chicken and gluten-free stock. No source has 20 ratings, so this is a fallback lead. Total is 40 minutes, over the 30-minute lunch target.",
+ "sources": [
+  {
+   "name": "No Dash of Gluten",
+   "title": "Caldo Tlalpeno Soup Recipe",
+   "url": "https://nodashofgluten.com/caldo-tlalpeno-soup-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Faith Fitness",
+   "title": "Caldo Tlalpeño",
+   "url": "https://www.foodfaithfitness.com/caldo-tlalpeno/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
