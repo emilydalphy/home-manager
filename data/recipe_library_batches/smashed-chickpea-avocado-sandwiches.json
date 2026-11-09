@@ -1,0 +1,106 @@
+{
+ "dish_name": "Smashed Chickpea Avocado Sandwiches",
+ "cuisine": "American",
+ "main_protein": "chickpeas",
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 3,
+ "ingredients": [
+  {
+   "item": "Canned chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Ripe avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4 tbsp sliced"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Whole wheat sandwich bread (vegan)",
+   "qty": "8 slices",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "2 cups",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Drain and rinse the chickpeas, then pat them dry with a paper towel. If you'd like a smoother spread, pinch off any loose skins.",
+  "Halve and pit the avocados and scoop them into a large bowl with the chickpeas.",
+  "Mash with a fork or potato masher until mostly broken down. Leave a few chunks for texture.",
+  "Stir in the cilantro, green onions, the juice of both limes, the salt and the pepper.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Toast the bread in a toaster or in a dry skillet over medium heat for 2 to 3 minutes, until golden.",
+  "Slice the tomato. Spread the mash over 4 slices of toast, about 3/4 cup on each, then add the spinach and tomato.",
+  "Top with the remaining toast and cut each sandwich in half. Eat them the same day."
+ ],
+ "method_notes": "Cup of Yum (4.6 from 354) leads: canned chickpeas and avocado mashed together with cilantro, green onion and lime, spread on bread with spinach, tomato or lettuce. Scaled from 3 servings to 4 sandwiches. Simple Veganista and Kale Junkie add carrot, cucumber or onion, which are left out to keep the lead's version. No mayo or dairy is needed, so it is naturally vegan; the bread has to be a vegan loaf. It doesn't keep, because the avocado browns, so make it the same day.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Smashed Chickpea Avocado Salad Sandwich",
+   "url": "https://cupofyum.com/recipes/smashed-chickpea-avocado-salad-sandwich",
+   "rating": 4.6,
+   "rating_count": 354,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simple Veganista",
+   "title": "Mashed Chickpea Avocado Salad Sandwich",
+   "url": "https://simple-veganista.com/mashed-chickpea-avocado-sandwic/",
+   "rating": 4.8,
+   "rating_count": 6,
+   "read": true
+  },
+  {
+   "name": "Kale Junkie",
+   "title": "Smashed Chickpea Avocado Salad Sandwich",
+   "url": "https://kalejunkie.com/smashed-chickpea-avocado-salad-sandwich/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

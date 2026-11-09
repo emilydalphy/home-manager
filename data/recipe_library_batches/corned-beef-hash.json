@@ -1,0 +1,105 @@
+{
+ "dish_name": "Corned Beef Hash",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "prep_time_minutes": 14,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 3/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Cooked corned beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water and put it on high heat to boil. Don't salt it.",
+  "While the water heats, cut the potatoes into 3/4-inch cubes. Leave the peels on.",
+  "Add the potatoes to the boiling water and cook for 6 minutes, until a knife slides in with a little resistance.",
+  "Meanwhile, dice the onion, mince the garlic, and chop the corned beef into 1/2-inch pieces. Keep each in its own pile.",
+  "Drain the potatoes well and spread them on a clean towel to dry.",
+  "Heat a large cast iron or heavy skillet over medium-high heat and add 3 tbsp of the oil. Add the onion, 1/4 tsp of the salt and 1/4 tsp of the pepper. Cook for 4 minutes, until the onion is soft and see-through.",
+  "Add the garlic and cook for 30 seconds, until you can smell it.",
+  "Add the potatoes and corned beef and stir once. Press the hash flat with a spatula and leave it alone for 5 minutes, until the bottom is deep golden and lets go of the pan.",
+  "Flip the hash in big sections, press it flat again and cook for 5 minutes.",
+  "While the second side browns, heat the last 1 tbsp oil in a nonstick skillet over medium heat. Crack in the eggs, sprinkle with the remaining 1/4 tsp salt and 1/4 tsp pepper, and cook for 3 minutes, until the whites are set and the yolks are still runny.",
+  "Take the hash off the heat and stir in the parsley. Taste it. If it's flat, add a pinch more salt.",
+  "Divide the hash among 4 plates and put an egg on each. Serve with the runny yolk to break over the hash."
+ ],
+ "method_notes": "Honest and Truly (5.0 from 87) leads: boil the potato cubes first, dry them, then press the hash flat and leave it to crust before flipping. Other pages (Amanda's Cookin, Life Made Simple Bakes, Yellow Bliss Road) roast or fry raw potatoes, which is slower. Here the lead's 1-inch cubes are cut to 3/4 inch and the crust time shortened to keep the total near 30 minutes; the lead's butter is all oil to keep it dairy-free, and the fried egg is the classic finish the other pages mention. The lead is a 6-serving, 45-minute recipe, scaled to 4. Needs already-cooked corned beef (leftover or from the deli counter).",
+ "sources": [
+  {
+   "name": "Honest and Truly",
+   "title": "Homemade Corned Beef Hash",
+   "url": "https://honestandtruly.com/homemade-corned-beef-hash-recipe",
+   "rating": 5.0,
+   "rating_count": 87,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Amanda's Cookin'",
+   "title": "Corned Beef Hash",
+   "url": "https://amandascookin.com/corned-beef-hash/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Life Made Simple Bakes",
+   "title": "Leftover Corned Beef Hash",
+   "url": "https://lifemadesimplebakes.com/leftover-corned-beef-hash/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,106 @@
+{
+ "dish_name": "Honey Mustard Salmon",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Salmon fillets, skin on or off",
+   "qty": "1 1/2 lb (4 fillets)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Whole grain mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Baby arugula",
+   "qty": "4 oz",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the Dijon, honey, vinegar, vegetable oil, minced garlic, salt and pepper in a jar. Close the lid and shake for 30 seconds, until it's smooth and thick. That should be about 3/4 cup.",
+  "Pat the salmon dry with paper towels. Put the fillets in a bowl, add 1/4 cup of the glaze and turn them to coat. They don't need to sit.",
+  "Heat the olive oil in a large skillet over medium heat.",
+  "Add the salmon, skin side down if it has skin, and cook for 3 to 4 minutes, until the underside is deep golden.",
+  "Flip the salmon and cook for 3 to 4 minutes. You're cooking it to 145°F at the thickest part, so if you have a thermometer, check it there. No thermometer? Press the thickest part with a fork: it's done when it flakes.",
+  "Stir the whole grain mustard into the remaining glaze. Taste it. If it's flat, add a pinch more salt.",
+  "Divide the arugula among 4 plates. Serve the salmon on the arugula with the sauce spooned over the top."
+ ],
+ "method_notes": "Spend With Pennies (5.0 from 31) leads: a shaken honey, Dijon and vinegar glaze, a quick toss with no marinating, a medium skillet, and the rest of the glaze stirred with whole grain mustard as a sauce. The lead's glaze (1 cup) is cut to about 3/4 cup, still plenty for coating and a sauce. A Sassy Spoon (4.6 from 42) brushes the glaze on in the last minute and serves over arugula, so the arugula comes from there. All ingredients are naturally gluten-free, dairy-free and nut-free (check the mustard labels).",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Honey Mustard Salmon",
+   "url": "https://www.spendwithpennies.com/honey-mustard-salmon/",
+   "rating": 5.0,
+   "rating_count": 31,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "A Sassy Spoon",
+   "title": "15 Minute Skillet Honey Mustard Salmon",
+   "url": "https://asassyspoon.com/honey-mustard-salmon/",
+   "rating": 4.6,
+   "rating_count": 42,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

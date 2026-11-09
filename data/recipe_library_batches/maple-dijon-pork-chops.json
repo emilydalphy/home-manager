@@ -1,0 +1,100 @@
+{
+ "dish_name": "Maple Dijon Pork Chops",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Boneless pork loin chops, 3/4 to 1 inch thick",
+   "qty": "1 1/2 lb (4 chops)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pure maple syrup",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1 tsp minced"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Pat the chops dry with paper towels. Make two slashes through the fat on each side of each chop, about 2 inches apart. That stops them curling in the pan.",
+  "Season both sides of the chops with the salt and 1/4 tsp of the pepper.",
+  "In a bowl, whisk the maple syrup, Dijon, vinegar, thyme and the remaining 1/4 tsp pepper.",
+  "Heat a large skillet over medium-high heat. Add the oil and heat until it just begins to smoke.",
+  "Add the chops and sear for 5 minutes without moving them, until they're deep brown.",
+  "Flip the chops and pour the glaze around them. Turn the heat down to medium-low and cook for 5 to 8 minutes. You're cooking them to 145°F in the middle, so if you have a thermometer, check them there. No thermometer? Cut into the thickest chop: it should be just barely pink in the center, with clear juices.",
+  "Transfer the chops to a plate and leave them to rest for 5 minutes.",
+  "Pour any juices from the plate back into the skillet. Simmer the glaze over medium heat for 2 to 3 minutes, until it's thick and syrupy. If it gets too thick, stir in a splash of water.",
+  "Taste the glaze. If it's flat, add a pinch more salt.",
+  "Serve the chops with the glaze spooned over the top."
+ ],
+ "method_notes": "America's Test Kitchen's skillet-glazed chops (4.0 from 117 on their site) lead: sear hard, add the maple, mustard, vinegar and thyme glaze, then reduce it after the chops rest. Bite Sized Bash, Cooking with Carlee and Little House Big Alaska bake the chops in a sauce with garlic and onion powder, which takes 40 minutes; Dishing Out Health rubs on a thinner glaze and finishes in the oven. Followed the lead's ratios (its mustard is small, so the glaze is mostly sweet and tangy); the lead's 140°F is raised to 145°F to match the app's pork target. All ingredients are naturally gluten-free, dairy-free and nut-free.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Skillet-Glazed Pork Chops",
+   "url": "https://www.americastestkitchen.com/recipes/5827-skillet-glazed-pork-chops",
+   "rating": 4.0,
+   "rating_count": 117,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dishing Out Health",
+   "title": "Easy 6-Ingredient Maple Dijon Pork Chops",
+   "url": "https://dishingouthealth.com/?p=3496",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Bite Sized Bash",
+   "title": "Maple Dijon Pork Chops",
+   "url": "https://bitesizedbash.com/maple-dijon-pork-chops/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
