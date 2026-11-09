@@ -1,0 +1,103 @@
+{
+ "dish_name": "Aloo Posto",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "White poppy seeds",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Nigella seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the poppy seeds in a small bowl and cover them with hot water. Let them soak for 15 minutes.",
+  "Meanwhile, peel the potatoes and cut them into 3/4-inch cubes. Slit the green chili down one side.",
+  "Drain the poppy seeds and transfer them to a blender with 1/3 cup of fresh water. Blend for 1 to 2 minutes, until you have a smooth, pale paste. That should be about 1/2 cup.",
+  "Heat the vegetable oil and mustard oil together in a large deep skillet over medium heat for 1 minute.",
+  "Add the nigella seeds. They'll crackle and smell toasty after 10 to 15 seconds. That's your cue for the potatoes.",
+  "Add the potatoes, the green chili and the turmeric. Stir to coat and cook for 6 to 7 minutes, stirring often, until the edges just start to soften. Don't let them brown.",
+  "Add the poppy seed paste, the salt and 1/2 cup of water. Stir until every cube is coated.",
+  "Turn the heat to low, cover, and cook for 12 to 15 minutes, stirring twice, until a knife slides into a potato and the paste is thick and clinging. If the pan dries out before the potatoes are tender, add 1/4 cup of water.",
+  "Take the pan off the heat and stir in the cilantro. Lift out the green chili if you'd like it milder.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with rice, dal or luchi."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 28,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The versions agree on the core: potatoes fried in a little oil with nigella seeds, then cooked in a ground poppy seed paste with turmeric and green chili, covered until soft. Archana's Kitchen (the lead, 40 minutes, no onion needed) uses a 15 to 20 minute soak and an oil blend; Bong Eats uses a longer soak and a pinch of sugar and ghee; Cooking and Me adds sugar and ghee. The 1/3 cup of seeds follows the ratios in Bong Eats and Cooking and Me, since Archana's 1 cup looked far too much for 2 potatoes. The seed amount was adjusted for 4 servings; ghee and sugar are left out so it stays vegan.",
+ "sources": [
+  {
+   "name": "Archana's Kitchen",
+   "title": "Aloo Posto Recipe (Potatoes In Poppy Seed Paste)",
+   "url": "https://archanaskitchen.com/aloo-posto-recipe-potatoes-in-poppy-seed-paste",
+   "rating": null,
+   "rating_count": 3641,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bong Eats",
+   "title": "Alu Posto",
+   "url": "https://www.bongeats.com/recipe/alu-posto",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking and Me",
+   "title": "Aloo Posto (Bengali Aloo)",
+   "url": "https://www.cookingandme.com/aloo-posto-bengali-aloo-potato-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

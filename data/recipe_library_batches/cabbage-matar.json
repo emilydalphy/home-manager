@@ -1,0 +1,123 @@
+{
+ "dish_name": "Cabbage Matar",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head (about 1.5 lbs)",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mild red chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Quarter the cabbage, cut out the core, and chop the rest into thin, small pieces. That should be about 6 cups. Chop the onion and tomato, and grate the ginger.",
+  "Heat the oil in a large wide skillet over medium-high heat. Add the cumin seeds and mustard seeds. After about 20 seconds they'll crackle and pop.",
+  "Add the onion and cook for 4 to 5 minutes, stirring, until it's soft and lightly golden. Add the ginger and cook for 30 seconds.",
+  "Add the tomato, the turmeric and 1/4 tsp of the salt. Cook for 3 to 4 minutes, mashing the tomato, until it's soft and mushy.",
+  "Stir in the chili powder and 1/2 tsp of the garam masala. Cook for 30 seconds, until you can smell the spices.",
+  "Add the peas and stir for 1 minute.",
+  "Add the cabbage and the remaining 1/2 tsp salt. Stir until every piece is coated in the masala.",
+  "Cook over medium-high heat, stirring every minute or so, for 7 to 8 minutes, until the cabbage is tender but still has a little crunch. Cover for 2 minutes if the cabbage seems tough.",
+  "Off the heat, stir in the remaining 1/2 tsp garam masala and the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with roti or rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions stir-fry chopped cabbage and green peas in a spiced base of mustard or cumin seeds, turmeric, chili and garam masala. Swasthi's Recipes (the lead, 4.98 from 145 ratings) is titled Cabbage Curry but uses green peas as its second vegetable; it builds the base with cumin, mustard seeds, onion and tomato, then stir-fries the cabbage until tender with some crunch. Cook with Manali and Archana's cook the same two vegetables with curry leaves and a shorter masala. Archana's uses a pressure cooker, which is left out here. The peas are 1 cup, more than the lead's range, so the matar shows.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Cabbage Curry",
+   "url": "https://www.indianhealthyrecipes.com/cabbage-curry-recipe/",
+   "rating": 4.98,
+   "rating_count": 145,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Cabbage With Green Peas - Patta Gobhi Matar",
+   "url": "https://www.cookwithmanali.com/cabbage-with-green-peas/",
+   "rating": 3.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Patta Gobi Matar Nu Shaak",
+   "url": "https://www.archanaskitchen.com/patta-gobi-matar-nu-shaak-recipe-cabbage-peas-sabzi-recipe",
+   "rating": null,
+   "rating_count": 11089,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

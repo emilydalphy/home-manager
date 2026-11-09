@@ -1,0 +1,120 @@
+{
+ "dish_name": "Mushroom Pepper Fry",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "White button mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Wipe the mushrooms clean and slice them 1/4 inch thick. Slice the onion and the bell pepper. Finely chop the ginger.",
+  "Put the peppercorns, fennel seeds, cumin seeds and coriander seeds in a mortar or spice grinder. Grind them coarsely and set aside.",
+  "Heat the oil in a large wide skillet over medium-high heat. Add the mustard seeds, dried chilies and curry leaves. After about 20 seconds the seeds will pop. Stand back a little. They'll spatter.",
+  "Add the ginger and onion and cook for 3 minutes, stirring, until the onion is soft.",
+  "Add the mushrooms and turn the heat to high. Cook for 6 to 8 minutes, stirring now and then, until they've released their liquid and it has cooked off.",
+  "Add the bell pepper and cook for 2 minutes, until it's just tender.",
+  "Add the ground spices and the salt. Stir for 1 minute, until every slice is coated.",
+  "Taste it. If it's flat, add a pinch more salt. The chilies stay whole, so lift them out for anyone who wants it milder.",
+  "Serve with rice or roti."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (the lead, 5.0 from 187 ratings) and Swasthi's Recipes (4.98 from 88) both cook mushrooms and bell pepper with a coarsely ground pepper, fennel and cumin mix and curry leaves; the lead also adds coriander seeds and dried red chilies. Green Bowl 2 Soul adds lime juice and ginger-garlic paste. Hebbar's uses ghee, swapped for oil to keep this vegan. The pepper is cut to 2 tsp for 1 lb of mushrooms (the lead's ratio would be about 1 1/2 tbsp) to keep the base mild.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "mushroom pepper fry recipe",
+   "url": "https://hebbarskitchen.com/mushroom-pepper-fry-recipe-pepper/",
+   "rating": 5.0,
+   "rating_count": 187,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Mushroom Pepper Fry (Pepper Mushroom)",
+   "url": "https://www.indianhealthyrecipes.com/mushroom-pepper-fry-easy-mushroom-recipes/",
+   "rating": 4.98,
+   "rating_count": 88,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Green Bowl 2 Soul",
+   "title": "Mushroom Pepper Fry Kerala Style",
+   "url": "https://greenbowl2soul.com/kerala-style-pepper-mushroom/",
+   "rating": 4.7,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

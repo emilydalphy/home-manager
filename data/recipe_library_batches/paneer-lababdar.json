@@ -1,0 +1,150 @@
+{
+ "dish_name": "Paneer Lababdar",
+ "cuisine": "Indian",
+ "main_protein": "paneer",
+ "ingredients": [
+  {
+   "item": "Paneer",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3 large",
+   "category": "produce"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "15",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried Kashmiri red chilies",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "2 inches",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch",
+   "category": "produce"
+  },
+  {
+   "item": "Coriander powder",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mild red chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Chop the tomatoes. Put them in a medium pot with the cashews, dried chilies, cinnamon, cardamom, cloves and 1/2 cup of water. Bring to a boil over high heat, then cover and simmer on medium for 10 minutes, until the tomatoes are soft.",
+  "Meanwhile, finely chop the onion. Mince the garlic and grate the ginger together. Cut 6 oz of the paneer into 3/4-inch cubes and grate the remaining 2 oz.",
+  "Fish out the cinnamon stick and blend the tomato mixture until smooth. That should be about 2 cups. Be careful, it's hot.",
+  "Heat the oil in a large deep skillet over medium heat. Add the bay leaf, then the onion. Cook for 6 to 8 minutes, stirring, until deep golden. Don't rush it.",
+  "Add the garlic and ginger and cook for 30 seconds, until it no longer smells raw.",
+  "Pour in the blended tomato puree. Add the coriander powder, garam masala, chili powder and salt. Cover and simmer on medium-low for 5 minutes.",
+  "Add 3/4 cup of water and the sugar. Cover and simmer for 5 minutes, until the gravy thickens and the oil shows at the edges.",
+  "Crush the kasuri methi between your palms and stir it in. Add the cubed and grated paneer. Cook on very low heat for 2 minutes.",
+  "Off the heat, stir in the cream and half of the cilantro. Cover and let it sit for 5 minutes.",
+  "Taste it. If it's flat, add a pinch more salt. Scatter the remaining cilantro on top.",
+  "Serve with naan, roti or rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes (the lead, 5.0 from 113 ratings) boils tomatoes, cashews and whole spices into a puree, builds the gravy on well-browned onion, and finishes with kasuri methi, cubed and grated paneer and a little cream. My Ginger Garlic Kitchen (5.0 from 40) does a longer version with melon seeds, butter and extra ground spices. The lead's green chili is left out so the base stays mild, and the Kashmiri chilies give color more than heat. Cooks claim 30 minutes; with the boiling and blending this is closer to 45.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Paneer Lababdar Recipe",
+   "url": "https://indianhealthyrecipes.com/paneer-lababdar-recipe",
+   "rating": 5.0,
+   "rating_count": 113,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Ginger Garlic Kitchen",
+   "title": "Paneer Lababdar Recipe",
+   "url": "https://www.mygingergarlickitchen.com/paneer-lababdar",
+   "rating": 5.0,
+   "rating_count": 40,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
