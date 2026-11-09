@@ -1,0 +1,142 @@
+{
+ "dish_name": "Dabeli",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Dried mild red chilies",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1/2 inch",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 tbsp juice"
+  },
+  {
+   "item": "Onions",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pav rolls",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup + 2 tbsp"
+  },
+  {
+   "item": "Sev",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Pomegranate",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 cup seeds"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1-inch chunks. Transfer them to a pot, cover with cold water and add 1/2 tsp salt. Bring to a boil over high heat, then simmer for 12 to 15 minutes, until a fork slides in easily. Drain well.",
+  "While the potatoes cook, remove the stems and seeds from 2 of the dried chilies. Transfer them to a small bowl and cover with hot water. Leave them for 20 minutes.",
+  "Make the dabeli masala. Set a small dry skillet over medium-low heat and add the remaining dried chili, the coriander seeds, cinnamon, cloves and 1/2 tsp of the cumin seeds. Stir for about 1 minute, until fragrant.",
+  "Transfer the spices to a plate and let them cool for 3 minutes. Grind them to a fine powder in a spice grinder or blender. That should be about 2 tsp.",
+  "Drain the soaked chilies and transfer them to a blender with the garlic, the lemon juice and a pinch of salt. Blend to a smooth paste, adding a splash of water if needed. This is the red garlic chutney.",
+  "Mash the drained potatoes in a bowl until mostly smooth. Finely chop the onion and set aside 1/3 cup for the filling.",
+  "Set a large skillet over medium heat and add the oil and the remaining 1/2 tsp cumin seeds. After about 20 seconds the seeds will crackle.",
+  "Add the 1/3 cup onion and cook for 3 minutes, until soft. Add the asafoetida and stir for 10 seconds.",
+  "Stir in 2 tbsp of the tamarind chutney, then add the mashed potatoes, 1 1/2 tsp of the dabeli masala and 1/2 tsp salt. Cook for 3 minutes, stirring often, and add a splash of water if it looks dry. Take the pan off the heat and stir in 2 tbsp chopped cilantro.",
+  "Split the pav rolls through the side, leaving one edge attached. Melt the butter in a large skillet over medium heat and toast the rolls for about 1 minute per side, until lightly golden.",
+  "Spread about 1 tsp tamarind chutney on the top half of each roll and about 1 tsp of the red garlic chutney on the bottom half.",
+  "Fill each roll with about 1/4 cup of the potato filling. Top with the remaining chopped onion, 1/4 cup chopped cilantro, the peanuts, the pomegranate seeds, a pinch of the leftover dabeli masala and the sev. Close the rolls and serve warm.",
+  "To pack it for lunch, keep the filling in a container and the rolls and toppings separate. The filling keeps for 3 days in the fridge. Reheat it in a skillet over medium heat with a splash of water, then fill the rolls."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Veg Recipes of India (the lead, 4.86 from 27 ratings) builds Kutchi dabeli from a spiced potato filling cooked with a homemade dabeli masala (red chili, coriander, cinnamon, cloves, cumin) and sweet tamarind chutney, served in toasted pav with a red garlic chutney, peanuts, pomegranate and sev. Only this source was read in full. This follows the lead, scaled to 8 rolls, without the optional coconut. It takes about 55 minutes, so it works as a make-ahead lunch, not a 30 minute one.",
+ "sources": [
+  {
+   "name": "Veg Recipes of India",
+   "title": "Dabeli Recipe (Kacchi Dabeli)",
+   "url": "https://www.vegrecipesofindia.com/dabeli-recipe-kutchi-dabeli-recipe/",
+   "rating": 4.86,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

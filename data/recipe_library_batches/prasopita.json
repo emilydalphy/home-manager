@@ -1,0 +1,110 @@
+{
+ "dish_name": "Prasopita",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Phyllo dough",
+   "qty": "1 package",
+   "category": "frozen",
+   "cook_qty": "7 sheets"
+  },
+  {
+   "item": "Leeks",
+   "qty": "3 large",
+   "category": "produce",
+   "cook_qty": "400 g (white parts)"
+  },
+  {
+   "item": "Spring onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Feta",
+   "qty": "3 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Graviera cheese",
+   "qty": "2 oz",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "The night before, if your phyllo is frozen: transfer the package to the fridge to thaw.",
+  "Heat the oven to 350°F/180°C. Brush an 8-inch square baking dish with olive oil.",
+  "Trim the roots and dark green tops off the leeks. Slice the white parts into 1/2-inch rounds and swish them in a bowl of cold water to loosen any grit. Lift them out to drain. That should be about 4 cups.",
+  "Set a large skillet over medium heat and add 2 tbsp olive oil. Add the leeks, the chopped spring onions, 1/2 tsp salt and 1/4 tsp pepper.",
+  "Cook for 8 to 10 minutes, stirring now and then, until the leeks are soft and glossy. Don't let them brown.",
+  "Pour in the wine and cook for 2 minutes, until it has cooked off. Transfer everything to a large bowl and let it cool for 10 minutes.",
+  "Separate the egg. Whisk the yolk with the milk in a small bowl and keep the white for the top of the pie.",
+  "Stir the milk mixture into the cooled leeks. Crumble in the feta, grate in the Graviera and add the remaining 1/4 tsp pepper. Stir to combine.",
+  "Unroll the phyllo and cover it with a damp towel. Lay 1 sheet in the dish, letting the edges hang over, and brush it with olive oil. Repeat with 3 more sheets.",
+  "Spoon the filling into the dish and spread it level. Fold the overhanging phyllo over the filling.",
+  "Lay 1 sheet over the top, brush it with olive oil and tuck the edges down inside the dish. Repeat with 2 more sheets.",
+  "Beat the reserved egg white with 1 tsp water and brush it over the top. With a sharp knife, score the top into 8 squares, cutting about 1/4 inch deep.",
+  "Bake on the middle rack for 40 to 45 minutes, until deep golden. Let the pie rest for 10 minutes, then cut along the scored lines.",
+  "Serve warm or at room temperature. To pack it for lunch, let it cool completely and wrap it well. It keeps for 3 days in the fridge and 1 month in the freezer. Reheat slices in a 350°F oven for 15 to 20 minutes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 55,
+ "advance_prep_notes": "thaw frozen phyllo in the fridge the night before",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "My Greek Dish (the lead, 4.9 from 512 ratings) and Dimitra's Dishes agree on leeks softened in olive oil, feta, egg and layers of oiled phyllo. They differ on the extras: the lead deglazes with white wine, adds a hard yellow cheese and a milk-and-yolk binding, while Dimitra's uses a whole pound of feta with mint, dill and butter. This follows the lead, scaled down from 8 to 10 portions to 4 and baked in a small square dish. The lead's whole egg wash is split so the yolk goes in the filling and the white on top.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Traditional Greek Leek Pie Recipe (Prasopita)",
+   "url": "https://www.mygreekdish.com/recipe/traditional-greek-leek-pie-recipe-prasopita/",
+   "rating": 4.9,
+   "rating_count": 512,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Greek Prassopita (Leek and Feta Phyllo Pie)",
+   "url": "https://www.dimitrasdishes.com/greek-prassopita-leek-and-feta-phyllo-pie/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

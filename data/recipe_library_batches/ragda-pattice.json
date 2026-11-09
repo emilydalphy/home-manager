@@ -1,0 +1,153 @@
+{
+ "dish_name": "Ragda Pattice",
+ "cuisine": "Indian",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Dried white peas",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small knob",
+   "category": "produce",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free asafoetida",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 small block",
+   "category": "pantry",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "1 1/4 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Poha (thick flattened rice)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Tamarind chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Green chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Sev",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  }
+ ],
+ "instructions": [
+  "The night before: rinse the white peas, transfer them to a large bowl and cover with 4 cups cold water. Leave them to soak for at least 8 hours.",
+  "Drain the peas and rinse them well. Set a 3-quart pot over medium heat and add 1 1/2 tsp oil. Add 1 tsp chopped ginger and the chopped garlic and stir for 1 minute, until fragrant. Add the asafoetida.",
+  "Add the peas, 1/2 tsp salt, the turmeric and the garam masala and stir for 1 minute. Add 4 cups water and bring to a boil.",
+  "Turn the heat to low, cover with the lid slightly open and simmer for 45 to 60 minutes, until the peas are soft and break easily when pressed. Add a splash of hot water if the level gets low.",
+  "Meanwhile, peel the potatoes and cut them into 1-inch chunks. Transfer them to a pot, cover with cold water, bring to a boil and simmer for 12 to 15 minutes, until a fork slides in easily. Drain, mash them in a bowl and let them cool for 10 minutes.",
+  "Grind the poha to a fine powder in a blender. That should be about 1/2 cup.",
+  "Grate 1 tsp ginger and deseed and finely chop the green chili. Stir them into the mashed potatoes with the poha powder, 1 tsp of the chaat masala, 1 tbsp chopped cilantro and 1/2 tsp salt. The mixture should not be sticky.",
+  "Divide the potato mixture into 8 portions. Flatten each into a patty about 2 1/2 inches across and 1/2 inch thick.",
+  "When the peas are soft, mash 3 to 4 tbsp of them against the side of the pot and stir them back in. Add the tamarind paste and the jaggery and simmer for 3 to 4 minutes. Taste it. If it's flat, add a pinch more salt.",
+  "Set a large nonstick skillet over medium-high heat and add 1 tbsp oil. Cook 4 patties for 3 to 4 minutes, until the underside is golden and crisp, then flip and cook for 3 minutes. Transfer them to a plate and repeat with the remaining oil and patties.",
+  "Ladle about 1 cup of the ragda into each of 4 bowls. Top each with 2 patties, 2 tbsp of the tamarind chutney and 1 tbsp of the green chutney.",
+  "Finish each bowl with the onion, tomato, sev, 2 tbsp cilantro divided between the bowls, and a pinch from the remaining 1 tsp chaat masala. Serve right away.",
+  "To pack it for lunch, keep the ragda, patties and toppings in separate containers. The ragda keeps for 4 days in the fridge and the patties for 3 days. Reheat the ragda in a pot until bubbling, with a splash of water if it has thickened, and crisp the patties in a skillet over medium heat for 2 minutes per side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 70,
+ "advance_prep_notes": "soak the white peas overnight, at least 8 hours",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Swasthi's Recipes (the lead, 5.0 from 58 ratings) makes the dish from a white pea gravy with ginger, garlic and tamarind, and pan fried potato patties bound with poha powder, served under tamarind and green chutneys, onion, tomato and sev. Only this source was read in full. This follows the lead, with the peas simmered on the stovetop instead of pressure cooked, and leaves out the optional red chili and red garlic chutney to keep it mild. Check labels on the asafoetida, sev and chutneys for gluten and any animal ingredients. It takes about 100 minutes plus the soak, so it is a make-ahead lunch, not a 30 minute one.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Ragda Patties (Ragda Pattice)",
+   "url": "https://www.indianhealthyrecipes.com/ragda-patties/",
+   "rating": 5.0,
+   "rating_count": 58,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

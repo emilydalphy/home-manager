@@ -1,0 +1,115 @@
+{
+ "dish_name": "Salade Parisienne",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Baby potatoes",
+   "qty": "3/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Sliced cooked ham",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Comte cheese",
+   "qty": "5 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "5 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Cornichons",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "8 cornichons"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp minced"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the potatoes in half, or into quarters if they're bigger than a walnut. Transfer them to a medium pot, cover with about 1 inch of cold water and stir in the 1 tbsp salt.",
+  "Set the pot over medium-high heat. When the water boils, turn the heat down to medium and simmer for about 15 minutes, until a knife slides into a potato with no resistance.",
+  "Meanwhile, put the eggs in a small saucepan and cover them with about 1 inch of cold water. Set it over high heat and bring to a rapid boil.",
+  "Boil the eggs for 1 minute, then take the pan off the heat, cover it and leave it for 10 minutes.",
+  "While the potatoes and eggs cook, make the vinaigrette. In a small bowl, whisk 1 tbsp Dijon mustard with 1 tbsp red wine vinegar and a pinch of salt. Whisk in the olive oil a little at a time until it looks creamy.",
+  "Wash and dry the lettuce and tear it into large pieces. Cut the ham into wide strips, cut the Comte into 1/2-inch cubes and slice the mushrooms thinly.",
+  "Chop 8 cornichons and mince the chives.",
+  "Drain the potatoes and rinse them under cold water until they're cool. Cool the eggs under cold running water, peel them and cut each one into quarters.",
+  "Divide the lettuce among 4 plates. Top each with ham, Comte, mushrooms, cornichons, potatoes and the 4 egg quarters from one egg.",
+  "Whisk the vinaigrette again and spoon it over the plates. Scatter the chives over, add a few turns of black pepper and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Pardon Your French (the lead) and The French Cooking Academy agree on the base: crisp lettuce, thick ham, a hard mountain cheese and hard-boiled eggs in a Dijon vinaigrette, dressed at the last minute. They differ on potatoes: the lead has boiled new potatoes plus mushrooms and cornichons, the Academy leaves them out, so the potato-and-Comté version here follows the lead. The lead says French vinaigrette without an amount, so the dressing ratio is the standard 1 mustard, 1 vinegar, 3 oil. For lunch boxes, pack the dressing separately; once dressed the salad is best within 2 to 3 hours. Neither source has 20 ratings (the lead has 2) and RecipeTin Eats has no version, so this is flagged as a fallback.",
+ "sources": [
+  {
+   "name": "Pardon Your French",
+   "title": "Classic Parisian Salad (Salade Parisienne)",
+   "url": "https://www.pardonyourfrench.com/classic-parisian-salad-salade-parisienne/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The French Cooking Academy",
+   "title": "Parisian Salad",
+   "url": "https://www.thefrenchcookingacademy.com/recipes/parisian-salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

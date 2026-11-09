@@ -1,0 +1,122 @@
+{
+ "dish_name": "Kolokithopita",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Phyllo dough",
+   "qty": "1 package",
+   "category": "frozen",
+   "cook_qty": "6 sheets"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1 1/4 lbs",
+   "category": "produce",
+   "cook_qty": "500 g"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/2 onion"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 small tub",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Feta",
+   "qty": "9 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Breadcrumbs",
+   "qty": "1 container",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "The night before, if your phyllo is frozen: transfer the package to the fridge to thaw.",
+  "Peel the zucchini and grate it on the large holes of a box grater. Transfer it to a colander, toss with 1 tsp salt and leave it in the sink for 20 minutes.",
+  "Meanwhile, heat the oven to 350°F/180°C. Melt the butter and set it aside. Brush an 8-inch square baking dish with a little of the butter.",
+  "Finely chop the onion. Warm 1 tbsp olive oil in a small skillet over medium heat and cook the onion for 4 to 5 minutes, until soft. Take the pan off the heat and let it cool for a few minutes.",
+  "Squeeze the grated zucchini dry in handfuls, then wrap it in a clean towel and squeeze again. Transfer it to a large bowl.",
+  "Add the onion, egg, yogurt, crumbled feta, breadcrumbs, parsley, mint and the pepper to the zucchini. Stir until evenly mixed.",
+  "Lay 1 sheet of phyllo in the dish, letting the edges hang over, and brush it with butter. Repeat with 2 more sheets.",
+  "Spoon in the filling and spread it level. Fold the overhanging phyllo over the filling.",
+  "Lay 1 sheet over the top and brush it with butter. Repeat with 2 more sheets, then tuck the edges down inside the dish.",
+  "Brush the top with the rest of the butter. With a sharp knife, score the top into 8 pieces, cutting about 1/4 inch deep.",
+  "Bake on the middle rack for 45 minutes, until deep golden. Let it rest for 10 minutes before cutting.",
+  "Serve warm or at room temperature. For lunches, let it cool completely and wrap it well. It keeps for 3 days in the fridge. Reheat slices in a 350°F oven for 15 minutes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "thaw frozen phyllo in the fridge the night before",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "My Greek Dish (the lead, 4.9 from 665 ratings) and Dimitra's Dishes agree on grated zucchini salted and squeezed dry, feta, egg, fresh mint and a crisp phyllo case. They differ on dairy and fat: the lead adds strained yogurt and uses olive oil or butter on shop-bought phyllo, Dimitra's adds a second cheese and brushes with a lot of butter. This follows the lead, scaled from 1 kg zucchini to 500 g, using the lead's commercial phyllo shortcut with butter, and skipping its sesame seeds.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Traditional Zucchini Pie Recipe with Feta Cheese (Greek Kolokithopita)",
+   "url": "https://www.mygreekdish.com/recipe/traditional-kolokithopita-recipe-with-homemade-phyllo-greek-zucchini-pie/",
+   "rating": 4.9,
+   "rating_count": 665,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Kolokythopita: Zucchini and Feta Pie",
+   "url": "https://www.dimitrasdishes.com/kolokythopita-zucchini-pie/",
+   "rating": 4.2,
+   "rating_count": 20,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

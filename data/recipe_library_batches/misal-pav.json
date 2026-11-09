@@ -1,0 +1,151 @@
+{
+ "dish_name": "Misal Pav",
+ "cuisine": "Indian",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Moth bean sprouts",
+   "qty": "12 oz",
+   "category": "produce",
+   "cook_qty": "2 1/2 cups"
+  },
+  {
+   "item": "Onions",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "2-inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Unsweetened dried coconut",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri red chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 small piece",
+   "category": "pantry",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Farsan",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Pav rolls",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Chop 1 onion finely. Chop the ginger roughly, cut the tomato into small pieces and keep the garlic and coconut ready.",
+  "Set a large heavy pot over medium heat and add 1 tbsp oil. Add the ginger, garlic and chopped onion and cook for 6 to 8 minutes, stirring, until golden brown.",
+  "Stir in the coconut and cook for 1 minute, until it smells toasty. Add the tomato and cook for 4 minutes, until soft. Transfer everything to a blender, add 1/4 cup water and blend until smooth.",
+  "Return the pot to medium heat and add the remaining 3 tbsp oil. Add the mustard seeds, cumin seeds and curry leaves. After about 20 seconds the mustard will splutter, so stand back a little.",
+  "Turn the heat to low. Stir in the turmeric, chili powder, ground coriander and garam masala and stir for 20 seconds, until fragrant.",
+  "Add the blended paste and cook for about 5 minutes, stirring, until the oil separates from the paste and pools at the edges.",
+  "Add the sprouts, the jaggery, 1 tsp salt and 5 cups water. Bring to a boil, then turn the heat to medium-low, cover and simmer for 15 minutes, until the sprouts are tender and a layer of oil floats on top.",
+  "Meanwhile, finely chop the second onion, chop 3 tbsp cilantro and cut the lemon into wedges.",
+  "Taste the gravy. If it's flat, add a pinch more salt.",
+  "Ladle the sprouts into 4 bowls with some of the thin gravy. Top each with farsan, chopped onion and cilantro, adding the farsan at the last minute so it stays crunchy. Serve with the pav and lemon wedges.",
+  "To pack it for lunch, keep the sprouts and gravy in one container, and the farsan and pav separate. The sprouts and gravy keep for 4 days in the fridge. Reheat in a pot over medium heat until bubbling, adding a splash of water if it has thickened."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (the lead, 4.97 from 413 ratings) and Swasthi's Recipes (4.99 from 94) agree on a spiced sprout curry with a thin gravy poured around the edge, topped with farsan, onion and cilantro, and served with pav and lemon. They differ in method: the lead blends a browned onion, tomato and coconut paste and pressure cooks the sprouts first, Swasthi grinds ginger, garlic and coconut raw and simmers the sprouts in the gravy for 5 minutes. This follows the lead's paste, with the sprouts simmered in the gravy instead of pressure cooked; Swasthi also accepts mixed sprouts. It is a 50 minute make-ahead lunch, not a 30 minute one.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Misal Pav Recipe",
+   "url": "https://hebbarskitchen.com/spicy-maharashtrian-misal-pav-recipe/",
+   "rating": 4.97,
+   "rating_count": 413,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Misal Pav Recipe",
+   "url": "https://www.indianhealthyrecipes.com/misal-pav-recipe/",
+   "rating": 4.99,
+   "rating_count": 94,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

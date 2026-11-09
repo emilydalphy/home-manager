@@ -1,0 +1,165 @@
+{
+ "dish_name": "Bisi Bele Bath",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Short-grain rice",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Toor dal",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind",
+   "qty": "1 small block",
+   "category": "pantry",
+   "cook_qty": "a golf-ball sized piece"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 small block",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Dried mild red chilies",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fenugreek seeds",
+   "qty": "2 pinches",
+   "category": "pantry"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened dried coconut",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/2 cup diced"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1/4 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Green beans",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Cashews",
+   "qty": "10",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free asafoetida",
+   "qty": "1 pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the dal. Transfer it to a medium pot with 2 cups water and bring to a boil over medium-high heat. Turn the heat to low, cover with the lid slightly open and simmer for 40 minutes, until the dal falls apart when you press it. Stir now and then and add a splash of hot water if it looks dry.",
+  "Put the tamarind in a small bowl with 1/2 cup hot water and leave it to soak.",
+  "Make the spice powder. Set a small dry skillet over low heat and add the red chilies, urad dal and chana dal. Stir for about 2 minutes, until golden.",
+  "Add the coriander seeds, cloves and cinnamon and stir for 1 minute, until fragrant. Add the fenugreek seeds and stir for 30 seconds, then add the cumin seeds and coconut and stir for 30 seconds.",
+  "Transfer everything to a plate and let it cool for 5 minutes. Grind it to a fine powder in a spice grinder or blender.",
+  "When the dal has been simmering for about 20 minutes, rinse the rice and add it to a second pot with 1 3/4 cups water. Bring to a boil, cover and cook over the lowest heat for 15 minutes, until soft. Take the pot off the heat.",
+  "Squeeze the tamarind well in the water, then strain the liquid into a bowl and discard the pulp. Keep 2 tbsp of it aside. Stir the spice powder, the jaggery and 1/2 tsp salt into the rest until there are no lumps.",
+  "Dice the carrot and trim and cut the beans into 1-inch pieces.",
+  "When the dal is done, mash it well with the back of a spoon. Transfer it into the pot of rice and stir until they're mixed.",
+  "Set the empty dal pot over medium-high heat. Add 1 tsp ghee, the carrot, beans and peas, and cook for 3 to 4 minutes. Pour in 1 cup water and cook for 6 to 8 minutes, until the vegetables are about three-quarters done and still slightly crunchy.",
+  "Add the tamarind mixture and boil for 3 minutes. Add the rice and dal with 1 cup water and stir.",
+  "Cook over medium heat for 5 minutes, stirring often, until it's thick but still pourable. Take it off the heat while it's a little looser than you want, since it thickens as it sits.",
+  "For the tempering, warm 1 tbsp ghee in a small pan over medium heat. Add the cashews and stir for about 1 minute, until light golden. Add the mustard seeds and stand back, as they'll splutter.",
+  "When the spluttering slows, add the curry leaves and stir for 20 seconds, until crisp. Add the asafoetida, then pour everything over the pot and stir in.",
+  "Stir in 2 tsp ghee. Taste it. If it's flat, add a pinch more salt, or a spoonful of the tamarind water you kept aside. Serve hot.",
+  "To pack it for lunch, let it cool and transfer it to an airtight container. It keeps for 3 days in the fridge. To reheat, stir in a few spoonfuls of boiling water, then warm it in a pot or the microwave until hot, adding more water as needed."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 50,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only Swasthi's Recipes (5.0 from 221 ratings) was read in full, so there is no cross-source comparison. It cooks rice and dal until soft, stirs them into vegetables and tamarind with a freshly roasted spice powder, and finishes with a ghee tempering. The lead gives the stovetop method with a homemade powder, which is used here with the dal simmered instead of pressure cooked; the powder uses mild chilies and the tempering chili is left out to keep the base mild. This is not a 30 minute lunch, it is a make-ahead one that keeps for days.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Bisi Bele Bath Recipe",
+   "url": "https://www.indianhealthyrecipes.com/bisi-bele-bath/",
+   "rating": 5.0,
+   "rating_count": 221,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Veg Recipes of India",
+   "title": "Bisi Bele Bath Recipe (Karnataka Style)",
+   "url": "https://www.vegrecipesofindia.com/bisi-bele-bath-recipe/",
+   "rating": 4.74,
+   "rating_count": 46,
+   "read": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,82 @@
+{
+ "dish_name": "Celeri Remoulade",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Celery root",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "a few sprigs"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large bowl with cold water and squeeze in the juice of half the lemon.",
+  "Cut the top and bottom off the celery root. Stand it on a flat end and slice off the peel with a sharp knife, following the curve.",
+  "Cut the celery root into thin slices, then stack the slices and cut them into thin matchsticks. Transfer the matchsticks into the lemon water as you go.",
+  "In a second large bowl, stir 3/4 cup mayonnaise with 1 tbsp Dijon mustard and the juice of the other half of the lemon until smooth.",
+  "Drain the celery root and pat it dry with paper towels. Add it to the dressing with 1/2 tsp salt and 1/2 tsp black pepper, and toss until every piece is coated.",
+  "Cover the bowl and refrigerate for at least 1 hour. It keeps for 3 days in the fridge, so it works for lunches made ahead.",
+  "Pick the leaves from a few parsley sprigs. Taste the salad. If it's flat, add a pinch more salt.",
+  "Serve cold, topped with the parsley leaves and a little black pepper."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Side Smith (the lead, 5.0 from 68 ratings) and Pardon Your French agree on matchsticks of raw celery root in a mustard mayonnaise, with lemon to keep it from browning and time in the fridge. They differ on extras: Pardon Your French adds cornichons and capers and chills 2 hours, the lead keeps it to mayonnaise, Dijon, lemon and parsley, which is what is written here. The lead's optional splash of milk is left out to keep the dish dairy-free.",
+ "sources": [
+  {
+   "name": "The Side Smith",
+   "title": "Celeri Remoulade",
+   "url": "https://thesidesmith.com/celeri-remoulade",
+   "rating": 5.0,
+   "rating_count": 68,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pardon Your French",
+   "title": "Classic French Celery Root Remoulade",
+   "url": "https://www.pardonyourfrench.com/classic-french-celery-root-remoulade/",
+   "rating": 3.8,
+   "rating_count": 21,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
