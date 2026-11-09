@@ -1,0 +1,80 @@
+{
+ "dish_name": "Calamares a la Romana",
+ "cuisine": "Spanish",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Squid tubes",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Egg",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the squid into rings about 1/2 inch wide. Pat them very dry with paper towels. Cut the lemon into wedges. Line a plate with paper towels.",
+  "In a medium bowl, whisk 1 1/4 cups of the flour, the baking soda, 1/2 tsp of the salt, the egg and 3/4 cup cold water until it's a thin, smooth batter.",
+  "Put the last 1/4 cup flour in a shallow bowl.",
+  "Heat the oil in a deep skillet over medium-high heat until it reaches 350°F. If you don't have a thermometer, drop in a bit of batter. It's ready when it sizzles right away and floats.",
+  "Toss a third of the rings in the flour and shake off the extra. Dip them in the batter, let the extra drip off, and add them to the oil one at a time. Stand back a little. They'll spatter.",
+  "Fry for about 2 minutes, turning once, until golden brown. Transfer them to the paper towels and sprinkle with a pinch of the salt.",
+  "Fry the rest the same way in two more batches, letting the oil come back to 350°F between them.",
+  "Serve right away with the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Fascinating Spain (the lead) coats squid rings in flour, then in a batter of flour, egg, water and baking soda, and fries them in olive oil at 175°C (350°F) in batches, which is what makes them a la romana. Spanish Fiestas flours the squid only and deep fries it for about a minute in sunflower oil. Neither shows a rating, so this is a fallback. The lead's baking soda (1/2 tbsp) was cut to 1/2 tsp as a safer amount. They're gluten containing, as the tags allow.",
+ "sources": [
+  {
+   "name": "Fascinating Spain",
+   "title": "Calamares a la Romana (Fried Squid) Recipe",
+   "url": "https://www.fascinatingspain.com/articulo/spanish-cuisine-recipes/calamares-a-la-romana-fried-squid-recipe/20200514095207070717.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spanish Fiestas",
+   "title": "Calamares a la Romana Recipe",
+   "url": "https://www.spanish-fiestas.com/recipes/calamares-a-la-romana/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

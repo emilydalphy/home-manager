@@ -1,0 +1,70 @@
+{
+ "dish_name": "Ensalada de Garbanzos",
+ "cuisine": "Spanish",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain the chickpeas in a colander and rinse them under cold water. Shake them dry and transfer them into a large serving bowl.",
+  "Peel the onion and chop it as finely as you can. Chop both peppers finely too.",
+  "In a medium bowl, whisk the 1/3 cup oil, the 3 tbsp sherry vinegar and the salt together.",
+  "Add the onion and peppers to the dressing and stir.",
+  "Pour it over the chickpeas and toss well. Let it sit for 15 minutes, or longer in the fridge.",
+  "Serve it cold or at room temperature. To pack it, keep it in a jar in the fridge for up to 3 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Invitado de Invierno (Miriam Garcia) dresses cooked chickpeas with finely chopped red and green pepper, red onion, olive oil and a little sherry vinegar, and lets the salad sit so the chickpeas take on the dressing. Her recipe cooks dried chickpeas and serves four as a starter, so this version uses canned chickpeas and triples the amounts for a lunch. Only the lead was readable (5.0 from 2 ratings, so it is a fallback). The 3 day fridge time is a cautious figure for a dressed bean salad.",
+ "sources": [
+  {
+   "name": "Invitado de Invierno",
+   "title": "Garbanzos en ensalada",
+   "url": "https://invitadoinvierno.com/garbanzos-en-ensalada",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

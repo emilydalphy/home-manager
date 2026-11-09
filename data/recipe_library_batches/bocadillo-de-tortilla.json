@@ -1,0 +1,104 @@
+{
+ "dish_name": "Bocadillo de Tortilla",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Potatoes",
+   "qty": "2 medium (about 1 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup + 1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes, halve them lengthwise and slice them 1/4 inch thick. Roughly chop the onion.",
+  "Heat 1/3 cup of the oil in a 10 inch nonstick pan over medium heat for about 2 minutes. Add the onion and cook for 3 to 4 minutes, until it's soft.",
+  "Add the potatoes and 1/2 tsp of the salt. Cook for 20 to 25 minutes, stirring every 2 to 3 minutes, until they're golden and a slice breaks easily when you press it.",
+  "Meanwhile, whisk the eggs in a large bowl with 1/2 tsp of the salt and the pepper.",
+  "Make the aioli too. In a small bowl, stir the 1/2 cup mayonnaise with the garlic grated in, 1 tsp lemon juice and the last 1 tbsp oil. Chop 2 tbsp of the chives.",
+  "Transfer the potatoes and onion into the eggs with a slotted spoon, leaving the oil in the pan. Stir and let it sit for 2 minutes.",
+  "Put the pan back over low to medium heat. Pour in the egg mixture in an even layer and cook for 3 to 4 minutes, without stirring, until the underside is golden and the edges are set.",
+  "Slide the tortilla onto a flat plate about the size of the pan, then flip it back into the pan. Press the edges in toward the middle and cook for 3 to 4 minutes, until just set. That should be about right when the center no longer jiggles.",
+  "Slide it onto a board and cut it into 8 wedges.",
+  "Cut the baguette into four 6 inch pieces and split each one lengthwise. Spread the aioli on both cut sides, add 2 wedges to each and scatter on the chives.",
+  "Serve warm or at room temperature. To pack it, keep the wedges and the aioli apart in the fridge for up to 3 days and fill the bread just before eating."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spain on a Fork cooks the potato and onion slowly in olive oil, folds them into whisked egg, cooks the tortilla in a nonstick pan, flips it and serves wedges in a split baguette with garlic mayonnaise and chives. That Spicy Chick (5 from 4 ratings) fries the potatoes faster with a strain over a bowl and mentions butter or mayonnaise in the bread. Nothing read had 20 ratings, so it follows the Spain on a Fork bocadillo page, which has no rating. At about 50 minutes this is not a 30 minute lunch; the tortilla keeps, so it suits being made the night before.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Potato Omelet Sandwich (Bocadillo de Tortilla de Patatas)",
+   "url": "https://spainonafork.com/spanish-potato-omelet-sandwich-bocadillo-de-tortilla-de-patatas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "That Spicy Chick",
+   "title": "Spanish Omelette (Tortilla Espanola)",
+   "url": "https://thatspicychick.com/spanish-omelette-tortilla-espanola/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

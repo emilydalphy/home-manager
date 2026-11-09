@@ -1,0 +1,103 @@
+{
+ "dish_name": "Ensalada de Lentejas",
+ "cuisine": "Spanish",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Lentils",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Corn",
+   "qty": "1 small can",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain the lentils in a colander and rinse them under cold water. Shake off the water and let them drain for a few minutes.",
+  "Chop 1/2 cup of the onion, 1/2 cup of the green pepper and 1/2 cup of the red pepper as finely as you can. Peel and finely chop 1/3 cup of the carrot. Drain 1/3 cup of the corn.",
+  "In a small bowl, whisk the 2 tbsp oil and the 1 tbsp vinegar. Grate in the garlic, then add 1 tbsp of chopped parsley and 1/4 tsp of the salt.",
+  "Transfer the lentils, onion, peppers, carrot and corn into a large bowl. Add the rest of the salt and the pepper.",
+  "Pour the dressing over and toss gently. Serve at room temperature, or chill for a couple of hours first. To pack it, keep it in a jar in the fridge for up to 3 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spain on a Fork (5 from 2 ratings) tosses canned lentils with finely chopped red onion, peppers, carrot and corn in an olive oil and sherry vinegar dressing with garlic and parsley. Milliken and Feniger's Food Network version cooks brown lentils and uses shallots with much more vinegar and oil, and says to let it stand 30 minutes. Neither has 20 ratings, so this is a fallback. The vinegar is doubled from the lead's 1/2 tbsp to 1 tbsp because Food Network's version is far sharper.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Lentil Salad (Ensalada de Lentejas)",
+   "url": "https://spainonafork.com/spanish-lentil-salad-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network",
+   "title": "Ensalada de Lentejas (Lentil Salad)",
+   "url": "https://www.foodnetwork.com/recipes/ensalada-de-lentejas-lentil-salad-recipe-1970031.amp",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

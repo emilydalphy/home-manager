@@ -1,0 +1,115 @@
+{
+ "dish_name": "Salpicon de Mariscos",
+ "cuisine": "Spanish",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 3,
+ "ingredients": [
+  {
+   "item": "Raw shrimp",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Canned octopus in olive oil",
+   "qty": "3 cans (4 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Pimiento-stuffed green olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: peel and devein the shrimp if they aren't already, and cut each one into 3 pieces.",
+  "Bring a large pot of water to a boil, then turn it down to a simmer. Add the shrimp, cover and take the pot off the heat. Let them sit for about 2 minutes, until pink and no longer see-through.",
+  "Drain the shrimp and rinse them under cold water so they stop cooking.",
+  "Drain the octopus into a large bowl so the oil collects there, and cut the octopus into bite-sized pieces. Whisk the 2 tbsp olive oil and the 3 tbsp vinegar into the oil in the bowl.",
+  "Halve the tomatoes. Chop both peppers into 1/2 inch pieces. Roughly chop the olives to get 1/3 cup and finely chop 1/3 cup of the onion.",
+  "Add the shrimp, octopus, tomatoes, peppers, olives and onion to the bowl. Sprinkle in the salt and pepper and toss well.",
+  "Cover and chill for at least 2 hours, or overnight.",
+  "Give it a stir and serve it chilled with slices of the baguette. It keeps in the fridge for up to 1 day after mixing."
+ ],
+ "advance_prep_notes": "chill for at least 2 hours, or overnight",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "Goya's Salpicon de Mariscos poaches the shrimp briefly off the heat, tosses it with canned octopus in olive oil, tomatoes, peppers, olives and onion in a sherry vinegar and olive oil dressing, and chills it for at least 2 hours. Benidorm Seriously's version poaches fish, squid and mussels and uses lime and cilantro, and says to cook the seafood a day ahead. Neither shows a rating, so this is a fallback. Goya's amounts are for 6, so they're scaled to 4 (shrimp 1 lb down to 3/4 lb).",
+ "sources": [
+  {
+   "name": "Goya",
+   "title": "Salpicon de Mariscos - Seafood Salad",
+   "url": "https://www.goya.com/en/recipes/salpicon-de-mariscos-seafood-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Benidorm Seriously",
+   "title": "Spanish Seafood Salad (Salpicon de Mariscos)",
+   "url": "https://www.benidormseriously.com/spanish-seafood-salad-salpicon-de-mariscos",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

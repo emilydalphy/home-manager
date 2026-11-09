@@ -1,0 +1,99 @@
+{
+ "dish_name": "Sopa de Habas",
+ "cuisine": "Mexican",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Dried peeled fava beans",
+   "qty": "1/2 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before: put the 1/2 lb fava beans in a large bowl and cover them with 3 inches of cold water. Leave them on the counter for about 12 hours, then drain and rinse them.",
+  "Put the soaked beans in a large pot with 6 cups of water, 2 sprigs of the cilantro and half of one onion. Bring it to a boil over high heat, then turn it down to a gentle simmer.",
+  "Cover and simmer for 50 to 60 minutes, until the beans are soft and starting to fall apart. Add a splash of hot water if the level drops below the beans.",
+  "Meanwhile, chop the rest of the onions to get about 1 cup and mince the garlic. Chop 3 of the tomatoes. Chop the last tomato and set it aside for serving.",
+  "Heat the 1 tbsp oil in a large skillet over medium heat. Add the chopped onion with a pinch of the salt and cook for 3 to 4 minutes, until soft and see-through.",
+  "Add the garlic and cook for 1 minute, until you can smell it. Add the 3 chopped tomatoes and cook for 5 to 6 minutes, until they break down into a thick sauce.",
+  "Add the tomato mixture to the pot of beans along with 3/4 tsp of the salt and the pepper. Simmer for 8 minutes. Take out the cilantro sprigs and the onion half.",
+  "Taste it. If it's flat, add a pinch more salt. For a thicker soup, mash a few spoonfuls of the beans against the side of the pot.",
+  "Cut the avocado into small cubes and chop 1/4 cup of the cilantro leaves. Slice the jalapeño. Ladle the soup into bowls and top with the chopped tomato, avocado and cilantro. Put the jalapeño on the table for anyone who wants heat.",
+  "To make it ahead, cool the soup and keep it in the fridge for up to 5 days. Pack it in a jar, then reheat it on the stove over low heat with a splash of water until it's hot all the way through. Add the avocado, chopped tomato and cilantro just before eating."
+ ],
+ "advance_prep_notes": "soak the beans overnight (the night before)",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Dora's Table (the lead, 4.86 from 7 ratings) soaks the beans overnight, simmers them with cilantro and onion, then stirs in a separate sautéed onion and tomato base. Mexican Made Meatless (5 from 2) uses vegetable broth and olive oil and keeps the soup for 5 days in the fridge Dora's also puts a minced jalapeño in the base. This version takes the lead's method, uses 1 tbsp olive oil to sauté from Mexican Made Meatless, and puts all the jalapeño on the table so the soup stays mild. It cannot honestly be done in 30 minutes: dried favas need an overnight soak and about an hour of simmering, so it is a made-ahead soup.",
+ "sources": [
+  {
+   "name": "Dora's Table",
+   "title": "Mexican Fava Bean Soup (Sopa de Habas)",
+   "url": "https://dorastable.com/mexican-fava-bean-soup-sopa-de-habas/",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Easy Mexican Fava Bean Soup",
+   "url": "https://mexicanmademeatless.com/?p=87212",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

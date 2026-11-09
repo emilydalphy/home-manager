@@ -1,0 +1,90 @@
+{
+ "dish_name": "Ensalada de Atun",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Tomatoes",
+   "qty": "4 large",
+   "category": "produce"
+  },
+  {
+   "item": "Tuna in olive oil",
+   "qty": "3 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Pitted green olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "White wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Core the tomatoes and slice them into rounds about 1/4 inch thick. Peel the onion and slice it very thinly. Chop 1/3 cup of the parsley.",
+  "Overlap the tomato slices on a large platter and sprinkle them with 3/4 tsp of the salt. Scatter the onion over the top.",
+  "Drain the tuna well and break it into big chunks. Pile it in the center of the platter.",
+  "Scatter the olives over the salad. Drizzle on the 1/3 cup oil and the 3 tbsp vinegar.",
+  "Finish with the pepper, the last 1/4 tsp salt and the parsley.",
+  "Serve it right away, or keep it in the fridge for up to 1 day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cuisine de Geraldine (5.00 from 12 ratings) layers sliced tomato, red onion and canned tuna with olive oil, vinegar and parsley, and salts the tomatoes first. Spain on a Fork's Ensalada de San Isidro supplies the olives and uses sherry-vinegar-and-oil dressing with tuna in olive oil. Neither has 20 ratings, so this is a fallback. Capers from the lead were left out, and the salad needs no cooking.",
+ "sources": [
+  {
+   "name": "La Cuisine de Geraldine",
+   "title": "Tuna and Tomato Salad (Spanish recipe)",
+   "url": "https://lacuisinedegeraldine.fr/en/tuna-and-tomato-salad",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "Ensalada de San Isidro",
+   "url": "https://spainonafork.com/wprm_print/ensalada-de-san-isidro-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

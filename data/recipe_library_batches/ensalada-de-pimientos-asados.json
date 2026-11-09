@@ -1,0 +1,61 @@
+{
+ "dish_name": "Ensalada de Pimientos Asados",
+ "cuisine": "Spanish",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Red bell peppers",
+   "qty": "4 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Flaky salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the broiler to high with a rack about 4 inches from the heat. Put the whole peppers on a foil lined baking sheet.",
+  "Broil for 18 to 22 minutes, turning them every 5 minutes, until the skins are blackened on all sides.",
+  "Transfer the peppers into a bowl and cover it with a plate. Let them steam for 10 minutes.",
+  "Meanwhile, slice the garlic thinly and slice the scallions into thin rings.",
+  "Peel the skins off the peppers, then pull out the stems and seeds. Tear the peppers into strips and drain them in a colander for a few minutes. Transfer the strips to a serving bowl and add the scallions.",
+  "Heat the oil and the garlic in a small pan over low heat. Cook for 3 to 4 minutes, until the garlic is just golden.",
+  "Take the pan off the heat and let it cool for a few minutes. Pour the garlic and all the oil over the peppers.",
+  "Toss and sprinkle with the flaky salt. Serve at room temperature or cold. To pack it, keep it in a jar in the fridge for up to 4 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Directo al Paladar's Ensalada de pimientos (25 votes, no average shown) peels roasted peppers, tears them into strips, tops them with fine spring onion and pours over olive oil that sliced garlic was gently cooked in, then finishes with flaky salt. Another Spanish page in the search said the flavor improves after resting several hours and that the peppers must be drained well. It's a fallback lead. The author offers a splash of vinegar but prefers the salad without it, so none is used. The pepper roasting takes about 25 minutes, so the salad is best made ahead.",
+ "sources": [
+  {
+   "name": "Directo al Paladar",
+   "title": "Ensalada de pimientos (Roasted Red Pepper Salad)",
+   "url": "https://www.directoalpaladar.com/recetas-vegetarianas/ensalada-pimientos-receta-clasico-verano-truco-sea-delicosa",
+   "rating": null,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
