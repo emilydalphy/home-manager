@@ -1,0 +1,98 @@
+{
+ "dish_name": "Peperonata",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 36,
+ "ingredients": [
+  {
+   "item": "Bell peppers, mixed colors",
+   "qty": "5 large",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups basmati rice and cook it the way you usually do.",
+  "Cut the peppers into 1/4-inch strips. Slice the onion thinly. Crush the garlic. Dice the tomatoes.",
+  "Heat 4 tbsp of the oil in a large, deep skillet over medium-low heat. Add the onion and 1/2 tsp of the salt and cook for 6 minutes, stirring now and then, until soft.",
+  "Add the garlic and cook for 1 minute.",
+  "Add the peppers and the remaining 1/2 tsp salt and stir well. Cover and cook on low for 20 minutes, stirring every 5 minutes. If it starts to stick, add a splash of water.",
+  "Add the tomatoes and half of the basil, torn. Raise the heat to medium and cook uncovered for 8 minutes, until the tomatoes turn saucy and the peppers are very tender but still hold their shape.",
+  "Take the pan off the heat. Stir in the balsamic vinegar, the last 1 tbsp oil and the rest of the basil, torn.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve warm over the rice."
+ ],
+ "method_notes": "Great Italian Chefs (5.00, number of ratings not shown, so this is a fallback) leads: onion, garlic and basil softened in olive oil, peppers covered on low, tomatoes last, balsamic to finish. Savoring Italy and Giallo Zafferano agree on slow-cooked peppers and tomato added late; they differ on passata versus fresh tomato. The covered cooking is shortened from 30 minutes to 20 to fit 45 minutes. Served over rice to keep it gluten-free; it also keeps 3 days in the fridge.",
+ "sources": [
+  {
+   "name": "Great Italian Chefs",
+   "title": "Peperonata Recipe",
+   "url": "https://www.greatitalianchefs.com/recipes/peperonata-recipe",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Savoring Italy",
+   "title": "Traditional Peperonata Recipe",
+   "url": "https://www.savoringitaly.com/peperonata/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Giallo Zafferano",
+   "title": "Peperonata: easy and flavorful traditional recipe",
+   "url": "https://www.giallozafferano.com/recipes/peperonata-pepper-and-onion-stew.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,131 @@
+{
+ "dish_name": "Prawn Balchao",
+ "cuisine": "Indian",
+ "main_protein": "shrimp",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 27,
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried Kashmiri chilies",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Distilled white vinegar",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole black peppercorns",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "6",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1-inch piece",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1-inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "16 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Break the dried chilies into pieces and put them in a bowl with 3/4 cup of the vinegar. Let them soak for 20 minutes.",
+  "Meanwhile, start the rice. Rinse 1 1/2 cups basmati rice and cook it the way you usually do.",
+  "Pat the shrimp dry and cut each one in half. Toss them with 1 tsp of the salt and 1/2 tsp of the turmeric and let them sit.",
+  "Finely chop the onions. Mince 4 of the garlic cloves and keep them apart from the other 12.",
+  "Put the soaked chilies and their vinegar in a blender with the peppercorns, cloves, cinnamon, ginger, the 12 whole garlic cloves, the cumin and the remaining 1/2 tsp turmeric. Blend until completely smooth. That should be about 1 1/4 cups.",
+  "Heat 2 tbsp of the oil in a large skillet over medium-high heat. Add half the shrimp in a single layer and cook for 3 minutes, turning once, until browned at the edges. Transfer to a plate and repeat with the rest.",
+  "Add 3 tbsp of the oil to the same skillet over medium heat. Add the onions and 1/2 tsp salt and cook for 10 to 12 minutes, stirring often, until deep brown. Don't rush the onions. That's where the flavor starts.",
+  "Add the minced garlic and cook for 1 minute.",
+  "Add the last 3 tbsp oil, the blended paste, the sugar and the remaining 1/4 cup vinegar. Stand back, it spatters. Cook for 3 minutes, until it darkens and the oil begins to separate.",
+  "Return the shrimp and any juices to the pan and cook for 2 minutes. You're cooking the shrimp to 145°F, so if you have a thermometer, check one there. No thermometer? Cut one open. It's done when it's opaque all the way through.",
+  "Taste it. If it's flat, add a pinch more salt or a splash more vinegar.",
+  "Serve with the rice."
+ ],
+ "method_notes": "Veena Patwardhan has no rating shown, so this is a fallback (no trusted cook has the dish). Her vinegar-chili paste with browned onions and sugar leads. Goan Food Recipes (4.3 from 7) uses the same vinegar masala and Archana's Kitchen and Raksha's Kitchen swap in tamarind. Balchao is normally a pickle matured for days; this is the fresh, saucy version eaten the same night. Shrimp are fried 3 minutes a batch instead of 8 so they stay tender, and the chilies are mild Kashmiri.",
+ "sources": [
+  {
+   "name": "Veena Patwardhan",
+   "title": "Goan Prawn Balchao Recipe",
+   "url": "https://veenapatwardhan.com/pat-a-cake/2024/09/27/goanprawnbalchaorecipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Goan Food Recipes",
+   "title": "Prawn Balchao: The Goan Prawn Pickle",
+   "url": "https://www.goanfoodrecipes.com/2011/11/prawn-balchao-goan-prawn-pickle.html",
+   "rating": 4.3,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Raksha's Kitchen",
+   "title": "Goan Prawn Balchao",
+   "url": "https://www.rakshaskitchen.com/goan-prawn-balchao-prawns-pickle/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

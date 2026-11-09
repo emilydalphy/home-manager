@@ -1,0 +1,101 @@
+{
+ "dish_name": "Machher Paturi",
+ "cuisine": "Indian",
+ "main_protein": "fish",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 22,
+ "ingredients": [
+  {
+   "item": "Boneless white fish fillets (cod or tilapia)",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow or brown mustard seeds",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened shredded coconut",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Mustard oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Aluminum foil",
+   "qty": "1 roll",
+   "category": "other"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups basmati rice and cook it the way you usually do.",
+  "Pat the fish dry and cut it into 8 even pieces. Rub them with 1 tsp of the salt and 1/4 tsp of the turmeric, and let them sit while you make the paste.",
+  "Cut the stem off 1 green chili and slice the other 2 thinly for the table. Put the 4 tbsp mustard seeds, the coconut, the whole chili, 1/2 tsp of the salt, the remaining 1/2 tsp turmeric and 3 tbsp cold water into a blender.",
+  "Blend to a thick, rough paste, about 1 minute. That should be about 3/4 cup. Stir in 2 tbsp of the mustard oil.",
+  "Add the fish to the paste and turn each piece until it's coated. Let it sit for 15 minutes.",
+  "Meanwhile, tear off 8 squares of foil, each about 10 inches. Put a piece of fish on each square, spoon the paste left in the bowl over the top and drizzle with a few drops of the last 1 tbsp mustard oil.",
+  "Fold each square over the fish and crimp the edges tight so nothing leaks. You'll have 8 packets.",
+  "Set a large skillet over medium-low heat. Lay the packets in a single layer, cover the pan and cook for 8 minutes. Work in two batches if they don't fit.",
+  "Flip the packets, cover and cook the other side for 8 minutes. Stand back a little when you open the foil, the steam is hot.",
+  "You're cooking the fish to 145°F in the middle, so if you have a thermometer, check one piece there. No thermometer? Open a packet and press the fish with a fork. It's done when it flakes easily and is opaque all the way through.",
+  "Open the packets onto a platter and spoon the juices and paste over the fish. Taste a little of the sauce. If it's flat, add a pinch more salt.",
+  "Serve with the rice. Set the sliced green chilies on the table for anyone who wants heat."
+ ],
+ "method_notes": "No version of this dish has a rating anywhere, so it's a fallback and no trusted cook has it. Yummraj leads (mustard, coconut, turmeric and green chili, with foil allowed in place of banana leaf). Indrani's and Coffee and Crumpets agree on a mustard seed paste and mustard oil, and differ on adding poppy seeds or tomato and on steaming versus pan or oven. Foil replaces banana leaf and the packets cook on a covered skillet. One green chili goes in the paste and the rest go on the table.",
+ "sources": [
+  {
+   "name": "Yummraj",
+   "title": "Machher Paturi (Bengali style Mustard fish in Banana leaf)",
+   "url": "https://yummraj.com/2012/04/26/machher-paturi-bengali-style-mustard-fish-in-banana-leaf/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Indrani's recipes",
+   "title": "Fish Paturi (Fish steamed in Banana leaf with mustard sauce)",
+   "url": "https://www.indrani-will-teach.com/recipe/fish/machher-paturi-fish-steamed-in-banana.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Coffee and Crumpets",
+   "title": "Sorshe Macher Paturi ~ Bengali Fish in Banana Leaf",
+   "url": "https://www.coffeeandcrumpets.com/sorshe-macher-paturi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
