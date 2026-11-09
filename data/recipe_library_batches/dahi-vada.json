@@ -1,0 +1,135 @@
+{
+ "dish_name": "Dahi Vada",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Urad dal",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Split moong dal",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Gluten-free asafoetida (hing)",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Mint chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri red chili powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain boondi",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 5 hours ahead, or overnight: rinse the 1 cup urad dal and cover it with plenty of cold water. Leave it to soak.",
+  "Soak the 1/4 cup moong dal in a small bowl of water for 30 minutes before you grind.",
+  "Seed the green chili. Drain the urad dal and grind it with the chili and the ginger in a blender, adding 2 to 3 tbsp water only as the blades need it, until you have a thick, fluffy batter. Transfer it into a large bowl.",
+  "Drain the moong dal and grind it to a smooth paste with 1 tbsp water. Stir it into the urad batter along with 1 tsp of the salt. Whisk for 2 minutes until it looks lighter.",
+  "In a large bowl, stir 5 cups hot tap water with 1/2 tsp salt and the hing. Set it next to the stove.",
+  "Pour the oil into a heavy pot so it's about 2 inches deep and heat it over medium. Test it with a drop of batter. It should sizzle and rise without browning right away.",
+  "Wet a spoon and drop in heaped tablespoons of batter, 5 or 6 at a time. Fry for about 5 minutes, turning now and then, until they're golden and crisp. You'll get about 20.",
+  "Lift them out onto paper towels for a few seconds, then transfer them straight into the hot water. Leave them there for 30 minutes, until they're soft.",
+  "Whisk the yogurt with the sugar and the last 1/2 tsp salt until smooth.",
+  "Gently squeeze each vada between your palms to press out the water. Arrange them on a deep platter and pour the sweet yogurt over.",
+  "Spoon on the tamarind and mint chutneys. Sprinkle with the cumin, chaat masala, boondi and 2 tbsp chopped cilantro. Serve chilled, with the chili powder in a small bowl for the adults to add."
+ ],
+ "advance_prep_notes": "Soak the urad dal at least 5 hours ahead, or overnight.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Hebbar's (4.98 from 247) soaks urad dal, grinds it with green chili and ginger, adds a little moong paste, fries the vadas, soaks them in hot salted hing water until soft, and serves them under sweetened curd with two chutneys, spices and boondi. My Ginger Garlic Kitchen uses only urad dal with raisins and cashews in the vadas (left out here for nut-free) and has just 4 reviews. The chutneys and spice amounts are not given on Hebbar's page, so they are bought chutneys and small amounts. The chili is seeded and the chili powder is left for the table. Check the hing label for gluten and the chutney labels for nuts.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "dahi vada recipe | dahi bhalla recipe | soft dahi balle | dahi bade",
+   "url": "https://hebbarskitchen.com/north-india-dahi-vada-recipe-dahi-bhalla/",
+   "rating": 4.98,
+   "rating_count": 247,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Ginger Garlic Kitchen",
+   "title": "Dahi Vada Recipe (Dahi Bhalla)",
+   "url": "https://www.mygingergarlickitchen.com/dahi-vada-recipe/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

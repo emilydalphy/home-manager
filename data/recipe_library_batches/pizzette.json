@@ -1,0 +1,105 @@
+{
+ "dish_name": "Pizzette",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Passata (tomato puree)",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "a handful"
+  },
+  {
+   "item": "Mozzarella",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Black olives, sliced",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, mix the 3 cups flour, the yeast and the sugar. Add 1/2 cup plus 2 tbsp water and the 1/2 cup milk, then 2 tsp salt and 2 tbsp of the olive oil. Mix until it comes together.",
+  "Knead it on the counter for about 5 minutes, until it's smooth. Put it in an oiled bowl, cover it, and leave it for 2 to 3 hours, until it's about doubled.",
+  "While the dough rises, make the sauce. Heat the passata with 1 tbsp of the oil in a saucepan over medium-low heat. Simmer for 10 minutes, stirring now and then, until it's slightly thicker.",
+  "Take the pan off the heat. Tear in a handful of basil leaves and stir in 1/2 tsp salt. Let the sauce cool.",
+  "Line two baking sheets with parchment. Rub a little of the last 1 tbsp oil on the counter and roll the dough out to about 1/8 inch thick. If it springs back, let it rest for 5 minutes and roll again.",
+  "Cut out 3 inch circles with a cutter or a small glass and set them on the sheets, 1 inch apart. Gather the scraps, roll them out and cut more. You'll get about 24. Leave them to rise for 30 to 60 minutes. Heat the oven to 375°F for the last 15 minutes.",
+  "Put the sauce, the grated mozzarella, the olives and the oregano in separate bowls. Let everyone press a shallow well into their rounds with a fingertip.",
+  "Top each with a spoonful of sauce, some mozzarella, a few olive slices and a pinch of oregano.",
+  "Bake one sheet at a time on the middle rack for about 15 minutes, until the cheese is bubbling and the edges are golden. Serve warm."
+ ],
+ "advance_prep_notes": "Make the dough at least 2 hours ahead so it can rise.",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Italian Recipe Book's dough (flour, a little milk, olive oil, two rises) and its simple tomato and mozzarella toppings are the lead, and Little Sugar Snaps agrees on 3 inch rounds baked in a hot oven. Both have a single rating, so this is a fallback. The lead gives no topping amounts, so the mozzarella, olive and oregano amounts are ours, with the anchovy and salami options left out so it stays vegetarian. The lead's card says 10 pizzette but its text says 25 to 30; this makes about 24. It is slow for a snack because of the two rises, so it's a weekend one, or make the dough ahead.",
+ "sources": [
+  {
+   "name": "Italian Recipe Book",
+   "title": "Pizzette (Mini Pizza Bites)",
+   "url": "https://www.italianrecipebook.com/pizzette-mini-pizza-bites/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Little Sugar Snaps",
+   "title": "Mini Pizzas (Pizzette)",
+   "url": "https://www.littlesugarsnaps.com/pizzette/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

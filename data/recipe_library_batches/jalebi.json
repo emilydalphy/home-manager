@@ -1,0 +1,120 @@
+{
+ "dish_name": "Jalebi",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Saffron strands",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 tsp juice"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Make the syrup first. Stir 1 cup sugar and 1/4 cup water together in a small pot over medium-low heat until the sugar dissolves.",
+  "Bring it to a boil, add the saffron, and simmer for about 5 minutes. To check it, let a drop cool for a few seconds, then press it between your thumb and finger and pull them apart. It should make a single sticky thread. If it doesn't, simmer for another minute and check again.",
+  "Take the pot off the heat and stir in the 1/4 tsp cardamom and 1/2 tsp lemon juice. Cover it and keep it warm.",
+  "In a bowl, mix the flour, cornstarch, turmeric, yogurt and vinegar. Add 5 tbsp water a little at a time, stirring until the batter is smooth.",
+  "Whisk it in circles for about 5 minutes, until it looks lighter.",
+  "Gently fold in the baking soda. Small bubbles will form. The batter should pour but still be thick. Transfer it into a squeeze bottle, or a zip bag with a corner snipped off.",
+  "Pour the oil into a wide pan so it's about 1 inch deep, add the ghee, and heat over medium. Test it with a drop of batter. It should sizzle and rise.",
+  "Squeeze the batter into the oil in spirals, starting from the middle with 2 or 3 loops. Make 3 at a time, and stand back a little.",
+  "When the underside is set and pale, after about 1 minute, flip each one. Fry until both sides are light golden, about 1 minute.",
+  "Lift each jalebi out with tongs and shake off the extra oil. Drop it into the warm syrup, turn it to coat both sides, then lift it out onto a plate. You'll get about 10. Serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's instant jalebi (4.99 from 274 ratings) and Swasthi's (4.99 from 217) agree on a thin yogurt batter beaten for 5 minutes, piped in spirals, fried briefly and dipped into a warm one-string sugar syrup with cardamom and saffron. This follows Hebbar's amounts, with the 1/2 tsp lemon juice its steps mention for the syrup. Swasthi's adds a long fermenting option and a larger syrup, and My Ginger Garlic Kitchen uses baking powder with ghee in the batter. Made fresh, they are crisp for only an hour or two, so it's one to make and eat the same day.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "jalebi recipe | instant jalebi recipe | homemade crispy jalebi recipe",
+   "url": "https://hebbarskitchen.com/jalebi-recipe-instant-crispy-jalebi/",
+   "rating": 4.99,
+   "rating_count": 274,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Jalebi recipe",
+   "url": "https://www.indianhealthyrecipes.com/jalebi-recipe/",
+   "rating": 4.99,
+   "rating_count": 217,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "My Ginger Garlic Kitchen",
+   "title": "Jalebi recipe",
+   "url": "https://mygingergarlickitchen.com/instant-jalebi-recipe",
+   "rating": 5.0,
+   "rating_count": 32,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

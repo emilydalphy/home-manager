@@ -1,0 +1,61 @@
+{
+ "dish_name": "Prosciutto e Melone",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Cantaloupe",
+   "qty": "1 ripe",
+   "category": "produce"
+  },
+  {
+   "item": "Prosciutto di Parma, thinly sliced",
+   "qty": "10 oz",
+   "category": "meat/seafood"
+  }
+ ],
+ "instructions": [
+  "Choose a cantaloupe that smells sweet at the stem end and gives a little when you press it.",
+  "Separate the prosciutto slices gently from their paper and lay them out on a serving plate in loose folds.",
+  "Trim both ends off the cantaloupe and stand it on a cut end. Slice the skin off in strips from top to bottom, then trim off any bits you missed.",
+  "Halve the cantaloupe and scoop out the seeds. Cut each half into wedges about 1 inch thick.",
+  "Arrange the melon on a second plate and pile the prosciutto over it. Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Rachael Ray's version on Food Network (2/3 pound of prosciutto di Parma to one ripe cantaloupe, serves 4) is the lead, and The Italian Chef and Lindsey Eats LA agree: peeled melon wedges and paper-thin prosciutto, nothing else. None of the pages has 20 ratings or a rating at all, so this is the fallback and there's no trusted cook on the Italian list who has the dish. Wrapping each wedge in a slice is the other way to serve it, but the prosciutto turns wet and chewy if it sits on the melon, so it goes on at the table. No balsamic, honey or basil, as the lead has none.",
+ "sources": [
+  {
+   "name": "Food Network (Rachael Ray)",
+   "title": "Prosciutto e Melone",
+   "url": "https://www.foodnetwork.com/recipes/rachael-ray/prosciutto-e-melone-recipe-1941261",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Italian Chef",
+   "title": "Prosciutto e Melone",
+   "url": "https://italianchef.com/prosciutto-e-melone/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Lindsey Eats LA",
+   "title": "Prosciutto and Melon",
+   "url": "https://lindseyeatsla.com/prosciutto-and-melon/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

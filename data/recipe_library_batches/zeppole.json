@@ -1,0 +1,99 @@
+{
+ "dish_name": "Zeppole",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Unsalted butter",
+   "qty": "1/2 stick (4 tbsp)",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Powdered sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Combine 1/4 cup water, the 1/4 cup milk, the butter, the sugar and the salt in a medium saucepan over medium heat. Stir until the butter melts, then bring it to a full boil.",
+  "Take the pan off the heat and add the flour all at once. Stir hard with a wooden spoon until it comes together into a ball.",
+  "Put the pan back over medium heat and stir constantly for about 2 minutes, until a thin film forms on the bottom of the pan.",
+  "Transfer the dough into a bowl and beat it for 2 minutes to cool it down.",
+  "Beat in the eggs one at a time, mixing each in fully before the next. The dough should be smooth and fall off the spoon in a thick ribbon.",
+  "Transfer the dough into a piping bag, or a zip bag, and cut a 1/2 inch opening.",
+  "Pour the oil into a heavy pot so it's about 2 inches deep and heat it over medium to 375°F. If you have a thermometer, check it there. No thermometer? Drop in a pea of dough. It should sizzle and rise steadily without browning right away.",
+  "Pipe 1 inch pieces into the oil, cutting each one off with scissors. Fry 6 to 8 at a time. Stand back a little. They'll spatter.",
+  "Fry for 4 to 5 minutes, turning them if they don't flip themselves, until they're deep golden all over.",
+  "Lift them out onto paper towels. Fry the rest the same way. You'll get about 30.",
+  "Dust them with the powdered sugar through a small sieve and serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Natasha's Kitchen (4.97 from 125) is a choux pastry piped into hot oil and dusted with sugar; this is her recipe cut in half, to about 30 bites instead of 65 to 75, with vegetable oil in place of peanut oil. The other versions fall into ricotta batters dropped by the spoonful (Food Republic, one rating) and a rested, piped choux (Food Network, unrated), and agree on 350 to 375°F oil and a dusting of sugar. They are best warm and don't keep well, so make them just before eating.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Zeppole Recipe",
+   "url": "https://natashaskitchen.com/zeppole-recipe/",
+   "rating": 4.97,
+   "rating_count": 125,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Republic",
+   "title": "The One and Only Zeppole Recipe",
+   "url": "https://www.foodrepublic.com/recipes/the-one-and-only-zeppole-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Network",
+   "title": "Zeppole",
+   "url": "https://www.foodnetwork.com/recipes/zeppole-recipe0-1915343",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

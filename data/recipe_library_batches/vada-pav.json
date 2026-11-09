@@ -1,0 +1,150 @@
+{
+ "dish_name": "Vada Pav",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce",
+   "cook_qty": "3 medium"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 cup leaves for the chutney, 3 tbsp for the filling"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "7",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "10 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "3/4 inch"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tsp juice"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Unsweetened shredded coconut",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Besan (chickpea flour)",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri red chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/4 tsp plus a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida (hing)",
+   "qty": "3 pinches",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Pav buns (soft dinner rolls)",
+   "qty": "8",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 3 potatoes in a pot, cover them with cold water and bring to a boil over high heat. Turn the heat to medium, cover, and cook for about 20 minutes, until a knife slides into the middle with no push.",
+  "Meanwhile, make the dry garlic chutney. Peel 6 of the garlic cloves and toast them in a dry skillet over medium heat for 3 to 4 minutes, turning them, until they're lightly browned in spots. Transfer them to a plate.",
+  "In the same skillet, still over medium heat, toast the 1/2 cup coconut for about 2 minutes, stirring, until it's pale gold. Transfer it to the plate and let both cool for 5 minutes.",
+  "Pulse the garlic, coconut, 1 tsp Kashmiri chili powder and 1/4 tsp of the salt in a blender or spice grinder until it's a coarse powder. Transfer it into a small bowl.",
+  "Make the green chutney. Seed 1 of the green chilies. Blend 1 cup of the cilantro leaves, 1/2 tsp cumin seeds, the seeded chili, 2 of the garlic cloves, 1 tsp lemon juice, 1/4 tsp of the salt and 2 tbsp water until it's a thick, smooth paste. Keep it thick. A runny chutney makes the pav soggy.",
+  "Drain the potatoes and let them cool for 10 minutes. Peel them and crumble them into a large bowl in rough pieces. That should be about 2 1/4 cups.",
+  "Seed 2 of the green chilies. Crush them with the ginger (3/4 inch) and the last 2 garlic cloves into a coarse paste, in a mortar or with a few pulses in a blender.",
+  "Heat 1 tbsp of the oil in a wide pan over low heat. Add 1/4 tsp mustard seeds. When they pop, after about 30 seconds, add the curry leaves from 1 sprig. Stand back a little. They'll spatter.",
+  "Add the chili, ginger and garlic paste and cook for 1 minute, until it smells fragrant.",
+  "Stir in 2 pinches of the hing, 1/4 tsp turmeric and 3/4 tsp of the salt. Add the crumbled potatoes and 3 tbsp chopped cilantro. Take the pan off the heat and mix well, mashing a little as you go.",
+  "Let the filling cool for 10 minutes, then divide it into 8 balls.",
+  "Make the batter. Whisk the 3/4 cup besan, 2 tbsp rice flour, the last 1/4 tsp salt, the last pinch of hing and a pinch of turmeric in a bowl. Add water a splash at a time, about 1/2 cup, whisking until it's thick and lump free. It should coat a potato ball and drip off slowly.",
+  "Pour the rest of the oil (about 3 cups) into a heavy pot, so it's about 2 inches deep. Heat it over medium to 350°F. If you have a thermometer, check it there. No thermometer? Drop in a drop of batter. It should sizzle and rise without browning right away.",
+  "Dip a potato ball in the batter, let the extra drip off, and lower it into the oil. Fry 3 or 4 at a time and leave them alone for 2 minutes. Then turn them and fry for 2 to 3 minutes, until they're deep golden.",
+  "Lift them out onto a rack or paper towels. Fry the rest the same way.",
+  "Slit 4 of the remaining green chilies lengthwise and scrape out the seeds. Fry them in the same oil for 30 seconds, then lift them out onto paper towels. Stand back, they spatter.",
+  "Slit each pav, keeping one side attached. Spread the green chutney inside, sprinkle in the dry garlic chutney, and press a vada in, flattening it a little. Serve right away with the fried green chilies on the side for the adults."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources fry a spiced potato ball in a besan batter and serve it in a slit pav with green chutney and a dry coconut and garlic chutney. This follows Swasthi's amounts and method. Swasthi's dry chutney uses 6 to 10 dried red chilies; here it's just 1 tsp mild Kashmiri chili powder, and the filling chilies are seeded, with the fried green chilies left for the adults at the table. Tamarind chutney and peanuts are optional in the lead and left out. Cook With Manali's version adds butter for toasting the pav, which was left off. Check the pav label if it needs to be dairy free or vegan. Honest total is well over an hour, as the lead's 55 minutes doesn't count the filling cooling.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Vada Pav Recipe (Mumbai Street Style)",
+   "url": "https://www.indianhealthyrecipes.com/vada-pav-recipe",
+   "rating": 5.0,
+   "rating_count": 105,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "vada pav",
+   "url": "https://www.cookwithmanali.com/vada-pav/",
+   "rating": 4.96,
+   "rating_count": 25,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

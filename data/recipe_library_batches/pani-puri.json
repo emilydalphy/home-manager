@@ -1,0 +1,141 @@
+{
+ "dish_name": "Pani Puri",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Pani puri shells (puris)",
+   "qty": "30",
+   "category": "pantry"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup for the pani, 2 tbsp for the filling"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tamarind paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 block",
+   "category": "pantry",
+   "cook_qty": "3 tbsp, grated"
+  },
+  {
+   "item": "Plain boondi",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri red chili powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida (hing)",
+   "qty": "2 pinches",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 3 potatoes in a pot, cover them with cold water and bring to a boil over high heat. Turn the heat to medium, cover, and cook for about 20 minutes, until a knife slides in with no push.",
+  "Meanwhile, make the green pani. Seed the green chili. Blend 1/4 cup mint, 1/2 cup cilantro, the ginger, the chili, 2 tbsp of the tamarind paste and 1 cup cold water until smooth.",
+  "Pour it into a large jug with 3 more cups cold water. Stir in 1 tsp chaat masala, 1 tsp cumin, a pinch of hing and 3/4 tsp salt.",
+  "Make the sweet and tangy pani. Whisk the other 3 tbsp tamarind paste into 1 cup warm water in a second jug. Add 3 cups cold water, the 3 tbsp jaggery, 1 tsp chaat masala, 1 tsp cumin, 1/4 tsp black pepper, 1/4 tsp Kashmiri chili powder, a pinch of hing and 3/4 tsp salt. Stir for a minute or two until the jaggery dissolves.",
+  "Put both jugs in the fridge.",
+  "Drain the potatoes, peel them, and mash them in a bowl. Finely chop half the onion and 2 tbsp cilantro and mix them in with 1/2 tsp cumin, 1/2 tsp chaat masala, 1/4 tsp black pepper, 1/2 tsp Kashmiri chili powder and 1/2 tsp salt.",
+  "Just before serving, stir 1 tbsp of the boondi into each jug.",
+  "Set out the puris, the potato filling and both jugs. Press your thumb into the top of a puri to make a hole. Add about 1 teaspoon of the filling, then dip it into the pani or spoon the pani in. Eat it right away, since the puri goes soft. Serve with both panis."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's makes two waters, a green one (mint, cilantro, ginger, chilies, tamarind) and a sweet and tangy tamarind and jaggery one, with an aloo filling and boondi. It is the best rated and the one followed here (4.91 from 287). Hebbar's makes the semolina puris from scratch and fries them for 30 minutes; here the puris are store-bought, which Hebbar's mentions as an option, so this comes out at a snack's effort. The green chili is cut to one, seeded, to keep the base mild. Tamarind extract is made from paste. Make the waters a few hours ahead and chill; add the boondi last. Check the puris and boondi labels for dairy.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Pani Puri (Golgappa/Puchka)",
+   "url": "https://hebbarskitchen.com/pani-puri-recipe/",
+   "rating": 4.91,
+   "rating_count": 287,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Food Story",
+   "title": "Easy Pani Puri (Golgappa/ Puchka) Recipe",
+   "url": "https://myfoodstory.com/easy-pani-puri-recipe/",
+   "rating": 4.62,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Indian Veggie Delight",
+   "title": "pani puri recipe",
+   "url": "https://www.indianveggiedelight.com/pani-puri-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
