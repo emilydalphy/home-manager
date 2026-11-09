@@ -1,0 +1,159 @@
+{
+ "dish_name": "Kadala Curry",
+ "cuisine": "Indian",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Canned black chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "3/4 tbsp chopped"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Unsweetened shredded coconut",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice. Cook 1 1/2 cups of basmati rice following the package directions.",
+  "Drain and rinse the black chickpeas. Slice the onion, chop the tomato, mince the ginger and garlic, and slice the shallots.",
+  "Heat the vegetable oil in a wide pot over medium heat. Add the onion and cook for 5 minutes, until soft and pale gold.",
+  "Add the ginger and garlic and stir for 1 minute.",
+  "Add the turmeric, ground coriander and chili powder. Stir for 30 seconds, then add the tomato and the salt. Cook for 3 minutes, until the tomato breaks down.",
+  "Add the chickpeas and 1 cup of water. Cover and simmer on medium-low for 10 minutes.",
+  "Meanwhile, set a dry skillet over medium-low heat. Add the cardamom, fennel seeds, black pepper, cloves, cinnamon stick and nutmeg, and stir for 1 minute, until they smell toasty.",
+  "Add the coconut and 1 sprig of the curry leaves. Stir for 4 minutes, until the coconut is light gold. Transfer everything to a bowl and let it cool for 3 minutes.",
+  "Blend the cooled coconut mixture with 1/2 cup of water until it's a smooth paste. If it's too thick to blend, add a spoonful more water.",
+  "Stir the paste into the chickpeas. Simmer, uncovered, for 4 minutes, until the sauce coats the back of a spoon.",
+  "Heat the coconut oil in a small pan over medium heat. Add the mustard seeds and dried chilies. When the seeds start to sputter, add the shallots and cook for 2 minutes, until golden. Add the other sprig of curry leaves and stir for 10 seconds. Stand back a little. It will spatter.",
+  "Pour the hot oil mixture over the curry and cover the pot for 1 minute.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 32,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes (5 from 51) leads: onion, ginger, garlic and tomato cooked with the chickpeas, then a paste of dry-roasted coconut with fennel, pepper, cloves, cardamom and cinnamon, and a coconut oil tempering. The lead pressure-cooks soaked dried black chickpeas; this version uses canned ones and 1 cup of water so it fits the time. Regular canned chickpeas work if black ones aren't in the shop. Needs a blender.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Kadala Curry Recipe (Instant pot & Stovetop)",
+   "url": "https://www.indianhealthyrecipes.com/kadala-curry/",
+   "rating": 5,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

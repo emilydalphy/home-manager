@@ -1,0 +1,135 @@
+{
+ "dish_name": "Vendakka Mappas",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Okra",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2 tsp chopped"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice. Cook 1 1/2 cups of basmati rice following the package directions.",
+  "Wash the okra and dry it well. Trim the ends and cut each pod in half lengthwise, then into 3/4 inch pieces. Finely chop the onion, tomato, ginger and green chilies.",
+  "Heat 2 tbsp of the coconut oil in a wide pan over medium-high heat. Add the onion and cook for 4 minutes, until lightly browned.",
+  "Add the ginger and green chilies and stir for 1 minute.",
+  "Add the okra and cook for 6 minutes, stirring now and then, until tender-crisp. Add the tomato and cook for 1 minute.",
+  "Turn the heat to low. Add the turmeric, coriander, chili powder and salt, and stir for 1 minute, until it smells toasty.",
+  "Pour in the coconut milk, keeping back 1/3 cup, and add 1/2 cup of water. Bring it to a simmer and cook on low for 3 minutes. Don't let it boil hard. Coconut milk can split.",
+  "Stir in the 1/3 cup of coconut milk, the garam masala and the black pepper. Take the pan off the heat.",
+  "In a small pan, heat the last 1 tbsp coconut oil over medium-high heat. Add the mustard seeds and wait until they splutter. Add the dried chilies and 2 sprigs of curry leaves and stir for 1 minute. Stand back a little. It will spatter.",
+  "Pour the hot oil mixture over the okra.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Nish Kitchen (5 from 52) leads: okra browned with onion, ginger and chilies, then tomato, ground spices and coconut milk simmered briefly, finished with garam masala and a mustard and curry leaf tempering. PlatterShare agrees on frying the okra first and keeping the heat low once coconut milk goes in, and adds whole spices and ginger-garlic paste, which are left out here. Amounts are scaled up from the lead's 10 okra to 12 oz so it feeds four with rice. Needs no soaking or grinding.",
+ "sources": [
+  {
+   "name": "Nish Kitchen",
+   "title": "Okra Mappas (Okra in Creamy Coconut Sauce)",
+   "url": "https://nishkitchen.com/okra-mappas-okra-in-creamy-coconut-sauce/",
+   "rating": 5,
+   "rating_count": 52,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "PlatterShare",
+   "title": "Vendakka Mappas",
+   "url": "https://www.plattershare.com/recipe/kerala-vendakka-mappas-creamy-okra-coconut-curry/",
+   "rating": 4.34,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

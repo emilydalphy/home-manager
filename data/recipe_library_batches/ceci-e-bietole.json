@@ -1,0 +1,90 @@
+{
+ "dish_name": "Ceci e Bietole",
+ "cuisine": "Italian",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Swiss chard",
+   "qty": "1 large bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Canned chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Trim the ends off the chard. Cut the stems into 1/2 inch pieces and roughly chop the leaves, keeping them separate. Dice the onion and slice the garlic. Drain and rinse the chickpeas.",
+  "Heat the olive oil in a large, deep pan over medium heat. Add the onion and 1/2 tsp of the salt. Cook for 5 minutes, until soft.",
+  "Add the garlic and stir for 1 minute.",
+  "Add the chard stems and cook for 3 minutes.",
+  "Add the crushed tomatoes, 1 cup of water, the chickpeas, the remaining 1/2 tsp salt and the pepper. Bring to a simmer and cook for 10 minutes.",
+  "Add the chard leaves a handful at a time, stirring as each one wilts. Cover and cook for 4 minutes, until the leaves are tender.",
+  "Take the pan off the heat and squeeze in the juice of the lemon.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in shallow bowls."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Our Italian Table's Florentine bietole e ceci leads: onion and garlic softened in olive oil, then chard stems, tomato and chickpeas, with the leaves wilted last and lemon at the end. Memorie di Angelina's chickpea and chard soup agrees on tomato with chickpeas and chard; its anchovies are left out for vegan, and its crushed tomatoes and water give the garlicky tomato broth this version is meant to have. The lead uses fresh plum tomatoes and one can of chickpeas; this uses two cans for four. Neither source has a rating, so the lead is a fallback.",
+ "sources": [
+  {
+   "name": "Our Italian Table",
+   "title": "Sauteed Swiss Chard and Chick-peas, Florentine style (Bietole e ceci alla fiorentina)",
+   "url": "https://ouritaliantable.com/sauteed-swiss-chard-and-chick-peas-florentine-style-bietole-e-ceci-alla-fiorentina/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Memorie di Angelina",
+   "title": "Cacciucco di Ceci (Tuscan Chickpea and Swiss Chard Soup)",
+   "url": "https://memoriediangelina.com/2020/08/15/cacciucco-di-ceci-tuscan-chickpea-and-swiss-chard-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

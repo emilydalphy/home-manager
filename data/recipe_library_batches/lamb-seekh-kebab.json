@@ -1,0 +1,127 @@
+{
+ "dish_name": "Lamb Seekh Kebab",
+ "cuisine": "Indian",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Ground lamb",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/3 cup chopped"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "If you're using wooden skewers, lay 8 of them in a baking dish and cover them with water. Leave them to soak while you mix and chill the meat. Metal skewers need nothing.",
+  "Finely chop the onion. Wrap it in a clean towel and squeeze out the liquid.",
+  "Seed the green chili and mince it. Grate 2 tsp of ginger and 2 cloves of garlic. Chop 1/3 cup of the cilantro.",
+  "In a large bowl, combine the lamb, onion, chili, ginger, garlic, cilantro, egg, coriander, cumin, garam masala, chili powder, salt and 1 tbsp of the oil. Knead with wet hands for 2 minutes, until the mixture is sticky and holds together.",
+  "Cover the bowl and refrigerate for 20 minutes.",
+  "Meanwhile, thinly slice the red onion into rings and transfer them to a bowl with a handful of cilantro leaves. Cut the lemon into wedges.",
+  "Set a rack 6 inches below the broiler and turn the broiler to high. Line a rimmed baking sheet with foil.",
+  "Divide the lamb into 8 portions. With wet hands, press each portion around a skewer into a log about 5 inches long. Lay the skewers across the edges of the baking sheet so the meat hangs over the foil, with space between them.",
+  "Brush the kebabs with the remaining 1 tbsp oil.",
+  "Broil for 4 minutes, until the tops are browned. Turn the skewers over and broil the other side for 4 minutes.",
+  "You're cooking the lamb to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut one open. It's done when there's no pink left.",
+  "Let the kebabs rest for 2 minutes.",
+  "Taste one. If it's flat, add a pinch of salt or a squeeze of lemon.",
+  "Serve with the red onion rings and the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on lean ground lamb with onion, ginger, garlic, green chili, coriander, cumin and garam masala, shaped on skewers and cooked hot. The lead (Indian Food Site) broils for 8 to 10 minutes; its 3 hour rest and meat tenderizer are dropped, and its yogurt is left out to keep this dairy-free. An egg binds the mix, as in Cook Like Cecilia. Swasthi's Chicken Seekh Kabab (5 from 27) is a different dish and is credited only for the chill time and the 160°F to 165°F check. Neither lamb source has a rating, so the lead is a fallback.",
+ "sources": [
+  {
+   "name": "Indian Food Site",
+   "title": "Lamb Seekh Kabab",
+   "url": "https://indianfoodsite.com/recipes/non-vegetarian/tandoori-food/lamb-seekh-kabab/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook Like Cecilia",
+   "title": "Seekh Kebab",
+   "url": "https://cooklikececilia.com/seekh-kebab",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
