@@ -1,0 +1,71 @@
+{
+ "dish_name": "Boquerones Fritos",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Fresh anchovies",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Flaky sea salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the anchovies in cold water. Pull off the heads (the guts usually come out with them), then pat the fish very dry with paper towels.",
+  "Stir the flour and the 2 tsp salt together on a plate. Coat each anchovy in the flour and shake off the extra.",
+  "Heat the oil in a large skillet over medium heat until a pinch of flour sizzles at once, about 1/2 inch deep.",
+  "Fry the anchovies in small batches, 1 to 2 minutes per side, until golden. Don't crowd the pan.",
+  "Transfer each batch to a paper towel and sprinkle with flaky salt. Cut the lemon into wedges and serve with the anchovies right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spanish Food Guide's version (25 minutes, no rating shown) leads as a fallback: salted flour, about 1/2 inch of olive oil, roughly a minute a side. Julia's Cuisine fries 2 to 3 minutes a side in vegetable oil, so the time is written as 1 to 2. Both serve with lemon; the baguette in the lead was left out. Fresh anchovies are often sold cleaned, which saves most of the prep time. One pound is the sources' portion for four.",
+ "sources": [
+  {
+   "name": "Spanish Food Guide",
+   "title": "Spanish Fried Anchovies Recipe (Boquerones Fritos Españoles)",
+   "url": "https://www.spanishfoodguide.com/?p=2941",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Julia's Cuisine",
+   "title": "Boquerones Fritos (Pan Fried Anchovies)",
+   "url": "https://juliascuisine.com/boquerones-fritos-pan-fried-anchovies",
+   "rating": 3.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

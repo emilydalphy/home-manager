@@ -1,0 +1,73 @@
+{
+ "dish_name": "Bistec Encebollado",
+ "cuisine": "Spanish",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Sirloin steaks, about 1/2 inch thick",
+   "qty": "1 1/2 lb (4 steaks)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sweet onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "4 tsp juice"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Take the steaks out of the fridge 10 minutes before cooking. Slice the onions into 1/2-inch half-moons. In a small bowl, stir together 1/4 cup water and 4 tsp lemon juice.",
+  "Pat the steaks dry and season both sides with 3/4 tsp of the salt and the pepper.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat. Cook the steaks in two batches, 2 minutes per side, until browned. Transfer them to a plate.",
+  "Add the remaining 1 tbsp oil and the onions with a pinch of the remaining salt. Cook 3 minutes, stirring, until lightly golden.",
+  "Pour in the water and lemon mixture and scrape up the browned bits. Cook 3 minutes, stirring, until the onions are soft and the liquid has reduced to a glossy sauce.",
+  "Return the steaks and their juices to the pan for 30 seconds. Take the pan off the heat and serve the steaks topped with the onions and pan sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 16,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The only quick version of this dish by name that could be read is Camila Made's (no rating shown), so it leads as a fallback. It is written for 2 and has been doubled, and its butter is replaced with olive oil to keep the dish dairy-free. Other versions (Billy Parisi's Puerto Rican one) marinate for 1 to 24 hours and braise the onions for 20 minutes, so they were left out of the method to keep the dish at 30 minutes. Two onions replace the one in the source to keep the onion-to-steak ratio.",
+ "sources": [
+  {
+   "name": "Camila Made",
+   "title": "Bistec Encebollado",
+   "url": "https://camilamade.com/bistec-encebollado/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Billy Parisi",
+   "title": "Bistec Encebollado (Puerto Rican Beef Steak)",
+   "url": "https://www.billyparisi.com/bistec-encebollado/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,82 @@
+{
+ "dish_name": "Chorizo a la Sidra",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Spanish-style chorizo, gluten-free",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dry hard apple cider, gluten-free",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Gluten-free bread",
+   "qty": "1 small loaf",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the chorizo into 3/4-inch slices. Slice the garlic.",
+  "Heat the oil in a large skillet over medium-high heat. Cook the garlic for 2 minutes, until soft and pale yellow.",
+  "Add the chorizo and cook for 4 minutes, until it starts to brown.",
+  "Pour in the cider, then add the pepper and bay leaves. Turn the heat down and simmer for 12 minutes, until the cider has reduced to a thick, slightly syrupy sauce and the chorizo is cooked through to 160°F, or has no raw pink in the middle.",
+  "Take the pan off the heat and remove the bay leaves. Stir in the parsley and serve with the gluten-free bread."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 23,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Food Drink Destinations (4.8 from 4 reviews) was the one version read with amounts, so it leads as a fallback; the bay leaves come from Fascinating Spain's version, which simmers the chorizo in cider with nothing else. Both agree on cooking the sausage in apple cider until it reduces to a little sauce, and they differ on whether to brown the sausage first (this follows the lead). The amounts are doubled from the lead's 1/2 lb tapa portion for a dinner. The bread is gluten-free to keep the dish gluten-free; check the chorizo and cider labels too.",
+ "sources": [
+  {
+   "name": "Food Drink Destinations",
+   "title": "Chorizo a la Sidra (Spanish Chorizo in Cider)",
+   "url": "https://fooddrinkdestinations.com/chorizo-in-cider-recipe-chorizo-a-la-sidra",
+   "rating": 4.8,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Fascinating Spain",
+   "title": "Chorizo a la Sidra Recipe (Spanish Chorizo in Cider)",
+   "url": "https://www.fascinatingspain.com/articulo/spanish-cuisine-recipes/spanish-chorizo-a-la-sidra-recipe/20200605094341070724.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

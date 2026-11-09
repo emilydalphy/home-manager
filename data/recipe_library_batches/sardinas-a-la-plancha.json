@@ -1,0 +1,61 @@
+{
+ "dish_name": "Sardinas a la Plancha",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Fresh sardines",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coarse sea salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Gut the sardines and pull off the heads, or ask the fishmonger to. Rinse them and pat very dry with paper towels.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet or griddle over high heat until very hot.",
+  "Add half the sardines in a single layer and turn the heat down to medium. Cook 3 minutes per side, until golden and the flesh is opaque. Transfer to a platter.",
+  "Wipe the pan, heat the remaining 1 tbsp oil and cook the second batch the same way.",
+  "Sprinkle the coarse salt over the sardines. Cut the lemons into wedges and serve them with the sardines."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 13,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Directo al Paladar's pan-grilled sardines (28 votes, no average shown) lead as a fallback: very hot oiled pan, about 3 minutes a side, coarse salt after. Okdiario's version soaks the fish in iced salt water for an hour and cooks 1.5 minutes a side; that soak was left out to keep the dish quick. The source is written for one person with 5 large sardines, so 2 lb of fresh sardines is used for four. Lemon comes from Okdiario and the list's description.",
+ "sources": [
+  {
+   "name": "Directo al Paladar",
+   "title": "Receta de sardinas a la plancha",
+   "url": "https://www.directoalpaladar.com/recetas-de-pescados-y-mariscos/receta-sardinas-a-plancha-opcion-facil-limpia-para-comerlas-olor",
+   "rating": null,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Okdiario",
+   "title": "Sardinas a la plancha",
+   "url": "https://okdiario.com/recetas/sardinas-plancha-76821",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

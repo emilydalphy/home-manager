@@ -1,0 +1,107 @@
+{
+ "dish_name": "Pollo con Tomate",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet smoked paprika",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the chicken dry and cut it into 2-inch chunks. Season the chunks with 1/2 tsp of the salt and the pepper.",
+  "In a bowl, stir the cornstarch with the garlic powder, 1/2 tsp of the paprika and 1/4 tsp of the salt. Toss the chicken in it, then shake off the extra.",
+  "Heat the olive oil in a large frying pan over medium heat. Fry the chicken in a single layer, 3 minutes per side, until golden. Transfer it to a plate.",
+  "In the same pan, cook the onion and garlic for 2 to 3 minutes, stirring, until the onion turns see-through. Add the remaining 1 tsp paprika and the thyme and stir for 30 seconds.",
+  "Pour in the wine, add the bay leaves and simmer for 3 minutes, until it smells less sharp and has reduced by about half.",
+  "Stir in the diced tomatoes and the remaining 1/4 tsp salt. Return the chicken to the pan in a single layer and turn each piece in the sauce.",
+  "Cover, turn the heat down to low and simmer for 10 minutes, shaking the pan now and then. The chicken is done at 165°F in the thickest piece, or when it's white all the way through with no pink.",
+  "Take the pan off the heat and remove the bay leaves. Sprinkle the parsley over and serve."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one version of this dish by name was readable with full amounts (Spain on a Fork, 5.0 from 3 votes, so it leads as a fallback). It floured the chicken in wheat flour; here the coating is cornstarch so the dish stays gluten-free. Other pages (Spanish Sabores) agree on the pan-fried chicken in a tomato, onion and paprika sauce but could not be read, so nothing was compared. The list's rice or potatoes are not in the source, so none are added.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Chicken with Tomato Sauce (Pollo con Tomate)",
+   "url": "https://spainonafork.com/spanish-chicken-with-tomato-sauce-pollo-con-tomate-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
