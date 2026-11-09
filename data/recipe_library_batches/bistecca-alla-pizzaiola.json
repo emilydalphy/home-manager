@@ -1,0 +1,113 @@
+{
+ "dish_name": "Bistecca alla Pizzaiola",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Sirloin steak",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood",
+   "cook_qty": "4 steaks, about 1 inch thick"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 cup diced"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned diced tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Pat the steaks dry. Season both sides with 1 tsp of the salt and the pepper. Dice the onion, mince the garlic and chop 2 tbsp of the parsley.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat until it shimmers.",
+  "Add the steaks and cook for 2 minutes, until the underside is deep brown. Flip and cook for 1 to 2 minutes. Transfer the steaks to a plate and lower the heat to medium.",
+  "Add the remaining 1 tbsp oil and the onion to the pan. Cook for 3 minutes, stirring, until it softens.",
+  "Add the garlic and the oregano and stir for 1 minute, until it smells good.",
+  "Add the tomatoes with their juice and the remaining 1/2 tsp salt. Scrape up the browned bits from the bottom of the pan. Simmer for 10 minutes, stirring now and then, until the sauce is thick.",
+  "Return the steaks and any juices from the plate to the pan, nestling them into the sauce. Cook for 3 minutes.",
+  "You're cooking the steaks to 135°F in the middle for medium rare. If you have a thermometer, check one there. No thermometer? Cut into one: it should be pink in the middle.",
+  "Spoon the sauce over the steaks and scatter the parsley on top. Serve with mashed potatoes or pasta.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version sears the steak, then simmers it in a tomato, garlic and oregano sauce. None of the versions I could read has a usable rating (Memorie di Angelina has 5 from 1 vote), so this is a fallback lead. Foodal's Steak Pizzaiola is followed for the onion base and the 10-minute sauce. Its optional wine and red pepper flakes are left out, and dried oregano replaces its fresh. Ciao Italia uses jarred sauce and butter. About 32 minutes in all, so it is just over the 30-minute target.",
+ "sources": [
+  {
+   "name": "Foodal",
+   "title": "Steak Pizzaiola",
+   "url": "https://foodal.com/beef/steak-pizzaiola/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ciao Italia",
+   "title": "Bistecca alla Pizzaiola",
+   "url": "https://www.ciaoitalia.com/recipes/beefsteak-with-tomato-sauce-bistecca-alla-pizzaiola",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Memorie di Angelina",
+   "title": "Carne alla pizzaiola",
+   "url": "https://memoriediangelina.com/2010/08/29/carne-alla-pizzaiola/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food.com",
+   "title": "Bistecca Alla Pizzaiola",
+   "url": "https://www.food.com/recipe/bistecca-alla-pizzaiola-steak-with-the-pizzaiolo-s-wife-s-sauce-166155",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

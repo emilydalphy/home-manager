@@ -1,0 +1,94 @@
+{
+ "dish_name": "Capesante al Limone",
+ "cuisine": "Italian",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Sea scallops",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood",
+   "cook_qty": "12 large"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "juice of the lemon"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Pull the little tough side muscle off each scallop if it's still on. Pat the scallops very dry with paper towels, then season them with the salt and pepper.",
+  "Juice the lemon into a small bowl and measure out the broth. Chop 2 tbsp of the parsley.",
+  "Heat a large skillet over medium-high heat for 2 minutes. Add the butter and let it melt and foam.",
+  "Add the scallops in a single layer with space between them. Don't touch them. Cook for 2 minutes, until the underside is golden brown and they lift off the pan easily.",
+  "Flip them and cook the other side for 2 minutes. Transfer the scallops to a plate.",
+  "You're cooking them to about 125°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one in half: it should be opaque all the way through and still a little glossy in the very center.",
+  "Add the broth and the lemon juice to the pan, still over medium-high heat. Scrape up the browned bits and let it bubble for 3 to 4 minutes, until it's reduced to about 1/2 cup.",
+  "Stir in the parsley. Return the scallops and any juices from the plate to the pan and turn them once in the sauce for 30 seconds.",
+  "Serve with a green salad or steamed green beans, and spoon the pan sauce over the scallops.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lemon."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Antonio Carluccio's Capesante al Burro e Limone is the only published recipe for this dish by name that I could read, and it has no rating. It sears the scallops in butter, then makes the sauce from lemon juice and stock scraped up from the pan. Gourmet Traveller's Venetian version uses olive oil, garlic and lemon instead. This follows Carluccio with the flour dusting left out to keep it gluten-free, and gives amounts where his list had none (1 lemon, 3/4 cup gluten-free broth, 2 tbsp parsley). About 20 minutes in all.",
+ "sources": [
+  {
+   "name": "Ckbk (Antonio Carluccio)",
+   "title": "Capesante al Burro e Limone",
+   "url": "https://app.ckbk.com/recipe/anto91862c06s001r006/capesante-al-burro-e-limone",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gourmet Traveller",
+   "title": "Pan-fried scallops with garlic, parsley and lemon",
+   "url": "https://www.gourmettraveller.com.au/recipe/snacks-sides/pan-fried-scallops-with-garlic-parsley-and-lemon-10155/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Memorie di Angelina",
+   "title": "Capesante alla veneziana",
+   "url": "https://memoriediangelina.com/wprm_print/capesante-alla-veneziana",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

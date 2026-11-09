@@ -1,0 +1,85 @@
+{
+ "dish_name": "Pasta e Broccoli",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Broccoli",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Penne",
+   "qty": "12 oz",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the broccoli and cut off the thick stalks. Cut the florets so each has about 2 inches of stem, and halve any thick stems lengthwise. Thinly slice the garlic.",
+  "Heat 3 tbsp of the oil in a 6-quart pot over medium-high heat. Add the garlic and stir for 2 minutes, until it smells good. Don't let it brown.",
+  "Lower the heat to medium. Add the broccoli and 1/4 tsp of the salt and stir to coat it in the oil. When the oil has been taken up, add 1/3 cup of warm water and stir.",
+  "Cover the pot and cook for 25 minutes, stirring now and then, until the broccoli is very soft and falling apart.",
+  "Add 3 1/2 cups warm water and the remaining 1/4 tsp salt and stir. Cover, raise the heat to high and bring it to a boil.",
+  "Add the penne and cook uncovered, stirring often, until it's al dente, about 10 to 11 minutes. If the pot gets dry before the penne is done, add a splash of hot water.",
+  "Don't drain it. Turn off the heat and stir well so the broccoli breaks up into a sauce with the starchy liquid.",
+  "Serve in bowls with the last 1 tbsp olive oil drizzled over and the red pepper flakes at the table for anyone who wants heat.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 7,
+ "cook_time_minutes": 38,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cooking with Mammac (4.73 from 29) braises the broccoli with garlic until it collapses, then cooks the pasta right in the pot, undrained, which is how pasta e broccoli is made. Jo Cooks (4.93 from 13) boils and mashes the broccoli in 30 minutes. Mammac's version is the lead, scaled from 6 servings to 4. The Parmesan is left out to keep it vegan, and the pepper flakes go on the side. The slow braise means about 45 minutes in all, so it is over the 30-minute target.",
+ "sources": [
+  {
+   "name": "Cooking with Mammac",
+   "title": "Pasta with Broccoli and Garlic",
+   "url": "https://cookingwithmammac.com/pasta-e-broccoli/",
+   "rating": 4.73,
+   "rating_count": 29,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Broccoli Pasta",
+   "url": "https://www.jocooks.com/recipes/broccoli-pasta/",
+   "rating": 4.93,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Appetito Magazine",
+   "title": "Pasta Broccoli",
+   "url": "https://appetitomagazine.com/recipes/how-to-make-pasta-broccoli",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

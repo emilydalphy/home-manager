@@ -1,0 +1,89 @@
+{
+ "dish_name": "Spaghetti alla Checca",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Cherry tomatoes",
+   "qty": "2 pints",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp for the tomatoes and 3/4 tsp for the pasta water"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 3/4 tsp of the salt and bring it to a boil over high heat.",
+  "Meanwhile, halve the cherry tomatoes and transfer them to a large bowl. Mince the garlic and add it to the bowl.",
+  "Add the olive oil, the remaining 3/4 tsp salt and the pepper to the tomatoes. Tear in about 20 basil leaves, keeping a few for the top. Stir gently and let the bowl sit while the pasta cooks.",
+  "Add the spaghetti to the boiling water and cook it according to the package until it's al dente, stirring once in the first minute.",
+  "Drain the pasta and add it to the bowl while it's still hot. Toss gently for 30 seconds so the tomatoes warm through and the juices coat the pasta.",
+  "Scatter the reserved basil leaves on top. Serve right away, with extra olive oil at the table if you like.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version leaves the tomatoes raw with garlic, basil, oil and salt, and lets the hot pasta warm them. An Italian in My Kitchen (5 stars from 5 votes, so this is a fallback lead) and Mangia with Michele (5 from 8) both rest the sauce for an hour. Here it sits for the 20 minutes the water takes to boil and the pasta to cook, so it's ready in about 25 minutes. Cheese (Michele's ricotta and Pecorino, Vincenzo's mozzarella) is left off to keep it vegan.",
+ "sources": [
+  {
+   "name": "An Italian in my Kitchen",
+   "title": "Pasta alla Checca",
+   "url": "https://anitalianinmykitchen.com/pasta-alla-checca/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mangia with Michele",
+   "title": "Pasta alla Checca",
+   "url": "https://mangiawithmichele.com/pasta-alla-checca/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Vincenzo's Plate",
+   "title": "Pasta alla Checca",
+   "url": "https://www.vincenzosplate.com/wprm_print/19718",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

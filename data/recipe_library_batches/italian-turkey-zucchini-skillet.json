@@ -1,0 +1,112 @@
+{
+ "dish_name": "Italian Turkey Zucchini Skillet",
+ "cuisine": "Italian",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 onion"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Cut the zucchini into 1/2-inch cubes. Cut the onion half and the bell pepper into 1/2-inch pieces. Mince the garlic and chop 2 tbsp of the parsley.",
+  "Heat a large nonstick skillet over medium-high heat for 1 minute. Add the turkey and break it into pieces with a spoon. Cook for 6 minutes, until it's browned in places and no pink is left.",
+  "You're cooking it to 165°F, so if you have a thermometer, check it there. No thermometer? Look for no pink anywhere.",
+  "Stir in 1 tsp of the Italian seasoning, 1/2 tsp of the salt, 1/2 tsp of the pepper, the garlic powder and the paprika. Transfer the turkey to a bowl.",
+  "Add the oil to the same skillet. Add the zucchini, onion, bell pepper and garlic with the remaining 1/2 tsp salt, 1/4 tsp pepper and 1 tsp Italian seasoning. Cook for 5 to 6 minutes, stirring now and then, until they start to soften.",
+  "Lower the heat to medium. Return the turkey to the pan, add the tomato sauce and stir. Cover and cook for 5 minutes, until it's hot and bubbling.",
+  "Scatter the parsley on top. Serve over rice, with chili flakes at the table for anyone who wants heat.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "WholeLottaYum's Italian Turkey Zucchini Skillet (4.87 from 22) browns the turkey and sets it aside, softens the vegetables in the same pan, then brings it together with tomato sauce. Clean and Delicious (4.64 from 91) simmers the same idea in canned tomatoes for longer. iFoodReal's popular turkey and zucchini skillet (4.96 from 121) is finished with pesto and Parmesan, so it isn't used. This uses a full 15-oz can of sauce instead of 3/4 cup, so the skillet has enough sauce for four. About 30 minutes in all.",
+ "sources": [
+  {
+   "name": "WholeLottaYum",
+   "title": "Italian Turkey Zucchini Skillet",
+   "url": "https://wholelottayum.com/ground-turkey-skillet/",
+   "rating": 4.87,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Clean and Delicious",
+   "title": "Turkey and Zucchini Skillet",
+   "url": "https://cleananddelicious.com/wprm_print/26453/",
+   "rating": 4.64,
+   "rating_count": 91,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,104 @@
+{
+ "dish_name": "Linguine al Pesto Trapanese",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Slivered almonds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 cup leaves"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plum tomatoes",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/3 cup grated"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Linguine",
+   "qty": "12 oz",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add a big pinch of salt and bring it to a boil over high heat.",
+  "Meanwhile, heat 1 tbsp of the oil in a large skillet over medium heat. Add the almonds and stir for 3 to 4 minutes, until they're light golden brown. Transfer them to a plate to cool for a few minutes.",
+  "Quarter the tomatoes. Pick the basil leaves. Grate the Parmesan.",
+  "Put the basil, garlic and the salt in a food processor or blender and pulse until chopped. Transfer to a bowl.",
+  "Add the almonds to the processor and pulse until they're about the size of orzo.",
+  "Add the tomatoes, the basil mixture, the Parmesan and the remaining 4 tbsp oil. Pulse a few times until it's a rough, chunky paste. Season with the pepper.",
+  "Add the linguine to the boiling water and cook until it's just short of al dente, with only a tiny white core left. Scoop out 1 cup of the pasta water, then drain.",
+  "Return the pasta to the pot off the heat. Add the sauce and toss quickly, adding splashes of the pasta water until the sauce coats the linguine.",
+  "Serve right away, warm or at room temperature.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Love and Olive Oil and Smitten Kitchen (both the Gourmet recipe) toast the almonds, pulse them with the basil and garlic, then blend in raw plum tomatoes, cheese and oil. None of the versions I could read has a rating, so this is a fallback lead. Milk Street uses cherry tomatoes and pepper flakes, which are left off here to keep it mild. Pecorino is traditional, so use a Parmesan labelled vegetarian if you avoid animal rennet. Amounts are scaled down to 12 oz of pasta. About 25 minutes in all.",
+ "sources": [
+  {
+   "name": "Love and Olive Oil",
+   "title": "Linguine with Pesto Trapanese",
+   "url": "https://www.loveandoliveoil.com/2009/01/linguine-with-pesto-trapanese.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Smitten Kitchen",
+   "title": "Linguine with Tomato-Almond Pesto",
+   "url": "https://smittenkitchen.com/2010/09/linguine-with-tomato-almond-pesto/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipes from Italy",
+   "title": "Pesto alla Trapanese",
+   "url": "https://www.recipesfromitaly.com/wprm_print/pesto-alla-trapanese-sicilian-pesto-with-tomatoes-and-almonds",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

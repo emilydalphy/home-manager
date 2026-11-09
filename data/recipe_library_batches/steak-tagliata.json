@@ -1,0 +1,105 @@
+{
+ "dish_name": "Steak Tagliata",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Sirloin steak",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Rosemary",
+   "qty": "1 pack",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Arugula",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1 oz shaved"
+  }
+ ],
+ "instructions": [
+  "Take the steak out of the fridge and pat it dry. Season both sides with 1 1/4 tsp of the salt and 1/2 tsp of the pepper.",
+  "Smash 2 of the garlic cloves. Strip the leaves from the rosemary and keep the sprigs whole.",
+  "Heat a large skillet over high heat for 2 minutes, until it's very hot. Add 2 tbsp of the oil.",
+  "Add the steak and cook for 3 minutes, until the underside is deep brown and lets go of the pan.",
+  "Flip the steak. Add the smashed garlic and the rosemary sprigs to the pan and cook for 3 minutes. Spoon the oil over the steak a couple of times.",
+  "You're cooking the steak to 130°F in the middle for medium rare, and it rises a few degrees as it rests. If you have a thermometer, check it there. No thermometer? Press the middle: it should feel soft and springy, like the base of your thumb.",
+  "Transfer the steak to a cutting board and spoon the pan juices over it. Rest it for 5 minutes. Meanwhile, make the salad.",
+  "Grate the last garlic clove into a large bowl. Whisk in the lemon juice, the remaining 3 tbsp oil, the remaining 1/2 tsp salt and the remaining 1/4 tsp pepper.",
+  "Add the arugula and toss to coat. Pile it on a platter and shave the Parmesan over the top with a vegetable peeler.",
+  "Slice the steak thin against the grain and lay the slices over the arugula. Pour the juices from the board on top. Serve with roasted potatoes or crusty bread.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 13,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version agrees on a seared steak, rested and sliced over dressed arugula with shaved Parmesan. Jernej's Kitchen (5 stars from 1 vote, so this is a fallback lead) sears in a pan with garlic and rosemary and dresses the arugula with lemon, oil and grated garlic. The Mediterranean Dish (4.75 from 4) grills the steak and dresses the salad more lightly. Steak is 1 1/2 lb for four, and the 30-minute counter rest is left out to keep it quick. About 23 minutes in all.",
+ "sources": [
+  {
+   "name": "Jernej Kitchen",
+   "title": "Steak Tagliata",
+   "url": "https://jernejkitchen.com/recipes/steak-tagliata",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Mediterranean Dish",
+   "title": "Tagliata di Manzo",
+   "url": "https://www.themediterraneandish.com/tagliata-di-manzo-beef-tagliata-italian-steak/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Our Italian Table",
+   "title": "Tagliata con Rucola and Parmigiano",
+   "url": "https://ouritaliantable.com/steak-with-arugula-and-parmesan/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
