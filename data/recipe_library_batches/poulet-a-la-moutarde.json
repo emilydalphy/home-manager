@@ -1,0 +1,112 @@
+{
+ "dish_name": "Poulet a la Moutarde",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken breasts",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken stock",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Wholegrain mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4 sprigs"
+  }
+ ],
+ "instructions": [
+  "Pat the chicken dry. Slice each breast in half through the middle so you have 8 thin cutlets. Season both sides with the salt and pepper.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high until it shimmers. Add 4 cutlets and leave them alone for 2 minutes, until golden. Flip them and cook 1 to 2 minutes. They won't be cooked through yet. Transfer them to a plate.",
+  "Repeat with the remaining 1 tbsp oil and the other 4 cutlets.",
+  "Meanwhile, finely chop the shallots, mince the garlic and strip the leaves from 4 thyme sprigs.",
+  "Turn the heat to medium. Add the shallots to the same pan and cook for 2 minutes, until soft.",
+  "Add the garlic and stir for 30 seconds.",
+  "Pour in the wine and scrape up the browned bits from the bottom of the pan. Let it bubble for 2 minutes, until it's cut by about half.",
+  "Add the stock and simmer for 3 minutes, until it's reduced by about half.",
+  "Turn the heat to low. Stir in the mustard, then the cream and the thyme leaves. Simmer gently for 3 minutes, until the sauce coats the back of a spoon.",
+  "Return the chicken and any juices from the plate to the pan. Spoon the sauce over and cook for 3 to 4 minutes. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check the thickest cutlet. No thermometer? Cut into one: it's done when there's no pink left.",
+  "Taste it. If it's flat, add a pinch more salt. Serve straight from the pan."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is a shallot, white wine, stock, wholegrain mustard and cream sauce with the chicken browned first and finished in the sauce; it dusts the chicken in flour, which is dropped here to keep it gluten-free. It simmers a full cup of stock for 15 minutes; this version uses 1/2 cup and thin cutlets so the whole dish fits in about 35 minutes. Two unrated quick versions (Marie Food Tips) skip the stock and just deglaze with wine before adding mustard and cream, which confirms the shorter sauce. Heavy cream stands in for crème fraîche.",
+ "sources": [
+  {
+   "name": "La Cuisine de Geraldine",
+   "title": "Creamy Dijon Mustard Chicken (poulet à la moutarde)",
+   "url": "https://lacuisinedegeraldine.fr/en/creamy-dijon-mustard-chicken",
+   "rating": 4.78,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Marie Food Tips",
+   "title": "Poulet à la moutarde",
+   "url": "https://mariefoodtips.com/poulet-a-la-moutarde",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Great British Chefs",
+   "title": "Poulet à la Moutarde (Chicken with Mustard Sauce)",
+   "url": "https://www.greatbritishchefs.com/recipes/chicken-with-mustard-recipe/amp",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "default_servings": 4
+}
