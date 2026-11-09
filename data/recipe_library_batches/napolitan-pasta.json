@@ -1,0 +1,123 @@
+{
+ "dish_name": "Napolitan Pasta",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked pork sausage, fully cooked",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil with the 1 tbsp salt.",
+  "Meanwhile, slice the sausage on a slant into 1/4 inch pieces. Slice the onion and both peppers into thin strips, about 1/4 inch wide. Mince the garlic.",
+  "In a small bowl, stir together 1/2 cup ketchup, 3 tbsp Worcestershire sauce and 1 tbsp soy sauce.",
+  "Add the spaghetti to the boiling water and cook for the time on the package, until it's al dente. Scoop out 1/2 cup of the pasta water into a mug, then drain the spaghetti.",
+  "While the spaghetti cooks, heat 2 tbsp oil in a large deep skillet over medium-high heat. Add the sausage and cook for 4 minutes, stirring now and then, until it's browned at the edges.",
+  "Add the onion and peppers and cook for 3 minutes, stirring often, until the onion is soft and see-through. Add the garlic and cook for 30 seconds.",
+  "Pour the ketchup mixture over the vegetables and sausage. Let it bubble for 1 minute, stirring, until it darkens a little and smells less sharp.",
+  "Add the spaghetti and 1/4 cup of the reserved pasta water. Toss with tongs for 2 minutes, until the sauce coats every strand. If it looks dry, stir in a splash of the pasta water.",
+  "Season with the black pepper. Serve with hot sauce on the side for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Doobydobap (4.0 from 282 ratings) is the lead: sausage browned first, then onion and peppers, ketchup mixed with a savory sauce and soy sauce, and the pasta tossed in. Japan Taste and RecipeTin Japan add a splash of pasta water and a little time for the ketchup to cook down, which is used here. Butter and Parmesan, which all three finish with, are left out to keep it dairy-free, and Worcestershire stands in for the bulldog sauce. Hot sauce is served at the table.",
+ "sources": [
+  {
+   "name": "Doobydobap",
+   "title": "Naporitan",
+   "url": "https://doobydobap.com/recipe/naporitan",
+   "rating": 4.0,
+   "rating_count": 282,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Taste",
+   "title": "How To Make Napolitan (Japanese Ketchup Spaghetti Recipe)",
+   "url": "https://japanesetaste.com/blogs/japanese-taste-blog/how-to-make-napolitan-ketchup-spaghetti-at-home",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Spaghetti Napolitan (Japanese Ketchup Pasta)",
+   "url": "https://japan.recipetineats.com/spaghetti-napolitan-japanese-ketchup-pasta/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

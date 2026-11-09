@@ -1,0 +1,76 @@
+{
+ "dish_name": "Kabocha Nimono",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Kabocha squash",
+   "qty": "1 small (about 1 1/2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Cut the kabocha in half and scoop out the seeds and stringy bits with a spoon. Leave the skin on and cut the squash into 1 1/2 inch cubes.",
+  "Shave the sharp corners off each cube with a knife so they hold their shape.",
+  "Arrange the cubes skin side down in a single layer in a wide, shallow pot. Sprinkle the 2 tbsp sugar evenly over the top and leave it for 15 minutes.",
+  "Add 1 cup water, 1 1/2 tbsp soy sauce and 1 1/2 tbsp sake to the pot. Bring to a boil over high heat.",
+  "Turn the heat down to medium. Cut a round of parchment paper a little smaller than the pot and lay it right on top of the squash. Simmer for 10 to 15 minutes, until a knife slides into the thickest piece easily and the cubes still keep their shape.",
+  "Take the pot off the heat and remove the parchment. Serve warm, at room temperature or cold, with a spoonful of the liquid.",
+  "To pack it for lunch, let it cool, then keep it in a covered container in the fridge for up to 3 days. Eat it cold, or warm it gently in a pan."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version read has 20 ratings, and RecipeTin Eats has one for this dish, so it leads (4.75 from 4). It sprinkles sugar on the squash first, then simmers it in water, soy sauce and sake under a lid. Chef JA Cooks (5 from 5) is quicker with no sake, and Chopstick Chronicles (5 from 12) adds a rest in the broth. Water is used in place of dashi, which RecipeTin allows. The squash is served warm or cold.",
+ "sources": [
+  {
+   "name": "RecipeTin Japan",
+   "title": "Simmered Pumpkin (Kabocha no Nimono)",
+   "url": "https://japan.recipetineats.com/simmered-pumpkin-kabocha-no-nimono/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chopstick Chronicles",
+   "title": "Kabocha no Nimono (Simmered Kabocha Squash)",
+   "url": "https://www.chopstickchronicles.com/kabocha-no-nimono/",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Chef JA Cooks",
+   "title": "Simple Simmered Kabocha (Kabocha Nimono)",
+   "url": "https://chefjacooks.com/en/simmered-kabocha/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

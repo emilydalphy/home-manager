@@ -1,0 +1,111 @@
+{
+ "dish_name": "Oi Naengguk",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Dried wakame (miyeok)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 oz"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Scallion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gochugaru (Korean chili flakes)",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ice cubes",
+   "qty": "1 tray",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Put the 1/2 oz dried wakame in a bowl, cover it with cold water and leave it for 10 minutes, until soft.",
+  "Meanwhile, cut the cucumbers into thin matchsticks about 2 inches long. Thinly slice the scallion and mince the garlic.",
+  "Drain the wakame, rinse it well under cold water and squeeze out as much water as you can. Cut it into bite-size pieces.",
+  "In a medium bowl, toss the cucumber, wakame, scallion and garlic with 2 tbsp soy sauce, 3 tbsp rice vinegar, 1 tsp sugar and the sesame seeds. Leave it for 10 minutes.",
+  "Pour in 4 cups cold water and add the 1/2 tsp salt. Taste it, and add a pinch more salt if it's flat. Put it in the fridge for at least 20 minutes, until it's cold.",
+  "Ladle into chilled bowls and add a few ice cubes to each. Serve with the gochugaru in a small dish for the adults to add.",
+  "If you'd like it ready for lunch, make it through the fridge step in the morning and add the ice when you serve it."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version read has 20 ratings, so Korean Bapsang (4.89 from 9) leads as a fallback: cucumber and soaked seaweed tossed with soy sauce, vinegar, sugar and garlic, rested 10 minutes, then cold water and ice. Tara's Multicultural Table (no rating shown) sweetens its broth with plum syrup, which isn't used here, and Honest Cooking seasons with only salt, sugar and vinegar. The lead blanches the seaweed for 30 seconds, but this version only rinses it, as Tara's does, so nothing is cooked. The chili flakes go on the side so the soup stays mild.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Oi Naengguk (Chilled Cucumber Soup)",
+   "url": "https://www.koreanbapsang.com/oi-naengguk-chilled-cucumber-soup/",
+   "rating": 4.89,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Oi Naengguk (Korean Chilled Cucumber Soup)",
+   "url": "https://tarasmulticulturaltable.com/oi-naengguk-korean-chilled-cucumber-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Honest Cooking",
+   "title": "Miyeok Oi Naengguk (Cold Cucumber Soup)",
+   "url": "https://honestcooking.com/cold-cucumber-soup-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

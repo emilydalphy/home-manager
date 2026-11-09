@@ -1,0 +1,115 @@
+{
+ "dish_name": "Tendon",
+ "cuisine": "Japanese",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "12 (about 3/4 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Japanese eggplant",
+   "qty": "2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Dashi granules",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 1/2 cups rice in cold water until it runs mostly clear, then drain. Put it in a medium pot with 2 3/4 cups water and bring to a boil over high heat.",
+  "Cover the pot, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered while you do everything else.",
+  "Meanwhile, make the sauce. In a small saucepan, off the heat, stir together 1 cup water, 1/4 cup soy sauce, 1/4 cup mirin and 1 tsp dashi granules. Bring to a boil over medium heat, then simmer for 4 minutes, until it has thickened slightly. Take it off the heat.",
+  "Peel and devein the shrimp if they aren't already, and pat them dry. Make 3 shallow cuts across the belly side of each one and press it flat so it stays straight in the oil.",
+  "Cut the eggplants in half lengthwise and make shallow slits across the cut sides. Cut the green pepper into 4 wide strips and remove the seeds. Slice the carrot into 1/4 inch rounds.",
+  "Pour about 3 cups vegetable oil into a wide, deep skillet so it's 1 1/2 inches deep. Heat it over medium-high to 350°F. If you have a thermometer, check it there. No thermometer? Drop in a little batter. It should sink for a second, then rise and sizzle.",
+  "While the oil heats, make the batter. Beat the egg in a large bowl, then stir in 1 cup ice-cold water with a fork. Add the 1 1/4 cups flour all at once and stir in just a few strokes. Stop while a few small dry lumps are left. Overmixing makes the batter heavy.",
+  "Fry the vegetables first, in 3 batches. Dip each piece in the batter, let the extra drip off and lower it into the oil. Fry for 2 to 3 minutes, turning once, until the batter is pale gold and crisp. Transfer to a wire rack or a plate lined with paper towels.",
+  "Fry the shrimp in 2 batches the same way, for 2 minutes each, until the batter is golden and the shrimp are pink and curled. Cut into one to check. It's done when it's opaque all the way through.",
+  "Fluff the rice and divide it among 4 bowls. Spoon a little of the sauce over each bowl of rice, top each with 3 shrimp and the vegetable tempura, then spoon the rest of the sauce over the top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum (4.6 from 22 ratings) gives the dish: short-grain rice in a bowl, shrimp and vegetable tempura on top, and a simmered soy sauce that is spooned over and around. It has no amounts, so the batter ratios and the sauce come from Kikkoman (flour to cold water about 1 to 1, one egg, lightly mixed) and Japanese Taste (dashi, soy sauce and mirin simmered until slightly thick). Kikkoman keeps the vegetables to eggplant, carrot and green pepper, which are used here. Honest time is about 40 minutes with the rice cooking while you prep and fry, so it runs past 30.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Tendon (Tempura Rice Bowl)",
+   "url": "https://cupofyum.com/recipes/tendon-tempura-rice-bowl",
+   "rating": 4.6,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kikkoman",
+   "title": "Tendon (Tempura Rice Bowl)",
+   "url": "https://www.kikkoman.com/en/cookbook/recipe/00001876.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Japanese Taste",
+   "title": "How to Make Tendon (Japanese Tempura Rice Bowl Recipe)",
+   "url": "https://int.japanesetaste.com/blogs/japanese-taste-recipes/how-to-make-tendon-japanese-tempura-rice-bowl-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

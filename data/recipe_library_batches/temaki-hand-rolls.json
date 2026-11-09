@@ -1,0 +1,115 @@
+{
+ "dish_name": "Temaki Hand Rolls",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Japanese short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Nori sheets",
+   "qty": "1 pack (7 sheets)",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned tuna, drained",
+   "qty": "2 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "1 to 4 hours ahead: rinse the 1 1/2 cups rice in cold water until it runs mostly clear, then drain. Put it in a medium pot with 1 1/2 cups water and leave it for 20 minutes.",
+  "Bring the pot to a boil over high heat. Cover, turn the heat to low and cook for 12 minutes. Take it off the heat and leave it covered for 10 minutes.",
+  "While the rice rests, put 4 tbsp rice vinegar, 2 tbsp sugar and the 1 tsp kosher salt in a small bowl. Microwave for 30 seconds and stir until the sugar dissolves.",
+  "Transfer the rice to a wide bowl. Pour the vinegar mixture over it and fold with a spatula, cutting through the rice, until it looks glossy. Cover with a damp towel and leave it at room temperature until you eat. Don't put it in the fridge.",
+  "Open the tuna cans and drain them well. Stir the tuna with 1/4 cup mayonnaise in a bowl until it's well mixed.",
+  "Peel the cucumbers in stripes, cut them in half lengthwise and scoop out the seeds with a spoon. Cut them into thin sticks about 3 inches long.",
+  "Cut the nori sheets in half crosswise. Halve the avocados, remove the pits and slice the flesh thinly, just before you eat.",
+  "Put the rice, tuna, cucumber, avocado and nori on the table with a small dish of soy sauce for each person. Wet your hands first so the rice doesn't stick.",
+  "To make a cone, hold a half sheet of nori shiny side down in your palm. Spread a thin layer of rice over the left third. Lay a little tuna, cucumber and avocado in a line down the middle of the rice.",
+  "Fold the bottom left corner up over the filling and keep rolling into a cone. Press one grain of rice on the end to seal it. Eat it right away, before the nori goes soft.",
+  "Serve with the soy sauce for dipping."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 5,
+ "advance_prep_notes": "Cook and season the sushi rice 1 to 4 hours ahead and keep it covered at room temperature.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "Just One Cookbook (4.70 from 46 ratings) leads: seasoned sushi rice, half sheets of nori, thin strips of cucumber and a filling, rolled into cones by hand and eaten right away. Its fish is sashimi grade, so for cooked fillings the fish here is canned tuna mixed with mayonnaise, the same idea as the spicy tuna in Hungry Huy's version, without the sriracha. The rice follows Just One Cookbook's sushi rice (4.57 from 506), cooked on the stove. Making the rice takes about 50 minutes, so it is the make-ahead part. With the rice done, the rolling takes about 20 minutes.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Temaki Sushi (Hand Roll)",
+   "url": "https://www.justonecookbook.com/temaki-sushi/",
+   "rating": 4.7,
+   "rating_count": 46,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Sushi Rice",
+   "url": "https://www.justonecookbook.com/sushi-rice/",
+   "rating": 4.57,
+   "rating_count": 506,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hungry Huy",
+   "title": "How To Make Hand Rolls (Temaki Sushi Recipe)",
+   "url": "https://www.hungryhuy.com/hand-rolls-temaki-sushi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

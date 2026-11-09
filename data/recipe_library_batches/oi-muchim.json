@@ -1,0 +1,112 @@
+{
+ "dish_name": "Oi Muchim",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Seedless cucumber",
+   "qty": "14 oz (1 large English cucumber)",
+   "category": "produce"
+  },
+  {
+   "item": "Onion",
+   "qty": "1/4 cup sliced",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tamari (gluten-free soy sauce)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp plus 1 tsp"
+  },
+  {
+   "item": "Gochugaru (Korean chili flakes)",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1 small",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the cucumber in half lengthwise and slice it into 1/4 inch half-moons. Put it in a bowl with the sliced onion and the 1/2 tsp salt. Toss and leave it for 20 minutes.",
+  "Meanwhile, chop the scallion and mince the garlic. In a large bowl, stir together the scallion, garlic, 1 tbsp plus 1 tsp tamari, 1 tsp of the gochugaru, the sesame seeds, sesame oil, sugar and rice vinegar.",
+  "Cut the carrot into thin matchsticks.",
+  "Drain the cucumber and onion in a colander and press gently to get rid of the extra liquid. Add them to the dressing along with the carrot and toss until everything is coated.",
+  "Serve with the remaining 1 tsp gochugaru in a small dish on the side. It keeps in a covered container in the fridge for up to 2 days, and the cucumber softens as it sits, so drain off any liquid before you pack it into a lunchbox."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version read has 20 ratings, so The Woks of Life (4.67 from 6) leads as a fallback. It salts the cucumber and onion for 20 minutes, then tosses them with a dressing of soy sauce, gochugaru, sesame, garlic and a little sugar. Sift and Simmer and Aaron and Claire dress the cucumber without salting first and skip the carrot. The fish sauce in the lead is left out and the soy sauce is raised slightly, and tamari is used to keep it gluten-free and vegan. Half the gochugaru goes in the salad and half on the side.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Oi Muchim (Korean Cucumber Salad)",
+   "url": "https://thewoksoflife.com/oi-muchim-korean-cucumber-salad/",
+   "rating": 4.67,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sift and Simmer",
+   "title": "Spicy Korean Cucumber Salad (Oi Muchim)",
+   "url": "https://www.siftandsimmer.com/spicy-korean-cucumber-salad-oi-muchim",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Aaron and Claire",
+   "title": "Korean Cucumber Salad (Oi Muchim)",
+   "url": "https://aaronandclaire.com/spicy-korean-cucumber-salad-oi-muchim-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
