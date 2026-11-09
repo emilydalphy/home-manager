@@ -1,0 +1,129 @@
+{
+ "dish_name": "Mi Xao Rau Cai",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Dried thin egg noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 crown",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "1/4 head"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil.",
+  "While it heats, cut the broccoli into small florets, slice the carrots and celery thinly on the diagonal, and cut the bok choy into 1-inch pieces. Slice a quarter of the cabbage and the onion thinly, mince the garlic, and leave the snow peas whole.",
+  "Stir the soy sauce and sugar together in a small bowl.",
+  "Add the broccoli, carrots and celery to the boiling water and cook for 90 seconds. Lift them out with a strainer into a bowl and leave the water on the heat.",
+  "Add the noodles to the same water and cook for 2 minutes, until they're tender but still firm. Drain, rinse under cold water, and drain well.",
+  "Heat a large wok or a 12-inch skillet over high heat for 1 minute. Add the oil and the onion and stir-fry for 2 minutes, until the edges start to brown.",
+  "Add the garlic and stir for 30 seconds, until it smells good.",
+  "Add the blanched vegetables, snow peas, bok choy and cabbage with the salt. Toss for 2 minutes, until the cabbage wilts but is still crunchy.",
+  "Add the noodles and the sauce. Toss with tongs for 2 to 3 minutes, until the noodles are evenly brown. If they stick, add a splash of water.",
+  "Take the pan off the heat and tear in half the cilantro. Taste it. If it's flat, add a splash more soy sauce.",
+  "Serve topped with the rest of the cilantro."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Food.com's Mi Xao Rau Cai (the lead, one review and no rating) is the only version by this name. It steams the harder vegetables, parboils egg noodles, stir-fries onion and garlic in a hot wok, then finishes with soy, sugar and a little fish sauce, which is left out here to keep it vegetarian. Plant Based Jess and Cooking Off the Cuff agree on firm noodles and a soy-based sauce, and add oyster sauce or mushrooms. This version doubles the lead's amounts for 4, and blanches the vegetables in the noodle water to save a pot. It is dairy-free, nut-free and vegetarian.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Mi Xao Rau Cai",
+   "url": "https://www.food.com/recipe/mi-xao-rau-cai-160810",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Plant Based Jess",
+   "title": "Vietnamese Stir-Fried Noodles",
+   "url": "https://plantbasedjess.com/vietnamese-stir-fried-noodles/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Cooking Off the Cuff",
+   "title": "Stir-Fried Egg Noodles (Mì Xào)",
+   "url": "https://www.cookingoffthecuff.com/recipes/stir-fried-egg-noodles",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

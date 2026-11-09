@@ -1,0 +1,148 @@
+{
+ "dish_name": "Goi Ngo Sen",
+ "cuisine": "Vietnamese",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Pork belly",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lotus stems in brine",
+   "qty": "1 jar (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 scallions"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "3 slices"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a medium pot with water. Add 3 of the scallions, 3 slices of ginger and 1 tsp of the salt, and bring it to a boil. Add the pork belly, turn the heat to medium-low, and simmer for 20 minutes, until a knife slides in easily.",
+  "Meanwhile, rinse the lotus stems, squeeze them dry, and slice them lengthwise into thin strips. Coarsely grate the carrots and slice the red onion thinly.",
+  "Toss the lotus stems, carrots and onion in a large bowl with the sugar, vinegar and 1 tsp of the salt. Leave them for 20 minutes, then squeeze out the liquid by the handful.",
+  "Slice the bell pepper into thin strips. Pick the mint and cilantro leaves.",
+  "Slice the shallots thinly. Heat the oil in a small skillet over medium-low heat, add the shallots, and stir for 5 to 6 minutes, until golden. Lift them out onto a paper towel.",
+  "Stir the fish sauce, brown sugar and the juice of the lime in a small bowl until the sugar dissolves.",
+  "Transfer the pork to a bowl of ice water. Add the shrimp to the simmering pot and cook for 2 minutes, until pink and curled. Drain them and add them to the ice water too.",
+  "Lift out the pork and slice it into thin bite-size pieces. Cut each shrimp in half lengthwise.",
+  "To pack for lunch, keep the pork and shrimp, the squeezed vegetables, the herbs, the shallots and the dressing in separate containers in the fridge for up to 2 days. Toss them the same morning.",
+  "In a large bowl, toss the squeezed vegetables, pork, shrimp, bell pepper and herbs with two thirds of the dressing. Add the rest of the dressing and toss again. Taste it. If it's flat, add a splash more fish sauce.",
+  "Top with the fried shallots and serve with the sriracha on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The versions agree on the structure: pork belly and shrimp boiled and chilled, lotus stem softened in a sweet vinegar soak, shredded carrot and onion, lots of herbs, and a fish sauce, sugar and lime dressing. La Academie leads (5.0 from 1 rating) with a salted, sugared rest for the vegetables, and Vietnamese Food Recipes agrees on the sweet vinegar soak and the ice bath. This version uses jarred lotus stem, mint and cilantro in place of Vietnamese coriander, and skips the peanuts to stay nut-free, with crunch coming from the fried shallots. It's slower than a 30-minute lunch, so it's built to be made ahead and packed.",
+ "sources": [
+  {
+   "name": "La Academie",
+   "title": "Gỏi Ngó Sen (Lotus Stem and Shrimp Salad)",
+   "url": "https://www.lacademie.com/lotus-stem-and-shrimp-salad-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vietnamese Food Recipes",
+   "title": "Lotus Stem Salad (with Shrimp and Pork) - Gỏi Ngó Sen Tôm Thịt",
+   "url": "https://www.vietnamesefoodrecipes.com/lotus-stem-salad-with-shrimp-and-pork-goi-ngo-sen-tom-thit/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,135 @@
+{
+ "dish_name": "Nom Hoa Chuoi",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "5 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Five-spice powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Banana blossom in brine",
+   "qty": "2 cans (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Slice the chicken into strips about 1/2 inch wide. Toss them in a bowl with the tamari, 1 tbsp of the sugar, the pepper and the five-spice, and leave them while you prep. That should be about 15 minutes.",
+  "Drain the banana blossom and rinse it under cold water. Squeeze it dry by the handful, then pull or slice it into thin shreds.",
+  "Coarsely grate the carrots, slice the scallions thinly, and pick the mint and basil leaves. Slice the shallot thinly and the chili into thin rounds.",
+  "For the dressing, crush the garlic into a small bowl. Add the juice of the limes, the fish sauce and the remaining 2 tsp sugar, and stir until the sugar dissolves.",
+  "Toast the sesame seeds in a dry large skillet over medium heat for 2 minutes, until golden. Transfer them to a small bowl.",
+  "Add the oil and sliced shallot to the same skillet over medium heat. Cook for 3 to 4 minutes, stirring, until golden. Lift the shallots out with a slotted spoon onto a paper towel and leave the oil in the pan.",
+  "Turn the heat to medium-high. Add the chicken in a single layer and leave it alone for 3 minutes, until browned underneath. Flip the pieces and cook for 2 minutes.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check a thick piece. No thermometer? Cut one open: it's done when there's no pink left and the juices run clear. Transfer to a plate and rest for 2 minutes.",
+  "Toss the banana blossom, carrots and scallions with the dressing in a large bowl. Add the chicken and any juices from the plate and toss again.",
+  "Top with the mint, basil, sesame seeds and fried shallots. Taste it. If it's flat, add a splash more fish sauce.",
+  "Serve with the sliced chili on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Feast of Travel's grilled chicken and banana blossom salad leads (no rating). It marinates sliced chicken in soy, sugar and five-spice, grills it, and tosses it with shredded blossom, herbs and a lime, fish sauce and garlic dressing, finished with sesame and fried shallots. Helen's Recipes and the Culinary Chronicles agree on the lime and fish sauce dressing and the soaked, squeezed blossom, but use pork and prawns or avocado. This version uses tamari for soy sauce to keep it gluten-free, canned banana blossom in place of fresh, and carrots in place of the papaya, mango and water spinach, and pan-sears the chicken in the shallot oil.",
+ "sources": [
+  {
+   "name": "Feast of Travel",
+   "title": "Vietnamese Banana Blossom Salad",
+   "url": "https://feastoftravel.com/banana-blossom-salad-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Helen's Recipes",
+   "title": "Nộm Hoa Chuối - Banana Blossom Salad",
+   "url": "https://helenrecipes.com/nom-hoa-chuoi-banana-blossom-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

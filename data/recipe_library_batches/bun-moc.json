@@ -1,0 +1,143 @@
+{
+ "dish_name": "Bun Moc",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Ground pork",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried wood ear mushrooms",
+   "qty": "1 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Round rice vermicelli",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the wood ear and shiitake mushrooms in a bowl and cover with just-boiled water. Leave them for 15 minutes.",
+  "Meanwhile, thinly slice the shallots and mince the garlic. Heat the oil in a small skillet over medium heat, add the shallots, and cook for 3 minutes, stirring, until they start to turn golden. Add the garlic and cook for 1 minute. Transfer both to a small bowl.",
+  "Drain the mushrooms and squeeze them dry. Cut the tough core off each wood ear and mince it. Slice the shiitake.",
+  "In a large bowl, mix the pork, minced wood ear, half the fried shallots and garlic, the pepper, the salt and 1 tbsp of the fish sauce. Mix with your hands for 2 minutes, until it's sticky and holds together.",
+  "Quarter the onion, leaving the root end on. Add it to a large pot with the broth, 2 cups of water and the shiitake and bring to a boil over high heat.",
+  "Wet your hands and shape the pork into about 24 balls, each about 1 inch wide.",
+  "Turn the heat to medium-low so the broth barely bubbles. Lower the balls in one at a time and simmer for 12 to 15 minutes, until they float and are cooked through. Don't stir hard while they set.",
+  "You're cooking the pork to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Meanwhile, cook the vermicelli in boiling water for the time on the package. Drain and rinse under cold water. Slice the scallions, pick the cilantro leaves, and cut the lime into wedges. Slice the chili for the table.",
+  "Stir the remaining 1 tbsp fish sauce and the sugar into the broth. Taste it. If it's flat, add a pinch more salt.",
+  "To pack for lunch, store the noodles, the broth with the meatballs, and the toppings in separate containers in the fridge for up to 3 days. Reheat the broth until it simmers and pour it over the noodles.",
+  "Divide the noodles among four bowls. Ladle the broth and meatballs over them and top with the rest of the fried shallots and garlic, the scallions, cilantro and a little black pepper. Serve with the lime wedges and the sliced chili on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Vicky Pham's pork meatball soup leads (4 out of 5, 1 review) and is the only version near 35 minutes. It poaches pork paste with wood ear and fried shallots in a light onion and shiitake stock, seasoned with fish sauce, sugar and bouillon, and serves it on round rice noodles. The Great River Food and La Academie versions agree on the meatballs and the round noodles, but build a 1 to 2 hour rib broth. This version swaps ground pork for the hard-to-find pork paste (giò sống), uses gluten-free chicken broth in place of bouillon and water, and fries the shallots and garlic fresh. It still runs over 30 minutes, so it keeps for reheating.",
+ "sources": [
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Pork Meatball Noodle Soup (Bún Mọc)",
+   "url": "https://vickypham.com/blog/vietnamese-pork-meatball-noodle-soup-bun-moc/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "La Academie",
+   "title": "Vietnamese Pork Ball Noodle Soup (Bún Mọc)",
+   "url": "https://www.lacademie.com/pork-ball-noodle-soup-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Savour the Pho",
+   "title": "Bún Mọc (Vietnamese Pork Meatball Noodle Soup)",
+   "url": "https://savourthepho.com/bun-moc/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

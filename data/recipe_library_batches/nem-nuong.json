@@ -1,0 +1,149 @@
+{
+ "dish_name": "Nem Nuong",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Ground pork",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Five-spice powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice paper wrappers",
+   "qty": "1 pack",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice vermicelli",
+   "qty": "6 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F (200°C). Rub 1 tbsp of the oil over a rimmed baking sheet.",
+  "Mince 4 of the garlic cloves and the shallot as finely as you can. Add them to a large bowl with the pork, rice flour, cornstarch, honey, 2 tbsp of the fish sauce and the five-spice.",
+  "Mix with your hands for 2 minutes, until the meat looks sticky and holds together in one mass. Don't skip this. It's what makes the pork logs springy.",
+  "Wet your hands and shape the meat into 12 short logs, each about 3 inches long and 3/4 inch thick. Set them on the oiled sheet with a little space between them.",
+  "Bake for 8 minutes. Turn each log over, brush with the remaining 1 tbsp oil, and bake for 8 minutes. Turn the oven to broil and cook for 2 minutes, until the tops are browned in spots.",
+  "You're cooking the pork to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left and the juices run clear. Let them rest for 3 minutes.",
+  "Meanwhile, make the dipping sauce. Mince the remaining 2 garlic cloves. Stir them in a small bowl with the sugar, 3 tbsp of the fish sauce, the vinegar, the juice of the lime and 1/4 cup warm water until the sugar dissolves.",
+  "Put the vermicelli in a heatproof bowl and cover with just-boiled water. Let it stand for 5 minutes, then drain and rinse under cold water.",
+  "Cut the cucumber into thin sticks, separate the lettuce leaves, and pick the mint and basil leaves.",
+  "Fill a wide shallow dish with warm water. Dip one rice paper for about 10 seconds, until it just turns soft, and lay it flat on a plate. Near the bottom edge, set a lettuce leaf, a small handful of noodles, a few cucumber sticks, some herbs and 1 of the cooked logs. Fold in the sides, roll it up tight, and repeat with the rest.",
+  "To pack for lunch, keep the pork logs, noodles, vegetables, herbs and sauce in separate containers in the fridge for up to 3 days. Roll them the same morning. The pork can be eaten cold or reheated for 30 seconds in the microwave.",
+  "Serve with the dipping sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on a seasoned pork paste with rice powder, fish sauce, five-spice and a sweetener, shaped and grilled until browned, then eaten in rice paper with herbs and noodles. SideChef (the lead, 4.0 from 2 ratings) gives the ratios, 1 lb of pork to 2 tbsp each of rice powder and cornstarch, 3 tbsp honey and 2 tbsp fish sauce, while Runaway Rice supplies the oven method and Vicky Pham confirms the long mixing. This version skips the bacon, the cooking wine and the 1 hour chill, and uses plain rice flour for roasted rice powder, to keep it a lunch you can make in under 40 minutes. The dipping sauce is the standard nuoc cham, and all the heat is left out.",
+ "sources": [
+  {
+   "name": "SideChef",
+   "title": "Nem Nuong (Grilled Vietnamese Pork Sausages)",
+   "url": "https://www.sidechef.com/recipes/11418/nem_nuong_grilled_vietnamese_pork_sausages/",
+   "rating": 4.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Runaway Rice",
+   "title": "Grilled Pork Sausages (Nem Nuong)",
+   "url": "https://runawayrice.com/main-dishes/grilled-pork-sausages-nem-nuong/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Grilled Pork Sausage (Nem Nuong)",
+   "url": "https://vickypham.com/blog/vietnamese-grilled-pork-nem-nuong/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
