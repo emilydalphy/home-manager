@@ -1,0 +1,103 @@
+{
+ "dish_name": "Denver Omelet",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "10 large",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Diced ham (gluten free)",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cheddar cheese, shredded",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion and the bell pepper into 1/4-inch pieces. Dice the ham if it isn't already. Slice the tomatoes.",
+  "Crack the eggs into a large bowl. Add the milk, 3/4 tsp of the salt and the pepper. Whisk with a fork until just combined. Don't overbeat.",
+  "Melt 1 tbsp of the butter in a 10-inch nonstick skillet over medium heat. Add the ham and cook for 2 minutes, until it's browned at the edges.",
+  "Add the onion, the bell pepper and the remaining 1/4 tsp salt. Cook for 3 minutes, until crisp-tender. Transfer the filling to a bowl and wipe out the pan.",
+  "Melt 1 tbsp of the butter in the pan over medium-high heat. Pour in half the eggs. As the edges set, pull them toward the center with a spatula and tilt the pan so the raw egg runs underneath. After about 1 minute it should be mostly set but still glossy on top.",
+  "Turn the heat to low. Spoon half the filling over one half of the omelet and scatter 3/4 cup of the cheese over it. Turn off the heat, cover, and leave it for 2 minutes, until the cheese has melted.",
+  "Fold the empty half over the filling and slide the omelet onto a plate. Cover it loosely with foil.",
+  "Wipe the pan, melt the last 1 tbsp butter over medium-high heat, and make the second omelet the same way with the rest of the eggs, filling and cheese.",
+  "Cut each omelet in half so there are 4 portions. Serve with the sliced tomatoes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has the 20 ratings the rule asks for, so this is a fallback. Spend With Pennies (5.0 from 17) is the lead: ham, onion and two peppers cooked first, then eggs, then cheese under a lid. Jessica Gavin (4.93 from 13) agrees on cooking the filling first so the omelet isn't watery. Written as two 5-egg omelets cut in half so a family of four eats it as dinner; the second omelet is why it runs the full 30 minutes. The ham is listed gluten free to keep the tag.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Denver Omelet",
+   "url": "https://www.spendwithpennies.com/denver-omelet/",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jessica Gavin",
+   "title": "Denver Omelet",
+   "url": "https://www.jessicagavin.com/denver-omelet/",
+   "rating": 4.93,
+   "rating_count": 13,
+   "read": true
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Denver Omelette",
+   "url": "https://www.jocooks.com/recipes/denver-omelette/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

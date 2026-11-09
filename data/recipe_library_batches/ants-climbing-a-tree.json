@@ -1,0 +1,103 @@
+{
+ "dish_name": "Ants Climbing a Tree",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Glass noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (2 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Spicy bean paste (doubanjiang)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the glass noodles in a large bowl, cover them with cold water and leave them for 10 minutes. Drain and rinse them, then snip them a few times with scissors so they're easier to eat.",
+  "Meanwhile, mince 2 tbsp of the ginger and slice the green onions.",
+  "Salt the pork with the 1/4 tsp salt.",
+  "Heat the oil in a wok or large skillet over medium heat. Add the ginger and stir for 30 seconds, until fragrant.",
+  "Add the bean paste and stir for 30 seconds, until the oil turns red.",
+  "Add the pork and press it into the pan. Leave it alone for 1 minute, then stir and break it into small crumbs. Cook for 3 minutes, until browned and cooked through.",
+  "You're cooking the pork to 160°F in the middle, so if you have a thermometer, check a crumb. No thermometer? Break one open: it's done when there's no pink left.",
+  "Add the chicken broth, 4 tsp light soy sauce, 2 tsp dark soy sauce and 1 tsp sugar. Bring it to a boil over high heat.",
+  "Add the noodles and most of the green onions, keeping a small handful for the top. Stir for 2 to 3 minutes, until the noodles have soaked up most of the broth and look glossy.",
+  "Take the pan off the heat. Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls topped with the rest of the green onions. Put the red pepper flakes on the table for anyone who wants heat."
+ ],
+ "method_notes": "The lead (The Woks of Life, 4.69 from 51) soaks the noodles, blooms ginger and spicy bean paste in oil, cooks the pork in it, then adds stock and soy and lets the noodles soak up the broth. This doubles the lead's two-serving recipe and uses a smaller amount of bean paste for a milder base, with red pepper flakes at the table for heat. The lead allows ground chicken in place of the pork.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Ants Climbing a Tree",
+   "url": "https://thewoksoflife.com/ants-climbing-a-tree/",
+   "rating": 4.69,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

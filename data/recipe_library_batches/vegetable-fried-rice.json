@@ -1,0 +1,127 @@
+{
+ "dish_name": "Vegetable Fried Rice",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 bag (8 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 2 hours ahead: rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes. Spread it on a plate or tray to cool, then cover and refrigerate. Cold, dry rice is what fries well, so don't use it warm.",
+  "When you're ready to cook, take the rice out of the fridge and break up any clumps with your fingers.",
+  "Dice the onion and carrots small. Dice the red bell pepper the same size. Mince the 3 garlic cloves. Cut the snow peas into thirds. Slice the green onions, keeping the white and green parts apart. Rinse the bean sprouts.",
+  "In a small bowl, stir together 2 tbsp light soy sauce, 2 tsp dark soy sauce, 1 tsp sesame oil and 1/4 tsp white pepper.",
+  "Beat the 3 eggs in a bowl with 1/4 tsp of the salt until there are no streaks of white left.",
+  "Heat 1 tbsp of the oil in your largest wok or skillet over high heat until it shimmers. Pour in the eggs and scramble for about 30 seconds, until they're just set. Transfer them to a bowl.",
+  "Add 2 tbsp oil to the pan over medium-high heat. Add the onion and carrots and stir for 2 minutes, until the onion starts to soften.",
+  "Add the bell pepper and the white parts of the green onions and stir for 1 minute. Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Turn the heat to high. Add the rice and toss it, pressing it against the pan, for 3 minutes, until it's hot and the grains look separate and dry.",
+  "Pour the sauce over the rice and toss for 1 minute, until the liquid has gone.",
+  "Add the snow peas and stir for 1 minute, until they turn bright green.",
+  "Return the eggs to the pan. Add the 1 tbsp Shaoxing wine around the edge of the pan, then add the bean sprouts and the green parts of the green onions. Toss for 30 to 60 seconds, until the sprouts just start to wilt. Take the pan off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot, straight from the pan."
+ ],
+ "advance_prep_notes": "cook and chill the rice the night before",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "The lead (The Woks of Life, 4.91 from 44) scrambles the eggs first, softens the onion and carrot, fries the rice hard, seasons with light and dark soy, and adds snow peas and sprouts at the very end so they stay crisp. This trims the lead's mushrooms and turmeric and its 45 minute prep to fit 30 minutes, uses a whole onion and 2 carrots in place of its small measures, and has no oyster sauce, so it stays vegetarian. The rice is cooked the night before; with that done the dish takes about 27 minutes.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Vegetable Fried Rice",
+   "url": "https://thewoksoflife.com/vegetable-fried-rice",
+   "rating": 4.91,
+   "rating_count": 44,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "default_servings": 4
+}

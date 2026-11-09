@@ -1,0 +1,113 @@
+{
+ "dish_name": "Egg Foo Young",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 bag (12 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetarian oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 cup jasmine rice in a sieve until the water runs mostly clear. Put it in a small pot with 1 1/2 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered until you serve.",
+  "Slice the green onions. Keep the green parts for the top and mince the 2 garlic cloves.",
+  "Make the gravy in a small pot, off the heat. Stir 2 tbsp cornstarch into 2 tbsp soy sauce until smooth. Stir in the 1 tbsp vegetarian oyster sauce, 1 1/2 tbsp Shaoxing wine, 1 tsp sesame oil, a pinch of the white pepper and the 1 1/2 cups vegetable broth.",
+  "Put the gravy on medium heat and stir constantly for 1 to 2 minutes, until it thickens like a thin syrup. Take it off the heat and keep it warm.",
+  "In a large bowl, beat the 8 eggs with 1/2 tsp salt and the rest of the white pepper. Stir in the 3 cups of bean sprouts and the white parts of the green onions.",
+  "Heat 1 1/2 tbsp of the vegetable oil and 1/4 tsp of the sesame oil in a large nonstick skillet over medium heat. Add 1 minced garlic clove and stir for 15 seconds.",
+  "Spoon in 3 mounds of the egg mixture, about 2/3 cup each, and shape each into a round with the back of the spoon. Cook for 2 minutes, until the underside is golden.",
+  "Flip them and cook the other side for 1 1/2 minutes, until golden and no wet egg shows when you press one. Transfer them to a plate.",
+  "Repeat with the remaining oil, the remaining 1/4 tsp sesame oil, the other garlic clove and the rest of the egg mixture.",
+  "Taste the gravy. If it's flat, add a pinch more salt.",
+  "Spoon the gravy over the omelettes and scatter the green parts of the green onions on top. Serve with the rice."
+ ],
+ "method_notes": "The lead (RecipeTin Eats, 4.95 from 106) fries thick egg and bean sprout omelettes in a pan with a little garlic and covers them with a thin cornstarch gravy. This is doubled to a table of four with no meat, vegetable broth in the gravy in place of water, and vegetarian oyster sauce (a mushroom based one) in place of regular oyster sauce, so it stays vegetarian. The lead notes it does not keep well, so cook it fresh.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Egg Foo Young",
+   "url": "https://www.recipetineats.com/egg-foo-young/",
+   "rating": 4.95,
+   "rating_count": 106,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

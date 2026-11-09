@@ -1,0 +1,114 @@
+{
+ "dish_name": "Chicken and Snow Peas",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on until you serve.",
+  "Slice the chicken across the grain into strips about 1/4 inch thick. Transfer it to a bowl and mix in 1 tsp of the cornstarch, 1 tsp soy sauce and 1 tsp of the oil. Leave it for 10 minutes.",
+  "Meanwhile, trim the snow peas and mince the 2 garlic cloves.",
+  "In a small bowl, stir the remaining 2 tsp cornstarch into the chicken broth until smooth.",
+  "In a second small bowl, stir together 1 tbsp soy sauce, 2 tsp oyster sauce, 1 tbsp Shaoxing wine, 1/2 tsp sesame oil, the salt, the white pepper and a pinch of sugar.",
+  "Heat a wok or large skillet over high heat until it's smoking. Add 1 tbsp of the oil and half the chicken in a single layer. Leave it alone for 1 minute, until the underside is browned. Transfer it to a plate, then repeat with 1 tbsp oil and the rest of the chicken.",
+  "Add the last 1 tbsp oil to the pan. Add the garlic and snow peas and stir for 1 minute, until the peas turn bright green.",
+  "Return the chicken and any juices to the pan. Pour in the soy sauce mixture and stir for 15 seconds.",
+  "Stir the broth mixture again and pour it in. Cook for 30 to 45 seconds, until the sauce coats a spoon.",
+  "You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check a thick slice. No thermometer? Cut into one: it's done when there's no pink left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "method_notes": "The lead (The Woks of Life, 4.95 from 38) sears thin marinated chicken first, then stir-fries the snow peas briefly with garlic, adds the seasonings, and thickens a light stock sauce. This is scaled to 1 lb of chicken and a pound of peas for four, with a bit more stock for a spoonable sauce, and the chicken seared in two batches so it browns. The 10 minute marinade runs while the rice cooks, so the whole dish takes about 20 minutes.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Chicken Snow Peas Stir Fry",
+   "url": "https://thewoksoflife.com/chicken-snow-peas-stir-fry/",
+   "rating": 4.95,
+   "rating_count": 38,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

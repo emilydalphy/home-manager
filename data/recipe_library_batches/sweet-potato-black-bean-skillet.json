@@ -1,0 +1,95 @@
+{
+ "dish_name": "Sweet Potato Black Bean Skillet",
+ "cuisine": "American",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet potatoes",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Kale",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "3 cups chopped"
+  },
+  {
+   "item": "Black beans",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free taco seasoning",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the sweet potatoes and cut them into 1/2-inch cubes. Dice the onion and mince the garlic. Strip the kale leaves from the stems and chop 3 cups of them. Drain and rinse the black beans.",
+  "Heat the olive oil in a large deep skillet over medium-high heat. Add the sweet potatoes and the salt and spread them out. Cook for 5 minutes, stirring only once or twice, until they're browned in spots.",
+  "Add the onion and cook for 3 minutes, until it's soft.",
+  "Add the garlic and the taco seasoning and stir for 30 seconds, until you can smell them.",
+  "Pour in the broth and scrape up anything stuck to the bottom of the pan. Turn the heat down to medium, cover, and cook for 6 minutes, until a fork slides easily into the sweet potato.",
+  "Add the kale and the black beans. Cook uncovered for 3 minutes, stirring, until the kale has wilted and the broth has thickened into a light sauce.",
+  "Take the pan off the heat. Juice half the lime over the skillet and stir. Cut the other half into wedges.",
+  "Serve from the skillet with the lime wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum's Sweet Potato, Kale and Black Bean Skillet (4.6 from 38 ratings) is the lead: brown sweet potato, add onion, then garlic and taco seasoning, then kale and black beans. Its version has no liquid and uses one can of beans for six; here there are two cans for four, and a half cup of broth with the lid on so the sweet potato cooks through and there's a little sauce. Lime at the end is from Namely Marly's and The Roasted Root's skillets (not readable). The taco seasoning is listed gluten free to keep the tag. Small cubes keep it to 30 minutes.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Sweet Potato, Kale and Black Bean Skillet",
+   "url": "https://cupofyum.com/recipes/sweet-potato-kale-and-black-bean-skillet/",
+   "rating": 4.6,
+   "rating_count": 38,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Namely Marly",
+   "title": "Sweet Potato Taco Skillet",
+   "url": "https://namelymarly.com/sweet-potato-taco-skillet/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

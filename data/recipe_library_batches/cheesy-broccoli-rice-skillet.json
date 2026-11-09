@@ -1,0 +1,104 @@
+{
+ "dish_name": "Cheesy Broccoli Rice Skillet",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2 medium",
+   "category": "produce",
+   "cook_qty": "1 cup shredded"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 large head",
+   "category": "produce",
+   "cook_qty": "3 cups small florets"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cheddar cheese block",
+   "qty": "6 oz",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups shredded"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Shred the carrots on the large holes of a box grater. That should be about 1 cup. Cut the broccoli into small florets, about 3 cups. Shred the cheddar on the large holes. That should be about 1 1/2 cups.",
+  "Melt the butter in a large skillet with a lid over medium heat. Add the carrots and cook for 2 minutes, stirring.",
+  "Add the rice, garlic powder, onion powder, salt and pepper. Stir for 1 minute so the rice is coated and smells toasty.",
+  "Pour in the broth and bring it to a boil. Turn the heat to low, cover, and simmer for 10 minutes.",
+  "Lay the broccoli on top of the rice without stirring. Cover and cook for 5 minutes, until the rice is tender and the broccoli is bright green and just soft.",
+  "Take the pan off the heat. Add the cheese and stir for 1 minute, until it has melted into the rice and the rice looks creamy.",
+  "Serve from the skillet."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has ratings, so this is a fallback. The Healthy Maven's cheesy rice (unrated, gluten free) is the lead: carrots and broccoli in butter, then rice, garlic and onion powder, broth, a covered simmer, cheese stirred in at the end. Frugal Farm Wife's skillet (unrated) toasts the rice and adds the broccoli on top partway through, which keeps it from going to mush, so that is used here. Vegetable broth replaces the chicken broth that both call for.",
+ "sources": [
+  {
+   "name": "The Healthy Maven",
+   "title": "Cheesy Rice",
+   "url": "https://www.thehealthymaven.com/cheesy-rice",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Frugal Farm Wife",
+   "title": "Cheesy Broccoli Rice Skillet Dinner",
+   "url": "https://www.frugalfarmwife.com/article/cheesy-broccoli-rice-skillet-dinner/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Souffle Bombay",
+   "title": "White Cheddar Cheesy Broccoli Rice",
+   "url": "https://soufflebombay.com/white-cheddar-cheesy-broccoli-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

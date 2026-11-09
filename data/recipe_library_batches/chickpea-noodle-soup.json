@@ -1,0 +1,122 @@
+{
+ "dish_name": "Chickpea Noodle Soup",
+ "cuisine": "American",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3 large",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "3 ribs",
+   "category": "produce"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Rotini pasta (egg free)",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "8 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion, peel and dice the carrots, and slice the celery. Drain and rinse both cans of chickpeas. Chop 1/4 cup of the parsley.",
+  "Heat the olive oil in a large pot over medium heat. Add the onion, carrots, celery and 1/2 tsp of the salt. Cook for 6 minutes, stirring often, until the onion is soft and the carrots are starting to give.",
+  "Add the thyme, basil and oregano and stir for 30 seconds, until you can smell them.",
+  "Add the chickpeas and the broth, turn the heat up to high, and bring it to a boil. This takes about 5 minutes.",
+  "Stir in the rotini and turn the heat down to a gentle simmer. Cook for 7 minutes, until the pasta is tender but still has a little bite. Stir once or twice so it doesn't stick to the bottom.",
+  "Take the pot off the heat. Stir in the parsley, the juice of half the lemon, the remaining 1/2 tsp salt and the pepper. Taste it, and add a pinch more salt if it's flat.",
+  "Cut the other half of the lemon into wedges. Serve with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Simple Veganista (5.0 from 18 ratings, fewer than the 20 the rule asks for, so this is a fallback) is the lead: sauté onion, carrot and celery with dried thyme, basil and oregano, then chickpeas, rotini and liquid together for about 7 minutes. Live Eat Learn and I Heart Vegetables (both fewer than 5 ratings) simmer the broth and chickpeas first and use egg noodles; for the vegan tag this uses egg-free rotini, as the lead does, and all vegetable broth. Lemon at the end is from Simple Veganista and I Heart Vegetables. Written for 8 cups of broth and 8 oz of pasta, so it stays a soup.",
+ "sources": [
+  {
+   "name": "Simple Veganista",
+   "title": "Chickpea Noodle Soup",
+   "url": "https://simple-veganista.com/chickpea-noodle-soup/",
+   "rating": 5.0,
+   "rating_count": 18,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Live Eat Learn",
+   "title": "Chickpea Noodle Soup",
+   "url": "https://www.liveeatlearn.com/chickpea-noodle-soup/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "I Heart Vegetables",
+   "title": "Chickpea Noodle Soup",
+   "url": "https://iheartvegetables.com/chickpea-noodle-soup-2/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

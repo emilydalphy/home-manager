@@ -1,0 +1,109 @@
+{
+ "dish_name": "Fish and Chips",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "White fish fillets (cod or haddock)",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Saltine crackers",
+   "qty": "10",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2 large",
+   "category": "dairy"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Malt vinegar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 450°F with a rimmed baking sheet inside. Scrub the potatoes and cut them into 1/4-inch sticks. Transfer them to a large bowl and toss with 2 tbsp of the oil and 1/2 tsp of the salt.",
+  "Take the hot sheet out, spread the potatoes on it in one layer, and put it back in the oven. Bake for 25 minutes, turning them once at 12 minutes, until golden and crisp at the edges.",
+  "Meanwhile, pat the fish dry and cut it into 8 even pieces. Mix 1/2 tsp of the salt, 1/2 tsp of the onion powder, 1/4 tsp of the garlic powder and 1/2 tsp of the paprika. Sprinkle this over the fish.",
+  "In a shallow dish, mix the flour with the remaining 1/2 tsp onion powder, 1/4 tsp garlic powder and 1/2 tsp paprika. Beat the eggs in a second dish. Crush the crackers in a zip bag with a rolling pin and transfer them to a third dish.",
+  "Coat each piece of fish in the seasoned flour, then in the egg, then press it into the cracker crumbs.",
+  "Heat 3 tbsp of the oil and 1 1/2 tbsp of the butter in a large skillet over medium-high heat until the butter foams. Add 4 pieces of fish and cook for 4 minutes on each side, until golden and a fork slides easily through the center. Transfer them to a wire rack set over a sheet pan.",
+  "Wipe out the skillet, then cook the other 4 pieces the same way with the rest of the oil and butter.",
+  "Salt the hot chips with the remaining 1/2 tsp salt. Cut the lemon into wedges. Serve with the lemon wedges and the malt vinegar."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has the 20 ratings the rule asks for, so this is a fallback. Or Whatever You Do's Breaded Fish and Chips (5.0 from 4) is the lead for the fish: seasoned flour, egg, crushed saltines, shallow pan-fry in oil and butter, about 4 minutes a side. Jones In Taste (5.0 from 1) fries both fish and chips in 2 cups of oil and takes 90 minutes, so it is only used for the thin-cut potato. Cayenne is left out to keep the base mild, butter is cut from a stick to 3 tbsp, and the chips are baked on a hot sheet, since frying two batches of fish and chips together does not fit 30 minutes. It still runs about 40 minutes, so it is over the quick-dinner target.",
+ "sources": [
+  {
+   "name": "Or Whatever You Do",
+   "title": "Breaded Fish and Chips",
+   "url": "https://www.orwhateveryoudo.com/breaded-fish-and-chips",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jones In Taste",
+   "title": "Pan Fried Fish and Chips",
+   "url": "https://jonesinfortaste.com/pan-fried-fish-and-chips/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
