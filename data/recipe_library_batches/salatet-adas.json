@@ -1,0 +1,98 @@
+{
+ "dish_name": "Salatet Adas",
+ "cuisine": "Lebanese",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Green lentils",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the lentils. Put them in a medium pot with 3 cups water and 1/2 tsp salt and bring to a boil over high heat. Turn the heat down to a gentle simmer and cook for 25 minutes, until they're tender but still hold their shape. Drain well and transfer to a large bowl.",
+  "Meanwhile, mince the garlic. Put it in a small skillet with 2 tbsp of the olive oil over low heat. Cook, stirring, for 5 minutes, until it's soft and pale gold. Don't let it brown.",
+  "Take the skillet off the heat. Whisk in the remaining 4 tbsp oil, 3 tbsp lemon juice, the cumin and the allspice.",
+  "Thinly slice the onion. Chop 1/2 cup parsley and 2 tbsp mint.",
+  "Pour the garlic dressing over the warm lentils. Add the onion, parsley, mint, 1/2 tsp salt and the pepper, and toss well.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lemon.",
+  "Serve warm or at room temperature. To pack for lunch, chill it in a container. It keeps in the fridge for 2 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had ratings, so the lead is a fallback. Food.com's version (unrated) is the garlicky one: lentils with garlic cooked soft in oil, then whisked with lemon, cumin and allspice. Lena's Recipes (unrated) is herbier, with parsley, mint, red onion and a plain lemon and oil dressing. This version follows the Food.com dressing with about half its garlic, and takes the larger herb amounts from Lena's. Lena's says the salad holds for 1 to 2 days in the fridge, so the list's \"keeps for days\" is closer to 2 days.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Salata Adas (Garlicky Lebanese Lentil Salad)",
+   "url": "https://www.food.com/recipe/salata-adas-garlicky-lebanese-lentil-salad-501260",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lena's Recipes",
+   "title": "Lebanese Lentil Salad",
+   "url": "https://bylena.com/recipe/1544/Lebanese-Lentil-Salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,137 @@
+{
+ "dish_name": "Chickpea Shawarma Wraps",
+ "cuisine": "Lebanese",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Canned chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried dill",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a rimmed baking sheet with parchment.",
+  "Drain and rinse the chickpeas. Pat them very dry with a clean towel. Transfer them to a bowl and toss with the olive oil, cumin, garlic powder, paprika, coriander, cinnamon, 1 tsp salt and the pepper.",
+  "Spread the chickpeas in a single layer on the sheet. Roast for 25 minutes, shaking the pan every 8 minutes, until they're golden and crisp. Let them cool for a few minutes. Taste one. If it's flat, add a pinch more salt.",
+  "Meanwhile, make the sauce. Juice the lemon into a bowl. Add the tahini, dill, a pinch of salt and the garlic, minced. Whisk, adding 1/4 cup water a splash at a time, until you can pour it.",
+  "Slice the tomatoes. Thinly slice half the red onion. Chop 1/4 cup parsley.",
+  "Warm the pitas in a dry skillet over medium heat for 20 seconds on each side. Cut them in half and open each half into a pocket.",
+  "Fill each pocket with the chickpeas, tomato, onion and parsley, then drizzle the sauce over the top.",
+  "To pack for lunch, keep the chickpeas, the sauce and the vegetables in separate containers and fill the pitas when you eat. The chickpeas and sauce keep in the fridge for 3 to 4 days. Eat the chickpeas cold or reheat them on a sheet pan at 400°F for 5 minutes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "My Cooking Journey (5 from 21 ratings) roasts the chickpeas at 400°F with cumin, coriander and garlic, and serves them in pita with a tahini sauce and a chopped tomato, onion and parsley salad. Minimalist Baker (4.93 from 94) adds cinnamon, paprika and a dill and garlic sauce on hummus or tahini, and Love and Lemons (4.91 from 40) uses a yogurt sauce and zhoug. This version keeps the lead's tahini sauce without its yogurt so it stays dairy-free, and takes the spice mix and roasting time from Minimalist Baker. Amounts are scaled for four wraps.",
+ "sources": [
+  {
+   "name": "My Cooking Journey",
+   "title": "Chickpea Shawarma Wrap",
+   "url": "https://mycookingjourney.com/chickpea-shawarma-wrap-vegetarian-shawarma-sandwich/",
+   "rating": 5,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Minimalist Baker",
+   "title": "Chickpea Shawarma Sandwich",
+   "url": "https://minimalistbaker.com/chickpea-shawarma-sandwich/",
+   "rating": 4.93,
+   "rating_count": 94,
+   "read": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Chickpea Shawarma Wraps",
+   "url": "https://loveandlemons.com/chickpea-shawarma-wraps",
+   "rating": 4.91,
+   "rating_count": 40,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

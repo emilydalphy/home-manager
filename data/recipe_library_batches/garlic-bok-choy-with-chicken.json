@@ -1,0 +1,117 @@
+{
+ "dish_name": "Garlic Bok Choy with Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "5 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a strainer until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to its lowest setting and cook for 15 minutes. Take it off the heat and leave it covered for 5 minutes.",
+  "Meanwhile, cut the chicken into bite-size pieces and pat them dry. In a bowl, stir together 1 tbsp of the cornstarch, the soy sauce, the rice vinegar, the brown sugar and the sesame oil. Add the chicken, toss to coat and let it sit while you prep the rest.",
+  "Trim the root ends off the bok choy. Cut the heads into 1-inch pieces and keep the white stems in one pile and the green leaves in another. Mince the garlic.",
+  "In a small bowl, stir the broth, the oyster sauce and the remaining 2 tsp cornstarch until smooth.",
+  "Heat a large skillet or wok over medium-high heat for 1 minute. Add 1 tbsp of the vegetable oil, then half the chicken in a single layer. Leave it alone for 2 minutes until the underside is browned, then flip the pieces and cook 1 minute. Transfer to a plate. Cook the second half the same way, using the same pan.",
+  "Add the remaining 1 tbsp oil to the pan, then the bok choy stems and 1/4 tsp salt. Stir-fry for 1 minute.",
+  "Add the garlic and stir for 30 seconds until it smells toasty. Add the leaves and stir for 1 minute, until they wilt.",
+  "Return the chicken and any juices to the pan. Stir the sauce again, pour it in and stir for 2 minutes, until it's thick and glossy. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a piece: it's done when there's no pink left.",
+  "Take the pan off the heat. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only What A Girl Eats had ratings I could read (5 from 37). It uses chicken breast, a soy, wine and sesame marinade and a thin sauce of broth and oyster sauce, with garlic cooked just before the greens. Oh Snap! Let's Eat (unrated) uses thighs, 4 cloves of garlic and a short vinegar and soy marinade, so this version takes thighs and the larger garlic amount from it. The sauce follows the lead's broth, oyster sauce and cornstarch.",
+ "sources": [
+  {
+   "name": "What A Girl Eats",
+   "title": "Classic Chicken and Bok Choy Stir-Fry",
+   "url": "https://whatagirleats.com/classic-stir-fry/",
+   "rating": 5,
+   "rating_count": 37,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Oh Snap! Let's Eat!",
+   "title": "Chicken Bok Choy Stir Fry",
+   "url": "https://ohsnapletseat.com/2023/10/27/bok-choy-chicken-stir-fry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

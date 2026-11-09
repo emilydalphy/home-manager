@@ -1,0 +1,104 @@
+{
+ "dish_name": "Tuna Onigirazu",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Sushi rice",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Nori sheets",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "4 sheets"
+  },
+  {
+   "item": "Canned tuna",
+   "qty": "2 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Japanese mayo",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the sushi rice in a bowl, swishing it with your hand, and drain. Repeat until the water runs mostly clear. Put the rice in a medium pot with 1 1/3 cups water and bring it to a boil over high heat. Cover, turn the heat to its lowest setting and cook for 12 minutes. Take it off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, shred the carrots on the large holes of a box grater. That should be about 1 cup. Chop 2 tbsp parsley and stir it into the carrot with 1 tsp lemon juice and a pinch of salt.",
+  "Drain the tuna well and transfer it to a bowl. Break it up with a fork, then stir in the mayo, the soy sauce and 1 thinly sliced green onion. Taste it. If it's flat, add a pinch more salt.",
+  "Wash the lettuce leaves, pat them dry and trim off any thick stems. Set out four sheets of plastic wrap, each a bit bigger than a nori sheet.",
+  "When the rice is done, fluff it with a fork. Keep it warm so the nori sticks. Wet your hands before you handle it.",
+  "Lay a nori sheet on a piece of plastic wrap. Press 1/3 cup rice into a dense square in the middle of the sheet.",
+  "Lay 5 lettuce leaves over the rice. Spread 1/4 of the tuna mixture on top, then 1/4 of the carrot salad.",
+  "Press another 1/3 cup rice on top. Fold the corners of the nori over the rice one at a time until it's a tight square, then wrap it snugly in the plastic. Make the other 3 the same way.",
+  "Let the wrapped sandwiches sit for 5 minutes. Unwrap and cut each one in half with a wet knife.",
+  "To pack them for lunch, leave them wrapped in the plastic and keep them cold with an ice pack. They keep in the fridge for up to 1 day."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Tasting Table (4.9 from 17 ratings, under the 20 needed, so a fallback lead) layers tuna mayo with a soy splash, a carrot salad and lettuce between two layers of rice. The SBS version (unrated) uses plain tuna with avocado, cucumber and pickled radish, and presses the wrapped sandwich so the nori softens. This version follows the lead. Its rice amount was scaled from 2 sandwiches to 4. The fridge time is a safe, cautious figure, since neither source gives one.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Tuna Mayo Onigirazu (Sushi Sandwich) Recipe",
+   "url": "https://www.tastingtable.com/1869695/tuna-mayo-onigirazu-recipe/",
+   "rating": 4.9,
+   "rating_count": 17,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Onigirazu (Tuna Sushi Sandwiches with Pickled Radish)",
+   "url": "https://www.sbs.com.au/food/recipe/onigirazu-tuna-sushi-sandwiches-with-pickled-radish/0hxeguzua",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

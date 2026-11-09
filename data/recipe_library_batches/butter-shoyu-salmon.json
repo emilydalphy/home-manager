@@ -1,0 +1,98 @@
+{
+ "dish_name": "Butter Shoyu Salmon",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Salmon fillets, skin on",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the salmon into 4 equal pieces, keeping the skin on. Pat them dry and sprinkle both sides with 2 tsp salt and the pepper. Let them sit for 15 minutes while the rice cooks.",
+  "Rinse the 1 1/2 cups rice in a strainer until the water runs mostly clear. Put it in a medium pot with 1 2/3 cups water and bring it to a boil over high heat. Cover, turn the heat to its lowest setting and cook for 12 minutes. Take it off the heat and leave it covered for 10 minutes.",
+  "Slice the green onions thinly. In a small bowl, stir together the soy sauce, the mirin and 2 tbsp water.",
+  "Pat the salmon dry again and dust both sides with the cornstarch.",
+  "Heat the oil in a large nonstick skillet over medium heat. Add the salmon skin side down and cook for 4 minutes, until the skin is browned and lets go of the pan.",
+  "Flip the salmon and cook the other side for 2 minutes. You're cooking it until it flakes when you press the thickest part, about 145°F in the middle if you have a thermometer. Transfer to a plate.",
+  "Turn the heat to low and pour the soy mixture into the pan. Add the butter and stir until it melts and the sauce bubbles gently, about 30 seconds. Take the pan off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the sauce over the salmon, scatter the green onions on top and serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats (5 from 3 ratings, so a fallback lead) sears salmon dusted with cornstarch after a short salting, then adds soy sauce, mirin, water and butter and takes the pan off the heat quickly so the sauce stays loose. Kikkoman's salmon meuniere (unrated) is the same idea with whole fillets and a splash of lemon. This version keeps the lead's sauce and searing method, scaled to whole fillets, and leaves out its mushrooms and the lemon. The sauce is salty, so it's best not to boil it down. The Sudachi bata shoyu salmon page could not be read.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "One Pan Soy Butter Salmon with Mushrooms",
+   "url": "https://japan.recipetineats.com/one-pan-soy-butter-salmon-with-mushrooms/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kikkoman",
+   "title": "Salmon Meuniere",
+   "url": "https://www.kikkoman.com/en/cookbook/recipe/00000542.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
