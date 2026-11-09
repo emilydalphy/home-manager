@@ -1,0 +1,68 @@
+{
+ "dish_name": "Apple Cheddar Panini",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Whole grain bread",
+   "qty": "8 slices",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Crisp apples",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Mild cheddar cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Cooking spray",
+   "qty": "1 can",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Thinly slice the apples, about 1/4 inch thick. Thinly slice the cheddar.",
+  "Lay out the 8 bread slices and spread 1/4 cup of honey mustard thinly across all of them.",
+  "On 4 of the slices, layer half an apple and 2 oz of the cheese, then top each with another slice, mustard side down.",
+  "Heat a nonstick skillet over medium and coat it lightly with cooking spray. Cook 2 sandwiches at a time, pressing down on them with a second heavy pan or a spatula.",
+  "Cook for 3 to 5 minutes, flipping once halfway, until the bread is toasted and the cheese has melted. Repeat with the other 2 sandwiches.",
+  "Let each sandwich cool for 1 minute before cutting."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Food.com's version (12 reviews, no star rating shown, so the fallback applies) spreads honey mustard on whole grain bread, layers apple and mild cheddar, and grills each sandwich 3 to 5 minutes in a press or under a second heavy skillet. Apples from NY has the same recipe with low-fat cheddar. Homemade Nutrition's single-serving version adds spinach and pepper, which this one leaves out.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Apple-Cheddar Panini",
+   "url": "https://www.food.com/recipe/apple-cheddar-panini-221685",
+   "rating": null,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Homemade Nutrition",
+   "title": "Apple Cheddar Panini",
+   "url": "https://www.homemadenutrition.com/2014/12/29/apple-cheddar-panini/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

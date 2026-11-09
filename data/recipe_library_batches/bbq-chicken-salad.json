@@ -1,0 +1,65 @@
+{
+ "dish_name": "BBQ Chicken Salad",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Cooked chicken breast",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Corn on the cob",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Romaine hearts (lettuce)",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Dairy-free ranch dressing",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Barbecue sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Put the corn, still in its husk, on a plate and microwave it for 4 minutes. Let it cool for a few minutes while you chop.",
+  "Chop the romaine hearts into bite-size pieces and divide the lettuce among 4 bowls. Dice the tomatoes and scatter them over the lettuce.",
+  "Shred or dice the cooked chicken and divide it among the bowls.",
+  "Stand each ear of corn on its end and cut the kernels off with a knife. Add the kernels to the bowls.",
+  "Drizzle 1/4 cup of the barbecue sauce over the 4 salads, then 1/3 cup of the dairy-free ranch."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 5,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only the Skinnytaste version could be read (4.91 from 10 votes, so the fallback applies). It dresses romaine, tomato, corn and chicken with a drizzle of barbecue sauce and ranch. It cooks raw chicken breast; this version uses leftover or rotisserie chicken, as the dish promises. Bottled ranch is dairy, so the list calls for dairy-free ranch, and the barbecue sauce should be one labeled gluten-free. Other BBQ chicken salads add black beans, avocado or tortilla strips, which this one leaves out.",
+ "sources": [
+  {
+   "name": "Skinnytaste",
+   "title": "BBQ Chicken Salad",
+   "url": "https://www.skinnytaste.com/bbq-chicken-salad/",
+   "rating": 4.91,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

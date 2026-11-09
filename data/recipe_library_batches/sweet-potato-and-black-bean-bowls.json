@@ -1,0 +1,116 @@
+{
+ "dish_name": "Sweet Potato and Black Bean Bowls",
+ "cuisine": "American",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Sweet potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Quick-cooking brown rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400\u00b0F. Line a large baking sheet with parchment.",
+  "Cut the sweet potatoes into 1-inch pieces (peeling is up to you). Cut half the red onion into 1-inch pieces. Save the other half for another meal.",
+  "Drain and rinse the black beans, then pat them dry with a clean towel.",
+  "In a large bowl, toss the sweet potatoes, onion and beans with the olive oil, cinnamon, paprika, cumin, onion powder, garlic powder, salt and pepper.",
+  "Spread everything on the baking sheet in a single layer. Roast for 30 minutes, stirring once halfway, until the sweet potatoes are tender and browned at the edges.",
+  "Meanwhile, cook the rice in a small pot following the package directions for 1 cup.",
+  "Divide the rice among 4 containers or bowls, then top with the roasted sweet potatoes and beans.",
+  "Spoon 1/4 cup of salsa over each bowl and squeeze lime over the top. For lunches, leave the salsa and lime for when you eat.",
+  "To store, cool the bowls and cover them. They keep in the fridge for up to 4 days. Reheat in the microwave for 1 to 2 minutes, then add the salsa and lime."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one rated version of the bowls could be read: It's a Veg World After All (4.88 from 8 ratings, so the fallback applies). It roasts the sweet potato, red onion and beans together with warm spices over brown rice and says the parts keep for a week. A version from Delicious Meets Healthy had no ratings and adds a yogurt crema and arugula, which this one leaves out to stay vegan. Quick-cooking brown rice is used so the rice finishes while the pan roasts.",
+ "sources": [
+  {
+   "name": "It's a Veg World After All",
+   "title": "Sweet Potato Black Bean Meal Prep Bowls",
+   "url": "https://itsavegworldafterall.com/sweet-potato-black-bean-meal-prep-bowls/",
+   "rating": 4.88,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Delicious Meets Healthy",
+   "title": "Sweet Potato Black Bean Bowls",
+   "url": "https://www.deliciousmeetshealthy.com/sweet-potato-black-bean-bowls/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

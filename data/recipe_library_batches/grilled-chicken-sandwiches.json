@@ -1,0 +1,110 @@
+{
+ "dish_name": "Grilled Chicken Sandwiches",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dill pickle slices",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "8 slices plus 3 tbsp of the juice"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dairy-free hamburger buns",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Iceberg lettuce",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "In a bowl, whisk the olive oil, 2 tbsp of the pickle juice, 1 tsp of the garlic powder, the onion powder, 1 tsp of the paprika, the salt and the pepper.",
+  "Pound the chicken breasts to an even thickness of about 3/4 inch. Turn them in the marinade and leave them on the counter for 20 minutes while you do the rest.",
+  "In a small bowl, stir the mayonnaise with the remaining 1/4 tsp paprika, the remaining 1/4 tsp garlic powder and 1 tsp of the pickle juice.",
+  "Tear the lettuce into sandwich-size pieces. Slice the tomato and thinly slice half the red onion.",
+  "Heat a large skillet or grill pan over medium-high. Lift the chicken out of the marinade and let the extra drip off, then lay it in the pan.",
+  "Cook for 5 to 6 minutes on the first side, until it's browned. Flip it and cook for 4 to 5 minutes. You're cooking it to 160\u00b0F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when there's no pink left.",
+  "Transfer the chicken to a plate and let it rest for 5 minutes. Wipe out the pan, then toast the buns cut side down for 30 seconds to 1 minute.",
+  "Spread the seasoned mayo on both halves of the buns. Layer the lettuce, chicken, tomato, red onion and pickle slices, then close the sandwiches."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Jam Jar Kitchen (4.88 from 185 ratings) marinates breasts in olive oil, pickle juice and spice, grills them, and serves them on brioche with seasoned mayo, bacon and provolone. Here the provolone and bacon are left out and the buns need to be dairy-free (brioche contains butter), to keep it dairy-free. The source marinates for 1 to 2 hours; 20 minutes is used so it fits a lunch, and a longer marinade only helps. A skillet stands in for the grill. Other versions (Modern Proper, 3 ratings) use a balsamic marinade.",
+ "sources": [
+  {
+   "name": "Jam Jar Kitchen",
+   "title": "Grilled Chicken Sandwich",
+   "url": "https://jamjarkitchen.com/2021/06/28/grilled-chicken-sandwich/",
+   "rating": 4.88,
+   "rating_count": 185,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Modern Proper",
+   "title": "Grilled Chicken Sandwich",
+   "url": "https://themodernproper.com/grilled-chicken-sandwich",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

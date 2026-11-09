@@ -1,0 +1,66 @@
+{
+ "dish_name": "Hot Dogs",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef hot dogs",
+   "qty": "8",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Hot dog buns",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat 1 tbsp of the olive oil in a large skillet over medium-high until it's glistening.",
+  "Add 4 hot dogs, spaced apart. Cook for 3 to 4 minutes, shifting them about every minute, until they're plump and browned on all sides. They only need to reach 140\u00b0F in the middle and they're already cooked, so you're heating and browning them.",
+  "Transfer them to a plate and wipe out the pan. Add the remaining tablespoon of oil and cook the other 4 the same way.",
+  "Warm the buns in the empty pan, cut side down, for about 30 seconds.",
+  "Serve in the buns with mustard and ketchup."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 2,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only The Modern Proper's page could be read with ratings (5 from 1 rating, so the fallback applies). It gives three ways to cook hot dogs; the skillet method is used here, searing them in a little olive oil for 3 to 4 minutes until plumped and browned. Taste of Home also boils (4 to 6 minutes) or splits and browns them in butter, but those had no ratings. Check the hot dog and bun labels for dairy and nuts.",
+ "sources": [
+  {
+   "name": "The Modern Proper",
+   "title": "How To Make A Hot Dog",
+   "url": "https://themodernproper.com/how-to-make-a-hot-dog",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "How to Cook Hot Dogs",
+   "url": "https://www.tasteofhome.com/article/how-to-cook-hot-dogs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
