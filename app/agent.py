@@ -3601,7 +3601,9 @@ BREAKFAST ON MORE THAN 3 MORNINGS and no snack on more than 3 days, unless the h
 for the same ones (their words, or a count too small to share the mornings out — 2 breakfasts \
 over 7 mornings is 4 each); a breakfast past that is moved or re-picked after you answer. \
 Pick breakfasts from `library_breakfasts` (dishes in Pomona's recipe library) by exact name \
-first, and invent one only when none of them fits.
+first, and invent one only when none of them fits. A breakfast in \
+`weekend_only_breakfasts` (a bake of 2 hours or more) goes on a Saturday or Sunday morning \
+only, never Monday to Friday.
 - SEND A REPEAT ONCE. When one breakfast, lunch or snack idea covers several days, that is ONE \
 entry with every one of those days listed in `dates` (its `date` first) — not the same dish \
 written out again for each morning. Oatmeal on three mornings is one entry with three dates. \
@@ -7857,6 +7859,9 @@ def _generate_weekly_plan(
     )
     if library_breakfasts:
         context["library_breakfasts"] = library_breakfasts
+        weekend = _breakfast_variety.weekend_only_breakfasts(library_breakfasts)
+        if weekend:
+            context["weekend_only_breakfasts"] = weekend
     # Library first (Emily, 2026-11-03): dinners and lunches from the shared
     # library, narrowed in code by every hard rule for THIS household (the
     # allergen gate on each dish's own list, diet words, dislikes, disliked

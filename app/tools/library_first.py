@@ -418,6 +418,11 @@ def swap_picks(weekly_plan_id: int, entry: dict, tried: list[str], context: dict
             avoid += sorted(_draft_opener.recent_dish_names(week_start, weekly_plan_id) or ())
         found = candidates(entry["slot"], memory, avoid=avoid, seed=f"swap:{entry.get('entry_id')}",
                            limit=12, max_minutes=context.get("max_minutes"))
+        # A weekend bake isn't offered for a Monday-to-Friday morning (Emily,
+        # 2026-11-09; breakfast_variety.weekend_only).
+        from . import breakfast_variety as _breakfast_variety
+        if _breakfast_variety.is_weekday(entry.get("date")):
+            found = [d for d in found if not _breakfast_variety.weekend_only(d["name"])]
         replaced = _replaced_shape(entry["meal"])
         # A different night, not the same night renamed: another protein and
         # cuisine than the dish going out come first.

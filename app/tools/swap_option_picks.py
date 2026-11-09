@@ -522,6 +522,7 @@ def library_picks(weekly_plan_id: int, entry: dict, tried: list[str], request: s
     the same three), anything matching the typed request's words ahead of
     the rest. Skips what the sheet has already turned down and what was
     eaten in the last two weeks. [] when the library can't be used here."""
+    from . import breakfast_variety as _breakfast_variety
     from . import draft_opener as _draft_opener
     from . import recipe_library as _recipe_library
     import random
@@ -533,9 +534,13 @@ def library_picks(weekly_plan_id: int, entry: dict, tried: list[str], request: s
     week_start = _swap._week_start_of(weekly_plan_id)
     skip |= (_draft_opener.recent_dish_names(week_start, weekly_plan_id) or set()) if week_start else set()
     written = _library_written_keys()
+    # A weekend bake isn't offered for a Monday-to-Friday morning (Emily,
+    # 2026-11-09; breakfast_variety.weekend_only).
+    weekday = _breakfast_variety.is_weekday(entry.get("date"))
     dishes = [d for d in _seed_dishes()
               if d.get("meal") in meals and (d.get("dish_name") or "").strip().lower() not in skip
-              and _dish_key(d.get("dish_name") or "") in written]
+              and _dish_key(d.get("dish_name") or "") in written
+              and not (weekday and d.get("weekend"))]
     random.Random(f"{household_id()}:{entry['entry_id']}").shuffle(dishes)
     wanted = _request_words(request)
 

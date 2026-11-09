@@ -520,23 +520,6 @@
 ]
 },
 {
-"dish_name": "Paniyaram",
-"cuisine": "Indian",
-"main_protein": "vegan",
-"ingredients": [
-"Idli or dosa batter",
-"Onions",
-"Carrots",
-"Ginger",
-"Curry leaves",
-"Cilantro",
-"Mustard seeds",
-"Vegetable oil",
-"Salt",
-"Coconut chutney"
-]
-},
-{
 "dish_name": "Papadzules",
 "cuisine": "Mexican",
 "main_protein": "eggs",

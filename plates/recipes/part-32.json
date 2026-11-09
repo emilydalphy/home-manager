@@ -75,22 +75,6 @@
 ]
 },
 {
-"dish_name": "Bungeoppang",
-"cuisine": "Korean",
-"main_protein": "beans",
-"ingredients": [
-"All-purpose flour",
-"Sweet rice flour (mochiko)",
-"Baking soda",
-"Baking powder",
-"Egg",
-"Sugar",
-"Salt",
-"Vegetable oil",
-"Sweet red bean paste"
-]
-},
-{
 "dish_name": "Cheese and Crackers",
 "cuisine": "American",
 "main_protein": "cheese",
@@ -215,22 +199,6 @@
 "Sugar",
 "Fresh ginger",
 "Light corn syrup"
-]
-},
-{
-"dish_name": "Egg Waffles",
-"cuisine": "Chinese",
-"main_protein": "vegetarian",
-"ingredients": [
-"All-purpose flour",
-"Baking powder",
-"Tapioca starch",
-"Custard powder",
-"Eggs",
-"Sugar",
-"Evaporated milk",
-"Vanilla extract",
-"Vegetable oil"
 ]
 },
 {
@@ -389,21 +357,6 @@
 ]
 },
 {
-"dish_name": "Khanom Krok",
-"cuisine": "Thai",
-"main_protein": "vegetarian",
-"ingredients": [
-"Rice flour",
-"Glutinous rice flour",
-"Coconut milk",
-"Sugar",
-"Salt",
-"Frozen sweet corn",
-"Scallions",
-"Vegetable oil"
-]
-},
-{
 "dish_name": "Kiymali Borek",
 "cuisine": "Turkish",
 "main_protein": "beef",
@@ -524,20 +477,6 @@
 "Black pepper",
 "Cooking spray",
 "Marinara sauce"
-]
-},
-{
-"dish_name": "Murukku",
-"cuisine": "Indian",
-"main_protein": "vegan",
-"ingredients": [
-"Rice flour",
-"Urad dal",
-"Sesame seeds",
-"Carom seeds (ajwain)",
-"Gluten-free asafoetida (hing)",
-"Salt",
-"Vegetable oil"
 ]
 },
 {

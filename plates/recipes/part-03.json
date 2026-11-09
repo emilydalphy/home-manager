@@ -704,20 +704,6 @@
 ]
 },
 {
-"dish_name": "Thai Coconut Pancakes",
-"cuisine": "Thai",
-"main_protein": "vegetarian",
-"ingredients": [
-"Rice flour",
-"Glutinous rice flour",
-"Coconut milk",
-"Sugar",
-"Salt",
-"Green onions",
-"Vegetable oil"
-]
-},
-{
 "dish_name": "Mien Ga",
 "cuisine": "Vietnamese",
 "main_protein": "chicken",

@@ -138,34 +138,6 @@
 30
 ]
 ],
-"Bungeoppang": [
-[
-"pool",
-"#F1E2BE",
-35
-],
-[
-"waffle",
-"#D9993E",
-"#A8641E"
-],
-[
-"mash",
-50,
-50,
-10,
-7,
-"#6B2A2E",
-"#4A1A20"
-],
-[
-"dots",
-"#F6EBCB",
-8,
-1.2,
-28
-]
-],
 "Cheese and Crackers": [
 [
 "well"
@@ -419,35 +391,6 @@
 "#6E9150",
 5,
 26
-]
-],
-"Egg Waffles": [
-[
-"well"
-],
-[
-"block",
-"#D9A04E",
-"#B8742A",
-50,
-50,
-60,
-44
-],
-[
-"rounds",
-"#E8B850",
-"#F8DF98",
-14,
-8,
-18
-],
-[
-"dots",
-"#C98A3A",
-10,
-1.4,
-24
 ]
 ],
 "Empanadillas": [
@@ -777,20 +720,6 @@
 8
 ]
 ],
-"Khanom Krok": [
-[
-"pool",
-"#F3E6C8",
-36
-],
-[
-"cups",
-"#F2C230",
-"#6E9A45",
-"#FBF3DC",
-"#D9A04E"
-]
-],
 "Kiymali Borek": [
 [
 "well"
@@ -1012,25 +941,6 @@
 8,
 "#C9302A",
 "#A32A22"
-]
-],
-"Murukku": [
-[
-"pool",
-"#F3E6C8",
-36
-],
-[
-"spiral",
-"#E3B058",
-"#B8842E"
-],
-[
-"dots",
-"#F4E6C0",
-20,
-1.2,
-24
 ]
 ],
 "Oatmeal Raisin Cookies": [
