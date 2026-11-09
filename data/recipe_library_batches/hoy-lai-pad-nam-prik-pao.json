@@ -1,0 +1,127 @@
+{
+ "dish_name": "Hoy Lai Pad Nam Prik Pao",
+ "cuisine": "Thai",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Clams",
+   "qty": "3 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Nam prik pao (Thai roasted chili paste)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Long red chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice in a strainer. Transfer it to a medium pot with 2 1/4 cups of water, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes and leave the lid on until you serve.",
+  "Scrub the clams under cold running water. Throw out any with a cracked shell, and any open clam that doesn't close when you tap it.",
+  "Fill a big bowl with cold water, stir in the salt, and add the clams. Leave them for 15 minutes while the rice cooks, so they let go of their sand. Lift them out with your hands or a slotted spoon, and leave the sandy water behind.",
+  "Meanwhile, mince the garlic. Slice the chilies thinly and set them aside for the table. Pick the basil leaves off the stems and cut the lime into wedges.",
+  "In a small bowl, stir together the nam prik pao, oyster sauce, fish sauce, sugar and 1/3 cup of water until smooth.",
+  "Heat the oil in a large deep skillet or wide pot that has a lid, over high heat, until it's hot. Add the garlic and stir for 20 to 30 seconds, until fragrant and light gold.",
+  "Pour in the sauce. It will sizzle. Let it bubble for 30 seconds, stirring.",
+  "Add the clams and toss to coat them. Cover and cook for 4 to 5 minutes, shaking the pan once or twice, until the shells have opened. Throw out any that stay shut.",
+  "Take the pan off the heat and add the basil. Toss for a few seconds, until it wilts.",
+  "Taste the sauce. If it's flat, add a splash more fish sauce.",
+  "Serve with the rice and the lime wedges, with the sliced chilies on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version found shows a rating, so this follows Fiona Beckett's Matching Food & Wine recipe (garlic, nam prik pao, fish sauce, sugar, long red chilies, Thai basil, a little water), with the oyster sauce and the lime from the Thai Awesome version. The Thai Awesome page soaks the clams for 30 minutes and the SBS version makes its own chili jam; here the soak is 15 minutes and bought nam prik pao is used to stay near 30 minutes. Amounts are scaled up from 500 g of clams to 3 lb for four. Nam prik pao brands often contain shrimp paste, and a few add nuts, so check the label for the nut-free tag.",
+ "sources": [
+  {
+   "name": "Matching Food & Wine",
+   "title": "Clams Stir-fried with Roasted Chilli Paste",
+   "url": "https://www.matchingfoodandwine.com/news/recipes/clams-stir-fried-with-roasted-chilli-paste/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Thai Awesome",
+   "title": "Hoy Lai Pad Nam Prik Pao: Thai Stir-Fried Clams with Chili Paste",
+   "url": "https://thai-awesome.com/en/recipe/Hoy-Lai-Pad-Nam-Prik-Pao:-Thai-Stir-Fried-Clams-with-Chili-Paste",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "High Heel Gourmet",
+   "title": "Clams in Spicy Thai Chili Jam Sauce and Basil, Hoi Lai Pad Nam Prik Pao",
+   "url": "https://www.highheelgourmet.com/?p=1870",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Stir-fried clams with chilli jam and Thai basil (hoi lay nahm prik pao)",
+   "url": "https://www.sbs.com.au/food/recipe/stir-fried-clams-with-chilli-jam-and-thai-basil-hoi-lay-nahm-prik-pao/t6kgi0acf",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

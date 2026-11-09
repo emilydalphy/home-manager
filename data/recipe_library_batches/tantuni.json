@@ -1,0 +1,113 @@
+{
+ "dish_name": "Tantuni",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Beef top round",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lavash or large flour tortillas",
+   "qty": "6",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sumac",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cayenne pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion small. Chop 1 cup of parsley leaves and 1/2 cup of mint leaves. In a bowl, toss them with 1 tsp of the sumac, 1/2 tsp of the salt and 1 tbsp of juice from the lemon. Set it aside.",
+  "Cut the beef into small pieces, about 1/2 inch. Transfer it to a bowl with 2 tbsp of the oil, the paprika, the remaining 1 tsp of sumac and 3/4 tsp of the salt. Toss until every piece is coated.",
+  "Slice the tomatoes.",
+  "Heat a 12-inch skillet over medium-high heat with 1 tbsp of the oil. Add half the beef in a single layer and cook for 3 minutes, stirring now and then, until it's browned. Transfer it to a plate, add the last 1 tbsp of oil, and cook the other half the same way.",
+  "Return all the beef to the skillet and add 1/3 cup of water. Lay 1 piece of lavash on top of the beef, cover the skillet, and let it steam for 2 minutes. The water should be mostly gone and the beef glossy and tender.",
+  "Take the lavash off the pan and set it aside. Warm the other pieces of lavash in a dry pan or the microwave if they're stiff.",
+  "Taste the beef. If it's flat, add a pinch more salt.",
+  "Lay a lavash flat. Put some of the herb and onion mix, a few tomato slices and a spoonful of the beef in a line across the lower third. Fold in the sides and roll it up tightly. Repeat with the rest.",
+  "Serve with the cayenne in a small bowl on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Marissa Recipes' 30-minute tantuni with diced beef top round (no rating shown), which matches the Mersin street style: small pieces of beef seared in fat, then steamed with a little water under the bread. Simon Says Cook and Turkish Food Travel use ground meat instead; the lemon in the herb mix comes from Simon Says Cook. All three cook in butter, so vegetable oil is used to keep it dairy-free, and the cayenne in the lead goes on the table to keep the base mild. The lead's steaming-lavash step is kept so the bread picks up the juices.",
+ "sources": [
+  {
+   "name": "Marissa Recipes",
+   "title": "Ultimate Turkish Tantuni: Delicious Beef Wrap in 30 Minutes",
+   "url": "https://marissarecipes.com/turkish-tantuni-2/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simon Says Cook",
+   "title": "Turkish Tantuni Wraps",
+   "url": "https://www.simonsayscook.org/home/tantuni-wraps",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Turkish Food Travel",
+   "title": "Turkish Wrap Tantuni & Lavash",
+   "url": "https://www.turkishfoodtravel.com/2020/09/15/turkish-wrap-tantuni-lavash/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

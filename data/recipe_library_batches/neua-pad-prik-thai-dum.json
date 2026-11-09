@@ -1,0 +1,121 @@
+{
+ "dish_name": "Neua Pad Prik Thai Dum",
+ "cuisine": "Thai",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 13,
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1.25 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice in a strainer. Transfer it to a medium pot with 2 1/4 cups of water, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes and leave the lid on until you serve.",
+  "Slice the beef thinly against the grain, about 1/8 inch.",
+  "Crack the egg and keep only the white. The yolk isn't used. In a large bowl, stir together the egg white, cornstarch, 2 tbsp of the oyster sauce and the sesame oil. Add the beef, toss until each slice is coated, and leave it for 15 minutes while you prep.",
+  "Slice the onion, cut the bell peppers into strips, and cut the green onions into 2-inch pieces. Mince the garlic.",
+  "Crack the peppercorns coarsely by pressing them under the bottom of a heavy pan, or use a mortar. In a small bowl, stir together the other 3 tbsp of oyster sauce, the soy sauce and 1/2 cup of water.",
+  "Heat a wok or 12-inch skillet over high heat until it's very hot, then add 1 tbsp of the oil. Add half the beef in a single layer and leave it alone for 30 seconds. Toss for another 30 to 60 seconds, until it's browned and no pink is left, then transfer it to a plate. Repeat with the rest of the beef and another 1 tbsp of oil.",
+  "Turn the heat to medium-high and add the last 1 tbsp of oil, then the garlic and the cracked pepper. Stir for 30 seconds, until you can smell the pepper.",
+  "Add the onion and bell peppers. Cook for 2 minutes, stirring, until they're just starting to soften but still have some bite.",
+  "Pour in the sauce and let it bubble for 1 minute. Return the beef and any juices to the pan, add the green onions, and toss for 1 minute.",
+  "Taste it. If it's flat, add a splash more soy sauce.",
+  "Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Hungry in Thailand's black pepper beef (5 from 5 votes; below the 20-rating bar, so this is a fallback): beef marinated with egg white, cornstarch, oyster sauce and sesame oil, stir-fried with onion and peppers in an oyster sauce and cracked black pepper sauce. Taste of Thailand's version (the Thai name Nua Pad Prik Thai Dum, no ratings) agrees on the pepper and oyster sauce but marinates for 1 to 2 hours; here it is 15 minutes, with the beef seared in two batches, to stay near 30 minutes. Golden Mountain seasoning sauce is replaced with soy sauce, and the amounts are scaled for four. The pepper is moderate; the base stays mild for kids and the grinder can go on the table.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Black Pepper Beef Stir-Fry",
+   "url": "https://hungryinthailand.com/thai-black-pepper-beef-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Thailand",
+   "title": "Thai Black Pepper Beef Stir Fry (Nua Pad Prik Thai Dum)",
+   "url": "https://tasteofthailand.co.uk/thai-black-pepper-beef-stir-fry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

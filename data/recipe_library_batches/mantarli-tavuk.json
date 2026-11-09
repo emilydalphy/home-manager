@@ -1,0 +1,108 @@
+{
+ "dish_name": "Mantarli Tavuk",
+ "cuisine": "Turkish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White button mushrooms",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of long-grain white rice in a strainer. Transfer it to a medium pot with 2 1/4 cups of water and 1/4 tsp of the salt, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes and leave the lid on until you serve.",
+  "Cut the chicken into 3/4-inch pieces and pat them dry. Sprinkle with 1/2 tsp of the salt.",
+  "Chop the peppers into 1/2-inch pieces. Wipe the mushrooms clean and slice them 1/4 inch thick. Grate the tomatoes on the large holes of a box grater and throw out the skins. Mince the garlic.",
+  "Heat the oil in a large skillet over high heat. Add the chicken in a single layer and cook for 5 to 6 minutes, stirring now and then, until it's white all over, with some golden edges, and the liquid it gave off has cooked away.",
+  "Add the peppers and cook for 3 minutes, stirring.",
+  "Add the mushrooms and cook for 6 to 8 minutes, until they've given off their liquid and it has cooked away. Add the garlic for the last 30 seconds.",
+  "Add the tomatoes, the remaining 1/2 tsp of salt, the black pepper, thyme and 1/2 cup of water. Scrape up the browned bits and simmer for 4 to 5 minutes, until the sauce has reduced by about half. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check a thick piece. No thermometer? Cut a piece open: it's done when there's no pink left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Yemek.com's Mantarli Tavuk Sote (4.6 from 158 ratings): diced chicken breast sautéed hot, then peppers, mushrooms and tomato, seasoned with black pepper and thyme. Lezzet and Arda'nin Mutfagi agree on the order and add garlic, which is included. The lead simmers the tomato for 15 minutes; here the tomato is grated and a little water added so it reduces in about 5 minutes and leaves some sauce, to stay near 30 minutes. Plain rice replaces the usual bulgur or pilaf with orzo so the dish stays gluten-free.",
+ "sources": [
+  {
+   "name": "Yemek.com",
+   "title": "Mantarli tavuk sote",
+   "url": "https://yemek.com/tarif/mantarli-tavuk-sote/",
+   "rating": 4.6,
+   "rating_count": 158,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lezzet",
+   "title": "Mantarli Tavuk Sote",
+   "url": "https://www.lezzet.com.tr/yemek-tarifleri/et-yemekleri/tavuk-yemekleri/mantarli-tavuk-sote",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Ardanin Mutfagi",
+   "title": "Mantarli Tavuk Sote",
+   "url": "https://www.ardaninmutfagi.com/yemek-tarifleri/tavuk-yemekleri/mantarli-tavuk-sote",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

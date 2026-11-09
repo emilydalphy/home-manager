@@ -1,0 +1,120 @@
+{
+ "dish_name": "Dana Sote",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1.75 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of long-grain white rice in a strainer. Transfer it to a medium pot with 2 1/4 cups of water and a pinch of salt, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes and leave the lid on until you serve.",
+  "Trim any tough bits off the beef and slice it thinly against the grain into strips about 2 inches long. Sprinkle with 1/2 tsp of the salt.",
+  "Slice the onion. Cut the peppers into strips, dice the tomatoes, and mince the garlic.",
+  "Heat 1 tbsp of the oil in a wok or 12-inch skillet over high heat. Add half the beef in a single layer and leave it alone for 1 minute. Stir and cook for 1 minute, until browned, then transfer it to a plate. Repeat with 1 tbsp of oil and the other half.",
+  "Turn the heat to medium-high and add the last 1 tbsp of oil, then the onion. Cook for 3 minutes, stirring, until it softens.",
+  "Add the peppers and garlic and cook for 2 minutes.",
+  "Add the tomato paste, thyme, black pepper and remaining 1/2 tsp of salt. Stir for 30 seconds, until the paste darkens.",
+  "Add the tomatoes and 2/3 cup of water. Scrape up the browned bits from the bottom of the pan, then return the beef and any juices to the pan. Cover and simmer over medium heat for 10 minutes, until the beef is tender and the sauce has thickened.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the red pepper flakes in a small bowl on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Dana Sote is the beef version of Turkey's et sote. The lead is Cooking Gorgeous's Et Sote (beef strips seared, then onion, peppers, tomato paste and diced tomatoes simmered 10 minutes; 5 from 2 votes, so this is a fallback). Turkish Food & Recipes' Dana Eti Sote and Foodiecara's version are the same dish but cook the beef 40 to 60 minutes before the vegetables, which doesn't fit a quick dinner; Turkey's For Life's version agrees on the vegetables. The lead's optional butter is replaced with olive oil to keep it dairy-free, bulgur pilaf is replaced with rice to keep it gluten-free, and the red pepper flakes go on the table.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Et Sote Recipe - Turkish Beef Tava",
+   "url": "https://cookingorgeous.com/blog/et-sote/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkish Food & Recipes",
+   "title": "Beef Sauté (Dana Eti Sote)",
+   "url": "https://www.turkishfoodandrecipes.com/2008/12/beef-saut-dana-eti-sote.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Turkey's For Life",
+   "title": "Et Sote Recipe - A Turkish Beef Saute In Tomatoes",
+   "url": "https://www.turkeysforlife.com/2011/08/et-sote-beef-saute.html",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

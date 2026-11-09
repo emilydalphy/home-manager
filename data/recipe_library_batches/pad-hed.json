@@ -1,0 +1,93 @@
+{
+ "dish_name": "Pad Hed",
+ "cuisine": "Thai",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Oyster mushrooms",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetarian oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice in a strainer. Transfer it to a medium pot with 2 1/4 cups of water, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes and leave the lid on until you serve.",
+  "Tear the mushrooms into chunky, bite-size pieces, and trim off any tough stem ends. Roughly chop the garlic and pick the basil leaves off the stems.",
+  "Heat the oil in a large wok or skillet over medium-low heat. Add the garlic and cook for about 1 minute, stirring, until it smells good and is just starting to turn gold. Don't let it brown.",
+  "Add the vegetarian oyster sauce, soy sauce and sugar. Stir for about 30 seconds, until the sugar has dissolved and the sauce is bubbling.",
+  "Turn the heat to medium-high and add the mushrooms. Toss to coat them and cook for 3 minutes.",
+  "If the pan looks dry, add 2 tbsp of water at a time, up to about 1/4 cup in all. Keep cooking for 2 minutes, until the mushrooms are tender and there's a little sauce in the pan.",
+  "Take the pan off the heat, add the basil, and toss until it wilts.",
+  "Taste it. If it's flat, add a splash more soy sauce.",
+  "Slice the chilies thinly and put them in a small bowl. Serve with the rice, with the chilies on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Thai Cookbook's Pad Hed Nang Rom (4.5 from 6,358 reader reviews, as shown on the page), a quick garlic, oyster sauce and soy sauce stir-fry of oyster mushrooms finished with sweet basil. Hungry in Thailand's 20-minute Pad Hed uses the same sauce with a little white pepper and green onions. Oyster sauce is swapped for a vegetarian (mushroom) oyster sauce to keep it vegetarian and vegan, and the 6 to 8 chilies in the lead go on the side. Amounts are about doubled for four with rice.",
+ "sources": [
+  {
+   "name": "Thai Cookbook",
+   "title": "Spicy Oyster Mushrooms with Sweet Basil (Pad Hed Nang Rom)",
+   "url": "https://www.thaicookbook.tv/thai-recipes/main-dishes/spicy-stir-fried-oyster-mushrooms/",
+   "rating": 4.5,
+   "rating_count": 6358,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Easy Thai Mushroom Stir-Fry Recipe (Pad Hed)",
+   "url": "https://hungryinthailand.com/thai-mushroom-stir-fry-recipe-pad-hed/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
