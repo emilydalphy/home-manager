@@ -1,0 +1,98 @@
+{
+ "dish_name": "Vegetable Uttapam",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Idli dosa batter",
+   "qty": "1 tub (about 3 cups)",
+   "category": "dairy",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion. Grate the carrot. Dice the bell pepper and tomato small. Finely chop 1 inch of ginger and 2 tbsp of the cilantro. Toss it all together in a bowl with the salt.",
+  "Stir the batter. It should be thick enough to hold a shape when you spread it. Stir in a spoonful or two of water only if it won't spread at all.",
+  "Heat a large nonstick skillet over medium. Wipe it with a little of the oil.",
+  "Ladle about 1/2 cup batter into the skillet and spread it into a thick 5-inch round. Make a second one beside it.",
+  "Scatter about 1/4 cup of the vegetables over each round and press them in lightly. Drizzle a little oil around the edges.",
+  "Cover and cook for 2 to 3 minutes, until the bottom is golden and the top looks set. Flip and cook the other side, uncovered, for 2 minutes.",
+  "Transfer to a plate and repeat with the rest of the batter to make 6 in all.",
+  "Serve warm or at room temperature. For packed lunches, cool them fully and wrap them well. They keep in the fridge for 2 days, and reheat in a dry skillet over medium for 1 to 2 minutes per side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen leads (5 stars from 229) with the thick-batter, vegetable-on-top method and the onion, carrot, pepper, tomato, ginger and cilantro topping. Its batter is soaked, ground and fermented for about 13 hours, which isn't a lunch, so this uses ready-made idli dosa batter as Archana's Kitchen and Jeyashri's Kitchen do. Check the label: most are rice and urad dal only, so they're gluten-free and vegan. Curry leaves and the green chili from Hebbar's are left out to keep it mild.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Vegetable Uttapam",
+   "url": "https://hebbarskitchen.com/vegetable-uttapam-recipe-veg-uttapam/",
+   "rating": 5.0,
+   "rating_count": 229,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Vegetable Uttapam",
+   "url": "https://www.archanaskitchen.com/vegetable-uttapam",
+   "rating": null,
+   "rating_count": 16092,
+   "read": true
+  },
+  {
+   "name": "Jeyashri's Kitchen",
+   "title": "Veg Uttapam Recipe",
+   "url": "https://www.jeyashriskitchen.com/veg-uttapam-recipe-vegetable-uthappam/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

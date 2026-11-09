@@ -1,0 +1,132 @@
+{
+ "dish_name": "Chicken Tikka Wraps",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Curry powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Large flour tortillas",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Mango chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "In a medium bowl, stir 4 tbsp of the yogurt with the curry powder, garam masala, the garlic grated or minced, and 2 tsp grated ginger.",
+  "Cut the chicken into thin strips. Add them to the bowl with 1/2 tsp of the salt and the pepper and toss until coated. Let it sit for 15 minutes while you do the next steps.",
+  "Slice the onion thinly. Shred half the head of lettuce.",
+  "In a small bowl, stir the rest of the yogurt with 1 tsp lime juice, the chaat masala and a pinch of the remaining salt. This is your sauce.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high. Add the onion and cook, stirring now and then, for 4 to 5 minutes, until soft with golden edges. Transfer it to a plate.",
+  "Add the remaining 1 tbsp oil to the same skillet. Add the chicken in a single layer, working in two batches if it's crowded. Leave it alone for 2 minutes, until the underside is browned.",
+  "Flip the strips and cook the other side for 2 to 3 minutes. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Return the onion to the skillet and stir for 30 seconds. Take the skillet off the heat.",
+  "Warm the tortillas one at a time in a dry skillet over medium for about 20 seconds per side, or wrap them in a damp towel and microwave for 30 seconds.",
+  "Spread about 1/2 tbsp mango chutney over each tortilla. Add some lettuce, then the chicken and onion, then 2 tbsp of the yogurt sauce. Fold in the sides and roll up.",
+  "Cut each wrap in half on the diagonal and serve with the rest of the yogurt sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version has the same shape: spiced chicken, a yogurt sauce, lettuce and onion in a soft wrap. No source had 20 ratings (the best two were 5 stars from 1 vote each), so Liana's Kitchen leads for its simple yogurt marinade and short timing. The sauce (lime and chaat masala in yogurt) is from Go Healthy Ever After; the garam masala marinade, onion and mango chutney are from Irish Heart Foundation. Yogurt is the dish, so the dairy-free tag is dropped. Use leftover cooked tikka chicken if you have it: skip the marinade and the chicken steps and warm it with the onion.",
+ "sources": [
+  {
+   "name": "Liana's Kitchen",
+   "title": "Chicken Tikka Wraps",
+   "url": "https://lianaskitchen.co.uk/chicken-tikka-wraps/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Go Healthy Ever After",
+   "title": "Easy Chicken Tikka Wrap",
+   "url": "https://www.gohealthyeverafter.com/?p=30962",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Irish Heart Foundation",
+   "title": "Quick Chicken Tikka Wraps with Greek-Style Yoghurt",
+   "url": "https://irishheart.ie/?p=4495",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

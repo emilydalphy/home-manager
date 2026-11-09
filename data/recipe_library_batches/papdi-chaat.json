@@ -1,0 +1,128 @@
+{
+ "dish_name": "Papdi Chaat",
+ "cuisine": "Indian",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Papdi",
+   "qty": "1 pack (about 36 pieces)",
+   "category": "pantry",
+   "cook_qty": "36"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Canned chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Tamarind chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Pomegranate arils",
+   "qty": "1 small container",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sev",
+   "qty": "1 bag",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1/2-inch cubes. Transfer them to a pot, cover with cold water and bring to a boil over high heat. Reduce to a simmer and cook for 6 to 8 minutes, until a knife slides in. Drain and let them cool.",
+  "Meanwhile, drain and rinse the chickpeas.",
+  "In a medium bowl, whisk the yogurt with 1 1/2 tsp sugar until smooth. Stir in 1 to 2 tbsp cold water until it's thick but pourable. Chill it until serving.",
+  "In a small bowl, mix the cumin, chaat masala and black salt. Chop 3 tbsp of the cilantro.",
+  "Lay 9 papdi on each of four plates, slightly overlapping.",
+  "Top each plate with some of the chickpeas and potato cubes.",
+  "Spoon the yogurt over each plate, then sprinkle with the spice mix.",
+  "Drizzle 2 tbsp green chutney, then 2 tbsp tamarind chutney over each plate.",
+  "Top with the pomegranate, a handful of sev and the cilantro. Serve right away, with the chili powder at the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on the layers: crisp papdi, boiled potato and chickpeas, sweetened yogurt, green and tamarind chutneys, chaat masala, then sev and pomegranate. No version had 20 ratings (the best were 5 stars from 2 votes), so Cook With Manali leads as the trusted cook with the dish. Her recipe says it makes two plates, so amounts are doubled to cover four. Papdi are bought, so assemble at the last minute or they go soft.",
+ "sources": [
+  {
+   "name": "Cook With Manali",
+   "title": "Papdi Chaat",
+   "url": "https://www.cookwithmanali.com/papdi-chaat/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "JCooking Odyssey",
+   "title": "Papdi Chaat (Papri Chaat)",
+   "url": "https://www.jcookingodyssey.com/2019/07/papdi-chaat.html",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "The Belly Rules the Mind",
+   "title": "Papdi Chaat",
+   "url": "https://thebellyrulesthemind.net/papdi-chaat-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

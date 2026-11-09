@@ -1,0 +1,92 @@
+{
+ "dish_name": "Kachumber Salad",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Persian cucumbers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the cucumbers and tomatoes into small 1/2-inch cubes. If the tomatoes are very juicy, scoop out the seeds first.",
+  "Finely chop the onion. Transfer the cucumber, tomato and onion to a large bowl.",
+  "Chop 1/4 cup of the cilantro and add it to the bowl.",
+  "Mince the green chili and put it in a small bowl for the table.",
+  "Just before serving, add the juice of the lemon (that should be about 2 tbsp), the salt, cumin, chaat masala and pepper. Toss well.",
+  "Serve right away with the minced chili on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources chop cucumber, tomato and onion and add lemon, chaat masala or cumin, and salt at the very end so the vegetables don't turn watery. Hebbar's Kitchen leads (5 stars from 84, tied with Swasthi's 4.98 from 38 at one decimal, so most ratings wins) and is tiny, so the amounts are scaled to four from Swasthi's. The carrot and cabbage in Hebbar's are left out; the chili moves to the side so the base stays mild.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Kachumber Salad Recipe",
+   "url": "https://hebbarskitchen.com/kachumber-salad-recipe-cucumber-salad/",
+   "rating": 5.0,
+   "rating_count": 84,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Kachumber Salad",
+   "url": "https://www.indianhealthyrecipes.com/?p=81681",
+   "rating": 4.98,
+   "rating_count": 38,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

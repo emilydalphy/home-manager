@@ -1,0 +1,115 @@
+{
+ "dish_name": "Bombay Sandwich",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Potatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Beets",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Set the butter out to soften. Fill two medium pots with water, add 1/2 tsp salt to each and bring them to a boil over high heat.",
+  "Meanwhile, peel the potatoes and the beet and slice both into 1/4-inch rounds.",
+  "Add the potatoes to one pot and the beet to the other. Keep them apart so the potatoes don't turn pink. Cook the potatoes for 8 to 10 minutes, until a knife slides in with no resistance. Cook the beet for 12 to 15 minutes, until tender. Drain both and spread them out to cool.",
+  "While they cook, make the chutney. Tear 1 slice of the bread into a blender. Add 1 1/2 cups cilantro leaves (most of the bunch), the green chili, the garlic, 1/2 tsp of the cumin, 1 tbsp lemon juice, 2 tbsp water and 1/4 tsp salt. Blend to a thick, spreadable paste. Add a splash more water if the blender stalls.",
+  "Slice the tomato, onion and cucumber into thin rounds.",
+  "In a small bowl, mix the chaat masala with the remaining 1/2 tsp cumin.",
+  "Cut the crusts off 8 slices of bread. Butter one side of each slice with 1/2 tbsp butter, then spread 1 tbsp of the chutney over the butter.",
+  "To build each sandwich, lay potato slices on one chutney slice and sprinkle with some of the spice mix. Add the onion, cucumber, tomato and beet, with another sprinkle of the spice mix on top. Close with a second slice, chutney side down.",
+  "Cut each sandwich into triangles and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources layer buttered, chutney-spread bread with boiled potato, beet, cucumber, tomato and onion, seasoned with sandwich masala or chaat masala. Swasthi's (5 stars from 21) leads; Ministry of Curry (4.6 from 27) adds a ketchup and grilled version that isn't used here. Sandwich masala is hard to find, so chaat masala and cumin stand in, as Swasthi's suggests. The chutney uses bread instead of peanuts to keep it nut-free.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Bombay Sandwich Recipe",
+   "url": "https://www.indianhealthyrecipes.com/bombay-veg-sandwich-recipe/",
+   "rating": 5.0,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ministry of Curry",
+   "title": "Authentic Bombay Sandwich",
+   "url": "https://ministryofcurry.com/bombay-sandwich/",
+   "rating": 4.63,
+   "rating_count": 27,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

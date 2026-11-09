@@ -1,0 +1,101 @@
+{
+ "dish_name": "Sprouts Chaat",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Moong sprouts",
+   "qty": "1 pack (about 10 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Pomegranate arils",
+   "qty": "1 small container",
+   "category": "produce",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a medium pot of water to a boil over high heat. Add the sprouts and cook for 2 minutes. Drain them in a colander, rinse under cold water, then shake off the water and pat them dry with a clean towel.",
+  "Meanwhile, finely chop the tomato and the onion. Grate the carrot. Chop 3 tbsp of the cilantro.",
+  "Mince the green chili and put it in a small bowl for the table.",
+  "Transfer the sprouts, tomato, onion, carrot and cilantro to a large bowl.",
+  "Just before serving, add the juice of the lemon, 3/4 tsp of the chaat masala and the salt. Toss well.",
+  "Spoon into four bowls and top with the pomegranate and the remaining 1/4 tsp chaat masala. Serve right away with the minced chili on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 5,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version uses sprouted moong with onion, tomato, cilantro, lemon and chaat masala, finished right before serving. All of them cook the sprouts briefly (steamed 5 to 6 minutes or blanched), so this isn't a no-cook dish. Archana's Kitchen leads for its 11,359 ratings, but its page shows no star value, so it counts as a fallback. Its mint chutney has almonds, so it's left out; carrot is from Yummy Tummy Aarthi.",
+ "sources": [
+  {
+   "name": "Archana's Kitchen",
+   "title": "Sprouted Moong Chaat Recipe",
+   "url": "https://archanaskitchen.com/sprouted-moong-chaat-recipe",
+   "rating": null,
+   "rating_count": 11359,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yummy Tummy",
+   "title": "Moong Sprouts Chaat",
+   "url": "https://www.yummytummyaarthi.com/moong-sprouts-chaat-recipe-sprouts/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Cook With Kushi",
+   "title": "Sprouted Moong Chaat",
+   "url": "https://www.cookwithkushi.com/sprouted-moong-chaat/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,108 @@
+{
+ "dish_name": "Aloo Chaat",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Yellow potatoes",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Pomegranate arils",
+   "qty": "1 small container",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Green chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Tamarind chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sev",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 3/4-inch cubes. Transfer them to a pot, cover with cold water, add 1/2 tsp of the salt and bring to a boil over high heat. Reduce to a steady simmer and cook for 6 to 8 minutes, until a knife slides in but the cubes still hold their shape.",
+  "Meanwhile, finely chop 1/4 cup of the onion and chop 2 tbsp of the cilantro.",
+  "Drain the potatoes and spread them on a clean towel for 2 minutes. Dry potatoes crisp up.",
+  "Heat the oil in a large skillet over medium-high. Add the potatoes in a single layer, working in two batches if they're crowded.",
+  "Cook them without stirring for 3 minutes, until golden underneath. Then turn them and cook, turning every minute or so, for 4 to 5 minutes, until golden on all sides.",
+  "Transfer the potatoes to a large bowl. Off the heat, add the onion, chili powder, cumin, chaat masala and the remaining 1/2 tsp salt. Toss gently.",
+  "Add the green chutney and the tamarind chutney and toss gently so the cubes stay whole.",
+  "Divide among four plates. Top with the sev, cilantro and pomegranate and serve warm. If you'd like to get ahead, boil and dry the potatoes the day before and keep them in the fridge."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree: boil the potatoes, fry them until golden, toss with chaat masala, cumin, chili and chutneys, and top with sev, cilantro and pomegranate. Hebbar's Kitchen leads (4.99 from 79; Swasthi's is 4.99 from 76) and is followed for the chutney pairing. Potatoes are boiled in cubes instead of pressure cooked, to keep it on the stovetop, and the curd is left out for vegan. The jarred chutneys are vegan by their usual recipes, so check the labels, including for nuts.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Aloo Chaat Recipe",
+   "url": "https://hebbarskitchen.com/spicy-aloo-chaat-recipe-potato-chaat/",
+   "rating": 4.99,
+   "rating_count": 79,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Aloo Chaat Recipe (Potato Chaat)",
+   "url": "https://indianhealthyrecipes.com/aloo-chaat-recipe/",
+   "rating": 4.99,
+   "rating_count": 76,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

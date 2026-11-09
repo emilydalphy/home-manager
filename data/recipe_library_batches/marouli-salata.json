@@ -1,0 +1,85 @@
+{
+ "dish_name": "Marouli Salata",
+ "cuisine": "Greek",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Romaine hearts",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the stems off the romaine hearts and slice the leaves into thin ribbons. Rinse them in cold water, then dry them well in a salad spinner or between clean towels.",
+  "Thinly slice 3 of the scallions, white and green parts. Chop about 1/4 cup of the dill.",
+  "Transfer the romaine, scallions and dill to a large bowl.",
+  "In a small bowl or jar, whisk together the olive oil, the juice of the lemon (that should be about 3 tbsp), the salt and the pepper until it looks creamy.",
+  "Pour the dressing over the salad just before you eat and toss with tongs until every leaf is shiny. Wet leaves go limp, so don't dress it early.",
+  "Serve right away as a side or as a light lunch."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three sources agree on the build: sliced romaine, scallions, dill, olive oil and lemon, dressed at the last minute. They all add feta (4 to 6 oz); it's left out here because the list asks for vegan, and the dish is traditionally just greens, dill and dressing. Salt is raised from the sources' 1/4 tsp to 1/2 tsp to make up for the feta. No source had 20 ratings (best was 19), and RecipeTin Eats has no version, so the 5.0 from 19 version leads.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Maroulosalata (Greek Lettuce Salad)",
+   "url": "https://natashaskitchen.com/maroulosalata-greek-lettuce-salad/",
+   "rating": 5.0,
+   "rating_count": 19,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Daring Gourmet",
+   "title": "Maroulosalata (Greek Lettuce Salad)",
+   "url": "https://www.daringgourmet.com/maroulosalata",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true
+  },
+  {
+   "name": "The Modern Nonna",
+   "title": "Maroulosalata (Greek Lettuce Salad)",
+   "url": "https://themodernnonna.com/maroulosalata-greek-lettuce-salad/",
+   "rating": 4.75,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
