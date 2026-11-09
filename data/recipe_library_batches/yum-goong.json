@@ -1,0 +1,112 @@
+{
+ "dish_name": "Yum Goong",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Rice vermicelli noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "1 stalk",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili garlic sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil and stir in the 1 tsp salt.",
+  "Juice the 3 limes into a large bowl. That should be about 5 tbsp. Stir in the fish sauce and sugar until the sugar dissolves. Taste it. It should be quite sour, with some salt and a little sweetness.",
+  "Thinly slice the shallot. Trim the lemongrass, peel off the tough outer layers, slice the bottom 4 inches very thin and chop it fine. Chop 1 cup of cilantro leaves and 1/2 cup of mint leaves.",
+  "Take the pot off the heat and add the shrimp. Poach them for 2 to 3 minutes, until they are pink and just cooked through. Don't let them go longer or they turn rubbery.",
+  "Lift the shrimp out with a slotted spoon and transfer them into the dressing while they're still warm. Toss to coat.",
+  "Bring the same water back to a boil. Add the noodles and cook them for 3 to 4 minutes, or as the package says. Drain, rinse under cold water and divide among four bowls.",
+  "Add the shallot, lemongrass, cilantro and mint to the shrimp and toss again. Taste it. If it's flat, add a splash more fish sauce.",
+  "Spoon the shrimp salad and its dressing over the noodles. Serve with the chili garlic sauce on the table for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Thai shrimp salad sold as pla goong or yum goong is the same dish: shrimp poached for a couple of minutes and tossed warm in a lime, fish sauce and sugar dressing, with shallot and herbs. Simply Suwanee leads (4.9 from 14 votes, called Pla Goong) and serves it with jasmine rice or rice noodles; Hungry in Thailand adds lemongrass, and Recipezazz, which names the dish Yum Goong, poaches the shrimp in lemongrass water. Changed for the list: the peanuts are left out to keep it nut-free, the chili paste moves to the table, and rice noodles cook in the poaching water to keep it quick. Under 20 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Simply Suwanee",
+   "title": "Authentic Spicy Thai Shrimp Salad (Pla Goong)",
+   "url": "https://www.simplysuwanee.com/thai-shrimp-salad/",
+   "rating": 4.93,
+   "rating_count": 14,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Pla Goong Salad (Authentic Thai Shrimp Salad Recipe)",
+   "url": "https://hungryinthailand.com/pla-goong-salad/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipezazz",
+   "title": "Thai Steamed Shrimp Salad (Yum Goong)",
+   "url": "https://www.recipezazz.com/recipe/thai-steamed-shrimp-salad-yum-goong-24532",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

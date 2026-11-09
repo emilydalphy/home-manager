@@ -1,0 +1,106 @@
+{
+ "dish_name": "Yum Mamuang",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {
+   "item": "Medium shrimp",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green mango",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted unsalted peanuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, squeeze in the juice of the lime. That should be about 3 tbsp. Whisk in the fish sauce and sugar until the sugar dissolves.",
+  "Add 3 tbsp water and the shrimp to a large skillet and bring it to a boil over high heat. Stir for 2 to 3 minutes, until the shrimp are pink and opaque. Drain them and let them cool for 2 minutes.",
+  "Meanwhile, peel the mango with a vegetable peeler. Cut the flesh off the pit in wide slabs and shred it with the large holes of a box grater or a julienne peeler. That should be about 2 cups.",
+  "Thinly slice the shallots. Chop 2 tbsp of cilantro leaves and 2 tbsp of mint leaves, and roughly chop the peanuts.",
+  "Add the shrimp, mango, shallots, cilantro, mint and half the peanuts to the dressing and toss until everything is coated.",
+  "Taste it. If it's flat, add a splash more fish sauce.",
+  "Scatter the rest of the peanuts over the top and serve right away, with the pepper flakes on the table for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hungry in Thailand leads (5 from 4 votes): shredded green mango tossed with shallot, peanuts and a fish sauce, lime and sugar dressing, served right away because the dressing softens the mango. The shrimp are taken from Pranee's Thai Kitchen, which poaches 16 prawns and tosses them with mango, shallot and herbs; Pranee's also uses more lime and a bit less sugar. Dried shrimp and crispy fish skin are left out. The chili is left on the side. Under 20 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Authentic Thai Mango Salad Recipe (Yum Mamuang)",
+   "url": "https://hungryinthailand.com/thai-mango-salad/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pranee's Thai Kitchen",
+   "title": "Thai Green Mango Salad with Prawn (Yum Mamuang Goong)",
+   "url": "https://praneesthaikitchen.com/2010/07/01/thai-green-mango-salad-recipe-yum-mamuang-goong/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Network",
+   "title": "Green Mango and Papaya Salad in Classic Thai Dressing (Yam Mamuang)",
+   "url": "https://www.foodnetwork.com/recipes/green-mango-and-papaya-salad-in-classic-thai-dressing-yam-mamuang-recipe-1917360",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

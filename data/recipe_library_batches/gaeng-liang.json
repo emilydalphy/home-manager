@@ -1,0 +1,122 @@
+{
+ "dish_name": "Gaeng Liang",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Vegetable broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free miso",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butternut squash",
+   "qty": "1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Oyster mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai red chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice, then add it to a small pot with 1 1/2 cups water. Bring to a boil, cover and cook over low heat for 15 minutes. Leave it covered off the heat until the soup is ready.",
+  "In a blender, blend 1 cup of the broth with the shallots, miso and white pepper until smooth.",
+  "Pour the paste into a medium pot with the remaining 3 cups broth. Add the soy sauce and salt and bring to a rapid boil over high heat.",
+  "Meanwhile, cut the squash into 1 1/2 inch pieces and the tofu into 1 inch cubes. Cut the zucchini into 1 1/2 inch chunks and tear the mushrooms into bite-sized pieces.",
+  "Add the squash and tofu to the boiling broth. Boil for 8 minutes, until a fork slides into the squash with a little resistance.",
+  "Add the zucchini and mushrooms and cook for 5 minutes, until the zucchini is tender.",
+  "Take the pot off the heat and stir in the basil leaves from the bunch. Taste it. If it's flat, add a pinch more salt.",
+  "Thinly slice the chilies and put them in a small bowl for the table. Serve the soup with the rice and the sliced chilies.",
+  "To pack it for lunch, keep the soup and the rice in separate containers in the fridge for up to 3 days. Reheat the soup on the stove until it's steaming."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Messy Vegan Cook's vegan version leads: a blended shallot, soybean paste and pepper base boiled with pumpkin and tofu first, then courgette and mushrooms, with lemon basil stirred in off the heat. Real Thai Recipes and Thaifooding make the same peppery paste with miso or bean paste and add gourds, which are hard to find here. Changed for the list: gluten-free miso stands in for the shrimp paste (the page names doenjang or Thai fermented soybean paste), gluten-free soy sauce replaces thin soy sauce, Thai basil replaces lemon basil, and the fingerroot and chilies are left out of the pot, with the chilies on the table. No page has ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Messy Vegan Cook",
+   "title": "Vegan Gaeng Liang (Thai Vegetable Soup with Lemon Basil)",
+   "url": "https://messyvegancook.com/thai-vegan-kaeng-liang-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Real Thai Recipes",
+   "title": "Gaeng Liang (Vegetable Soup With Herbs)",
+   "url": "https://www.realthairecipes.com/recipes/vegetable-soup-with-herbs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Thaifooding",
+   "title": "Gaeng Liang (Plant-Based Thai Vegetable Soup)",
+   "url": "https://thaifooding.com/2020/07/18/gaeng-liang/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

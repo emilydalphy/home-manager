@@ -1,0 +1,136 @@
+{
+ "dish_name": "Yum Som O",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Pomelo",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Medium shrimp",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Unsweetened coconut flakes",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Roasted unsalted peanuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Roasted chili paste (nam prik pao)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the top and bottom off the pomelo and score the thick skin in 6 places from top to bottom. Peel it away, along with the white pith.",
+  "Separate the segments, peel off the membranes and break the flesh into bite-sized pieces. That should be about 3 cups.",
+  "Heat a dry skillet over medium-low heat. Add the coconut flakes and stir for 3 to 4 minutes, until golden brown. Watch them closely, they burn fast. Transfer them to a plate.",
+  "Thinly slice the shallot and finely chop the garlic. Heat the oil in a small pot over medium heat. Fry the garlic for 1 to 2 minutes until pale gold, and transfer it with a slotted spoon onto a paper towel.",
+  "Fry the shallot in the same oil for 4 to 5 minutes, stirring often, until golden. Transfer it onto the paper towel.",
+  "Bring a pot of water to a boil with the salt. Add the shrimp and cook them for 1 to 2 minutes, until pink and opaque. Drain them well.",
+  "In a small bowl, juice both limes. That should be about 1/4 cup. Whisk in the fish sauce, sugar, coconut milk and chili paste until the sugar dissolves.",
+  "In a large bowl, combine the pomelo, shrimp, peanuts, fried garlic, fried shallot, half the toasted coconut and 2 tbsp of chopped cilantro leaves. Pour in the dressing and toss gently.",
+  "Taste it. If it's flat, add a splash more fish sauce. Scatter the rest of the coconut over the top and serve right away, with the pepper flakes on the table for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Rachel Cooks Thai leads (5 from 5 votes): pomelo with shrimp, toasted coconut and peanuts, fried garlic and shallot, and a dressing of coconut milk, roasted chili paste, fish sauce, palm sugar and lime. Tasty Thais dresses it with a cooked fish sauce, tamarind and sugar sauce, and Whaley Cooks uses a raw lime, fish sauce and sugar dressing with herbs. Changed for the list: shrimp amount raised to make it a lunch, the dressing raised to match, brown sugar replaces palm sugar, and shallot fries in about 5 minutes instead of the 20 to 30 the lead gives. The chili is left on the side, and nam prik pao labels should be checked for gluten. Under 20 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Rachel Cooks Thai",
+   "title": "Pomelo Salad (Yum Som-O)",
+   "url": "https://rachelcooksthai.com/pomelo-salad/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tasty Thais",
+   "title": "Thai Pomelo Salad with Savory Sauce (Yum Som O)",
+   "url": "https://tastythais.com/thai-pomelo-salad/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Whaley Cooks",
+   "title": "Yum Som O (Thai Pomelo Salad with Shrimp)",
+   "url": "https://whaleycooks.com/yum-som-o-thai-pomelo-salad-with-shrimp-bright-juicy-and-refreshing/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

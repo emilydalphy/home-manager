@@ -1,0 +1,117 @@
+{
+ "dish_name": "Yum Tuna",
+ "cuisine": "Thai",
+ "main_protein": "fish",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Canned tuna in water",
+   "qty": "3 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "1 stalk",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Transfer the tuna to a fine sieve over the sink. Press down with the back of a spoon until it stops dripping, then transfer it to a large bowl and flake it with a fork.",
+  "Trim the lemongrass and peel off the tough outer layers. Slice the bottom 4 inches very thin, then chop it fine. That should be about 2 tbsp.",
+  "Thinly slice the shallots and the green onions. Pick the leaves from half the cilantro bunch and half the mint bunch, and tear the mint into small pieces.",
+  "Juice the 2 limes into a small bowl. That should be about 1/4 cup. Stir in the 2 tbsp fish sauce and the 1 1/2 tsp sugar until the sugar dissolves.",
+  "Pour the dressing over the tuna. Add the shallots, lemongrass and green onions and toss.",
+  "Add the cilantro and mint and toss lightly. Taste it. If it's flat, add a splash more fish sauce.",
+  "Pull the lettuce leaves apart and slice the cucumber.",
+  "Spoon the tuna salad into the lettuce leaves and serve with the cucumber slices. Put the red pepper flakes on the table for anyone who wants heat.",
+  "To pack it for lunch, keep the tuna salad in a covered container in the fridge for up to 2 days and pack the lettuce and cucumber separately. Don't freeze it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hungry in Thailand, Marion's Kitchen and Riverside Thai Cooking all dress drained canned tuna with fish sauce, lime and a little sugar, then add shallot and herbs. Hungry in Thailand adds lemongrass and Marion's adds mint with lettuce and cucumber to serve; Marion's uses a stronger dressing, so this one sits between the two. The chili is left on the side as pepper flakes so the base stays mild. Every page has only 1 rating, so the lead is a fallback.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Tuna Salad Recipe (Easy Yum Tuna)",
+   "url": "https://hungryinthailand.com/thai-tuna-salad/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Marion's Kitchen",
+   "title": "Spicy Thai-style Tuna Salad",
+   "url": "https://www.marionskitchen.com/spicy-thai-style-tuna-salad/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Riverside Thai Cooking",
+   "title": "Yam Tunah (Thai-Style Tuna Salad)",
+   "url": "https://www.riversidethaicooking.com/quick-thai-dishes/thai-style-tuna-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

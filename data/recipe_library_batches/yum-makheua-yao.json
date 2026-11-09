@@ -1,0 +1,98 @@
+{
+ "dish_name": "Yum Makheua Yao",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Japanese eggplants",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Set an oven rack about 6 inches from the broiler and heat the broiler to high. Line a rimmed baking sheet with foil.",
+  "Prick each eggplant a few times with a fork and put them on the sheet. Broil for 12 to 15 minutes, turning them every 4 minutes, until the skin is blackened and the eggplants have collapsed. A knife should slide in with no resistance.",
+  "Meanwhile, bring a small pot of water to a boil. Lower in the eggs and boil them for 7 minutes for soft yolks.",
+  "Transfer the eggs into a bowl of cold water for 3 minutes, then peel them.",
+  "Thinly slice the shallots. Pick 1/2 cup of cilantro leaves from the bunch and chop them roughly.",
+  "Squeeze the lime into a bowl. That should be about 2 tbsp. Whisk in the soy sauce, the sugar and 1/2 tsp of the pepper flakes until the sugar dissolves.",
+  "Transfer the hot eggplants to a bowl and cover it with a plate for 5 minutes. They will steam and the skin will loosen.",
+  "Peel off the skin, leaving a few charred bits for the smoky flavor. Cut the flesh into bite-sized pieces. That should be about 2 cups.",
+  "Add the eggplant, shallots and cilantro to the dressing and toss gently. Taste it. If it's flat, add a pinch more sugar.",
+  "Halve the eggs and set them next to the salad. Serve slightly warm, with the rest of the pepper flakes on the table for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Rachel Cooks Thai leads: charred whole eggplant, peeled, tossed with shallot, cilantro and a fish sauce, lime and sugar dressing, with soft-boiled eggs alongside. Thaifooding uses light soy sauce and mint instead of fish sauce, and Andy Ricker's Food Network version warms the dressing and tops it with fried garlic and shallots. Changed for the list: the fish sauce and dried shrimp are replaced with gluten-free soy sauce so the dish stays vegetarian and gluten-free. The chili is left on the side. The lead has only 2 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Rachel Cooks Thai",
+   "title": "Thai Grilled Eggplant Salad (Yum Makeua Yao)",
+   "url": "https://rachelcooksthai.com/grilled-eggplant-salad/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Thaifooding",
+   "title": "Yum Makeua Yao",
+   "url": "https://thaifooding.com/2020/04/09/yum-makeua-yao/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Network",
+   "title": "Grilled Eggplant Salad (Yam Makheua Yao)",
+   "url": "https://www.foodnetwork.com/fnk/recipes/grilled-eggplant-salad-yam-makheua-yao-7151557",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

@@ -1,0 +1,178 @@
+{
+ "dish_name": "Kuay Teow Reua",
+ "cuisine": "Thai",
+ "main_protein": "beef",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Beef broth",
+   "qty": "8 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef sirloin",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Rice noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "1 stalk",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Star anise",
+   "qty": "2 whole",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Thai red chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Thinly slice 3 of the garlic cloves. Heat the oil in a large pot over medium heat and fry the garlic for 1 to 2 minutes, until pale gold. Transfer it with a slotted spoon into a small bowl and leave the oil in the pot.",
+  "Add the star anise, cinnamon stick, cloves, coriander seeds and peppercorns to the oil. Stir for 30 seconds, until they smell toasty.",
+  "Smash the remaining 2 garlic cloves and the ginger with the flat of a knife. Smash the lemongrass and cut it into 3 pieces. Cut the stems off the cilantro and keep the leaves for later.",
+  "Add the broth, smashed garlic, ginger, lemongrass, cilantro stems, fish sauce, soy sauce, dark soy sauce and sugar to the pot. Bring to a boil, then lower the heat, cover with the lid slightly open and simmer for 25 minutes.",
+  "Meanwhile, put the beef in the freezer for 15 minutes so it is easy to slice. Then slice it across the grain as thin as you can and spread it on a plate.",
+  "Slice the chilies thin and stir them into a small bowl with the vinegar for the table. Thinly slice 3 of the green onions and chop 1/4 cup of the cilantro leaves.",
+  "Cook the noodles in a separate pot of boiling water as the package says, adding the bean sprouts for the last 10 seconds. Drain and divide among four bowls.",
+  "Pour the broth through a strainer into a clean pot and throw away the spices and aromatics. Taste it. If it's flat, add a splash more fish sauce.",
+  "Bring the strained broth to a simmer. Add the beef, stir, and cook for 1 minute, until no pink is left.",
+  "Lift the beef out with a slotted spoon and divide it among the bowls. Ladle the hot broth over, then top with the fried garlic, green onions and cilantro leaves.",
+  "Serve with the lime cut into wedges, the red pepper flakes and the chilies in vinegar on the table.",
+  "To store it, keep the broth, the noodles and the toppings in separate containers in the fridge for up to 3 days. Reheat the broth until it simmers, then cook the beef in it and assemble the bowls fresh."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hungry in Thailand leads (5 from 2 votes): a spiced, dark broth seasoned with light and dark soy, sugar and garlic, poured over rice noodles and bean sprouts, with fried garlic, green onion and cilantro and a chili, sugar and vinegar seasoning at the table. The beef broth, the 1-minute poach of thin beef and the whole-spice list come from Thai Food Guide, Ajinomoto and Cuisine Atlas, which all cook the beef in the simmering broth; Hungry in Thailand uses pork bones and an hour of simmering. Changed for the list: store-bought broth cuts the simmer to 25 minutes, blood, pandan and morning glory are left out, and the broth can be made ahead and packed. Honest total is 60 minutes, over the 30 minute target unless the broth is made ahead. Under 20 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Boat Noodles Recipe (Kuay Teow Reua)",
+   "url": "https://hungryinthailand.com/thai-boat-noodles-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Thai Food Guide",
+   "title": "Boat Noodles (Kuay Teow Ruea)",
+   "url": "https://www.thaifoodguide.com/recipes/boat-noodles",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cuisine Atlas",
+   "title": "Thai Boat Noodles (Kuay Teow Rua)",
+   "url": "https://cuisineatlas.com/asian/thailand/thai-boat-noodles-kuay-teow-rua/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

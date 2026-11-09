@@ -1,0 +1,161 @@
+{
+ "dish_name": "Khao Kha Moo",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 195,
+ "ingredients": [
+  {
+   "item": "Pork hocks",
+   "qty": "3 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Star anise",
+   "qty": "3 whole",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "1 small pack",
+   "category": "pantry",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Chinese five spice powder",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 1/2 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chinese broccoli",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Pickled mustard greens",
+   "qty": "1 small pack",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Thai red chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  }
+ ],
+ "instructions": [
+  "The day before, or at least 3 hours ahead: pat the pork hocks dry. Heat the oil in a large heavy pot over medium-high heat. Brown the hocks on all sides for about 8 minutes, until deep golden. Stand back a little, they will spatter. Transfer them to a plate.",
+  "Finely chop 3 of the garlic cloves with the stems from the cilantro and the peppercorns, then pound or mash them into a rough paste. Keep the cilantro leaves for the table.",
+  "Lower the heat to medium. Add the paste, cinnamon sticks, star anise and shiitake to the same pot and stir for 1 minute, until it smells fragrant.",
+  "Add 1/4 cup of the brown sugar and stir for 1 minute, until it begins to melt and darken.",
+  "Add 6 cups water, the soy sauce, dark soy sauce, five spice powder and salt and stir. Return the pork and any juices to the pot and bring to a boil.",
+  "Lower the heat, cover and cook for 2 1/2 hours, turning the pork once or twice, until the meat is tender and a fork slides into it with no resistance. The skin should be soft.",
+  "About 45 minutes before the pork is done, cover the eggs with cold water in a small pot and bring to a boil. Boil for 10 minutes, then cool them in cold water and peel them.",
+  "Add the eggs to the braising liquid for the last 30 minutes.",
+  "If the pork was cooked earlier, reheat it in its liquid over low heat, covered, for 15 minutes, until hot.",
+  "Meanwhile, rinse the rice, add it to a pot with 2 1/4 cups water and bring to a boil. Cover and cook over low heat for 15 minutes, then leave it covered off the heat for 5 minutes.",
+  "Make the chili vinegar sauce: finely chop the chilies and the remaining 2 garlic cloves. Stir them in a small bowl with the rice vinegar, the remaining 1/2 tsp brown sugar and a pinch of salt.",
+  "Cut the Chinese broccoli into 2 inch pieces and blanch them in boiling water for 2 minutes, until just tender. Drain. Slice the pickled mustard greens.",
+  "Slice the pork off the bone. Spoon the rice into bowls and top with the pork, a halved egg, the broccoli and the mustard greens. Spoon some of the braising liquid over the rice.",
+  "Serve with the chili vinegar sauce and a few cilantro leaves. Keep leftover pork in its liquid in the fridge for up to 3 days, or in the freezer for up to 3 months, and reheat it gently as in the reheat step above."
+ ],
+ "advance_prep_notes": "Braise the pork the day before or at least 3 hours ahead. It keeps and tastes better the next day.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8
+ ],
+ "method_notes": "Hungry in Thailand leads (5 from 4 votes): pork leg browned, then braised for hours in a paste of garlic, cilantro root and peppercorns with cinnamon, star anise, shiitake, five spice, light and dark soy and palm sugar. Asian Inspirations braises for 1.5 to 2 hours, adds galangal and serves a chili vinegar sauce, which is used here. Changed for the list: pork hocks stand in for the pork leg, brown sugar replaces palm sugar, and the greens and pickled mustard come from Asian Inspirations. Under 20 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Khao Kha Moo Recipe (Thai Braised Pork Leg)",
+   "url": "https://hungryinthailand.com/khao-kha-moo/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Asian Inspirations",
+   "title": "Thai Braised Pork Rice (Khao Kha Moo)",
+   "url": "https://asianinspirations.com.au/recipes/thai-braised-pork-rice-khao-kha-moo/",
+   "rating": 4.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}
