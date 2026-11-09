@@ -1,0 +1,123 @@
+{
+ "dish_name": "Bang Bang Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "3 slices"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 cut in half, plus 3 tbsp finely chopped"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1, cut into matchsticks"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Chinese black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ground Sichuan peppercorn",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp, for the table"
+  }
+ ],
+ "instructions": [
+  "Put the chicken in a pot with the ginger and the halved scallion. Add 3 cups of cold water, enough to just cover the chicken, and set it on high heat.",
+  "When it comes to a simmer, turn the heat to the lowest setting, cover, and cook for 12 to 15 minutes. You're cooking it to 165°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Transfer the chicken into a bowl of ice water and let it chill for 10 minutes. Save 3/4 cup of the cooking water.",
+  "Meanwhile, cut the cucumber into matchsticks and spread them on a shallow platter.",
+  "In a medium bowl, stir together the 3/4 cup cooking water, soy sauce, black vinegar, sugar, sesame oil, sesame seeds, Sichuan peppercorn, salt and chopped scallions until the sugar dissolves.",
+  "Pat the chicken dry. Flatten it with a rolling pin, then shred it into thin strips.",
+  "Layer the chicken over the cucumber and pour the sauce over it. Toss gently to coat.",
+  "Serve right away, with the chili oil on the side for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Woks of Life authentic Sichuan version (4.93 from 28) leads. Its sauce is a thin soy, black vinegar and sesame oil sauce thinned with the poaching water, and it has no sesame paste, so the list's line about a creamy sesame sauce does not match the best-rated version. Chicken is doubled to 1 lb for a lunch main, with the sauce at 1.5 times the lead. Two Kooks (5.0 from 1) and Taste Asian Food (5.0 from 2) use similar thin sauces, with sesame paste only as an option.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Bang Bang Chicken (The Authentic Sichuan Version)",
+   "url": "https://thewoksoflife.com/bang-bang-chicken-the-authentic-sichuan-version/",
+   "rating": 4.93,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Two Kooks in the Kitchen",
+   "title": "Bang Bang Chicken (Almost Authentic, 30 Minutes)",
+   "url": "https://twokooksinthekitchen.com/bang-bang-chicken-almost-authentic-30-minutes/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Taste Asian Food",
+   "title": "Bang Bang Chicken",
+   "url": "https://tasteasianfood.com/bang-bang-chicken/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

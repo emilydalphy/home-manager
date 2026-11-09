@@ -1,0 +1,98 @@
+{
+ "dish_name": "Wontons in Chili Oil",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Frozen pork wontons",
+   "qty": "28 wontons (about 1 1/2 lb)",
+   "category": "frozen"
+  },
+  {
+   "item": "Chili oil with chili crisp",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "6 tbsp, plus more for the table"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Chinese black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "2 cloves, finely grated"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3, thinly sliced"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil.",
+  "Meanwhile, grate the 2 garlic cloves into a medium bowl. Add the chili oil with its chili crisp, soy sauce, black vinegar and sugar. Stir until the sugar dissolves.",
+  "Thinly slice the scallions and chop the cilantro.",
+  "Add the wontons to the boiling water in two batches and lower the heat to a gentle simmer. Cook for 3 to 4 minutes, until they float and the wrappers look see-through. Frozen wontons take a minute or two longer.",
+  "Transfer the wontons into the bowl with a slotted spoon. Add 4 tbsp of the hot cooking water and toss until they are coated.",
+  "Spoon the wontons and sauce into 4 bowls and top with the scallions and cilantro.",
+  "Serve with extra chili oil on the table for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 ratings. Omnivore's Cookbook (4.95 from 19) leads: boil, then toss in chili oil, black vinegar, sweet soy and grated garlic, with a little of the cooking water. Food Network Kitchen has no rating but gives the plain sauce used here (6 tbsp chili oil, 1/4 cup light soy, black vinegar, garlic, 1 tsp sugar). Both make their own wontons and chili oil; this uses frozen wontons and a jarred chili oil as the list asks. The soy is cut to 3 tbsp and the vinegar raised for balance.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Sichuan Spicy Wonton in Chili Oil",
+   "url": "https://omnivorescookbook.com/sichuan-spicy-wonton-in-chili-oil/",
+   "rating": 4.95,
+   "rating_count": 19,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network Kitchen",
+   "title": "Wontons in Chili Oil",
+   "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/wontons-in-chili-oil-17947453",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Sichuan Chili Oil Wontons",
+   "url": "https://takestwoeggs.com/sichuan-chili-oil-wontons-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

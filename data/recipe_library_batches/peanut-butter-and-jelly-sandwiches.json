@@ -1,0 +1,51 @@
+{
+ "dish_name": "Peanut Butter and Jelly Sandwiches",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Sandwich bread (dairy-free)",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Grape jelly",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Lay out 8 slices of bread in pairs.",
+  "Spread 2 tbsp of peanut butter on one slice of each pair.",
+  "Spread 1 tbsp of jelly on the other slice of each pair.",
+  "Press each pair together and cut the sandwiches in half. Cut them diagonally if you like.",
+  "Wrap each sandwich or pack it in a lunchbox."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one version was readable: Cooking with Curls (no rating shown). It is the classic build of two slices, peanut butter on one and preserves on the other, about 2 tbsp of peanut butter and 1 tbsp of preserves per sandwich. Check the bread label if the sandwich needs to be dairy-free.",
+ "sources": [
+  {
+   "name": "Cooking with Curls",
+   "title": "Peanut Butter and Jelly Sandwich",
+   "url": "https://cookingwithcurls.com/2012/11/27/peanut-butter-jelly-sandwich/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

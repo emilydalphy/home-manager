@@ -1,0 +1,63 @@
+{
+ "dish_name": "Tomato Sandwiches",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Tomatoes",
+   "qty": "3 large",
+   "category": "produce"
+  },
+  {
+   "item": "White sandwich bread",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Slice the tomatoes 1/4 inch thick and lay the slices on a double layer of paper towels.",
+  "Sprinkle the slices with 1/2 tsp salt and leave them for 5 to 7 minutes to drain.",
+  "Spread 1/2 tbsp of mayonnaise on each of the 8 bread slices.",
+  "Layer the tomato slices over 4 of the slices. Dab the tops with a paper towel first if they look wet.",
+  "Grind black pepper over the tomatoes, using about 1/2 tsp in all, then close the sandwiches with the other slices.",
+  "Cut the sandwiches in half and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "A Cozy Kitchen (5.0 from 3) is the only recipe rated and read; Spend With Pennies and Belly Full were not readable, so this is a fallback lead. The method is a mayo spread on bread, salted tomato slices drained on paper towels, and pepper. Amounts are scaled from two sandwiches to four, with mayonnaise spread on the bread's inside faces.",
+ "sources": [
+  {
+   "name": "A Cozy Kitchen",
+   "title": "Tomato Sandwich",
+   "url": "https://www.acozykitchen.com/how-to-make-a-tomato-sandwich",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,119 @@
+{
+ "dish_name": "Ji Si Liang Mian",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "4 slices"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 cut into 3-inch lengths, 2 finely chopped"
+  },
+  {
+   "item": "Dried wheat noodles",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1, cut into matchsticks"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "6 cloves"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Chili oil (check the label for nuts)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp, for the table"
+  }
+ ],
+ "instructions": [
+  "Put the chicken in a medium pot with the ginger slices and the 2 scallion lengths. Cover with about 2 inches of cold water and set it on high heat.",
+  "Bring it to a boil, then cover, turn off the heat, and leave the chicken for 25 minutes. You're cooking it to 165°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Meanwhile, fill a large pot with water and bring it to a boil for the noodles.",
+  "Mince the 6 garlic cloves. In a large bowl, stir together the garlic, rice vinegar, soy sauce, sesame oil, sugar and salt until the sugar dissolves.",
+  "Cut the cucumber into matchsticks, chop the cilantro and finely chop the 2 remaining scallions.",
+  "Boil the noodles for the time on the package. Drain them, rinse well with cold water, and drain again.",
+  "Transfer the chicken to a cutting board and shred it into thin strips with two forks or your fingers.",
+  "Add the noodles, chicken, cucumber, bean sprouts, chopped scallions and cilantro to the bowl with the sauce. Toss until everything is coated.",
+  "Serve cold with the chili oil on the side for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Woks of Life (4.87 from 22) leads: poached chicken, cold noodles, cucumber and sprouts under a soy, vinegar and garlic sauce. The recipe is doubled from two servings to four, the garlic is cut from 8 cloves to 6 for a milder base, and the chili oil moves to the table. The peanuts it calls for are left out to keep it nut-free. The honest total is 40 minutes because the chicken rests for 25, but only about 15 of those are hands on, and the finished dish packs cold.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Cold Noodles with Shredded Chicken",
+   "url": "https://thewoksoflife.com/2015/06/cold-noodles-with-shredded-chicken/",
+   "rating": 4.87,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

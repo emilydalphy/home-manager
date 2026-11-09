@@ -1,0 +1,76 @@
+{
+ "dish_name": "Shanghai Fried Noodles",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Fresh shiitake mushrooms",
+   "qty": "12 oz",
+   "category": "produce",
+   "cook_qty": "12 mushrooms, thinly sliced"
+  },
+  {
+   "item": "Udon noodles (vegan)",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 bunch, trimmed and washed"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Thinly slice the 12 mushrooms. Trim and wash the bok choy and cut the stems from the leaves if they are thick.",
+  "Heat a wok or large skillet over high heat until it just starts to smoke. Turn the heat to medium and add 2 tbsp of the oil.",
+  "Add the mushrooms and stir-fry for 3 to 4 minutes, until they are browned at the edges. Transfer them into a bowl.",
+  "Add the remaining 1 tbsp oil to the wok on medium-high heat. Gently pull the noodles apart by hand and add them.",
+  "Add the light soy sauce, 2 1/2 tsp of the dark soy sauce, and the sugar. Stir-fry for 3 to 4 minutes, until the noodles are an even, deep brown. If they look pale, add the remaining 1/2 tsp dark soy sauce.",
+  "Add the bok choy and mushrooms. Toss for 1 to 2 minutes, until the bok choy wilts.",
+  "Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Woks of Life (4.84 from 65) leads. It marks the pork and its marinade as optional for a vegetarian version, so those are left out and the mushrooms go from 8 to 12 to carry the dish. Its sauce is light and dark soy with a little sugar and no oyster sauce, so the recipe is vegan as written. Check that the udon contains no egg. Black vinegar is an optional finish in the source and is not used here.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Shanghai Fried Noodles (Cu Chao Mian)",
+   "url": "https://thewoksoflife.com/shanghai-fried-noodles/",
+   "rating": 4.84,
+   "rating_count": 65,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

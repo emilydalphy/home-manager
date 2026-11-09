@@ -1,0 +1,142 @@
+{
+ "dish_name": "Shanghai Stir-Fried Rice Cakes",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork loin",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Napa cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "1 1/4 lb, cut into 1/2 inch strips"
+  },
+  {
+   "item": "Chinese rice cakes (sliced nian gao)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1 lb"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 slice"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "4 cloves"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Chicken stock",
+   "qty": "1 carton",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Cut the pork into thin strips and transfer it into a bowl. Stir in 1 tbsp water, the cornstarch, light soy sauce, sesame oil and 1/4 tsp of the white pepper. Set it aside.",
+  "Cut the cabbage into 1/2 inch strips, chop the garlic, and cut the scallions into 1 inch pieces. If the rice cakes are frozen, thaw them and pull apart any that are stuck.",
+  "Heat a wok or large skillet over high heat until it just starts to smoke. Add the oil and the ginger, and cook for 30 seconds, until the ginger is golden.",
+  "Add the pork in a single layer and leave it for 1 minute without stirring, so it browns. Stir and cook for 1 minute, until no pink is left.",
+  "Add the garlic and stir for 30 seconds. Add the cabbage and scallions and stir-fry for 3 minutes, until the cabbage wilts.",
+  "Pour the Shaoxing wine around the edge of the wok and stir for 30 seconds. Stir in the oyster sauce.",
+  "Push everything to the center, pour in the stock, and spread the rice cakes over the top. Cover and cook on high heat for 2 minutes (3 minutes if the rice cakes were frozen).",
+  "Uncover, add the salt and the remaining 1/4 tsp white pepper, and stir-fry over medium heat for 2 minutes. The sauce should thicken and the rice cakes should be soft but still chewy.",
+  "Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 ratings. The Woks of Life (4.69 from 16) leads, with Cook with Dana (4.67 from 3) and Cookgem (no rating) agreeing on pork, napa cabbage and rice cakes steamed over the top with stock. The lead serves 6, so the cabbage and stock are scaled to four and the rice cakes rounded to 1 lb. Cook with Dana's brown pork and mushroom version and Cookgem's tamari sauce were read but not used.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Rice Cakes with Napa Cabbage & Pork",
+   "url": "https://thewoksoflife.com/rice-cakes-napa-cabbage-pork/",
+   "rating": 4.69,
+   "rating_count": 16,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Dana",
+   "title": "Stir-Fried Shanghai Rice Cakes",
+   "url": "https://cookwithdana.com/shanghai-rice-cakes/",
+   "rating": 4.67,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Cookgem",
+   "title": "Stir Fry Shanghai Rice Cake",
+   "url": "https://cookgem.com/stir-fry-shanghai-rice-cake",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

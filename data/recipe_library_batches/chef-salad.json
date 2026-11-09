@@ -1,0 +1,103 @@
+{
+ "dish_name": "Chef Salad",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Iceberg lettuce",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "8 cups torn"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/4 of it, thinly sliced"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "2 cups, halved"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 cup, sliced"
+  },
+  {
+   "item": "Sliced deli ham (gluten-free)",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sliced deli turkey (gluten-free)",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cheddar cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Ranch dressing (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Put the 4 eggs in a saucepan and cover them with cold water by about 1 inch. Set the pan on high heat and bring it to a rolling boil.",
+  "Take the pan off the heat, cover it, and let the eggs sit for 10 minutes.",
+  "Meanwhile, tear the lettuce into bite-size pieces, wash it, and spin it dry. That should be about 8 cups. Transfer it into a large bowl.",
+  "Transfer the eggs into a bowl of ice water and let them chill while you cut everything else.",
+  "Thinly slice a quarter of the red onion. Halve the cherry tomatoes and slice the cucumber until you have 1 cup.",
+  "Cut the ham and turkey into 1/2 inch strips. Cut the cheddar into 1/2 inch cubes.",
+  "Peel the eggs and cut each into wedges.",
+  "Arrange the ham, turkey, cheddar, eggs, onion, tomatoes and cucumber over the lettuce, in rows or in sections.",
+  "Pour the ranch into a small bowl and serve it with the salad."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No source had 20 ratings: Spend With Pennies (5.0 from 16) leads and Baked Bree and Well Plated agree on the same build of greens, ham, turkey, cheese, eggs and vegetables. Baked Bree's 1/4 cup of ranch is the only source amount for the dressing, so it is doubled here for four plates. For gluten-free, check the deli meats and the ranch label, and leave out the croutons Well Plated adds. RecipeTin Eats has no chef salad, so the fallback is the best-rated version read.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Chef's Salad",
+   "url": "https://spendwithpennies.com/chefs-salad",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Baked Bree",
+   "title": "Chef Salad",
+   "url": "https://bakedbree.com/chef-salad-recipe",
+   "rating": null,
+   "rating_count": 0,
+   "read": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Chef Salad",
+   "url": "https://www.wellplated.com/chef-salad/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
