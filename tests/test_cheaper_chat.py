@@ -544,23 +544,29 @@ def test_sending_a_message_counts_as_the_warm_up():
 
 @_needs_node
 def test_starting_dictation_warms_the_chat():
+    # The chat's mic is the shared static/dictation.js helper (2026-11-09);
+    # setupAskDictation hands it the warm-up as its onStart. A desktop
+    # browser, so the helper listens through the Web Speech API.
+    dictation_js = (Path(__file__).resolve().parent.parent / "static" / "dictation.js").read_text()
     script = """
+var window = { navigator: { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/140' } };
+window.webkitSpeechRecognition = function () { this.start = function () {}; this.stop = function () {}; };
+var document = {};
 var warmed = 0;
 function warmAskCache() { warmed += 1; }
 function autoGrowAskInput() {}
 function showToast() {}
-function SpeechRecognitionCtor() { this.start = function () {}; this.stop = function () {}; }
 var askInput = { value: '', placeholder: 'Ask', focus: function () {} };
 var clicks = [];
 var micBtn = { dataset: {}, classList: { add: function () {}, remove: function () {} },
                addEventListener: function (ev, fn) { clicks.push(fn); } };
-""" + _function_source("setupDictation") + """
-setupDictation(askInput, micBtn);
+""" + dictation_js + "\n" + _function_source("setupAskDictation") + """
+setupAskDictation(askInput, micBtn);
 clicks[0]();
 var other = { value: '', placeholder: '', focus: function () {} };
 var otherBtn = { dataset: {}, classList: { add: function () {}, remove: function () {} },
                  addEventListener: function (ev, fn) { clicks.push(fn); } };
-setupDictation(other, otherBtn);
+setupAskDictation(other, otherBtn);
 clicks[1]();
 console.log(JSON.stringify(warmed));
 """

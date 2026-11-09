@@ -84,6 +84,15 @@ time, no code), and the phone checks before Beta App Review are
   by text, as before. The Push Notifications capability is in
   `ios/App/App/App.entitlements`; `npm run sync` checks it's switched on.
 
+- **Talking instead of typing** (2026-11-09): the app has its own speech
+  plugin, `ios/App/App/PomonaSpeechPlugin.swift`, on Apple's on-device
+  engine from iOS 26 (SpeechAnalyzer). It's far more accurate than
+  Safari's, free, and nothing leaves the phone. `MainViewController.swift`
+  registers it (Main.storyboard points there instead of Capacitor's own
+  view controller). The website's `static/dictation.js` uses it when the
+  app says it's there. Otherwise, on iOS 15–25 or in Safari, the mic
+  button opens the keyboard and points at the keyboard's own mic. Only
+  the microphone permission is asked for.
 - **Privacy manifest** (`ios/App/App/PrivacyInfo.xcprivacy`): Apple's
   required list of what the app collects, whether it tracks anyone (no),
   and which "required reason" phone APIs its native code calls (none, as of

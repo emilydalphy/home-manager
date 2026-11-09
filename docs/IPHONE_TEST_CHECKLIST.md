@@ -36,9 +36,15 @@ screenshot, and keep going.
 - [ ] Camera: take a photo of a handwritten list on Shop, or of a cookbook
       page when adding a recipe. Pomona asks for the camera first, then
       reads the photo.
-- [ ] Dictation: in Ask, tap the microphone. Either you can talk and the
-      words show up in the box, or Pomona tells you to use the microphone on
-      your keyboard, and that works. Both count. Note which one you got.
+- [ ] Talking instead of typing: in Ask, tap the microphone. The first
+      time, the phone asks to use the microphone: say Allow. Then say a
+      long sentence with a pause in the middle, like "add chicken thighs…
+      and a bag of rice." The words show up in the box as you talk, and it
+      keeps listening through the pause. Tap the microphone again to stop.
+      On an iPhone older than iOS 26 it opens the keyboard instead and says
+      to use the keyboard's microphone. That counts too. Note which one you
+      got.
+- [ ] Same thing in Kitchen's "Say it" box: tap its microphone and talk.
 - [ ] Invite: Preferences → Who's here → invite someone. The phone's share
       sheet opens with a message ready to send. If it asks you to tap once
       more first, that's expected. (You don't have to send it.)

@@ -30752,98 +30752,23 @@
     if (askInput.value.trim()) warmAskCache();
   });
 
-  // ---------- Voice dictation (restored per testing feedback) ----------
-  // Ported from static/index.html's mic button, which the ask-sheet's
-  // Step 3 rewrite explicitly left out at the time ("a reasonable follow-
-  // up but out of scope"). Two very different situations:
-  // - Android Chrome / desktop Chrome expose the Web Speech API, so a mic
-  //   button can drive in-page transcription directly.
-  // - iOS Safari does NOT expose it at all — dictation there only exists
-  //   as the mic key built into the native keyboard on any text field,
-  //   which already works with zero code. The button can't trigger that
-  //   programmatically, so on iOS it just focuses the input and points at
-  //   the keyboard mic once.
-  // Takes an input/mic-button pair so it can be reused wherever a composer
-  // needs dictation — today that's just the ask sheet's own.
-  var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-  function setupDictation(input, micBtn) {
-    if (!input || !micBtn) return;
-    var originalPlaceholder = input.placeholder;
-    var recognition = null;
-    var recognizing = false;
-    var dictationBaseValue = '';
-
-    if (SpeechRecognitionCtor) {
-      recognition = new SpeechRecognitionCtor();
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = function (e) {
-        var finalText = '';
-        var interimText = '';
-        for (var i = 0; i < e.results.length; i++) {
-          var result = e.results[i];
-          if (result.isFinal) finalText += result[0].transcript;
-          else interimText += result[0].transcript;
-        }
-        var spoken = (finalText + interimText).trim();
-        input.value = dictationBaseValue ? (dictationBaseValue + ' ' + spoken) : spoken;
-        autoGrowAskInput(input); // dictation sets .value directly, which fires no 'input' event
-      };
-      recognition.onerror = function (e) {
-        recognizing = false;
-        micBtn.classList.remove('active');
-        input.placeholder = originalPlaceholder;
-        if (e.error === 'aborted') return; // user-initiated stop, not a real error
-        var messages = {
-          'not-allowed': "Microphone access is blocked for this site — check your browser's site settings (usually the icon left of the address bar) and allow the microphone, then try again.",
-          'service-not-allowed': "Microphone access is blocked for this site — check your browser's site settings (usually the icon left of the address bar) and allow the microphone, then try again.",
-          'audio-capture': 'No microphone found — check that one\'s connected and selected as your input device.',
-          'no-speech': "Didn't catch anything — try again and speak right after tapping the mic.",
-          'network': 'Voice dictation needs an internet connection — check your connection and try again.'
-        };
-        showToast(messages[e.error] || ('Voice dictation error: ' + e.error));
-      };
-      recognition.onend = function () {
-        recognizing = false;
-        micBtn.classList.remove('active');
-        input.placeholder = originalPlaceholder;
-        input.focus();
-      };
-
-      micBtn.addEventListener('click', function () {
-        if (recognizing) {
-          recognition.stop();
-          return;
-        }
-        dictationBaseValue = input.value.trim();
-        recognizing = true;
-        // Speaking a message is starting one: prepare the briefing now
-        // (dictation sets .value directly, so the input listener never fires).
-        if (input === askInput) warmAskCache();
-        micBtn.classList.add('active');
-        input.placeholder = 'Listening... tap the mic again to stop';
-        try {
-          recognition.start();
-        } catch (err) {
-          recognizing = false;
-          micBtn.classList.remove('active');
-          input.placeholder = originalPlaceholder;
-          showToast('Could not start voice dictation: ' + err.message);
-        }
-      });
-    } else {
-      micBtn.addEventListener('click', function () {
-        input.focus();
-        if (!micBtn.dataset.hinted) {
-          showToast('Tap the microphone icon on your keyboard to dictate your message.');
-          micBtn.dataset.hinted = '1';
-        }
-      });
-    }
+  // ---------- Voice dictation ----------
+  // The chat's mic uses the shared helper, static/dictation.js (loaded just
+  // before this file), which picks the best way to listen on each device:
+  // the iPhone app's own speech engine, the iPhone keyboard's mic, or the
+  // browser's (voice research, 2026-11-09). Two chat-only extras:
+  // speaking a message is starting one, so it warms the briefing (see
+  // warmAskCache); and dictation writes .value with no 'input' event, so
+  // the box grows itself here.
+  function setupAskDictation(input, micBtn) {
+    if (!input || !micBtn || typeof window.setupDictation !== 'function') return null;
+    return window.setupDictation(input, micBtn, {
+      onMessage: showToast,
+      onStart: function () { if (input === askInput) warmAskCache(); },
+      onText: function () { autoGrowAskInput(input); }
+    });
   }
-  setupDictation(askInput, document.getElementById('ask-mic-btn'));
+  setupAskDictation(askInput, document.getElementById('ask-mic-btn'));
   // The composer's camera: a cookbook page photographed from the chat goes
   // to the recipe review sheet with the typed words as the note (recipe
   // photo import, 2026-09-13) — never straight to a save.
