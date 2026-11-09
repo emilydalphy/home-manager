@@ -1,0 +1,88 @@
+{
+ "dish_name": "Kasarli Mantar",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Cremini or white mushrooms",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "6 sprigs",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashar cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F.",
+  "Wipe the mushrooms with a damp paper towel and twist out the stems. Finely chop the stems. Mince the garlic and strip the leaves from the thyme.",
+  "Melt 2 tbsp of the butter in a 12-inch skillet over medium heat. Add the chopped stems and cook for 3 minutes, until the liquid is gone and they start to brown. Add the garlic and cook for 1 minute.",
+  "Take the skillet off the heat and stir in the thyme, 3/4 tsp of the salt and the pepper.",
+  "Melt the remaining 1 tbsp butter. Toss the caps with it and the remaining 1/4 tsp salt, then set them hollow side up in a 9 by 13 inch baking dish.",
+  "Spoon the stem mixture into the caps. Slice the cheese and set it aside.",
+  "Bake the mushrooms without the cheese for 12 minutes. Take the dish out, lay a piece of cheese on each one, tearing it to fit, and bake for 6 minutes, until the cheese is melted and spotted golden. Let them stand for 2 minutes.",
+  "Taste one. If it's flat, add a pinch more salt.",
+  "Serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Nefis Yemek Tarifleri (the lead, 4.94 from 51) puts butter and salt in each mushroom, bakes for 20 minutes, then adds the kashar for 10 more. Yemek.com (4.7 from 74) sautes the chopped stems with garlic and thyme as a filling and bakes at 356°F for about 15 minutes with the cheese on from the start. This follows the lead's two-stage bake with the cheese going on late, uses Yemek.com's stem filling, and raises the oven to 400°F so it takes 18 minutes instead of 30. Amounts are scaled up to 1 1/2 lb of mushrooms so it works as a dinner. It runs about 34 minutes.",
+ "sources": [
+  {
+   "name": "Nefis Yemek Tarifleri",
+   "title": "Fırında Kaşarlı Mantar Tarifi",
+   "url": "https://www.nefisyemektarifleri.com/firinda-kasarli-mantar-tarifi/",
+   "rating": 4.94,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Baked Kaşar Mushrooms (Fırında Kaşarlı Mantar)",
+   "url": "https://yemek.com/tarif/firinda-kasarli-mantar/",
+   "rating": 4.7,
+   "rating_count": 74,
+   "read": true
+  },
+  {
+   "name": "Lezzet",
+   "title": "Fırında Kaşarlı Mantar Tarifi",
+   "url": "https://www.lezzet.com.tr/yemek-tarifleri/sebze-yemekleri/firin-yemekleri/firinda-kasarli-mantar-tarifi",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,108 @@
+{
+ "dish_name": "Kabak Mucver",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "3 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Feta",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Green onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped, plus a few sprigs"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Canola oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 cup",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Grate the zucchini on the large holes of a box grater into a colander set over a bowl. Toss with the 1 tsp salt and leave it for 10 minutes.",
+  "Meanwhile, finely chop the half onion and the green onions. Chop 1/2 cup of the dill and keep a few sprigs for the plate. Mince 3 of the garlic cloves and crumble the feta.",
+  "Grate the last garlic clove into a small bowl, stir in the yogurt, and set it aside for serving.",
+  "Squeeze the zucchini by the handful over the sink until it stops dripping. Any water left and the fritters fall apart in the pan.",
+  "In a large bowl, beat the eggs, then whisk in the flour and pepper. Fold in the zucchini, onion, green onions, minced garlic, chopped dill and feta. Don't add more salt. The feta and the salted zucchini are enough.",
+  "Heat 1/4 cup of the oil in a 12-inch skillet over medium heat. It's ready when a small spoonful of batter sizzles right away.",
+  "Drop in the batter by scant 1/4 cupfuls, about 6 fritters, and press each one flat with the back of the spoon. Cook for 3 minutes, until the underside is deep golden. Flip and cook the other side for 3 minutes.",
+  "Transfer the fritters to a plate lined with paper towels. Add the remaining 1/4 cup oil to the pan and cook the rest of the batter the same way. You should end up with about 12 fritters.",
+  "Taste one. If it's flat, sprinkle a pinch more salt over the rest.",
+  "Serve with the garlic yogurt and the dill sprigs."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 18,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Ozlem's Turkish Table (the lead, no rating shown) and The Tasteful Pantry (5.0 from 5 votes) agree on salting and squeezing the grated zucchini dry, then folding in feta, dill, onion and a little flour and shallow frying. They differ on flour (3 tbsp against 2 tbsp) and on whether baking powder or baking soda goes in; this follows Ozlem, who uses neither, and her garlic yogurt for serving. The batter is portioned into larger fritters so the frying takes two rounds, which is why the cook time is short. The 10-minute salt rest is shorter than the lead's 30.",
+ "sources": [
+  {
+   "name": "Ozlem's Turkish Table",
+   "title": "Zucchini (Courgette) Fritters with Feta and Dill – Kabak Mucveri",
+   "url": "https://ozlemsturkishtable.com/2010/04/zucchini-courgette-fritters-flavored-with-feta-and-dill-mucver/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Tasteful Pantry",
+   "title": "Turkish Zucchini Fritters (Kabak Mücver)",
+   "url": "https://thetastefulpantry.com/turkish-zucchini-fritters/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

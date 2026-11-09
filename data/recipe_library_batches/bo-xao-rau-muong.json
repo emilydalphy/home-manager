@@ -1,0 +1,99 @@
+{
+ "dish_name": "Bo Xao Rau Muong",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Water spinach (rau muong)",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Green onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Slice the beef across the grain as thin as you can. In a bowl, toss it with the fish sauce, the sugar, 1/2 tsp of the pepper and 1 tbsp of the oil. Leave it for 10 minutes while you do the rest.",
+  "Trim an inch off the bottom of the water spinach stems and rinse it well. Cut it into 3 inch lengths, keeping the thick stems and the leafy tops in separate piles.",
+  "Cut the half onion into thin strips. Mince the garlic. Slice the green onions.",
+  "Heat a wok or large skillet over high heat until very hot. Add 1 tbsp of the oil, then half the beef spread in one layer, half the onion and 1 garlic clove. Leave it for 30 seconds, then stir for 1 minute, until the beef is browned and about 80 percent cooked. Transfer it to a plate.",
+  "Add 1 tbsp more oil and cook the rest of the beef, onion and another garlic clove the same way. Transfer it to the plate.",
+  "Add the last 1 tbsp oil and the remaining 3 garlic cloves. Stir for 15 seconds, then add the stems and stir for 1 minute. Add the leafy tops and 3 tbsp of water and toss for 1 minute, until the leaves wilt and the stems are bright green and still crisp.",
+  "Return the beef and any juices to the pan and toss for 30 seconds. Take the pan off the heat.",
+  "Taste it. If it's flat, add a pinch of salt or a splash more fish sauce.",
+  "Scatter the green onions and the remaining 1/2 tsp pepper over the top. Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Feed the Pudge (the lead, 5.0 from 8 votes) marinates thin beef in fish sauce, sugar and pepper, sears it in a hot pan with onion and garlic until about 80 percent done, then wilts the water spinach and tosses everything together. Vicky Pham's version marinates with stock powder and blanches the greens first, and finishes with oyster sauce; this follows the lead and skips the MSG, stock powder and oyster sauce so it stays gluten-free. The lead's hour in the freezer and long marinade are dropped to keep it quick, so slice the beef thin. Check that the fish sauce label says gluten-free. Water spinach is sold in Asian markets; if you can't find it, any leafy green that wilts quickly can stand in.",
+ "sources": [
+  {
+   "name": "Feed the Pudge",
+   "title": "Stir-Fried Water Spinach and Beef / Rau Muống Xào Thịt Bò",
+   "url": "https://feedthepudge.com/stir-fried-water-spinach-and-beef-rau-muong-xao-thit-bo/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Stir-Fried Water Spinach/Morning Glory with Beef (Rau Muong Xao Thit Bo)",
+   "url": "https://vickypham.com/blog/stir-fry-water-spinach-morning-glory-garlic-rau-muong-xao-toi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

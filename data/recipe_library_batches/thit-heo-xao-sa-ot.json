@@ -1,0 +1,125 @@
+{
+ "dish_name": "Thit Heo Xao Sa Ot",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork loin or tenderloin",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, trim the lemongrass to the pale bottom half and peel off the tough outer layer. Mince one stalk as finely as you can and slice the other thin. Mince 1 shallot and slice the other. Mince the garlic.",
+  "Slice the pork across the grain about 1/4 inch thick. In a bowl, toss it with the minced lemongrass, the minced shallot, the oyster sauce, the fish sauce, the sugar, the pepper and the salt. Leave it for 10 minutes while you do the rest.",
+  "Cut the bell pepper into bite-size pieces and the green onions into 1 1/2 inch lengths. Slice the chilies and put them in a small dish with the chili oil for the table.",
+  "Heat the vegetable oil in a wok or large skillet over medium heat. Add the sliced lemongrass, sliced shallot and garlic and stir for 30 seconds, until they smell fragrant.",
+  "Turn the heat to high and add the pork with everything in its bowl, spread out in one layer. Leave it for 1 minute so it browns underneath, then stir for 1 minute.",
+  "Add the bell pepper and stir for 3 minutes, until the pepper is just tender and there's no pink left in the pork. You're cooking the pork to 145°F, so if you have a thermometer, check the thickest slice. No thermometer? Cut into one: it's done when there's no pink.",
+  "Add the green onions, stir for 30 seconds, and take the pan off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the sliced chilies and chili oil on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 18,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead, My Menu Bon Appetit's heo xao sa ot (no rating shown), marinates sliced pork with minced lemongrass, shallot, oyster sauce, fish sauce, sugar and pepper, then cooks sliced lemongrass, shallot and garlic in oil before the pork, bell pepper and green onion. This version uses lean pork loin in place of the lead's pork belly, and marinates for 10 minutes instead of 30 to fit the time. Cook Eat World (4.5 from 2) blends the lemongrass into a sauce instead. Bouillon is left out and gluten-free oyster sauce is used so it stays gluten-free, and the chilies and chili oil go on the side so the base stays mild.",
+ "sources": [
+  {
+   "name": "My Menu Bon Appetit",
+   "title": "Heo xào sả ớt • Lemongrass & chili sautéed pork",
+   "url": "https://mmbonappetit.com/heo-xao-sa-ot/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook Eat World",
+   "title": "Vietnamese Pork with Lemongrass & Chilli",
+   "url": "https://www.cookeatworld.com/vietnamese-pork-with-lemongrass-chilli/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,85 @@
+{
+ "dish_name": "Yogurtlu Makarna",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Penne",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain whole-milk Greek yogurt",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped, plus a few leaves"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp plus 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with 3 quarts of water, add 1 tbsp of the salt, and bring it to a boil over high heat.",
+  "Meanwhile, grate the garlic into a bowl. Add the yogurt, 1 tbsp chopped mint and 1/2 tsp salt, and stir until smooth.",
+  "Cook the penne in the boiling water until al dente, about 10 to 11 minutes. Drain it well and divide it among 4 bowls.",
+  "While the pasta drains, melt the butter in a small saucepan over medium heat. When it foams, stir in the paprika and cook for 20 seconds. Take it off the heat.",
+  "Spoon the garlic yogurt over the pasta in each bowl and drizzle the paprika butter on top. Scatter a few mint leaves over each bowl.",
+  "Put the red pepper flakes on the table for anyone who wants heat.",
+  "Taste a forkful. If it's flat, add a pinch more salt.",
+  "Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 17,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Bailey Farms (the lead, no rating shown) pairs penne with a garlic and mint yogurt and a paprika butter poured over the top, which is the heart of yogurtlu makarna. Its version tops the pasta with a spiced meat sauce; this one leaves that out to keep the dish vegetarian, and keeps its 2 tsp mint to 3 cups yogurt ratio, scaled down. Ambitious Kitchen (4.6 from 15) is a meat version of the same idea with 2 cups Greek yogurt and 4 tbsp butter, which sets the amounts here. Heat moves to the table: cayenne is left out of the butter.",
+ "sources": [
+  {
+   "name": "Bailey Farms",
+   "title": "Pasta with Yogurt-Mint Sauce (Yogurtlu Makarna)",
+   "url": "https://baileyfarmsinc.com/pasta-with-yogurt-mint-sauce-yogurtlu-makarna/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ambitious Kitchen",
+   "title": "The Viral Turkish Pasta Recipe",
+   "url": "https://www.ambitiouskitchen.com/turkish-pasta/",
+   "rating": 4.6,
+   "rating_count": 15,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

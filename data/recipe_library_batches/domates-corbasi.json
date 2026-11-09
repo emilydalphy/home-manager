@@ -1,0 +1,105 @@
+{
+ "dish_name": "Domates Corbasi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Crushed tomatoes",
+   "qty": "2 cans (14 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 1/2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "a few leaves"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion and grate the garlic.",
+  "Heat 1 tbsp of the olive oil in a medium saucepan over medium-low heat. Add the onion and cook for 5 minutes, until it's soft and see-through. Don't rush it. That's where the flavor starts.",
+  "Add the garlic and stir for 1 minute.",
+  "Add the butter. When it melts, stir in the flour and cook for 1 minute. Add the tomato paste and paprika and stir for 1 minute, until the paste darkens a little.",
+  "Add the crushed tomatoes, the broth, the salt and half the pepper. Bring it to a boil, then turn the heat down and simmer for 10 minutes, stirring now and then.",
+  "Take the pot off the heat. Blend it smooth with an immersion blender, or in batches in a blender with the lid vented. Stand back a little. It's hot.",
+  "Return the soup to the pot over low heat. Taste it. If it's flat, add a pinch more salt. If it's too thick, stir in a splash of hot water.",
+  "Ladle it into bowls. Drizzle each with the remaining olive oil, add the rest of the pepper, and tear a few basil leaves over the top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 7,
+ "cook_time_minutes": 23,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum's version (the lead, no ratings yet) builds the soup on onion, a flour and butter roux, tomato paste and paprika, then simmers and blends it; Fethiye Times does the same roux base with milk and only 10 minutes of simmering. This follows the lead but simmers for 10 minutes instead of 20 to fit the time, uses canned crushed tomatoes in place of grating fresh ones, and leaves out the chilli and the vermicelli to keep it mild and smooth. Vegetable broth stands in for the chicken stock so it stays vegetarian.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Easy Turkish Tomato Soup Recipe (Domates Çorbası)",
+   "url": "https://cupofyum.com/recipes/easy-turkish-tomato-soup-recipe-domates-corbasi",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Fethiye Times",
+   "title": "Domates Çorbası - Turkish Tomato Soup",
+   "url": "https://fethiyetimes.com/domates-corbasi-turkish-tomato-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
