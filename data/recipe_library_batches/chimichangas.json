@@ -1,0 +1,121 @@
+{
+ "dish_name": "Chimichangas",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Refried beans",
+   "qty": "1 can (16 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Burrito-size flour tortillas (12 inch)",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F and lightly grease a baking dish.",
+  "Dice the onion. Heat 1 tbsp of the oil in a large skillet over medium. Add the beef and cook for 5 to 6 minutes, breaking it into small pieces, until it's browned.",
+  "Add the onion and cook for 4 minutes, until it's soft.",
+  "Add the chili powder, paprika, garlic powder, cumin, oregano and salt. Stir for 1 minute, until you can smell them. Taste the beef and add a pinch more salt if it's flat. Take the pan off the heat.",
+  "Warm the tortillas in a dry skillet or the microwave for about 20 seconds, so they roll without cracking.",
+  "Spread a quarter of the refried beans over the lower middle of each tortilla and top with a quarter of the beef. Fold in the sides, then roll it up tightly from the bottom.",
+  "Place them seam side down in the baking dish and brush the tops with the remaining 1 tbsp oil.",
+  "Bake for 15 to 20 minutes, until the tortillas are crisp and golden.",
+  "Slice the avocados. Serve the chimichangas with the salsa and the avocado.",
+  "To store, let the baked chimichangas cool completely, then keep them in an airtight container in the fridge for up to 5 days or in the freezer for up to 3 months. To reheat from the fridge, bake them at 400°F for 10 minutes. From the freezer, thaw them overnight in the fridge, then bake at 400°F for about 20 minutes, until hot in the middle."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Urben Life browns the beef with onion and a chili, paprika, cumin and oregano mix, spreads refried beans on burrito tortillas, rolls them and bakes at 425°F until crisp, which this follows. Heart's Content Farmhouse adds black beans and cheese and freezes them unbaked, wrapped in foil. Six Sisters' Stuff bakes them at a lower heat for 30 to 35 minutes with melted butter on top. This keeps the lead's mild filling with no cheese.",
+ "sources": [
+  {
+   "name": "The Urben Life",
+   "title": "Baked Beef Chimichangas",
+   "url": "https://theurbenlife.com/2023/04/25/baked-beef-chimichangas/",
+   "rating": 5.0,
+   "rating_count": 37,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Heart's Content Farmhouse",
+   "title": "Crispy Beef Chimichangas (Oven Method)",
+   "url": "https://heartscontentfarmhouse.com/baked-beef-chimichangas/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Six Sisters' Stuff",
+   "title": "Baked Beef and Bean Chimichangas",
+   "url": "https://www.sixsistersstuff.com/recipe/baked-beef-bean-chimichanga-recipe/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

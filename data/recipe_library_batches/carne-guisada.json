@@ -1,0 +1,137 @@
+{
+ "dish_name": "Carne Guisada",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 115,
+ "ingredients": [
+  {
+   "item": "Beef chuck roast",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flour tortillas",
+   "qty": "8",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into 1-inch pieces. Pat it dry with paper towels and sprinkle it with 1 tsp of the salt and the black pepper.",
+  "Heat 2 tbsp of the oil in a large Dutch oven or heavy pot over medium-high until it shimmers. Add the beef in two batches, so the pieces aren't touching. Leave each batch alone for 2 minutes, then turn and brown the other sides for 2 minutes. Transfer each batch to a plate.",
+  "Dice the onion. Seed and finely dice the jalapeño. Mince the garlic. Chop 1/4 cup of cilantro.",
+  "Reduce the heat to medium and add the remaining 2 tbsp oil. Add the onion and jalapeño and cook for 8 to 10 minutes, scraping up the browned bits, until the onion is soft.",
+  "Add the garlic, cumin, chili powder and oregano and stir for 1 minute, until you can smell them.",
+  "Return the beef and its juices to the pot. Add the cilantro, bay leaf, tomatoes with their juice, broth and 1 cup of water, then stir well.",
+  "Bring it to a boil, then turn the heat to low and simmer partly covered for 1 hour 45 minutes, stirring every 30 minutes, until the beef is tender and falls apart when pressed with a spoon.",
+  "If the gravy is thin, stir the flour into 1/4 cup of the hot cooking liquid until smooth, then stir it back into the pot and simmer for 5 minutes, until it thickens.",
+  "Take out the bay leaf. Taste it. If it's flat, add a pinch more salt.",
+  "Warm the tortillas in a dry skillet, 20 seconds per side. Serve the carne guisada in the warm tortillas.",
+  "To store, let the stew cool, then keep it in a covered container in the fridge for up to 4 days or in the freezer for up to 3 months. Thaw it overnight in the fridge. Reheat it in a pot over low heat with a splash of water, stirring, until it's hot all the way through."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Homesick Texan sears chuck in batches, softens onion and chiles, blooms cumin, chili powder and oregano, then simmers with tomatoes, a bay leaf and cilantro until the meat is tender, which this follows at half the batch with one mild jalapeño and no serranos. The dark beer is replaced with beef broth, and the peanut oil with vegetable oil to keep it nut-free, and the lead's own flour trick thickens the gravy. Kitchen Gidget (4.5 from 1,190) is the faster everyday version with stew meat, tomato sauce and a flour-thickened gravy, and The Anthony Kitchen uses sirloin for a 35 minute stew. Oil is used, never butter or lard, so it stays dairy-free.",
+ "sources": [
+  {
+   "name": "Homesick Texan",
+   "title": "Carne guisada, Tex-Mex stew",
+   "url": "https://www.homesicktexan.com/carne-guisada-tex-mex-stew/",
+   "rating": 4.92,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kitchen Gidget",
+   "title": "Carne Guisada Recipe (Mexican Style)",
+   "url": "https://www.kitchengidget.com/2018/12/14/carne-guisada-recipe-mexican-style/",
+   "rating": 4.5,
+   "rating_count": 1190,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Anthony Kitchen",
+   "title": "Carne Guisada",
+   "url": "https://www.theanthonykitchen.com/carne-guisada/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

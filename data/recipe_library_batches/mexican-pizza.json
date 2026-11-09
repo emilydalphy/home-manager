@@ -1,0 +1,102 @@
+{
+ "dish_name": "Mexican Pizza",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Taco seasoning",
+   "qty": "1 packet",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Small flour tortillas (6 inch)",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Refried beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Red enchilada sauce",
+   "qty": "1 can (10 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Colby Jack cheese",
+   "qty": "4 oz",
+   "category": "dairy",
+   "cook_qty": "1 cup shredded"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Pico de gallo",
+   "qty": "1 tub",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F.",
+  "Crumble the beef into a large skillet over medium-high heat. Cook for 6 to 8 minutes, stirring now and then, until it's browned.",
+  "Add the taco seasoning and 1/3 cup water. Cook for 2 minutes, until the water has cooked off and the beef is coated. Transfer it to a bowl.",
+  "Wipe out the skillet and heat 1 tbsp of the oil over medium. Fry the tortillas one at a time for about 1 minute per side, until golden and crisp. Add the remaining 1 tbsp oil when the pan looks dry. Transfer them to a plate lined with paper towels as they're done.",
+  "Lay 4 of the crisp tortillas on a baking sheet. Spread 1/4 cup of the refried beans over each one, then top with a quarter of the beef.",
+  "Cover each with a second crisp tortilla. Spoon 3 tbsp of the enchilada sauce over each top tortilla and sprinkle with 1/4 cup of the cheese.",
+  "Bake for 5 to 6 minutes, until the cheese has melted.",
+  "Warm the rest of the enchilada sauce for 30 seconds in the microwave.",
+  "Top each pizza with sour cream and pico de gallo and serve right away with the warm enchilada sauce spooned over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Tasting Table fries flour tortillas until crisp, spreads refried beans and taco beef between two of them and tops them with enchilada sauce and Colby Jack before a short bake, which this follows at four pizzas instead of six. Life Made Simple Bakes broils them and puts diced tomato and green onion on top, and Slender Kitchen uses corn tortillas baked with oil spray. All three agree on the double tortilla with beans and beef in the middle.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Mexican Pizza Recipe",
+   "url": "https://www.tastingtable.com/762839/mexican-pizza-recipe",
+   "rating": 5.0,
+   "rating_count": 66,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Life Made Simple Bakes",
+   "title": "Easy Homemade Mexican Pizzas",
+   "url": "https://lifemadesimplebakes.com/quick-easy-mexican-pizzas/",
+   "rating": 4.93,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Slender Kitchen",
+   "title": "Mexican Pizza",
+   "url": "https://slenderkitchen.com/recipe/mexican-pizza",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

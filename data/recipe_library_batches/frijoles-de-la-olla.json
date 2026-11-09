@@ -1,0 +1,81 @@
+{
+ "dish_name": "Frijoles de la Olla",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 100,
+ "ingredients": [
+  {
+   "item": "Dried pinto beans",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before: rinse the beans and pick out any stones. Put them in a large bowl, cover with cold water by about 3 inches and leave them on the counter overnight.",
+  "Drain the beans and rinse them. Halve the onion and peel the garlic.",
+  "Put the beans, onion, garlic and olive oil in a large pot and add enough cold water to cover the beans by about 1 1/2 inches. That should be about 8 cups.",
+  "Bring it to a boil over high heat, then turn the heat to low. Partly cover and simmer for 1 hour, stirring now and then and adding hot water if the beans stop being covered.",
+  "Stir in the salt. Keep simmering for 15 to 30 minutes, until the beans are soft all the way through and the broth is slightly thick. To check, press a bean between your fingers. It should squash easily.",
+  "Take out the onion and garlic, or mash them into the broth. Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls with plenty of the broth.",
+  "To store, let the beans cool, then keep them in their broth in a covered container in the fridge for up to 5 days. For the freezer, divide them into portions with the broth and freeze for up to 6 months. Thaw in the fridge overnight, then reheat in a pot over medium-low heat with a splash of water, stirring, until they're hot. Use them for burritos, soup, tacos or sides all week."
+ ],
+ "advance_prep_notes": "soak the beans overnight",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Maricruz Avalos soaks the beans overnight, then simmers them with onion, garlic and salt until tender. Lola's Cocina adds olive oil to the pot, and Mexican Food Journal soaks and simmers for 2 hours before salting, which is where the salt goes in last here. Epazote is left out because it is hard to find. None of the readable versions has 20 ratings with 4.0 or better, so the lead is fallback and no vegan stock is used.",
+ "sources": [
+  {
+   "name": "Maricruz Avalos",
+   "title": "Frijoles de la Olla",
+   "url": "https://www.maricruzavalos.com/de-la-olla-beans-easy-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lola's Cocina",
+   "title": "Frijoles de la Olla (Easy Slow Cooker Recipe)",
+   "url": "https://lolascocina.com/?p=371",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mexican Food Journal",
+   "title": "Frijoles de la Olla (Mexican Beans)",
+   "url": "https://mexicanfoodjournal.com/frijoles-de-la-olla/",
+   "rating": 3.89,
+   "rating_count": 17,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

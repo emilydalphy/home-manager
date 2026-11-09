@@ -1,0 +1,127 @@
+{
+ "dish_name": "Frijoles Charros",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Thick-cut bacon",
+   "qty": "4 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mexican chorizo",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned pinto beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fire-roasted diced tomatoes",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Dice the bacon, onion and jalapeño (seeds and ribs out), and mince the garlic.",
+  "Cook the bacon in a large pot or Dutch oven over medium heat for 5 to 6 minutes, until it's crisp. Transfer it to a plate with a slotted spoon and pour off all but 1 tbsp of the fat.",
+  "Raise the heat to medium-high. Add the chorizo and cook for 5 to 6 minutes, breaking it into small pieces, until it's browned. Transfer it to the plate with the bacon and pour off all but 1 tbsp of the fat.",
+  "Turn the heat to medium. Add the onion and jalapeño and cook for 5 minutes, until soft.",
+  "Add the garlic, cumin, brown sugar, oregano, smoked paprika, coriander and salt. Stir for 1 minute, until you can smell them.",
+  "Add the beans with their liquid, the tomatoes with their juice and the broth. Stir in the chorizo.",
+  "Bring it to a simmer, then turn the heat to low and simmer uncovered for 25 to 30 minutes, stirring now and then, until the broth has thickened a little.",
+  "Off the heat, chop the cilantro and stir in the bacon and half of the cilantro. Taste it. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve in bowls with the rest of the cilantro and lime wedges.",
+  "To store, let it cool completely, then keep it in a covered container in the fridge for 3 to 4 days or in the freezer for up to 3 months. Thaw in the fridge overnight, then reheat in a pot over low heat, stirring, with a splash of water if it has thickened."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Chili Pepper Madness crisps bacon, browns Mexican chorizo, softens onion and jalapeño, blooms the spices and then simmers canned pinto beans with fire-roasted tomatoes and broth, which this follows at a third of the batch with the chipotle powder left out to keep the pot mild. Dish n the Kitchen soaks dried beans and cooks them in stock with bay leaves, and No Spoon Necessary treats the bacon and chorizo the same way. Chorizo brands vary, so check the label if gluten matters.",
+ "sources": [
+  {
+   "name": "Chili Pepper Madness",
+   "title": "Charro Beans",
+   "url": "https://www.chilipeppermadness.com/recipes/charro-beans/",
+   "rating": 4.96,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dish n the Kitchen",
+   "title": "Frijoles Charros (Mexican Charro Beans)",
+   "url": "https://dishnthekitchen.com/frijoles-charros-mexican-charro-beans/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

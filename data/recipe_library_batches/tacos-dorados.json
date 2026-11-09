@@ -1,0 +1,126 @@
+{
+ "dish_name": "Tacos Dorados",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup plus 2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Oaxaca or Monterey Jack cheese",
+   "qty": "8 oz",
+   "category": "dairy",
+   "cook_qty": "2 cups shredded"
+  },
+  {
+   "item": "Iceberg lettuce",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "2 cups shredded"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the chicken in a medium pot with half the onion (cut it in two or three pieces), 2 of the garlic cloves and 1 tsp of the salt. Cover with water by about an inch.",
+  "Bring it to a boil over high heat, then cover, turn the heat to low and simmer for 10 minutes. Turn off the heat and leave the pot covered for 10 minutes. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when there's no pink left.",
+  "Meanwhile, put the tomatoes, a quarter of the onion and the last garlic clove in a small pot. Cover with water, bring to a boil and simmer for about 8 minutes, until the tomatoes are soft.",
+  "Transfer the tomatoes, onion and garlic to a blender with 1/2 tsp salt, 1/4 tsp pepper, 1/4 tsp oregano and 1/4 cup water. Blend until smooth.",
+  "Drain the chicken and discard the onion and garlic. Shred it with two forks. That should be about 3 cups.",
+  "Heat 2 tbsp of the oil in a large skillet over medium. Add the shredded chicken and cook for 3 minutes, stirring now and then, until it's lightly golden in spots.",
+  "Pour in the blended sauce and cook for 2 minutes, until the chicken is coated and the sauce is thick. Take the pan off the heat and set it aside.",
+  "Stack the tortillas on a plate, cover them with a damp paper towel and microwave for 45 seconds. Warm tortillas fold without cracking.",
+  "Put about 2 tbsp of chicken and a good pinch of the cheese on one half of a tortilla, then fold it over and press the edge. Fill all 12 this way.",
+  "Heat the remaining 1/2 cup oil in a large heavy skillet over medium-high until it reaches 350°F. No thermometer? Drop in a corner of a tortilla. It should sizzle right away.",
+  "Fry 3 tacos at a time, flipping once, for 2 to 3 minutes per side, until golden and crisp. Stand back a little. They'll spatter.",
+  "Transfer them to a wire rack or a plate lined with paper towels. Shred half the head of lettuce.",
+  "Serve right away with the lettuce, sour cream and salsa."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Everyday Latina's version poaches the chicken, blends a simple boiled tomato sauce and fries folded tacos in about half an inch of oil, which this follows. Familia Kitchen rolls thin taquitos filled with chicken only and serves them in a broth. Slender Kitchen and FoodieCrush bake the tacos with a cream cheese or taco sauce filling, a lighter route that is less crisp. No source had 20 or more ratings, so the lead is the most complete version of the dish itself.",
+ "sources": [
+  {
+   "name": "Everyday Latina",
+   "title": "Tacos Dorados de Pollo (Crispy Chicken Tacos)",
+   "url": "https://everydaylatina.com/tacos-dorados-de-pollo-crispy-chicken-tacos/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Familia Kitchen",
+   "title": "Chicken Tacos Dorados, Acapulco-Style",
+   "url": "https://familiakitchen.com/pablos-chicken-tacos-dorados-acapulco-style/",
+   "rating": 4.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Slender Kitchen",
+   "title": "Crispy Tacos Dorados",
+   "url": "https://www.slenderkitchen.com/recipe/tacos-dorados",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

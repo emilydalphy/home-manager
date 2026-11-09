@@ -1,0 +1,101 @@
+{
+ "dish_name": "Chile Relleno Casserole",
+ "cuisine": "Mexican",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Poblano peppers",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Pepper jack cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded cheddar cheese",
+   "qty": "4 oz",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the broiler to high and set a rack about 6 inches from the heat. Line a baking sheet with foil.",
+  "Put the poblanos on the sheet and broil for 4 to 5 minutes per side, turning them until the skins are blistered and blackened in spots, about 15 minutes in all.",
+  "Transfer the hot peppers to a bowl and cover it with a plate. Let them steam for 5 minutes. Turn the oven to 350°F.",
+  "Peel off the blackened skin. Slit each pepper down one side, pull out the stem and scrape out the seeds. Pat the peppers dry with paper towels.",
+  "Cut the pepper jack into long sticks, about 1/2 inch thick. Put a few sticks inside each pepper and close it around the cheese.",
+  "Grease a 9 by 9-inch baking dish. Lay the stuffed peppers in it in a single layer, seam side down.",
+  "Whisk the eggs, milk, salt and pepper in a bowl until smooth. Pour it over the peppers and sprinkle the cheddar on top.",
+  "Bake for 30 to 35 minutes, until the center is set and no longer jiggles and the top is golden. Let it rest for 10 minutes.",
+  "Chop 2 tbsp of cilantro. Serve with the cilantro sprinkled on and the salsa on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Flavor Mosaic roasts and peels poblanos, stuffs them with pepper jack sticks, pours over an egg and milk mixture and bakes at 350°F, which this follows. Food Network Kitchen and Sue Bee Homemaker use more eggs and milk and bake closer to an hour. Both also add flour, which is left out here to keep the dish gluten-free, with a few more eggs and a little more milk making up for it. No readable source had a rating of 20 or more, so the lead is fallback.",
+ "sources": [
+  {
+   "name": "Flavor Mosaic",
+   "title": "Chile Relleno Casserole",
+   "url": "https://flavormosaic.com/chile-relleno-casserole/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network Kitchen",
+   "title": "Chile Relleno Casserole",
+   "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/chile-relleno-casserole-3816704",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sue Bee Homemaker",
+   "title": "Chile Relleno Casserole",
+   "url": "https://suebeehomemaker.com/?p=102823",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

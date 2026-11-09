@@ -1,0 +1,121 @@
+{
+ "dish_name": "Beef and Bean Burritos",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned pinto beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red enchilada sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded Mexican cheese blend",
+   "qty": "10 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Burrito-size flour tortillas (10 inch)",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F and grease a 9 by 13-inch baking dish.",
+  "Finely chop the onion. Crumble the beef into a large skillet over medium-high heat, add the onion and cook for 7 to 8 minutes, stirring now and then, until the beef is browned and the onion is soft. Spoon off the fat.",
+  "Add the chili powder, cumin, garlic powder and salt. Stir for 30 seconds, until you can smell them.",
+  "Drain and rinse the pinto beans. Add them to the skillet along with 3/4 cup of the enchilada sauce and cook for 2 minutes. Mash about a third of the beans with the back of the spoon. Take the pan off the heat.",
+  "Stir in 6 oz of the cheese (about 1 1/2 cups) until it's melted into the filling.",
+  "Warm the tortillas in the microwave for 20 seconds, wrapped in a damp paper towel, so they don't crack.",
+  "Spoon about 1/2 cup of the filling down the center of each tortilla. Fold in the sides, then roll it up from the bottom.",
+  "Place the burritos seam side down in the baking dish. Pour the rest of the enchilada sauce over them and sprinkle with the remaining 4 oz of cheese.",
+  "Bake for 20 to 25 minutes, until the sauce is bubbling and the cheese has melted and started to brown in spots.",
+  "Chop 2 tbsp of cilantro. Let the burritos rest for 5 minutes, then serve with the sauce from the dish spooned over the top and the cilantro sprinkled on.",
+  "To freeze, roll the burritos as in step 7 and skip the baking. Let the filling cool completely first. Wrap each burrito in a paper towel, then in foil, and put them in a freezer bag. They keep for up to 2 months. To bake from frozen, unwrap them, put them in the dish with the sauce and cheese, cover with foil and bake at 350°F for 45 minutes, then uncover and bake for 10 minutes. Leftover baked burritos keep in the fridge for 3 days. Reheat them covered at 350°F for 15 minutes."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Good Cheap Eats browns beef with onion, folds in drained pinto beans, enchilada sauce and jack cheese, rolls burritos and freezes them wrapped, which this follows. Taste of Home and Feast and Farm season the beef with chili powder, oregano and garlic powder and use refried beans, while Once a Month Meals and a Highlands Ranch version bake the rolled burritos under more sauce and cheese, which is how this one ends. No source had a rating of 20 or more, so the lead is fallback.",
+ "sources": [
+  {
+   "name": "Good Cheap Eats",
+   "title": "Bean and Beef Burritos with Red Sauce",
+   "url": "https://goodcheapeats.com/?p=20918",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Beef and Bean Burritos",
+   "url": "https://www.tasteofhome.com/recipes/beef-and-bean-burritos/",
+   "rating": null,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Feast and Farm",
+   "title": "Beef Burrito Recipe with Beans",
+   "url": "https://feastandfarm.com/?p=1025",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once a Month Meals",
+   "title": "Burritos",
+   "url": "https://onceamonthmeals.com/recipes/burritos/amp",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
