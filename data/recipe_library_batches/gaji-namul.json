@@ -1,0 +1,106 @@
+{
+ "dish_name": "Gaji Namul",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Asian eggplants",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a few changes of water until the water runs mostly clear. Put it in a pot with 1 3/4 cups water, bring it to a boil, then cover, turn the heat to low and cook for 18 minutes. Take it off the heat and leave it covered while you steam the eggplant.",
+  "Cut each eggplant in half lengthwise, then cut each half lengthwise again into quarters. Cut the quarters crosswise into pieces about 2 inches long.",
+  "In a large bowl, stir together the soy sauce, sesame oil, sugar, sesame seeds and pepper. Finely chop the 2 green onions and mince the garlic, and stir them in. Put the gochugaru in a small bowl for the table.",
+  "Bring about an inch of water to a boil in a large pot fitted with a steamer basket. Add the eggplant, cover, and steam for 3 to 4 minutes, until softened but still a little firm.",
+  "Move the eggplant to the bowl with the seasoning and let it cool for 5 minutes. Toss gently so the pieces stay whole.",
+  "Taste it. If it's flat, add a splash more soy sauce.",
+  "Serve over the rice, with the gochugaru at the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Korean Bapsang steams quartered eggplant for about 3 minutes and tosses it with soy, sesame oil, garlic, scallion and a little gochugaru. Beyond Kimchee soaks the eggplant in vinegar water first and uses soup soy sauce, and Kimchimari steams the eggplant whole and tears it by hand. This follows Korean Bapsang, doubled so it works as a dinner over rice, with the chili flakes moved to the table so the eggplant stays mild.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Gaji Namul (Steamed Eggplant Side Dish)",
+   "url": "https://www.koreanbapsang.com/gaji-namul-steamed-eggplant-side-dish/",
+   "rating": 4.54,
+   "rating_count": 47,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Steamed Korean Eggplant (Gaji Namul)",
+   "url": "https://www.beyondkimchee.com/korean-eggplant/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kimchimari",
+   "title": "Steamed Eggplant Side Dish (Gaji Namul)",
+   "url": "https://kimchimari.com/steamed-eggplant-gaji-namul/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

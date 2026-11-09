@@ -1,0 +1,133 @@
+{
+ "dish_name": "Dak Kalguksu",
+ "cuisine": "Korean",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Boneless skin-on chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh kalguksu noodles",
+   "qty": "1 package (about 1 1/4 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "7 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "6"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken bouillon powder",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 12 cups of water in a kettle or second pot and bring it to a boil. Cut the potato and carrot into matchsticks, slice the onion, and slice the shiitake caps. Mince the garlic and slice 6 green onions.",
+  "Make the sauce for the table. In a small bowl, mix the 4 tbsp soy sauce, the gochugaru, the sesame oil, 1 of the minced garlic cloves and 2 of the sliced green onions.",
+  "Heat the vegetable oil in a large pot over medium-high heat. Put the chicken in skin side down and sear for 4 minutes, until the skin is browned.",
+  "Flip the chicken, add the onion, and cook for 4 to 5 minutes, stirring the onion. Move the chicken to a board and cut it into bite-size pieces. That should be about 165°F in the thickest piece if you have a thermometer. Without one, cut a piece open: there should be no pink.",
+  "Pour in 8 cups of the boiling water and add the potato, carrot, mushrooms, bouillon powder and fish sauce. Return the chicken to the pot and boil for 3 minutes.",
+  "Add the remaining 4 cups boiling water and bring it back to a boil. Rinse the noodles under cold water, shake them loose, and add them to the pot. Cook for 5 to 6 minutes, until tender.",
+  "Turn off the heat and stir in the remaining garlic and the remaining 4 green onions.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle into bowls and sprinkle with the pepper. Serve with the sauce at the table to spoon in."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Korean Bapsang is the top-rated version and leads by the app's rule, but it simmers a whole chicken for 40 minutes to make the broth and takes about an hour, which cannot fit a 30 minute dinner. This uses its shape (chicken, onion, garlic, potato, carrot, noodles, a soy and chili sauce at the table) but takes the method from Aaron and Claire's quick version, which sears boneless thighs, builds the broth with bouillon and fish sauce, and cooks the noodles in the same pot, doubled for 4. Taste Korean Food is another way to make it, with fish sauce and king oyster mushroom. Heat is moved to the table in the sauce. Even the quick version runs a little over 30 minutes for 4.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Dak Kalguksu (Chicken Noodle Soup)",
+   "url": "https://www.koreanbapsang.com/dak-kalguksu-chicken-noodle-soup/",
+   "rating": 4.66,
+   "rating_count": 69,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Aaron and Claire",
+   "title": "Dak Kalguksu (Korean Chicken Noodle Soup)",
+   "url": "https://aaronandclaire.com/dak-kalguksu-korean-chicken-noodle-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Taste Korean Food",
+   "title": "Korean Chicken Noodle Soup (Dak Kalguksu)",
+   "url": "https://www.tastekoreanfood.com/recipes/korean-chicken-noodle-soup-dak-kalguksu",
+   "rating": null,
+   "rating_count": 0,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

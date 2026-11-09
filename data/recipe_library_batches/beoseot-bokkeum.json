@@ -1,0 +1,99 @@
+{
+ "dish_name": "Beoseot Bokkeum",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Button mushrooms",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a few changes of water until the water runs mostly clear. Put it in a pot with 1 3/4 cups water, bring it to a boil, then cover, turn the heat to low and cook for 18 minutes. Take it off the heat and leave it covered while you cook the mushrooms.",
+  "Wipe the mushrooms with a damp paper towel and trim the ends of the stems. Slice them about 1/4 inch thick. Slice the garlic.",
+  "Heat 1 tbsp of the vegetable oil in a large skillet over high heat. Add half the mushrooms in a single layer and leave them for 2 minutes, until the undersides brown. Stir, sprinkle with 1/4 tsp of the salt, and cook for 2 minutes more. Move them to a plate and cook the rest the same way with the other 1 tbsp oil and 1/4 tsp salt.",
+  "Put all the mushrooms back in the pan over medium-high heat. Add the garlic and stir for 30 seconds, until it smells fragrant. Add the soy sauce and stir for 30 seconds, until it's absorbed.",
+  "Take the pan off the heat and stir in the sesame oil, pepper and sesame seeds.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions read had a rating. Aeri's Kitchen sautés sliced garlic with button mushrooms and finishes with sesame oil and seeds, so it leads. Chowdivine browns the mushrooms hot and adds a splash of soy sauce, and Hansik Young uses dried shiitake and onion. This follows Aeri's Kitchen, scaled up for 4 as a main over rice, cooks the mushrooms in two batches so they brown instead of steam, adds the garlic after browning so it doesn't burn, and takes the splash of soy from Chowdivine.",
+ "sources": [
+  {
+   "name": "Aeri's Kitchen",
+   "title": "Button Mushroom Bokkeum",
+   "url": "https://www.aeriskitchen.com/2013/05/button-mushroom-bokkeum/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chowdivine",
+   "title": "Beosut Bokkeum (Sauteed Mushrooms)",
+   "url": "https://chowdivine.com/beosut-bokkeum-and-danggeun-bokkeum-two-korean-side-dishes-sauteed-mushrooms-sauteed-carrots/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hansik Young",
+   "title": "Pyogo Beoseot Bokkeum",
+   "url": "https://www.hansikyoung.com/recipes/pyogo-beoseot-bokkeum",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

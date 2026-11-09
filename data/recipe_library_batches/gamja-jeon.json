@@ -1,0 +1,98 @@
+{
+ "dish_name": "Gamja Jeon",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "3 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Grate half the onion into a large bowl. Peel the potatoes and grate them on the large holes of a box grater or with a food processor, working in handfuls. Tip each handful in with the onion and stir so the potato doesn't turn brown.",
+  "Pour the grated potato into a strainer set over another bowl and press out as much liquid as you can. Put the potato back in the big bowl and leave the liquid alone for 10 minutes while you make the sauce.",
+  "In a small bowl, stir together the tamari, vinegar, 2 tbsp water, the sugar and the pepper until the sugar dissolves.",
+  "Pour the clear water off the top of the saved liquid and scrape out the white starch left at the bottom. Stir the starch and the salt into the potato until it holds together.",
+  "Heat 1 1/2 tbsp of the oil in a large skillet over medium heat. Spoon in about a third of the potato for one pancake about 5 inches wide, and add a second pancake beside it. Flatten each to about 1/3 inch thick.",
+  "Cook for 2 to 3 minutes, until the underside is golden and lets go of the pan. Turn the heat to medium-low, flip each pancake once, and cook 2 to 3 minutes, until crisp and golden on both sides. Taste the first pancake. If it's flat, stir a pinch more salt into the rest of the potato.",
+  "Set the finished pancakes on a wire rack so they stay crisp. Make the rest the same way, 2 at a time, adding 1 1/2 tbsp oil for each round, for 6 pancakes in all.",
+  "Serve hot with the dipping sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Korean Bapsang, Kimchimari and Yeji's Kitchen Stories all pan-fry finely grated potato with onion and a pinch of salt. Korean Bapsang holds the pancake together with the potato's own starch, which settles out of the squeezed liquid, while the other two use flour, so this follows Korean Bapsang and stays gluten-free. It is doubled from the 2-serving original, the optional garlic chives are left out because they are hard to find, and the dipping sauce uses gluten-free tamari. The pancakes are made smaller and two at a time so they brown evenly.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Gamjajeon (Potato Pancakes)",
+   "url": "https://www.koreanbapsang.com/gamjajeon-potato-pancakes/",
+   "rating": 4.75,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kimchimari",
+   "title": "Crispy Korean Potato Pancakes (Gamja Jeon)",
+   "url": "https://kimchimari.com/korean-potato-pancakes-gamjajeon/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Yeji's Kitchen Stories",
+   "title": "Crispy Korean Potato Pancakes (Gamja-jeon)",
+   "url": "https://yejiskitchenstories.com/crispy-korean-potato-pancakes-gamja-jeon/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,118 @@
+{
+ "dish_name": "Samgyeopsal",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Thin-sliced pork belly",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Red leaf lettuce",
+   "qty": "2 heads",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1"
+  },
+  {
+   "item": "Jalapeno",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Doenjang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a few changes of water until the water runs mostly clear. Put it in a pot with 1 3/4 cups water, bring it to a boil, then cover, turn the heat to low and cook for 18 minutes. Take it off the heat and leave it covered while you cook the pork.",
+  "Wash the lettuce, separate the leaves and drain them well. Slice 6 of the garlic cloves thinly and slice the jalapeno. Put them on a plate for the table.",
+  "Make the ssamjang. Mince the 2 remaining garlic cloves and the green onion. Stir them in a small bowl with the doenjang, 2 tbsp of the sesame oil, the maple syrup and the vinegar.",
+  "Make the dipping oil. Put 1/2 tbsp sesame oil, 1/4 tsp salt and a few grinds of pepper in each of 4 small bowls.",
+  "Score the pork belly slices with a few shallow cuts. Heat a large skillet over medium-high heat and add the pork in a single layer without oil. Cook for 2 to 3 minutes, until golden brown underneath. Flip and cook 2 to 3 minutes, until golden and crisp. That should be about 145°F in the thickest slice if you have a thermometer. Without one, cut a slice open: there should be no pink.",
+  "Snip each slice into bite-size pieces with kitchen scissors and move them to a plate. Pour off most of the fat from the pan between batches and cook the rest of the pork the same way, in 3 batches in all.",
+  "Taste a piece. If it's flat, add a pinch more salt.",
+  "Serve the pork with the rice, lettuce, ssamjang, dipping oil, sliced garlic and jalapeno at the table, for wrapping in the lettuce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cook With Dana, Wok With Sam and Beyond Kimchee all brown thin pork belly slices in a dry pan or on a grill, cut them with scissors, and eat them in lettuce with a sesame oil and salt dip and a doenjang and gochujang ssamjang. None had a rating, so this follows Cook With Dana, the only one with a full ssamjang and dipping oil written out. Its ssamjang has no gochujang, so the base stays mild, and the jalapeno is on the side. Beyond Kimchee grills for 20 minutes and adds mushrooms and kimchi; Wok With Sam is the quickest at 2 to 3 minutes a side.",
+ "sources": [
+  {
+   "name": "Cook With Dana",
+   "title": "Korean Pork Belly BBQ (Samgyeopsal)",
+   "url": "https://cookwithdana.com/korean-pork-belly-samgyeopsal/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wok With Sam",
+   "title": "Samgyeopsal (Korean Grilled Pork Belly)",
+   "url": "https://wokwithsam.com/samgyeopsal-korean-grilled-pork-belly/",
+   "rating": null,
+   "rating_count": 0,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Samgyupsal Gui (Korean Pork Belly BBQ)",
+   "url": "https://www.beyondkimchee.com/samgyupsal/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
