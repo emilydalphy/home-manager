@@ -1,0 +1,112 @@
+{
+ "dish_name": "Derek Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 13,
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into 3/4 inch cubes. Pat them dry with paper towels, then toss them in a bowl with the 1 tbsp berbere, 3/4 tsp of the salt and the 1/2 tsp black pepper.",
+  "Slice the onion and cut the bell pepper into thin strips. Thinly slice the garlic. Pull the leaves off a rosemary sprig and chop them finely. Slice the jalapeño into rings and put them in a small bowl for the table. Cut the lemon into wedges.",
+  "Heat a large skillet over high heat for 1 minute, then add 1 tbsp of the olive oil. Add half the beef in a single layer and leave it alone for 90 seconds, until the underside is deep brown. Stand back a little. It will spatter.",
+  "Stir the beef and cook it for 1 minute, until the edges are crisp in places, then transfer it to a plate. Brown the second half the same way in 1 tbsp of the oil.",
+  "Turn the heat down to medium high and add 1 tbsp of the oil, the onion, the bell pepper and the last 1/4 tsp salt. Cook for 4 minutes, stirring now and then, until the edges brown but the pepper still has some bite.",
+  "Add the garlic and the rosemary and stir for 30 seconds, until it smells fragrant.",
+  "Return the beef to the pan with any juices from the plate. Toss over high heat for 1 minute, until it sizzles and the juices have cooked off. You're cooking the beef to 145°F in the middle for medium, so if you have a thermometer, check it there. No thermometer? Cut into a cube: it should be barely pink.",
+  "Take the pan off the heat and stir in the last 1 tbsp oil.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lemon.",
+  "Serve with the injera, with the jalapeño rings and the lemon wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Derek tibs is the dry-fried style: meat seared hard in fat with onion and pepper and almost no sauce, traditionally brought to the table sizzling. The only page read for it (Migrationology) describes the dish with no amounts and no rating, so the amounts come from the quantities in the wet beef tibs at Cuisine Noir, scaled down and cooked dry with no tomato or added liquid. The Gourmet Traveller 'derek tibs' is a two hour braise, so it was not used. Niter kibbeh is butter, so olive oil replaces it to stay dairy-free. Heat is kept on the side with jalapeño. It is a dry dish by design, so the pan juices and lemon are the only moisture. Store injera is often wheat-blended, so the list says 100% teff injera to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Migrationology",
+   "title": "Derek tibs, Ethiopia's flaming hot meat treat",
+   "url": "https://migrationology.com/ethiopian-derek-tibs",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cuisine Noir",
+   "title": "Ethiopian Tibs Recipe",
+   "url": "https://www.cuisinenoir.com/recipes/ethiopian-tibs-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

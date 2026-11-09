@@ -1,0 +1,87 @@
+{
+ "dish_name": "Ayib be Gomen",
+ "cuisine": "Ethiopian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Collard greens",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Small curd cottage cheese",
+   "qty": "1 container (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 stick",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Wash the collards and cut out the thick stems. Stack the leaves, roll them up and slice them into thin ribbons.",
+  "Finely dice the onion. Mince the garlic and grate 1 tbsp of ginger.",
+  "Melt the butter in a large deep skillet over medium heat. Add the onion and 1/4 tsp of the salt and cook for 4 minutes, stirring, until soft.",
+  "Add the garlic and ginger and stir for 30 seconds, until fragrant.",
+  "Add the collards and 1/2 cup water. Cover and cook for 8 minutes, stirring once or twice, until the collards are tender.",
+  "Take the lid off and cook for 2 minutes, until the water has cooked off.",
+  "Turn the heat to low and add the cottage cheese, the remaining 3/4 tsp salt and the pepper. Stir for 2 minutes, until the cheese is warm and coats the collards.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the injera."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The only version of ayib be gomen found is Gayathri's Cook Spot (no rating), made with spinach: onion, ginger and garlic in spiced butter, the greens wilted, then cottage cheese stirred in until fairly dry. Collards are used here to match the dish name, cooked with a splash of water as in the Gomen already in the library, and cottage cheese stands in for ayib, the fresh Ethiopian cheese. Plain butter replaces niter kibbeh. It is vegetarian and gluten-free as long as the injera is 100% teff; store injera is often wheat-blended.",
+ "sources": [
+  {
+   "name": "Gayathri's Cook Spot",
+   "title": "Ayib be Gomen",
+   "url": "https://gayathriscookspot.com/wprm_print/ayib-be-gomen-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

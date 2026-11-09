@@ -1,0 +1,108 @@
+{
+ "dish_name": "Shrimp Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 13,
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Pat the shrimp dry with paper towels and toss them with 1/4 tsp of the salt.",
+  "Cut the onion and both bell peppers into thin strips. Cut the tomatoes into small dice. Slice the jalapeño into rings and put them in a small bowl for the table. Pull the leaves off a rosemary sprig and chop them finely. Cut the lemon into wedges.",
+  "Heat 2 tbsp of the olive oil in a large skillet over high heat until it shimmers. Add the onion, bell peppers and 1/2 tsp of the salt. Cook for 5 minutes, stirring, until the edges brown and the peppers are soft but still have some bite.",
+  "Add the cardamom and rosemary and stir for 20 seconds, until it smells fragrant.",
+  "Add the tomatoes and cook for 2 minutes, until they start to break down into a loose sauce.",
+  "Push the vegetables to the sides. Add the remaining 1 tbsp oil to the center, then add the shrimp in a single layer and sprinkle with the berbere. Cook for 1 minute without stirring.",
+  "Stir everything together and cook for 2 minutes, until the shrimp are pink and curled into a C shape. A tight O means they're overcooked. They're done at 120°F to 125°F in the thickest part if you have a thermometer.",
+  "Take the pan off the heat and squeeze in a lemon wedge.",
+  "Taste it. If it's flat, add the last 1/4 tsp salt or another squeeze of lemon.",
+  "Serve with the injera, with the jalapeño rings and the lemon wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Brundo (an Ethiopian chef's page, no rating) sautés onion and peppers in niter kibbeh, adds korerima, jalapeño, rosemary and tomato, then stirs in berbere and the shrimp for a few minutes until pink; nothing else turned up for shrimp tibs, so it is the only source. This version speeds up the vegetables (10 minutes down to 5) so it lands near 25 minutes, and swaps ground cardamom for korerima. Niter kibbeh is butter, so olive oil replaces it to stay dairy-free. The jalapeño goes on the table to keep the base mild. Store injera is often wheat-blended, so the list says 100% teff injera to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Brundo",
+   "title": "Shrimp Tibs (Sautéed Shrimp in Ethiopian Spices)",
+   "url": "https://brundo.com/blogs/recipes/shrimp-tibs-sauteed-shrimp-in-ethiopian-spices",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

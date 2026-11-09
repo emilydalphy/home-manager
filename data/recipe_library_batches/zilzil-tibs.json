@@ -1,0 +1,107 @@
+{
+ "dish_name": "Zilzil Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 13,
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into long thin strips, about 1/2 inch wide and 3 inches long. Pat them dry with paper towels, then toss them with the 1 tbsp berbere and 3/4 tsp of the salt.",
+  "Slice the onion. Thinly slice the garlic and grate 1 tbsp of ginger. Cut the jalapeño in half lengthwise and remove the seeds. Slice half into thin strips for the pan and the other half into rings for the table. Pull the leaves off a rosemary sprig and chop them finely. Cut the lemon in half.",
+  "Heat a large skillet over high heat for 1 minute, then add 1 tbsp of the olive oil. Add half the beef in a single layer and leave it alone for 1 minute, until the underside is browned. Stand back a little. It will spatter.",
+  "Stir the beef and cook it for 1 minute, then transfer it to a plate. Brown the second half the same way in 1 tbsp of the oil.",
+  "Turn the heat down to medium high and add 1 tbsp of the oil, the onion and the last 1/4 tsp salt. Cook for 3 minutes, stirring, until the edges brown.",
+  "Add the garlic, ginger, rosemary and the jalapeño strips and stir for 30 seconds, until it smells fragrant.",
+  "Add 3 tbsp water and scrape up the brown bits. Return the beef to the pan with any juices from the plate and toss for 1 minute, until it's coated and hot. You're cooking it to 145°F in the middle for medium, so if you have a thermometer, check it there. No thermometer? Cut into a strip: it should be barely pink.",
+  "Take the pan off the heat and stir in the last 1 tbsp oil.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze from one lemon half.",
+  "Serve with the injera, with the jalapeño rings and the other lemon half cut into wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Zilzil means strips: beef cut long and thin, browned fast, then finished with onion and berbere. The Wikibooks version (no rating) marinates the strips for an hour with onion, garlic, ginger and spices before frying; this one salts and spices them just before the pan to fit 30 minutes, and follows Gypsy Plate (5.0 from 6) for the rosemary and jalapeño the dish line asks for. Niter kibbeh is butter, so olive oil replaces it to stay dairy-free. Half the jalapeño cooks in the pan, seeded, and half goes on the table. Store injera is often wheat-blended, so the list says 100% teff injera to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Wikibooks Cookbook",
+   "title": "Zilzil Tibs (Spicy Ethiopian Beef Strips)",
+   "url": "https://en.wikibooks.org/wiki/Cookbook:Zilzil_Tibs_(Spicy_Ethiopian_Beef_Strips)",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gypsy Plate",
+   "title": "Awaze Tibs",
+   "url": "https://gypsyplate.com/awaze-tibs/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

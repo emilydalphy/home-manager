@@ -1,0 +1,123 @@
+{
+ "dish_name": "Awaze Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into thin strips, about 1/4 inch thick and 2 inches long. Pat them dry with paper towels and toss them with 3/4 tsp of the salt.",
+  "Make the awaze. In a small bowl, stir together the 2 tbsp berbere, 1 tsp honey, 2 tbsp water and 1 tbsp of the olive oil into a loose paste.",
+  "Slice the onion and thinly slice the garlic. Cut the tomatoes into thin wedges and scoop out most of the seeds. Slice the jalapeño into rings and put them in a small bowl for the table. Pull the leaves off a rosemary sprig and chop them roughly. Cut the lemon in half.",
+  "Heat a large skillet over high heat for 1 minute, then add 1 tbsp of the oil. Add half the beef in a single layer and leave it alone for 1 minute, until the underside is browned. Stand back a little. It will spatter.",
+  "Stir the beef and cook it for 1 minute, then transfer it to a plate. Brown the second half the same way in 1 tbsp of the oil.",
+  "Turn the heat down to medium high and add the onion and the last 1/4 tsp salt. Cook for 3 minutes, stirring, until the edges brown.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Add the tomatoes, the rosemary, half of the awaze and 2 tbsp water. Cook for 2 minutes, stirring and scraping up the brown bits, until the tomatoes start to slump.",
+  "Return the beef to the pan with any juices from the plate and toss it for 1 minute, until it's coated and hot. You're cooking it to 145°F in the middle for medium, so if you have a thermometer, check it there. No thermometer? Cut into a strip: it should be barely pink.",
+  "Take the pan off the heat and stir in the last 1 tbsp oil.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze from one lemon half.",
+  "Serve with the injera, with the jalapeño rings, the rest of the awaze and the other lemon half cut into wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the three versions read is rated, so this leads with Brundo, an Ethiopian chef's page for the same dish: salt the beef, sear it fast, then onion, garlic and tomato, with the awaze stirred in and extra served at the table. Gypsy Plate (5.0 from 6) and Cuisine Noir cook it the same way; Gypsy Plate adds rosemary and cooks the beef a little longer. Niter kibbeh is butter, so this uses olive oil in its place to stay dairy-free. Half the awaze goes in the pan and half on the side to keep the base mild, and a little honey stands in for the tej (honey wine) some cooks mix into awaze. Store injera is often wheat-blended, so the list says 100% teff injera to keep it gluten-free; rice works too.",
+ "sources": [
+  {
+   "name": "Brundo",
+   "title": "Awaze Beef Tibs",
+   "url": "https://www.brundo.com/blogs/recipes/awaze-beef-tibs",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gypsy Plate",
+   "title": "Awaze Tibs",
+   "url": "https://gypsyplate.com/awaze-tibs/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cuisine Noir",
+   "title": "Ethiopian Tibs Recipe",
+   "url": "https://www.cuisinenoir.com/recipes/ethiopian-tibs-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,100 @@
+{
+ "dish_name": "Pasta be Siga",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 22,
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with 4 quarts of water, add 1 tbsp of the salt and bring it to a boil over high heat. Start this first.",
+  "Meanwhile, finely chop the onion and mince the garlic. Chop 1/4 cup of parsley.",
+  "Heat the olive oil in a large deep skillet over medium-high heat. Add the onion and 1/4 tsp of the remaining salt. Cook for 4 minutes, stirring, until the onion is soft and just starting to brown.",
+  "Add the beef and the remaining 3/4 tsp salt and the pepper. Break the beef up with a spoon and leave it alone for 2 minutes, until the underside browns. Stir and cook for 3 minutes, until no pink is left.",
+  "Add the garlic, 1 1/2 tbsp of the berbere and the tomato paste. Stir for 1 minute, until the paste darkens and the garlic smells fragrant.",
+  "Add the crushed tomatoes and 1/2 cup water. Scrape up the browned bits, bring it to a simmer and cook for 8 minutes, stirring now and then, until it thickens a little.",
+  "While the sauce simmers, add the spaghetti to the boiling water and cook it for 1 minute less than the package says. Scoop out 1/2 cup of the pasta water, then drain the spaghetti.",
+  "Add the spaghetti and 1/4 cup of the pasta water to the sauce. Toss over medium heat for 1 minute, adding the rest of the pasta water if it looks dry.",
+  "Take the pan off the heat and stir in the parsley.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the last 1/2 tbsp berbere in a small bowl at the table for anyone who wants more heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spaghetti with a berbere sauce is the everyday Ethiopian pasta, from Italy's influence there; 'siga' means meat. The one readable recipe (Oxen and Elephants, vegan, unrated) fries onion and garlic, cooks the berbere into a paste, adds tomato sauce and finishes the pasta with a little pasta water. This version adds ground beef for the siga, uses canned tomatoes with tomato paste in place of jarred sauce, and leaves out the Parmesan so it stays dairy-free. Only 1 1/2 tbsp berbere goes into the sauce, with the rest on the table for heat.",
+ "sources": [
+  {
+   "name": "Oxen and Elephants",
+   "title": "Spaghetti al Berbere (vegan)",
+   "url": "https://oxenandelephants.blogspot.com/2022/06/spaghetti-al-berbere-vegan.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
