@@ -1,0 +1,89 @@
+{
+ "dish_name": "Camarones a la Plancha",
+ "cuisine": "Mexican",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Jumbo shrimp, peeled and deveined",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ancho chile powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Orange",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pat the shrimp dry.",
+  "In a large bowl, mix the cumin, ancho chile powder, garlic powder, salt and pepper. Add 2 tbsp of the olive oil, the juice of 1 lime (about 1 tbsp) and 2 tbsp orange juice. Add the shrimp and toss until they're coated.",
+  "Cover the bowl and put it in the fridge for 15 minutes. Meanwhile, cut the other 2 limes into wedges.",
+  "Heat a large cast-iron skillet or griddle over high heat for about 3 minutes, until it's smoking hot. Brush it lightly with the last 1 tbsp olive oil.",
+  "Lift the shrimp out of the bowl and lay half of them in a single layer. Cook for 3 minutes without moving them, until the underside is pink.",
+  "Flip them and cook for 2 to 3 minutes, until they're pink all over and curled into a loose C. Cut one in half to check. It's done when it's opaque all the way through. Transfer to a plate.",
+  "Cook the other half the same way.",
+  "Taste one. If it's flat, add a pinch more salt. Serve with the lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Maricruz Avalos's camarones a la plancha (no rating shown; 11 minutes): jumbo shrimp tossed with cumin, chile, garlic, lime and orange juice and olive oil, then seared on a smoking-hot flat griddle, 3 minutes then 2 to 3. Palatable Pastime's skewers (4.67 from 9 votes) agree on lime, garlic and a hot pan but marinate for 30 minutes to an hour and add skewers, so the shorter marinade is used. The garlic is garlic powder, as in the lead, so it can't burn on the hot pan. Cooked in two batches so the pan stays hot.",
+ "sources": [
+  {
+   "name": "Maricruz Avalos",
+   "title": "Camarones a la Plancha",
+   "url": "https://www.maricruzavalos.com/camarones-a-la-plancha/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Palatable Pastime",
+   "title": "Mexican Grilled Shrimp Skewers (aka Camarones a la Plancha)",
+   "url": "https://palatablepastime.com/2020/09/16/mexican-grilled-shrimp-skewers",
+   "rating": 4.67,
+   "rating_count": 9,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

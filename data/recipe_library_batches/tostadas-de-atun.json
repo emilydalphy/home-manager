@@ -1,0 +1,109 @@
+{
+ "dish_name": "Tostadas de Atun",
+ "cuisine": "Mexican",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Canned tuna",
+   "qty": "2 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeno",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 cucumber"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 onion"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tostada shells",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Refried beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Drain the tuna very well and transfer it to a medium bowl. Break it up with a fork.",
+  "Juice the limes into a small bowl. That should be about 1/4 cup. Dice the tomato. Cut the jalapeno open, scrape out the seeds and ribs, and mince it. Chop the cilantro until you have about 1/4 cup. Dice half the cucumber and a quarter of the red onion. Slice the avocados.",
+  "Add the tomato, jalapeno, cilantro, cucumber, onion, salt and the lime juice to the tuna. Stir until combined.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spread about 2 tbsp of refried beans over each tostada shell. Lift the tuna mixture with a slotted spoon so the extra juice stays in the bowl, and pile it on top.",
+  "Top with the avocado slices. Serve right away, 2 tostadas each."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Mama Maggie's Kitchen tostada de atun (5 from 3 ratings): drained canned tuna mixed with lime, tomato, jalapeno, cilantro, cucumber and onion, piled on refried-bean tostadas with avocado. Maricruz Avalos (no rating) makes a creamy chipotle and mayo version, and Salima's Kitchen (no reviews) fries the shells and skips the mayo, so cooks differ on creamy or lime-based; the lime version is the one with no stove. Queso fresco is left out to keep it dairy-free, and the lead's 1/2 cup lime juice is cut to 1/4 cup. Assemble at the table so the shells stay crisp.",
+ "sources": [
+  {
+   "name": "Mama Maggie's Kitchen",
+   "title": "Tostadas de Atun (Mexican Tuna Tostadas)",
+   "url": "https://inmamamaggieskitchen.com/tostada-de-atun/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Tostadas de Atun",
+   "url": "https://www.maricruzavalos.com/tostadas-de-atun/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Salima's Kitchen",
+   "title": "Easy Canned Tuna Tostadas",
+   "url": "https://salimaskitchen.com/tuna-tostadas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,101 @@
+{
+ "dish_name": "Pollo a la Plancha",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  }
+ ],
+ "instructions": [
+  "Put the chicken breasts between two sheets of plastic wrap, one at a time. Pound them with a meat mallet or rolling pin until they're about 1/4 inch thick.",
+  "Juice 1 of the limes into a large shallow dish. That should be about 2 tbsp. Add 2 tbsp of the olive oil, the garlic powder, onion powder, paprika, cumin, oregano, salt and pepper. Stir.",
+  "Add the chicken and turn each piece until it's coated. Let it sit at room temperature for 10 minutes.",
+  "Meanwhile, cut the other 2 limes into wedges. Chop the cilantro until you have about 1/4 cup.",
+  "Heat the last 1 tbsp olive oil in a large skillet or griddle over medium-high heat for 2 minutes, until it shimmers.",
+  "Lift 2 of the cutlets out of the marinade and shake off the extra. Lay them in the pan and cook without moving them for 2 to 3 minutes, until the underside is golden brown and lets go of the pan.",
+  "Flip them and cook for 2 to 3 minutes. You're cooking it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when there's no pink left.",
+  "Transfer the cutlets to a plate and cook the other 2 the same way. Let all of them rest for 3 minutes.",
+  "Scatter the cilantro over the chicken. Taste a piece. If it's flat, add a pinch more salt. Serve with the lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is A Sassy Spoon's Cuban pollo a la plancha (4.8 from 55): chicken pounded to 1/4 inch, a citrus and garlic marinade, then 2 to 3 minutes a side in a hot pan. Maricruz Avalos's Mexican version (no rating shown) supplies the lime, garlic, cumin, paprika and oregano marinade here, so the lead's bottled mojo and sazon are replaced with plain pantry spices. Both agree on pounding thin and a short marinade; the lead's marinade is 20 minutes, cut to 10 to stay at 30 minutes.",
+ "sources": [
+  {
+   "name": "A Sassy Spoon",
+   "title": "Cuban Pollo a la Plancha (Easy Griddled Chicken Breast)",
+   "url": "https://asassyspoon.com/pollo-a-la-plancha",
+   "rating": 4.8,
+   "rating_count": 55,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Pollo a la Plancha",
+   "url": "https://www.maricruzavalos.com/pollo-a-la-plancha/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

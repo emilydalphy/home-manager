@@ -1,0 +1,86 @@
+{
+ "dish_name": "Pescado al Mojo de Ajo",
+ "cuisine": "Mexican",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Tilapia fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice, 2 1/4 cups water and 1/4 tsp of the salt in a medium pot. Bring to a boil over high heat, then cover, lower the heat to low and cook for 15 minutes. Take it off the heat and leave it covered.",
+  "Meanwhile, slice the garlic thin. Chop the parsley until you have about 3 tbsp. Juice 1 of the limes. That should be about 2 tbsp. Cut the other lime into wedges.",
+  "Pat the fillets dry. Season both sides with the remaining 1 tsp salt and the pepper.",
+  "Pour the oil into a large nonstick skillet and set it over low heat. Add the garlic and cook for 20 to 30 seconds, until it just turns light gold. Stay with it. Garlic goes dark fast and turns bitter.",
+  "Use a slotted spoon to transfer the garlic to a small plate right away. Leave the oil in the skillet.",
+  "Raise the heat to medium-high. When the oil shimmers, lay in the fillets in a single layer, in two batches if they don't fit with room between them. Cook for 2 to 3 minutes without moving them, until the underside is golden and lets go of the pan.",
+  "Flip them and cook for 2 to 3 minutes, until the fish flakes easily with a fork. Transfer to a platter.",
+  "Squeeze the lime juice over the fish and scatter the fried garlic and parsley on top. Taste a piece. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the fish with the rice and the lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Mely Martinez's Mexican pescado al mojo de ajo (Taste and Travel; no rating shown): sliced garlic fried in oil over low heat, removed, then the fish fried in the same oil. Her optional flour and butter are left out to keep the dish gluten-free and dairy-free, and the lime is squeezed on at the end instead of before cooking so the fish browns. Gretchen Cooks' version (no rating) agrees on the garlic-oil method but uses margarine and flour. Rice is added because the source serves it with rice.",
+ "sources": [
+  {
+   "name": "Taste and Travel Magazine",
+   "title": "Pescado al Mojo de Ajo",
+   "url": "https://tasteandtravelmagazine.com/2024/06/pescado-al-mojo-de-ajo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gretchen Cooks",
+   "title": "Filetes de Pescado al Mojo de Ajo",
+   "url": "https://www.gretchencooks.com/recipes/155_Filetes_de_Pescado_al_Mojo_de_Ajo_Fish_fillets_in_Garlic_Sauce",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

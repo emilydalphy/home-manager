@@ -1,0 +1,97 @@
+{
+ "dish_name": "Tacos de Nopales",
+ "cuisine": "Mexican",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Nopales, cleaned and diced",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Anaheim chiles",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "pantry"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the nopales in a colander under cold water and let them drain.",
+  "Slice the onion thin and the garlic thin. Stem and seed the chiles and slice them into thin strips. Slice the radishes thin. Cut the limes into wedges.",
+  "Heat a wide skillet over medium heat for 2 minutes. Swirl in the oil, then add the onion, chiles and nopales. Stir to coat.",
+  "Cover and cook for 10 minutes, stirring once or twice.",
+  "Uncover, stir in the salt and cook for 5 minutes, until most of the liquid has cooked off. Add the garlic and cook for 1 minute, until it smells good.",
+  "While that cooks, warm a dry skillet over medium-high heat. Warm the tortillas for about 30 seconds a side, until they have a few brown spots. Stack them in a clean towel as they're done.",
+  "Taste the filling. If it's flat, add a pinch more salt.",
+  "Fill each tortilla with the warm nopales and top with radishes. Serve with the lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is the PBS SoCal tacos de nopales (no rating shown): onion, garlic and green chile cooked down with the nopales, covered then uncovered, until the liquid is gone. Sippitysup (no rating) sears diced nopales hot with onion and jalapeno, and Beyond Mere Sustenance (5 from 3) cooks them in a pan with a red chile sauce, so cooks differ on char versus stewing. This version uses nopales already cleaned and diced (sold fresh at many Mexican grocers) to stay near 30 minutes; the sources' queso fresco and cotija are left off to keep it vegan.",
+ "sources": [
+  {
+   "name": "PBS SoCal",
+   "title": "Recipe: Tacos de Nopales",
+   "url": "https://pbssocal.org/food-discovery/food/recipe-tacos-de-nopales",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sippity Sup",
+   "title": "Nopales Tacos",
+   "url": "https://www.sippitysup.com/?p=41345",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Beyond Mere Sustenance",
+   "title": "Nopales Tacos (Cactus Tacos)",
+   "url": "https://beyondmeresustenance.com/nopales-tacos/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

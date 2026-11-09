@@ -1,0 +1,79 @@
+{
+ "dish_name": "Avocado Tostadas",
+ "cuisine": "Mexican",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 4,
+ "ingredients": [
+  {
+   "item": "Corn tostada shells",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetarian refried black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry",
+   "cook_qty": "about 1 3/4 cups"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "1 1/2 cups shredded"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "1 1/2 cups shredded"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Spoon the refried beans into a small pot with 2 tbsp water. Warm over medium-low heat, stirring, for 3 to 4 minutes, until hot and smooth enough to spread. Take it off the heat.",
+  "Meanwhile, halve and pit the avocados and slice them thin. Shred 1 1/2 cups of the lettuce and 1 1/2 cups of the red cabbage. Cut the limes into wedges.",
+  "Spread about 3 tbsp of the warm beans over each tostada shell.",
+  "Top each one with avocado slices and a handful of the lettuce and cabbage. Sprinkle the salt over all 8.",
+  "Taste one. If it's flat, add a pinch more salt. Serve right away, 2 tostadas each, with the lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Love and Lemons' easy tostadas (4.9 from 39 ratings): warm refried beans on a crisp tostada, topped with sliced avocado and a shredded lettuce and cabbage mix, with salt and lime. The cotija it uses is left out to keep this vegan and dairy-free. Plant Based Jess's avocado salad tostadas (no rating shown) put a diced avocado and tomato salad on the beans instead. Both say to top the shells at the last minute so they stay crisp. The list says vegetarian refried beans because some canned ones are made with lard. Love and Lemons isn't titled avocado tostadas, but its filling is the beans and avocado this dish promises.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Easy Tostadas",
+   "url": "https://www.loveandlemons.com/tostada-recipe/",
+   "rating": 4.9,
+   "rating_count": 39,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Plant Based Jess",
+   "title": "Avocado Salad Tostadas",
+   "url": "https://plantbasedjess.com/avocado-salad-tostadas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

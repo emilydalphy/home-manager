@@ -1,0 +1,97 @@
+{
+ "dish_name": "Turkey Taquitos",
+ "cuisine": "Mexican",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Taco seasoning",
+   "qty": "1 packet (1 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes with green chiles",
+   "qty": "1 can (10 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Flour tortillas (6-inch)",
+   "qty": "16",
+   "category": "pantry"
+  },
+  {
+   "item": "Cheddar cheese",
+   "qty": "4 oz",
+   "category": "dairy",
+   "cook_qty": "1 cup shredded"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with the rack in the middle. Line a large baking sheet with parchment.",
+  "Dice the onion small and mince the garlic. Shred the cheese if it's a block. Drain the tomatoes.",
+  "Heat 1 tbsp of the olive oil in a large skillet over medium-high heat. Add the onion and cook for 3 minutes, until soft. Add the garlic and cook for 30 seconds, until it smells good.",
+  "Add the turkey and the salt. Break it into crumbles with a spoon and cook for 5 minutes, until it's browned and there's no pink left. Ground turkey is cooked to 165°F, so if you have a thermometer, check it there.",
+  "Add the taco seasoning and stir for 30 seconds. Add the drained tomatoes and cook for 1 minute. Take the skillet off the heat and let the filling cool for 3 minutes.",
+  "Stack the tortillas, wrap them in a damp paper towel and microwave for 20 to 30 seconds, until bendy. They roll without cracking.",
+  "Lay a tortilla on the counter. Sprinkle 1 tbsp of the cheese down the middle, spoon about 2 tbsp of filling over it, and roll it up tightly. Set it seam side down on the baking sheet. Repeat with the rest, keeping them close but not touching.",
+  "Brush the tops with the remaining 1 tbsp olive oil. Bake for 10 to 12 minutes, until golden and crisp at the edges. Let them cool for 1 minute.",
+  "Serve with the salsa for dipping.",
+  "To keep them, let the leftovers cool, then store in a sealed container in the fridge for up to 3 days. To freeze, set them on a tray for 1 hour, then transfer to a freezer bag for up to 2 months. Reheat from the fridge at 375°F for 8 to 10 minutes. Reheat from frozen at 350°F for 15 to 20 minutes, until hot and crisp."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Peanut Blossom's baked turkey taquitos (5 from 6 ratings): browned turkey, onion and garlic with taco seasoning and drained tomatoes with chiles, rolled in flour tortillas with cheddar and baked at 425°F. Six Sisters' Stuff (5 from 1 vote) agrees on the method and the oven heat. The freezer and reheating times come from general guidance and Sift and Simmer's baked turkey taquitos, not the lead. The batch makes 16 and rolling takes about 8 minutes, so the honest total is 35.",
+ "sources": [
+  {
+   "name": "Peanut Blossom",
+   "title": "Baked Turkey Taquitos",
+   "url": "https://peanutblossom.com/?p=19382",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Six Sisters' Stuff",
+   "title": "Taco Turkey Taquitos",
+   "url": "https://www.sixsistersstuff.com/recipe/taco-turkey-taquitos/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
