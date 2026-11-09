@@ -1,0 +1,117 @@
+{
+ "dish_name": "Bread Upma",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Toast 12 slices of the bread in a toaster, a few at a time, until golden and crisp. Cut them into 1 inch cubes.",
+  "Meanwhile, finely chop the onion and tomatoes, grate 1 tsp of the ginger, chop the bell pepper into small pieces and chop 3 tbsp of the cilantro. Cut the lemon into wedges.",
+  "Heat the oil in a large, wide skillet over medium heat for 1 minute. Add the mustard seeds and curry leaves. They'll splutter in about 30 seconds.",
+  "Add the onion and ginger. Cook for 3 minutes, stirring, until the onion is soft and see-through.",
+  "Add the tomatoes. Cook for 5 minutes, until they break down into a thick mush.",
+  "Stir in the turmeric, chili powder, 1 tsp sugar and the salt. Cook for 1 minute.",
+  "Add the bell pepper and cook for 1 minute, so it stays crunchy.",
+  "Stir in 1/4 cup water, then gently fold in the bread cubes so they don't break up.",
+  "Cover and cook on low for 2 to 3 minutes, until the bread has soaked up the masala.",
+  "Off the heat, stir in the cilantro. Serve with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 13,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (the lead, 4.99 from 249) toasts the bread first so the cubes hold their shape, then folds them into a tomato masala. Written for 4 by doubling its 2-serving amounts. The source's green chili is left out to keep the base mild, and the Kashmiri chili powder is the mild kind. Indian Veggie Delight's version is similar but skips the toasting and adds garam masala.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Bread Upma Recipe | South Indian Bread Upma",
+   "url": "https://hebbarskitchen.com/south-indian-bread-upma-recipe/",
+   "rating": 4.99,
+   "rating_count": 249,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Indian Veggie Delight",
+   "title": "Bread Upma Recipe",
+   "url": "https://www.indianveggiedelight.com/bread-upma-recipe/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

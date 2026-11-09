@@ -1,0 +1,131 @@
+{
+ "dish_name": "Semiya Upma",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Vermicelli (semiya)",
+   "qty": "7 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida (hing)",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1/4 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat a large, wide pan over low heat. Add the vermicelli and dry-roast it, stirring often, for 4 to 5 minutes, until it turns deep golden. Transfer it to a bowl.",
+  "Meanwhile, finely chop the onion, grate 2 tsp of the ginger, dice the carrot and 1/4 cup of the bell pepper, and chop 2 tbsp of the cilantro.",
+  "Return the pan to medium heat and add the oil. Add the mustard seeds, cumin seeds, chana dal, urad dal and asafoetida. Cook for about 1 minute, until the seeds splutter and the dals turn golden.",
+  "Add the ginger and curry leaves and cook for 30 seconds, until fragrant.",
+  "Add the onion and cook for 3 minutes, until soft.",
+  "Add the carrot, peas, bell pepper, salt and turmeric. Cook for 3 minutes, until the vegetables are tender but still crisp.",
+  "Pour in 3 cups of water and bring it to a boil.",
+  "Add the roasted vermicelli and stir gently so there are no lumps.",
+  "Cover and cook on low for 8 to 10 minutes, until the water is absorbed and the vermicelli is soft.",
+  "Off the heat, squeeze in the juice of the lemon and stir in the cilantro. Serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (the lead, 5 from 250) dry-roasts the vermicelli even when it's pre-roasted, tempers the dals and seeds, then simmers it covered in the water with the vegetables. Swasthi's (5 from 110) cooks the same way but rests it off the heat instead. Written for 4 by doubling the lead. Peanuts and cashews and the 5 green chilies are left out so it stays nut-free and mild, and the green beans are dropped for a shorter list.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Semiya Upma Recipe | Vermicelli Upma",
+   "url": "https://hebbarskitchen.com/semiya-upma-recipe-vermicelli-upma/",
+   "rating": 5,
+   "rating_count": 250,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Semiya Upma Recipe (Vermicelli Upma)",
+   "url": "https://www.indianhealthyrecipes.com/semiya-upma-vermicelli-upma-recipe/",
+   "rating": 5,
+   "rating_count": 110,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

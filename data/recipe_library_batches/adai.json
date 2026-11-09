@@ -1,0 +1,112 @@
+{
+ "dish_name": "Adai",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Parboiled rice (idli rice)",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Toor dal",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Split moong dal",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free asafoetida (hing)",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut chutney",
+   "qty": "1 tub",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 3 hours ahead, or the night before: rinse the rice well under cold water. In a separate bowl, rinse the chana dal, toor dal, moong dal and urad dal together until the water runs mostly clear.",
+  "Put the rice and the dried red chilies in one bowl and cover with cold water. Cover the dals with cold water in another bowl. Leave both to soak for 3 to 4 hours.",
+  "Drain the rice and the chilies. Add them to a blender with a 1/2 inch piece of the ginger, the cumin seeds and 1/4 cup water. Blend to a thick, slightly coarse batter, then transfer it to a large bowl.",
+  "Drain the dals and add them to the blender with 1/4 cup water. Blend until thick and slightly coarse. Transfer to the bowl with the rice batter.",
+  "Finely chop 3 tbsp of the onion and 2 tbsp of the cilantro. Stir them into the batter along with the asafoetida and the salt.",
+  "Check the batter. It should be thick like pancake batter. Stir in a splash of water if it's too thick to spread.",
+  "Heat a large nonstick or cast iron skillet over medium heat. Wipe it with a little of the oil on a paper towel.",
+  "Pour a scant 1/3 cup of batter into the center and spread it quickly into a circle about 6 inches wide. Drizzle 1/2 tsp oil around the edge.",
+  "Cook for 2 to 3 minutes, until the edges lift and the underside is golden.",
+  "Flip it and cook the other side for 2 minutes, until crisp in spots. Transfer to a plate and repeat with the rest of the batter. You should get about 8 adai.",
+  "Serve hot with the coconut chutney."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "Soak the rice and dals 3 to 4 hours ahead, or overnight",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Swasthi's (the lead) soaks rice and four dals, grinds them coarse and skips fermenting, so the batter can be cooked the same day. The dals and rice are about 1:1, as other adai recipes describe it. Dried red chilies cut to 2 and the ghee swapped for oil to keep it mild and vegan. Hing often contains wheat flour, so the list asks for a gluten-free one. The soaking is the make-ahead part; the batter itself is ready to cook right after grinding. VegRecipesofIndia and Holy Cow Vegan versions couldn't be read (blocked).",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Adai Recipe | Adai Dosa",
+   "url": "https://www.indianhealthyrecipes.com/adai-recipe-adai-dosa",
+   "rating": 5,
+   "rating_count": 115,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

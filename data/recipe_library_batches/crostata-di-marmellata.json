@@ -1,0 +1,94 @@
+{
+ "dish_name": "Crostata di Marmellata",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 stick",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Apricot jam",
+   "qty": "1 jar (10 oz)",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The day before, or at least 1 hour ahead: put the flour, sugar and a pinch of salt in a large bowl. Zest half the lemon into it. Cut the cold butter into small pieces and rub it in with your fingertips, working quickly, until it looks like coarse crumbs.",
+  "Separate one of the eggs. Add the whole egg and the yolk of the other to the bowl and mix until the dough comes together in a smooth ball. Stop as soon as it does. Keep the extra white for another use.",
+  "Flatten the dough into a disk, wrap it and chill it for at least 1 hour, or up to a day.",
+  "Heat the oven to 350°F. Butter a 9 inch tart pan with a removable bottom, or line it with parchment.",
+  "Set aside about one third of the dough. Roll out the rest on a floured surface to about 1/4 inch thick and press it into the pan. Trim the extra.",
+  "Roll a thin rope from the trimmed dough and the reserved dough. Press it around the rim and crimp it with a fork.",
+  "Spread the jam evenly over the base with the back of a spoon.",
+  "Roll out the remaining dough and cut it into strips. Lay them over the jam in a diamond pattern and press the ends onto the rim.",
+  "Bake for about 30 minutes, until the edges are golden and the jam bubbles slightly.",
+  "Let it cool completely in the pan before you slice it. Cutting it warm lets the jam run.",
+  "To store it, cover the tart and keep it at room temperature for 3 to 4 days, or in the fridge for up to 4 days. Let a chilled slice sit out for 20 to 30 minutes before eating. To freeze, cut it into slices and freeze for up to 2 months, then thaw slices at room temperature."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "make the dough at least 1 hour ahead, or the day before",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Recipes from Italy (the lead) makes a pasta frolla with a whole egg and a yolk, butter and lemon zest, fills it with apricot jam and bakes it under a lattice. The Petite Cook (4.85 from 13) uses olive oil in place of the butter, and Tara's Multicultural Table adds baking powder and vanilla. None of the three has 20 ratings, so this leads with the first readable Italian version (RecipeTin Eats has no crostata). Keeps 3 to 4 days at room temperature and the slices freeze for 2 months, as the lead says. It cuts into about 8 slices.",
+ "sources": [
+  {
+   "name": "Recipes from Italy",
+   "title": "Traditional Italian Crostata",
+   "url": "https://www.recipesfromitaly.com/traditional-italian-crostata/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Petite Cook",
+   "title": "Crostata - Italian Jam Tart",
+   "url": "https://www.thepetitecook.com/?p=15121",
+   "rating": 4.85,
+   "rating_count": 13,
+   "read": true
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Crostata di Marmellata",
+   "url": "https://tarasmulticulturaltable.com/crostata-di-marmellata-italian-jam-tart/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

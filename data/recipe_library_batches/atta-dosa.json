@@ -1,0 +1,95 @@
+{
+ "dish_name": "Atta Dosa",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Whole wheat flour (atta)",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut chutney",
+   "qty": "1 tub",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, whisk the whole wheat flour, rice flour, salt and cumin seeds together.",
+  "Gradually whisk in 3 cups of water until the batter is smooth and thin and pours like thin pancake batter. Let it rest for 10 minutes.",
+  "Meanwhile, finely chop the onion, grate the carrot, and chop 2 tbsp of the cilantro and the curry leaves.",
+  "Stir the onion, carrot, cilantro and curry leaves into the batter. If it has thickened, add a splash of water.",
+  "Heat a large nonstick pan over medium-high heat until a drop of water sizzles on it.",
+  "Stir the batter, since the flour settles. Pour a scant 1/3 cup into the pan in a circle, starting at the outside and working in. Tilt the pan to fill any gaps.",
+  "Drizzle 1 tsp oil over the dosa. Lower the heat to medium and cook for 2 minutes, until the underside is golden and crisp and the top looks dry. You don't need to flip it.",
+  "Transfer to a plate and repeat with the rest of the batter, stirring it each time. You should get about 10 dosas.",
+  "Serve hot with the coconut chutney."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (the lead, 5 from 45) makes an instant batter of wheat and rice flour with no fermenting, so it's ready after a 10 minute rest. Its ratio is one third wheat flour to two thirds rice flour, which keeps the dosas crisp. Cook with Kushi's version is all whole wheat flour and gives a softer, thicker dosa, but has only 9 ratings. The green chili is left out of the base to keep it mild.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Instant Wheat Dosa Recipe in 10 Minutes",
+   "url": "https://hebbarskitchen.com/instant-wheat-dosa-recipe-godhuma-dosa/",
+   "rating": 5,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Kushi",
+   "title": "Instant Wheat Dosa (Atta Dosa)",
+   "url": "https://www.cookwithkushi.com/wprm_print/49153",
+   "rating": 5,
+   "rating_count": 9,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

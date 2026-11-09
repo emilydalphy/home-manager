@@ -1,0 +1,159 @@
+{
+ "dish_name": "Masala Toast",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Potatoes",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 large bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted chana dal",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida (hing)",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 small",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the potatoes into 1 inch chunks and put them in a pot with cold water to cover and a good pinch of the salt. Bring to a boil and cook for 12 minutes, until a knife slides in easily. Drain them.",
+  "Meanwhile, make the chutney. In a blender, add 1 cup of the cilantro leaves, 1/2 cup of the mint leaves, the roasted chana dal, the green chili, 1/2 inch of the ginger, 2 of the garlic cloves, 2 tbsp lemon juice, the ground cumin, 1 tsp of the chaat masala, the sugar, 1/2 tsp of the salt and 3 tbsp water. Blend until smooth, then transfer to a bowl.",
+  "Finely chop the remaining 3 garlic cloves and the remaining ginger. Finely chop 2 tbsp of the cilantro. Thinly slice the tomato and the onion.",
+  "Return the drained potatoes to the pot and mash them roughly with a fork.",
+  "Heat the oil in a large skillet over medium heat. Add the mustard seeds, cumin seeds and asafoetida. After about 20 seconds they'll sizzle and smell toasty.",
+  "Add the chopped garlic, ginger and curry leaves. Cook for 1 minute, stirring.",
+  "Stir in the turmeric and the remaining salt for 30 seconds, then add the mashed potatoes. Cook for 2 minutes, stirring, until hot.",
+  "Off the heat, stir in a squeeze of lemon juice and the chopped cilantro. Wipe the skillet clean.",
+  "Butter one side of each of the 8 slices of bread, using all 4 tbsp of butter. Turn 4 of the slices butter-side down and spread each with 1 tbsp of the chutney.",
+  "Top each with a quarter of the potato filling, then a few slices of tomato and onion. Sprinkle with the remaining 1 tsp chaat masala. Cover with the other slices, butter-side up.",
+  "Heat the skillet over medium heat. Toast the sandwiches two at a time for 3 to 4 minutes per side, pressing down gently, until golden and crisp.",
+  "Cut each sandwich in half and serve with the rest of the chutney."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (the lead, 5 from 71) builds the sandwich on green chutney, a tempered aloo masala, vegetables and a buttered toasting. Cooking from Heart's version also uses a tomato and onion layer and chaat masala. The chutney and the potato filling both keep several days in the fridge, so they can be made ahead. Green chilies are cut to one in the chutney and none in the filling, and the aamchur, cheese, beetroot and sev are left out.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Masala Sandwich Recipe | Mumbai Masala Toast Sandwich",
+   "url": "https://hebbarskitchen.com/wprm_print/masala-sandwich-recipe-mumbai-masala-toast-sandwich",
+   "rating": 5,
+   "rating_count": 71,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking from Heart",
+   "title": "Bombay Masala Toast",
+   "url": "https://cookingfromheart.com/bombay-masala-toast/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

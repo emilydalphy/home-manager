@@ -1,0 +1,105 @@
+{
+ "dish_name": "Besan Toast",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Gram flour (besan)",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Carom seeds (ajwain)",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida (hing)",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop 1/2 cup of the onion and 1/2 cup of the tomato. Chop 4 tbsp of the cilantro and grate 1 tsp of the ginger.",
+  "In a large bowl, whisk the gram flour, carom seeds, turmeric, chili powder, asafoetida and salt together.",
+  "Stir in the onion, tomato, cilantro and ginger. Add 3/4 cup water and beat with a fork for 1 to 2 minutes, until you have a thick batter that coats a spoon. If it runs, whisk in another spoonful of gram flour.",
+  "Heat a large nonstick skillet or griddle over low to medium heat and add 1 tbsp of the oil.",
+  "Spread a generous layer of batter over one side of 4 slices of bread and place them batter-side down in the pan.",
+  "Cook for 3 to 4 minutes, until the batter sets and the bread lifts easily from the pan.",
+  "Spread batter over the top of each slice and flip. Cook for 3 minutes, until the batter is set and golden. Transfer to a plate.",
+  "Wipe the pan, add another 1 tbsp oil, and repeat with the other 4 slices and the rest of the batter. Add the last 1 tbsp oil if the pan looks dry.",
+  "Serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's (the lead, 4.97 from 51) coats the bread in a thick besan and vegetable batter and pan-fries it on both sides. Hebbar's Kitchen (5 from 32) does almost the same with a thinner batter and more vegetables. Written for 4 by multiplying the lead's 2-slice amounts by four. Ghee is swapped for oil, and the lead's optional green chili is left out to keep it mild.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Besan Bread Toast Recipe",
+   "url": "https://www.indianhealthyrecipes.com/besan-bread-toast-recipe/",
+   "rating": 4.97,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Besan Bread Toast",
+   "url": "https://hebbarskitchen.com/wprm_print/37481",
+   "rating": 5,
+   "rating_count": 32,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
