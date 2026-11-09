@@ -1,0 +1,168 @@
+{
+ "dish_name": "Tom Yum Mushroom Noodle Soup",
+ "cuisine": "Thai",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Rice noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Baby corn",
+   "qty": "1 can (15 oz)",
+   "category": "pantry",
+   "cook_qty": "5 pieces"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Dried makrut lime leaves",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "8 leaves"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small knob",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (14 oz)",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sambal oelek",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Thai chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Smash the lemongrass with the flat of a knife and cut each stalk in 3 pieces. Slice the mushrooms, cube the tofu, cut the tomato into wedges and cut the bok choy into 1-inch pieces. Mince the garlic and the ginger. Drain the baby corn and cut each ear in half.",
+  "Put a large pot over medium heat and add the oil. Add the ginger and stir for 1 minute, then add the garlic and stir for 30 seconds.",
+  "Add the broth, lemongrass, lime leaves, tamari and brown sugar. Bring it to a boil, then turn the heat to medium-low and simmer for 8 minutes.",
+  "Meanwhile, cook the rice noodles by the package directions. Drain and rinse them with cold water and set them aside.",
+  "Add the mushrooms, tofu, tomato and baby corn to the pot and simmer for 5 minutes.",
+  "Add the bok choy and 1 cup of the bean sprouts and cook for 2 minutes.",
+  "Off the heat, fish out the lemongrass and lime leaves. Stir in the coconut milk and the juice of 1 lime.",
+  "Taste it. If it's flat, add a splash more tamari.",
+  "Divide the noodles among 4 bowls and ladle the soup over them. Slice the green onions and top the bowls with them, the Thai basil, and the remaining 1 cup bean sprouts. Cut the other lime into wedges. Serve with the lime wedges, the sliced Thai chili and the sambal oelek on the side for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Nuts and Twigs (rated 5 from 2 votes) is the lead and the only readable version that has noodles, mushrooms and tofu in a 30-minute pot; no vegan tom yum noodle soup has 20 ratings. The Viet Vegan and Happy Apple Vegan agree on tom yum flavors with tofu, mushrooms and rice noodles. RecipeTin Eats' classic Tom Yum is a shrimp soup, so it was not used. Vegetable broth replaces the vegetable base paste, there are more mushrooms and a whole block of tofu so it works as dinner, and the chili and sambal go on the side so the base stays mild. Rice noodles are normally gluten-free; check the package.",
+ "sources": [
+  {
+   "name": "Nuts and Twigs",
+   "title": "Vegan Thai Tom Yum Noodle Soup",
+   "url": "https://nutsandtwigs.com/vegan-tom-yum-noodle-soup/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Happy Apple Vegan",
+   "title": "Delicious Vegan Tom Yum Noodle Soup",
+   "url": "https://happyapplevegan.com/blog/2024/10/31/delicious-vegan-tom-yum-noodle-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Viet Vegan",
+   "title": "Vegan Tom Yum Noodle Soup",
+   "url": "https://thevietvegan.com/vegan-tom-yum-noodle-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,114 @@
+{
+ "dish_name": "Alubias con Verduras",
+ "cuisine": "Spanish",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Canned white beans",
+   "qty": "3 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion and the garlic. Cut the red pepper, green pepper, carrots and zucchini into 1/2-inch pieces.",
+  "Put a large, wide pot over medium heat and add the 1/4 cup olive oil. Add the onion and 1/2 tsp of the salt and cook for 3 minutes, until it starts to soften.",
+  "Add the peppers, carrots and zucchini. Cover and cook for 6 minutes, stirring once or twice, until the carrots start to soften.",
+  "Add the garlic and the paprika and stir for 30 seconds. Keep it moving so the paprika doesn't burn.",
+  "Stir in the tomato sauce, the black pepper and 1/2 tsp of the salt. Cook for 1 minute.",
+  "Drain and rinse the beans. Add them to the pot with 2 1/2 cups water and bring it to a boil over high heat.",
+  "Turn the heat to medium-low and simmer for 6 minutes. If you like it thicker, mash a few spoonfuls of the beans against the side of the pot.",
+  "Stir in the last 1/2 tsp salt. Taste it. If it's flat, add a pinch more salt. Serve in bowls."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Bonviveur (4.9 from 35 votes) builds a sofrito of onion, peppers, carrot and zucchini, adds paprika and tomato, then the beans and water; its canned-bean version is the lead, doubled for 4. Karlos Arguinano's 25-minute version cooks the vegetables covered and adds canned beans with a little tomato sauce, which is why the vegetables are covered here. Bonviveur blends part of the sofrito back in for body; that step is left out to keep it quick and to avoid a blender, and mashing a few beans does the same job. Vegan and gluten-free as written. Honest total is about 32 minutes.",
+ "sources": [
+  {
+   "name": "Bonviveur",
+   "title": "Alubias blancas con verduras",
+   "url": "https://bonviveur.com/es/recetas/alubias-blancas-con-verduras",
+   "rating": 4.9,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hogarmania (Karlos Arguiñano)",
+   "title": "Alubias con verduras",
+   "url": "https://www.hogarmania.com/cocina/recetas/legumbres/alubias-verduras-3135.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Familia y Salud",
+   "title": "Alubias blancas con verduras",
+   "url": "https://www.familiaysalud.es/vivimos-sanos/alimentacion/cocinando-en-familia/recetas-de-familia/alubias-blancas-con-verduras",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

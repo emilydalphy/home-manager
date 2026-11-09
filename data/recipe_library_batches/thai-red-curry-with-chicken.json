@@ -1,0 +1,105 @@
+{
+ "dish_name": "Thai Red Curry with Chicken",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken tenderloins",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice, then put it in a pot with 2 1/4 cups water. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until the curry is done.",
+  "Cut the chicken into 1-inch cubes, pat them dry and sprinkle with the 1/2 tsp salt.",
+  "Thinly slice the scallions, keeping the white and light green parts apart from the dark green. Chop the garlic. Seed the jalapeño and dice it. Chop 1/4 cup of the cilantro.",
+  "Put a large nonstick pan over medium-low heat and add the oil. Add the light scallion parts, garlic and jalapeño and cook for 3 to 4 minutes, until soft but not browned.",
+  "Whisk in the coconut milk, curry paste, fish sauce and brown sugar. Bring it to a gentle boil, then turn the heat to low and simmer for 3 minutes, until slightly thickened.",
+  "Add the chicken and simmer uncovered for 5 to 6 minutes, stirring now and then. Keep it at gentle bubbles. You're cooking it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a piece: it's done when there's no pink left.",
+  "Off the heat, stir in the juice of the lime, the dark scallion greens and the cilantro.",
+  "Taste it. If it's flat, add a little more fish sauce or a squeeze of lime. Serve with the jasmine rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Once Upon a Chef (4.82 from 330 ratings) is the lead: soften scallion, garlic and jalapeño, whisk in coconut milk, paste, fish sauce and brown sugar, then poach cubed tenderloins and finish with lime and herbs. Other 30-minute versions (Rich and Delish, The Garlic Diaries) add vegetables and Thai basil, which this one leaves out. The jalapeño is seeded so the base stays mild. Red curry paste is gluten-free and dairy-free, but check the label for the brand you buy.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Thai Red Curry Chicken",
+   "url": "https://www.onceuponachef.com/recipes/thai-red-curry-chicken.html",
+   "rating": 4.82,
+   "rating_count": 330,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

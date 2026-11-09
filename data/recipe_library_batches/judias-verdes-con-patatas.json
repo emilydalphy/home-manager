@@ -1,0 +1,76 @@
+{
+ "dish_name": "Judias Verdes con Patatas",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Green beans",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Trim the green beans and cut them into 2-inch pieces. Peel the potatoes and cut them into 1/2-inch cubes.",
+  "Put the beans and potatoes in a large pot. Cover them with water by about 2 inches and add the 2 tsp salt.",
+  "Bring the pot to a boil over high heat. Turn it down to medium-high and boil for 10 to 12 minutes, until a knife slides easily into a potato cube.",
+  "While the pot heats and boils, slice the 3 garlic cloves thinly.",
+  "Drain the beans and potatoes in a colander and set them aside.",
+  "Put a large skillet over medium heat and add the 1/4 cup olive oil. Add the garlic and cook for 1 minute, until it smells good and is just pale gold. Don't let it brown.",
+  "Stir in the smoked paprika and cook for 30 seconds.",
+  "Add the beans and potatoes and stir so everything is coated in the paprika oil. Cook for 5 minutes, stirring now and then.",
+  "Taste it. If it's flat, add a pinch more salt. Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The two readable versions agree on the method: boil the beans and potatoes together, then toss them in a pan with olive oil and garlic. Bonviveur adds smoked paprika to the garlic oil; Divina Cocina stews the beans with onion, ham and broth, so it was only used to confirm the combination. This follows Bonviveur, doubled for 4, with the potatoes cut small so the boil is 10 to 12 minutes instead of 15. Both pages have fewer than 20 ratings (RecipeTin Eats has no version), so the lead is the best-rated version of the same dish. It is vegan and gluten-free as written.",
+ "sources": [
+  {
+   "name": "Bonviveur",
+   "title": "Judías verdes con patatas",
+   "url": "https://bonviveur.com/es/recetas/judias-verdes-patatas",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Divina Cocina",
+   "title": "Judías verdes guisadas con patatas",
+   "url": "https://www.divinacocina.es/judias-verdes-guisadas-patatas/",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,113 @@
+{
+ "dish_name": "Kua Kling",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Ground pork",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "1 pack",
+   "category": "produce",
+   "cook_qty": "8 leaves"
+  },
+  {
+   "item": "Red Fresno chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai bird chilies",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice, then put it in a pot with 2 1/4 cups water. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until the pork is done.",
+  "Peel off the tough outer layers of the lemongrass and finely shave the tender part. Slice the lime leaves very thinly, then put 2 of them aside for the top. Slice the Fresno chili into thin strips and the bird chilies into rings. Slice the cucumber.",
+  "Put a wok or large skillet over medium-high heat and add the oil. Add the curry paste and stir for 30 seconds, until it smells toasty.",
+  "Add a spoonful of the pork to the paste and stir for 1 minute. Then add the rest of the pork and stir-fry for 6 to 8 minutes, scraping the pan and breaking the pork into small pieces, until it's cooked through and the liquid has cooked off. You're cooking it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Break open a piece: it's done when there's no pink left.",
+  "Add the sugar and the fish sauce and stir for 30 seconds.",
+  "Add the lemongrass and the 6 remaining lime leaves and stir-fry for 1 minute, until you can smell them.",
+  "Add the Fresno chili and turn off the heat. Leave it for 1 minute.",
+  "Taste it. If it's flat, add a little more fish sauce. Serve with the jasmine rice and the cucumber, with the lime leaves and the bird chilies on top for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Khua kling is a dry curry, so the pork is cooked until no liquid is left and the dish has no sauce by design. Eating Thai Food (4.9 from 10 ratings) is the lead: fry the paste dry with a spoonful of pork, add the rest, then lemongrass, lime leaves and chili at the end. Cooking with Nart and Hungry in Thailand agree on the order and add fish sauce and a little sugar. No version has 20 ratings, so the lead is the best-rated one. The proper southern Thai paste is hard to find, so bought red curry paste is used, as Hungry in Thailand allows. The bird chilies go on top at the table so the base stays mild.",
+ "sources": [
+  {
+   "name": "Eating Thai Food",
+   "title": "Khua Kling Recipe - Thai Dry Meat Curry",
+   "url": "https://www.eatingthaifood.com/thai-khua-kling-recipe/",
+   "rating": 4.9,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Khua Kling Recipe (Southern Thai Dry Curry)",
+   "url": "https://hungryinthailand.com/khua-kling/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking with Nart",
+   "title": "Thai Kua Gling",
+   "url": "https://www.cookingwithnart.com/kua-gling/",
+   "rating": null,
+   "rating_count": 0,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

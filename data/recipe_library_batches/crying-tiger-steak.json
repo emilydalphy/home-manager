@@ -1,0 +1,130 @@
+{
+ "dish_name": "Crying Tiger Steak",
+ "cuisine": "Thai",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Tamarind paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Glutinous rice",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Juice both limes into a small bowl. That should be about 4 tbsp.",
+  "In a large bowl, mix the tamari, 1 tbsp of the brown sugar, 1 tbsp of the oil, 1 tbsp of the lime juice, the black pepper and the grated garlic clove. Cut the steak in half across the grain, add it to the bowl and turn it to coat. Leave it for 15 minutes while you make the sauce.",
+  "Put a small dry skillet over medium heat. Add the glutinous rice and toast it for 4 to 5 minutes, shaking the pan often, until it's golden and smells nutty. Transfer it to a spice grinder or mortar and grind it to a fine powder.",
+  "In a small bowl, stir together the remaining 3 tbsp lime juice, the fish sauce, the last 1 tbsp brown sugar, the tamarind paste and 2 tbsp hot water until the sugar dissolves.",
+  "Thinly slice the shallot. Chop the cilantro and the green onions. Stir the shallot, 1 tbsp cilantro, 1 tbsp green onions, the rice powder and 1 tsp of the red pepper flakes into the sauce. Put the other 2 tsp red pepper flakes in a small dish for the table.",
+  "Put a large heavy skillet over medium-high heat and add the remaining 2 tbsp oil. When it's shimmering, add the steak and cook for 3 to 4 minutes on each side, turning it once. You're cooking it to 130°F in the middle for medium-rare, so if you have a thermometer, check it there. No thermometer? Press the middle: it should feel springy, like the fleshy part of your palm.",
+  "Transfer the steak to a cutting board and let it rest for 5 minutes.",
+  "Slice the steak thinly against the grain. Taste the sauce. If it's flat, add a little more fish sauce. Serve with the sauce, and the extra pepper flakes for the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Asian Inspirations (4.5 from 7 ratings) is the lead because it has full ratios for both the flank steak marinade and the jaew dipping sauce; Hungry in Thailand has the same sauce with a 30 minute marinade and Tiffy Cooks has one rating. None reaches 20 ratings. Dark and regular soy sauce become tamari to keep it gluten-free, and oyster sauce is left out (it normally contains wheat). Palm sugar is brown sugar. The marinade is 15 minutes instead of an hour so it fits a weeknight, and the toasted rice powder is a short job that keeps the sauce authentic. Most of the chili heat is on the table.",
+ "sources": [
+  {
+   "name": "Asian Inspirations",
+   "title": "Crying Tiger (Suea Rong Hai)",
+   "url": "https://asianinspirations.com.au/recipes/crying-tiger-suea-rong-hai/",
+   "rating": 4.5,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Suea Rong Hai Recipe (Thai Crying Tiger Steak)",
+   "url": "https://hungryinthailand.com/crying-tiger-steak/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tiffy Cooks",
+   "title": "Thai Crying Tiger Steak (Suea Rong Hai)",
+   "url": "https://tiffycooks.com/thai-crying-tiger-steak-suea-rong-hai/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

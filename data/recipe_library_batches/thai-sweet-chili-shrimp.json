@@ -1,0 +1,122 @@
+{
+ "dish_name": "Thai Sweet Chili Shrimp",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small knob",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai sweet chili sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice, then put it in a pot with 2 1/4 cups water. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until the shrimp are done.",
+  "Pat the shrimp dry and sprinkle with the salt and pepper.",
+  "Chop the bell peppers and zucchini into bite-size pieces. Dice half the onion. Mince the garlic and 1 tsp of the ginger. Slice about 1/2 cup of the green onions.",
+  "Put a large skillet over medium-high heat and add 1 tbsp of the oil. Add half the shrimp and cook for 2 minutes on each side, until pink. Transfer them to a plate and cook the rest the same way.",
+  "Add the other 1 tbsp oil. Add the onion and cook for 2 minutes, until it softens.",
+  "Add the garlic and ginger and stir for 30 seconds, until you can smell them.",
+  "Add the peppers and zucchini and stir-fry for 4 to 5 minutes, until crisp-tender.",
+  "Return the shrimp to the pan. Add the tamari, the sweet chili sauce and the green onions and toss for 2 to 3 minutes, until everything is coated and the shrimp are opaque all the way through.",
+  "Taste it. If it's flat, add a pinch more salt. Serve over the jasmine rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Flavours of Kitchen stir-fry (4.73 from 36 votes) is the lead: sear the shrimp and set aside, soften aromatics, stir-fry the vegetables, then toss everything in sweet chili sauce and soy sauce. More Than You Can Chew cooks the shrimp in garlic and simmers the sauce down, and Grillseeker marinates for hours; both were skipped to keep it quick. Soy sauce is tamari so it stays gluten-free, and the base is mild because sweet chili sauce is sweet more than hot. Check the sweet chili sauce label for gluten.",
+ "sources": [
+  {
+   "name": "The Flavours of Kitchen",
+   "title": "Sweet Chili Shrimp Stir Fry",
+   "url": "https://theflavoursofkitchen.com/sweet-chilli-shrimp-stir-fry/",
+   "rating": 4.73,
+   "rating_count": 36,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "More Than You Can Chew",
+   "title": "Sweet Chili Shrimp",
+   "url": "https://morethanyoucanchew.com/blog/2019/7/11/sweet-chili-shrimp",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Grillseeker",
+   "title": "Easy Sweet Chili Shrimp Recipe",
+   "url": "https://www.grillseeker.com/easy-sweet-chili-shrimp-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
