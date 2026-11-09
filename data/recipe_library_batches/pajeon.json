@@ -1,0 +1,140 @@
+{
+ "dish_name": "Pajeon",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Potato starch or cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Gochugaru (Korean chili flakes)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "For the dipping sauce, stir together 1/2 cup soy sauce, 1/4 cup water, 1 tbsp mirin, 1 tbsp sugar, 2 tbsp sesame oil, the minced garlic clove and 1 tsp sesame seeds in a small bowl. Set it aside.",
+  "In a large bowl, whisk 1 1/2 cups flour, 1 1/2 tbsp potato starch, 1 1/2 tsp salt, 1 tbsp garlic powder, 1 tbsp onion powder, 3/4 tsp gochugaru, the 2 eggs and 1 1/2 cups ice-cold water until smooth. The batter should be thin.",
+  "Trim the green onions and cut them into 2 to 3 inch pieces. Stir them into the batter until they're coated.",
+  "Heat a large nonstick skillet over medium heat. Add about 1 tbsp oil, then pour in about 1 cup of the batter. Spread it thin so the green onions lie in one layer. Cook for 3 to 4 minutes, until the bottom is crisp and golden.",
+  "Flip the pancake and cook the other side for 3 to 4 minutes. Add a little oil around the edge if the pan looks dry. Transfer it to a cutting board.",
+  "Repeat with the rest of the batter, using about 1 tbsp of oil for each pancake. If you have a second skillet, run both at once. You should get about 5 pancakes.",
+  "Cut the pancakes into squares. Serve with the dipping sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Carmyy (5.0 from 31) is the lead: a thin batter of flour, a little potato starch, egg and ice water, with a pile of green onions, fried in plenty of oil and served with a soy, sesame and garlic dipping sauce. The batch is scaled up by half for a lunch for four. The Daring Gourmet (5.0 from 18) and Mission Food agree on cold water, starch for crispness and a thin batter; the sauce is kept to the lead's.",
+ "sources": [
+  {
+   "name": "Carmyy",
+   "title": "Pajeon (Korean Scallion Pancake)",
+   "url": "https://carmyy.com/pajeon-korean-scallion-pancake",
+   "rating": 5.0,
+   "rating_count": 31,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Daring Gourmet",
+   "title": "Pajeon (Korean Scallion Pancakes)",
+   "url": "https://www.daringgourmet.com/pajeon-korean-pancakes/",
+   "rating": 5.0,
+   "rating_count": 18,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mission Food",
+   "title": "Pajeon (Korean Scallion Pancakes)",
+   "url": "https://mission-food.com/pajeon-korean-scallion-pancakes/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

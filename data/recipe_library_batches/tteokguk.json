@@ -1,0 +1,131 @@
+{
+ "dish_name": "Tteokguk",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Sliced rice cakes (tteok)",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small knob",
+   "category": "produce",
+   "cook_qty": "3 thin slices"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Roasted seaweed (gim) sheets",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "1 sheet"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp + 1/2 tsp + 1 pinch"
+  }
+ ],
+ "instructions": [
+  "Put the rice cakes in a bowl of cold water and let them soak for 20 minutes.",
+  "In a bowl, mix the ground beef with the 3 minced garlic cloves, 1 tbsp sesame oil, 1/2 tsp salt and 1/4 tsp pepper. Let it sit for 10 minutes.",
+  "Meanwhile, thinly slice the green onions. Beat the eggs in a small bowl with a pinch of salt. Crumble the seaweed sheet.",
+  "Heat a medium soup pot over medium-high heat. Add the beef and cook for 2 minutes, breaking it up, until the pink is gone. Transfer about a third of the beef to a small plate for the top.",
+  "Add 5 cups of water, the ginger slices and the dashi granules to the pot. Bring to a boil, then lower to a gentle simmer for 15 minutes. Skim off any foam.",
+  "Take out the ginger. Taste the broth, and add 1/2 tsp salt if it's flat.",
+  "Drain the rice cakes and add them to the pot. Boil for 3 to 4 minutes, until they're soft and float.",
+  "Slowly pour the eggs into the pot in a circle. Leave them alone for 20 seconds, then stir gently once. Take the pot off the heat.",
+  "Ladle the soup into 4 bowls. Top with the reserved beef, green onions, seaweed and sesame seeds."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version with 20 or more ratings had a quick method, so the lead is the unrated ground beef tteokguk from Vietnamese Food Recipes (fallback), which builds the broth in 25 minutes instead of the 1 to 1 1/2 hours a brisket stock takes. Quantities are scaled up a little, and the eggs are swirled in the way Kimchimari does rather than cooked as separate sheets. Beyond Kimchee (5.0 from 3) and Tara's Multicultural Table agree on soaked rice cakes, seasoned beef, egg and seaweed on top. Tteokguk does not keep well, so make it just before eating.",
+ "sources": [
+  {
+   "name": "Vietnamese Food Recipes",
+   "title": "Korean Ground Beef & Rice Cake Soup (Tteokguk)",
+   "url": "https://www.vietnamesefoodrecipes.com/wprm_print/recipe-for-korean-ground-beef-rice-cake-soup-tteokguk",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kimchimari",
+   "title": "Tteok Mandu Guk (Korean Rice Cake Soup with Dumplings)",
+   "url": "https://kimchimari.com/rice-cake-soup-ii-with-beef-and-dumplings/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Tteokguk (Korean Rice Cake Soup)",
+   "url": "https://www.beyondkimchee.com/rice-cake-soup/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Tteokguk (Korean Rice Cake Soup)",
+   "url": "https://tarasmulticulturaltable.com/wprm_print/tteokguk-korean-rice-cake-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

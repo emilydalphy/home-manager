@@ -1,0 +1,148 @@
+{
+ "dish_name": "Jjolmyeon",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Jjolmyeon noodles (chewy Korean wheat noodles, fresh or frozen)",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Soybean sprouts",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small wedge (6 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Gochujang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Gochugaru (Korean chili flakes)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Corn syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Apple juice",
+   "qty": "1 small carton",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 pinch"
+  }
+ ],
+ "instructions": [
+  "Put the 4 eggs in a small pot and cover them with cold water. Bring to a boil over high heat, then take the pot off the heat, cover it, and let the eggs sit for 10 minutes. Transfer them to a bowl of ice water.",
+  "In a medium bowl, stir together 4 tbsp gochujang, 2 tbsp corn syrup, 2 tbsp sugar, 4 tbsp rice vinegar, 2 tbsp soy sauce, 4 tbsp apple juice, the 2 minced garlic cloves, 2 tbsp sesame seeds, 2 tbsp sesame oil and a pinch of salt. Set it aside.",
+  "Bring 1 cup of water to a boil in a medium pot. Add the soybean sprouts, cover, and cook for 4 minutes. Transfer them to a bowl of cold water, then drain.",
+  "Bring a large pot of water to a boil for the noodles. Meanwhile, slice the cabbage as thin as you can, and cut the carrot and cucumber into matchsticks.",
+  "Cook the noodles in the boiling water for about 5 minutes, or as the package says. They should stay springy. Drain them, then rinse under cold water, rubbing gently, until they're completely cold. Drain well.",
+  "Divide the noodles among 4 bowls. Arrange the sprouts, cabbage, carrot and cucumber on top. Peel the eggs, halve them, and add 2 halves to each bowl.",
+  "Spoon the sauce over the top and mix everything together at the table. Serve with the gochugaru in a small bowl for the adults to stir in."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum (4.9 from 45) is the lead: refrigerated or frozen chewy noodles, cold rinse, a gochujang, vinegar and sweet sauce, and crunchy raw vegetables with a boiled egg. Sauce and vegetables are doubled for four, apple juice stands in for the pineapple juice, red cabbage is left out, and the gochugaru moves to the table so the base stays mild. Sift and Simmer and Ahnest Kitchen agree on the method and use the same toppings.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Jjolmyeon (Spicy Chewy Noodles)",
+   "url": "https://cupofyum.com/recipes/jjolmyeon-spicy-chewy-noodles",
+   "rating": 4.9,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sift and Simmer",
+   "title": "Spicy Jjolmyeon (Korean Cold Chewy Noodles)",
+   "url": "https://www.siftandsimmer.com/wprm_print/spicy-jjolmyeon-korean-cold-chewy-noodles",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Ahnest Kitchen",
+   "title": "Jjyolmyeon (Korean Spicy Noodles)",
+   "url": "https://ahnestkitchen.com/food/jjyolmyeon",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

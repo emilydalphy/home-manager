@@ -1,0 +1,112 @@
+{
+ "dish_name": "Baba Ghanouj Sandwiches",
+ "cuisine": "Lebanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Eggplant",
+   "qty": "1 large (about 1 1/4 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Pita rounds",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sun-dried tomatoes",
+   "qty": "1 small jar",
+   "category": "produce",
+   "cook_qty": "8 halves"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp + 1 pinch"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Halve the eggplant lengthwise, score the cut sides, and brush them with 1 tbsp olive oil. Place them cut side down on a lined baking sheet.",
+  "Roast for 25 to 30 minutes, until the skin is wrinkled and the flesh is very soft. Let them cool for 10 minutes.",
+  "Meanwhile, grate the carrots, thinly slice the cucumber, and slice the sun-dried tomatoes. Chop 2 tbsp of the parsley.",
+  "Scoop the eggplant flesh into a blender or food processor. Add the 4 garlic cloves, 4 tbsp tahini, 4 tbsp lemon juice (from 2 lemons), 4 tbsp olive oil, 4 tbsp water, the parsley, 2 tsp oregano, 1/2 tsp salt and 1/4 tsp black pepper. Blend until smooth.",
+  "Cut the pitas open to make pockets. Spread the baba ghanouj inside, then layer in the carrots, cucumber and sun-dried tomatoes. Sprinkle a pinch of oregano over the filling.",
+  "Serve the sandwiches with the red pepper flakes in a small bowl for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Sonoran Spice's Baba Ghanoush Sandwich is the only baba ghanouj sandwich by that name with a full recipe, and it has no rating, so fallback_used is set. It blends grilled eggplant with tahini, garlic, olive oil, lemon, oregano and parsley, spreads it on bread, and layers carrot, cucumber and sun-dried tomato. The recipe makes one sandwich, so amounts are multiplied for four; the eggplant is roasted in the oven instead of grilled, bird's eye chili is moved to the table as red pepper flakes, and pita replaces the sliced bread because the list promises pita. The spread alone keeps well, so it can be made ahead.",
+ "sources": [
+  {
+   "name": "Sonoran Spice",
+   "title": "Baba Ghanoush Sandwich",
+   "url": "https://www.sonoranspice.com/blogs/recipes/baba-ganoush-sandwich-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

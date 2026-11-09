@@ -1,0 +1,132 @@
+{
+ "dish_name": "Naengmyeon",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef brisket",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Daikon radish",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1/2",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small knob",
+   "category": "produce",
+   "cook_qty": "3 thin slices"
+  },
+  {
+   "item": "Green onions (white parts)",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Whole black peppercorns",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Naengmyeon noodles (dried, Korean buckwheat and wheat)",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp + 2 tbsp"
+  },
+  {
+   "item": "Hot mustard or yellow mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp + 1/2 tsp + 1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 5 hours ahead: put 12 cups of water in a large pot with the brisket, 6 oz of the daikon cut into chunks, the half onion, the garlic, the ginger slices, the green onion whites and the peppercorns. Bring to a boil and skim off the foam. Cover and simmer for 1 hour, adding the 2 tbsp soy sauce for the last 10 minutes.",
+  "Transfer the brisket to a plate. Strain the broth into a large bowl and throw away the vegetables. Stir in 1 tbsp sugar and 2 tsp salt, and taste it. It should be savory with a little sweetness. Let it cool, then cover the broth and the beef separately and refrigerate overnight.",
+  "At least 2 hours before you eat, transfer the cold broth into a large freezer-safe container and freeze it until it's slushy, stirring once after an hour.",
+  "For the pickled radish, peel the remaining 10 oz of daikon. Cut it into 2 inch pieces, slice each piece thin, then cut into strips. Mix it with your hands with 1 1/2 tbsp vinegar, 1 tbsp sugar and 1/2 tsp salt until the sugar dissolves.",
+  "Put the eggs in a small pot of cold water, bring to a boil over high heat, then cover, turn off the heat, and leave for 10 minutes. Transfer them to ice water, then peel and halve them.",
+  "Halve the cucumber lengthwise and slice it thin. Toss it with 1/2 tsp salt and let it sit for 10 minutes. Thinly slice the cold brisket against the grain.",
+  "Cook the noodles in a large pot of boiling water as the package says. Drain them, then rinse in ice water, rubbing gently, until they're very cold. Drain well and divide into 4 portions.",
+  "Put a portion of noodles in each of 4 bowls. Top with the pickled radish, brisket, cucumber and an egg half. Pour the icy broth around the noodles. Serve with 2 tbsp vinegar and the mustard on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "make the broth the night before (or at least 5 hours ahead) and freeze it until slushy 2 hours before eating",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Korean Bapsang (4.82 from 33) is the lead: a beef brisket and radish broth seasoned with soy and sugar, served icy over buckwheat noodles with sweet and sour radish, cucumber, brisket and egg, with vinegar and mustard at the table. The broth and beef are made the day before and the broth is frozen until slushy. Beyond Kimchee's version is quicker (beef base granules) but has no listed rating; pear and the bibim sauce are left out, and the radish pickle is halved.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Naengmyeon (Cold Noodles)",
+   "url": "https://www.koreanbapsang.com/naengmyeon-cold-noodles",
+   "rating": 4.82,
+   "rating_count": 33,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Mul Naengmyeon (Korean Cold Noodle Soup with Icy Broth)",
+   "url": "https://www.beyondkimchee.com/wprm_print/mul-naengmyeon-korean-cold-noodle-soup-with-icy-broth",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,92 @@
+{
+ "dish_name": "Kongnamul Muchim",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Soybean sprouts",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tamari (gluten-free soy sauce)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 pinch"
+  }
+ ],
+ "instructions": [
+  "Rinse the sprouts and pick out any that are brown or slimy. Mince the garlic and chop the green onions.",
+  "Put the sprouts and 6 tbsp of water in a medium pot with a tight lid. Cover and cook over medium heat for 6 minutes. Don't lift the lid.",
+  "Take the pot off the heat, lift the lid, and stir so the sprouts from the bottom move to the top. Let them sit for 30 seconds.",
+  "Drain the sprouts in a colander and let them cool for 2 or 3 minutes.",
+  "Transfer the sprouts to a large bowl. Add the garlic, green onions, 1 tbsp tamari, 1 1/2 tbsp sesame oil, 1 1/2 tbsp sesame seeds and a pinch of salt. Toss gently with your hands until everything is coated.",
+  "Taste it. If it's flat, add a pinch more salt. Serve at room temperature or cold.",
+  "To keep it, store it in an airtight container in the fridge for 4 to 5 days. Serve it cold; there's no need to reheat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 8,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum (4.9 from 27) is the lead: steam the sprouts in a covered pot with a little water, never lift the lid, then dress them while warm with garlic, green onion, sesame oil, seeds and soy. Beyond Kimchee has the same method with a 4 to 5 day fridge life. Amounts are scaled up to 1 lb, and tamari stands in for Korean soup soy sauce so the dish stays gluten-free; Takes Two Eggs and Kimchimari agree on the dressing and the rule not to overcook.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Korean Bean Sprout Side Dish (Kongnamul Muchim)",
+   "url": "https://cupofyum.com/recipes/korean-bean-sprout-side-dish-kongnamul-muchim",
+   "rating": 4.9,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Korean Soybean Sprout Side Dish (Kongnamul Muchim)",
+   "url": "https://www.beyondkimchee.com/bean-sprout-salad",
+   "rating": 4.82,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Korean Bean Sprout Salad (Kongnamul Muchim)",
+   "url": "https://takestwoeggs.com/korean-bean-sprout-salad/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,112 @@
+{
+ "dish_name": "Ssambap",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Thinly sliced pork belly",
+   "qty": "1 1/3 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Short-grain (sushi) rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Red leaf lettuce",
+   "qty": "2 heads",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Gochujang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Gochugaru (Korean chili flakes)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a bowl of cold water and drain it. Put it in a medium pot with 1 3/4 cups of water. Bring to a boil over high heat, then cover, turn the heat to its lowest, and cook for 15 minutes. Take the pot off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, cut the pork belly slices into bite-size pieces. In a large bowl, stir together 1 1/2 tbsp gochujang, 1 tbsp gochugaru, 5 tbsp soy sauce, 2 tbsp mirin, 2 tbsp sugar and the 3 crushed garlic cloves. Add the pork and toss until every piece is coated. Let it sit for 15 minutes.",
+  "Thinly slice the onion. Separate the lettuce leaves, wash them, pat them dry, and stack them on a platter.",
+  "Heat a large skillet over medium-low heat. Add the pork with all its marinade, no oil needed, and spread it out. Cook, stirring often, for 8 to 10 minutes. Watch it early on, since the sauce can scorch. If it sticks, add a splash of water.",
+  "You're cooking the pork to 145°F, so if you have a thermometer, check a thick piece. No thermometer? Cut one open. It's done when there's no pink left and the edges are browned.",
+  "Add the onion and stir-fry for 2 minutes, until it softens.",
+  "Take the skillet off the heat. Stir in 1 tbsp sesame oil and 1 tbsp sesame seeds.",
+  "Fluff the rice with a fork. Serve the pork with the rice and lettuce leaves, and put the remaining 1 tbsp gochugaru in a small bowl for the adults. To eat, put a spoonful of rice and pork in a leaf and fold it up."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one published pork ssambap turned up (10000recipe, a single 5.0 rating), so it is the lead and fallback_used is set. It marinates pork belly in a gochujang, gochugaru, soy and garlic sauce, stir-fries it without oil, finishes with sesame, and serves it with lettuce and rice. Changes: the marinade is cut to 15 minutes and mild, with extra gochugaru left for the table; mirin replaces cooking wine, and sugar replaces the oligosaccharide and plum extract. The rice is cooked the way Cup of Yum's ssambap does (short-grain, steamed).",
+ "sources": [
+  {
+   "name": "10000recipe",
+   "title": "Pork Ssambap Recipe: Pork Belly Red Pepper Paste Sauce Stir-Fried",
+   "url": "https://www.10000recipe.com/en/6988749/Pork_Ssambap_Recipe_Pork_Belly_Red_Pepper_Paste_Sauce_Stir-Fried",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Ssambap (Korean Rice Lettuce Wraps)",
+   "url": "https://cupofyum.com/recipes/ssambap-korean-rice-lettuce-wraps/print",
+   "rating": 4.5,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
