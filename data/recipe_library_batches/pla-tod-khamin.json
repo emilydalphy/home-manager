@@ -1,0 +1,78 @@
+{
+ "dish_name": "Pla Tod Khamin",
+ "cuisine": "Thai",
+ "main_protein": "fish",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Small whole fish, cleaned and scaled (sea bream or snapper)",
+   "qty": "2 fish, about 1 lb each",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "12 cloves"
+  },
+  {
+   "item": "Fresh turmeric root",
+   "qty": "3 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Neutral oil for frying",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups jasmine rice until the water runs mostly clear. Cook it on the stove or in a rice cooker. Start it first, since it takes about 18 minutes.",
+  "Peel the 12 garlic cloves and the turmeric. Chop the turmeric roughly. Pound both together in a mortar, or pulse in a food processor, until it's a chunky, oily mix. That should take 3 to 5 minutes. Turmeric stains, so wear an apron.",
+  "Rinse the fish and pat it dry. Cut three diagonal slashes through the skin on each side, not too deep.",
+  "Rub 1 tsp salt over the fish, inside and out. Press the garlic and turmeric mix over both sides and into the slashes. Let the fish sit for 10 to 15 minutes.",
+  "Pour 3/4 cup oil into each of two 10 inch skillets and heat over medium until a pinch of the mix sizzles right away.",
+  "Scrape most of the garlic and turmeric off the fish and into a bowl, so it doesn't burn. Keep it for the topping.",
+  "Lay one fish in each skillet. Fry for 5 to 7 minutes per side, until the skin is golden and crisp. Cut into the thickest part to check: it's done when the flesh is white and flakes, with nothing translucent. Transfer the fish onto a platter.",
+  "Pour the oil from one skillet into a heatproof bowl and carefully wipe out the skillet. Put 2 tbsp of the oil back, add the scraped-off garlic and turmeric, and fry over medium-low for 4 to 6 minutes, stirring, until the garlic is golden and crisp. Drain it on a paper towel.",
+  "Pile the crispy garlic and turmeric over the fish. Serve with the rice."
+ ],
+ "method_notes": "Eating Thai Food, Austin Bush and Rosa's Thai all fry a whole fish with a pounded garlic and turmeric rub, then fry the scraped-off garlic and turmeric separately as a crisp topping. Eating Thai Food is the closest written version (garlic, turmeric and salt only) and deep-fries two fish; here they are shallow-fried in two skillets to stay practical at home. The garlic and turmeric are scaled down from the source's large amounts. Rosa's Thai uses ground turmeric and chicken powder, which are left out. Fresh turmeric is the specialty item here.",
+ "sources": [
+  {
+   "name": "Eating Thai Food",
+   "title": "How to make Thai fried fish with garlic and turmeric",
+   "url": "https://www.eatingthaifood.com/recipe-thai-fried-fish-garlic-turmeric/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rosa's Thai",
+   "title": "Southern Thai Seabass in Turmeric",
+   "url": "https://rosasthai.com/recipes/southern-thai-seabass-turmeric",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

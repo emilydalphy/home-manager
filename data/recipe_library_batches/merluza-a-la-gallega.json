@@ -1,0 +1,112 @@
+{
+ "dish_name": "Merluza a la Gallega",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Hake fillets, skin on",
+   "qty": "1 1/3 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "1 3/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free fish stock",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup + 1 tbsp"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Sweet Spanish paprika (pimentón dulce)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and slice them 1/2 inch thick. Cut the onions into thin rings and the peppers into thin strips.",
+  "Put the potatoes and onions in a wide, deep pan with the bay leaf, 1 tsp salt and the fish stock. Add a little water if the stock doesn't just cover the potatoes.",
+  "Bring to a boil over medium-high, then turn it down to a gentle simmer. Cook for 10 minutes, until the potatoes are just starting to soften.",
+  "Scatter the peppers over the top and drizzle with 1 tbsp of the olive oil. Cover partway and simmer for 8 minutes, until the peppers are soft.",
+  "Meanwhile, pat the hake dry and sprinkle it with 1/2 tsp salt and the pepper. Cut it into 4 equal pieces.",
+  "Lay the hake skin side down on top of the vegetables. Cover and cook over low heat for 6 to 8 minutes. The fish is done when it's opaque and flakes easily with a fork.",
+  "While the fish cooks, thinly slice the garlic and chop the 1/4 cup parsley.",
+  "Warm the remaining 1/2 cup olive oil in a small pan over medium-low. Add the garlic and cook for 2 to 3 minutes, until it just starts to turn golden.",
+  "Take the pan off the heat and stir in the paprika right away. Paprika burns fast in hot oil.",
+  "Discard the bay leaf. Spoon the vegetables and some of the broth onto each plate and set a piece of hake on top.",
+  "Pour the garlic and paprika oil over the fish and sprinkle with the parsley. Serve with the potatoes, peppers and onions."
+ ],
+ "method_notes": "The cooks agree on the Galician method: potatoes and onion are simmered first, the hake poaches on top, and a garlic and paprika oil (the ajada) is poured over, made off the heat so the paprika doesn't scorch. The Culture Cook adds red pepper and fish stock and is written for two, so the amounts are doubled here. Fork and Salt adds wine, sherry vinegar and a pinch of hot paprika, which are left out to keep it plain and mild. A gluten-free fish stock is named to keep the dish gluten-free.",
+ "sources": [
+  {
+   "name": "The Culture Cook",
+   "title": "Authentic Galician Hake with Paprika Oil (Merluza a la Gallega)",
+   "url": "https://theculturecook.com/recipe-authentic-galician-hake-with-paprika-oil-merluza-a-la-gallega.html",
+   "rating": 4.9,
+   "rating_count": 88,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Fork and Salt",
+   "title": "Merluza a la Gallega",
+   "url": "https://forkandsalt.com/recipes/galician/merluza-a-la-gallega",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

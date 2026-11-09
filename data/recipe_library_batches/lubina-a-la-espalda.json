@@ -1,0 +1,92 @@
+{
+ "dish_name": "Lubina a la Espalda",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Whole sea bass, cleaned and butterflied",
+   "qty": "2 fish, about 1 2/3 lb each",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried guindilla chili",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Mild olive oil",
+   "qty": "1 small bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "White wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Ask the fishmonger to clean the sea bass and open it flat along the back. Pat the fish dry and sprinkle 1 tsp salt over the flesh side only.",
+  "Peel the potatoes and slice them about 1/4 inch thick. Thinly slice the onion.",
+  "Heat the 1/3 cup mild olive oil in a large skillet over medium-high. Add the potatoes in two batches and fry them for 5 to 6 minutes per batch, turning once, until they're lightly golden and just tender. Transfer them onto a paper towel and sprinkle with 1/2 tsp salt.",
+  "Add the onion to the same skillet and cook for 2 to 3 minutes, until soft.",
+  "Spread the potatoes over a rimmed baking sheet and push the onion to one side. Lay the 2 fish skin side down on top, flesh side up, and drizzle with 2 tbsp of the extra virgin olive oil.",
+  "Bake for 15 to 18 minutes. The fish is done when the flesh is white all the way through and flakes easily with a fork.",
+  "While the fish bakes, thinly slice the garlic and shake the seeds out of the guindilla, then cut it into thin rings. Chop 2 tbsp of the parsley.",
+  "About 5 minutes before the fish is out, heat the remaining 10 tbsp extra virgin olive oil in a small pan over medium. Add the garlic and guindilla and cook for 3 to 4 minutes, until the garlic is golden but not brown. Stir in the parsley.",
+  "Take the pan off the heat and let the oil cool for a minute or two. Stir in the vinegar. Stand back a little, it will spit if the oil is too hot.",
+  "Spoon the warm garlic oil over the fish and potatoes. Serve with the potatoes and onion from the pan."
+ ],
+ "method_notes": "The sources agree on the Basque method: a butterflied sea bass baked flat over fried potato and onion, then dressed with a bilbaina of garlic, guindilla, parsley and vinegar added off the heat. This follows El Cocinero Casero, whose amounts were written for two, so everything is doubled for two fish. Other Spanish cooks add paprika or a splash of white wine; neither is used here. The guindilla has its seeds shaken out to keep it mild.",
+ "sources": [
+  {
+   "name": "El Cocinero Casero",
+   "title": "Lubina a la espalda con salsa bilbaina",
+   "url": "https://elcocinerocasero.com/receta/lubina-a-la-espalda/",
+   "rating": 4.6,
+   "rating_count": 72,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,114 @@
+{
+ "dish_name": "Moo Yang",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "marinate at least 1 hour ahead, or overnight",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "ingredients": [
+  {
+   "item": "Pork shoulder or pork neck, in 3/4 inch steaks",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Gluten-free soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Chili flakes",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups + 1 tbsp"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before: pound the 3 garlic cloves, 1/2 tsp coriander seeds and the bottom 2 inches of 6 cilantro stems in a mortar, or finely chop them. Stir in the oyster sauce, soy sauce and 1/2 tbsp of the brown sugar. Add the pork, turn it to coat, cover and refrigerate.",
+  "Rinse 1 1/2 cups of the rice until the water runs mostly clear. Cook it on the stove or in a rice cooker. It takes about 18 minutes, so start it first.",
+  "Put the 1 tbsp rice in a dry skillet over medium. Stir often for 4 to 5 minutes, until it's deep golden and smells toasty. Transfer it onto a plate to cool, then grind it in a spice grinder or mortar until it looks like coarse sand.",
+  "Make the sauce: in a small bowl, stir the juice of the lime, the fish sauce, the remaining 1 tbsp brown sugar, 2 tbsp water and the ground rice until the sugar dissolves. Put the chili flakes in a small bowl for the table. Chop 2 tbsp of cilantro leaves for the top.",
+  "Heat a grill pan or large skillet over medium-high until hot. Brush it with the oil. Pat the pork lightly so it isn't dripping.",
+  "Cook the pork for 6 to 7 minutes per side, until it's deeply browned with charred edges. You're cooking it to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it should be juicy with only a trace of pink at most. Cook it in batches if the pieces don't fit in one layer.",
+  "Transfer the pork to a cutting board and rest it for 5 minutes. Slice it thinly across the grain.",
+  "Sprinkle the pork with the chopped cilantro. Serve with the rice, the sauce and the chili flakes on the side."
+ ],
+ "method_notes": "Hungry in Thailand and Let's Cook Some Food agree on the marinade: garlic, coriander root or stem, and coriander seed pounded together with oyster sauce and a sweetener, then grilled until charred and sliced. Hungry in Thailand is the lead (3 votes, so a fallback) and adds Golden Mountain sauce and milk; both are changed here, with gluten-free soy sauce and no milk, to keep the dish gluten-free and dairy-free. Palm sugar is brown sugar, and cilantro stems stand in for coriander roots. The sauce follows its optional kor moo yang dipping sauce with chili flakes moved to the table.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Easy Moo Yang Recipe (Thai Grilled Pork)",
+   "url": "https://hungryinthailand.com/moo-yang-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Let's Cook Some Food",
+   "title": "Moo Yang (Thai Grilled Pork)",
+   "url": "https://www.letscooksomefood.com/moo-yang-thai-grilled-pork/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

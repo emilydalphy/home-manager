@@ -1,0 +1,107 @@
+{
+ "dish_name": "Hor Mok",
+ "cuisine": "Thai",
+ "main_protein": "fish",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "White fish fillets (cod or tilapia)",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Full-fat coconut milk",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 1/3 cups"
+  },
+  {
+   "item": "Egg",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Napa cabbage",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Kaffir lime leaves",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups jasmine rice until the water runs mostly clear. Cook it on the stove or in a rice cooker. Start it first, since it takes about 18 minutes.",
+  "Set up a steamer: put a rack or steamer basket in a large pot with 1 inch of water, and bring it to a boil while you prep.",
+  "Remove the center vein from 3 of the lime leaves and slice them very thin. Keep the 4th leaf whole for the top, and thinly slice the chili for the table.",
+  "Cut the fish into chunks and add it to a food processor with the curry paste, egg, fish sauce, brown sugar and the sliced lime leaves. Blend until smooth.",
+  "Add 1 cup of the coconut milk and pulse a few times, until it's mixed into a thick custard.",
+  "Shred the cabbage and divide it between four 1 cup ramekins. Spoon the fish custard over it, filling each ramekin about three quarters full.",
+  "Put the ramekins in the steamer, cover and steam for 18 to 20 minutes. They're done when the custard is puffed and firm and a skewer in the center comes out clean.",
+  "While they steam, whisk the rice flour into the remaining 1/3 cup coconut milk in a small pan. Heat over low-medium, stirring, for 1 to 2 minutes, until it thickens like a thin sauce.",
+  "Slice the whole lime leaf into thin threads.",
+  "Spoon the thickened coconut milk over each custard and top with the lime leaf threads. Serve with the rice and the sliced chili on the side."
+ ],
+ "method_notes": "Hungry in Thailand and Marion's Kitchen agree on the dish: red curry paste, coconut milk and egg set into a custard with fish over cabbage, finished with a thickened coconut topping. Hungry in Thailand blends the fish into a smooth custard, which suits a quick weeknight. Marion's Kitchen stirs in flaked fish and steams longer in banana leaf cups. This uses ramekins instead of banana leaves, brown sugar for palm sugar, and moves the chili to the table to keep the custard mild. Check that the curry paste is gluten-free.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Hor Mok Pla Recipe (Thai Steamed Fish Curry)",
+   "url": "https://hungryinthailand.com/hor-mok-pla-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Marion's Kitchen",
+   "title": "Steamed Red Curry Fish (Haw Mok Plaa)",
+   "url": "https://www.marionskitchen.com/steamed-red-curry-fish/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

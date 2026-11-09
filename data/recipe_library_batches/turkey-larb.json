@@ -1,0 +1,135 @@
+{
+ "dish_name": "Turkey Larb",
+ "cuisine": "Thai",
+ "main_protein": "turkey",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1 tsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp + 1 tsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Boston lettuce",
+   "qty": "2 heads",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat 1 tbsp of the oil in a large skillet over medium. Add the 1 tbsp rice and stir for about 3 minutes, until it's browned and smells toasty. Transfer it onto a plate to cool.",
+  "Grind the cooled rice in a spice grinder or a mortar until it looks like coarse sand. No grinder? Seal it in a zip bag and crush it with a rolling pin.",
+  "Meanwhile, thinly slice the garlic. Halve 2 of the shallots and slice them thin. Thinly slice the last shallot and keep it for the top.",
+  "Separate the lettuce leaves, then wash and dry them. Slice the cucumber. Tear the basil, mint and cilantro leaves. Thinly slice the Thai chilies and crumble the dried chilies into a small bowl for the table.",
+  "Make the dipping sauce: in a small bowl, stir the juice of the lime, 2 tbsp fish sauce, 1 tbsp sugar and 1/4 cup water until the sugar dissolves.",
+  "Heat the remaining 1 tbsp oil in the same skillet over medium-low. Add the garlic and cook for about 1 minute, until golden.",
+  "Add 1 tsp sugar and stir for 20 seconds.",
+  "Add the turkey, turn the heat up to medium-high and break it up as it cooks. Cook for 3 to 5 minutes, until there's no pink left.",
+  "Stir in the 2 sliced shallots, 1 tsp fish sauce, the salt and the pepper. Turn the heat to high and cook, stirring, for about 6 minutes, until the turkey is golden. You're cooking it to 165°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a large piece: it's done when there's no pink left.",
+  "Transfer the turkey to a bowl and sprinkle the ground rice over it.",
+  "Serve with the lettuce leaves, cucumber, herbs, the extra shallot, the dipping sauce and the chilies on the side."
+ ],
+ "method_notes": "Tasting Table is the lead, and Weight Watchers, Simply Suwanee and Honeysuckle agree on the shape: ground turkey cooked with garlic and shallot, seasoned with fish sauce and a little sugar, and finished with toasted rice powder, herbs and lime in lettuce cups. Tasting Table keeps the lime, fish sauce and chili in a separate dipping sauce, which suits a family table. The fresh and dried chilies are moved to the table to keep the turkey mild. A little water is added to the dipping sauce so there's enough for four.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Thai Larb-Style Turkey Lettuce Wraps",
+   "url": "https://www.tastingtable.com/1480675/thai-larb-style-turkey-lettuce-wraps-recipe/",
+   "rating": 4.9,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

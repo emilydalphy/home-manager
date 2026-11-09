@@ -1,0 +1,106 @@
+{
+ "dish_name": "Goong Pao",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Large shell-on shrimp, deveined",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Black sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Chop 1 tbsp of the garlic (about 3 cloves) and chop 3/4 cup of the cilantro leaves.",
+  "In a large bowl, mix 2 tbsp of the oil, the chopped garlic, black sesame seeds, smoked paprika, garlic powder and chopped cilantro. Add the shrimp and toss to coat. Let them sit at room temperature for 10 to 15 minutes while you make the sauce.",
+  "Juice the limes. That should be about 1/2 cup.",
+  "Make the sauce: in a blender, combine the lime juice, 1/4 cup water, 2 cloves of garlic, 3 tbsp cilantro leaves, 1 of the Thai chilies, 1 1/4 tsp salt and 2 1/2 tbsp sugar. Blend for 30 to 60 seconds, until the cilantro is finely chopped. Pour it into a bowl.",
+  "Thinly slice the second Thai chili and put it in a small bowl for the table.",
+  "Heat a large skillet or grill pan over high heat until it's very hot. Add 1 tbsp of the oil.",
+  "Add half the shrimp in a single layer. Cook for 2 to 3 minutes per side, until they're pink and a little charred. Transfer them to a platter.",
+  "Cook the second batch the same way.",
+  "Serve with the lime sauce and the sliced chili on the side."
+ ],
+ "method_notes": "Taming of the Spoon marinates shell-on shrimp in garlic, smoked paprika and black sesame, grills them hot, and serves a blended lime, cilantro, garlic and chili sauce. Rice and Relish and Thailandblog agree that the sauce is a sharp lime, garlic, chili and sugar mix (nam jim talay) and that the prawns get just a couple of minutes per side. Taming of the Spoon's amounts are for 1 lb, so everything is scaled to 1 1/2 lb. The dried orange peel is left out, and only half the chili goes in the sauce, with the rest on the side. The source has one rating, so this uses a fallback.",
+ "sources": [
+  {
+   "name": "Taming of the Spoon",
+   "title": "Thai Grilled Shrimp with Angry Sauce {Goong Pao}",
+   "url": "https://tamingofthespoon.com/thai-grilled-shrimp-angry-sauce/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rice and Relish",
+   "title": "Grilled Prawns with Seafood Sauce (Gung Pao, Nam Jim Talay)",
+   "url": "https://riceandrelish.wordpress.com/2015/03/17/grilled-prawns-with-seafood-sauce-gung-pao-nam-jim-talay/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
