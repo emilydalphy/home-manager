@@ -1,0 +1,123 @@
+{
+ "dish_name": "Steak Salad with Blue Cheese",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Sirloin steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mixed salad greens",
+   "qty": "1 container (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Crumbled blue cheese",
+   "qty": "1 container (4 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup + 1 tbsp"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Take the steak out of the fridge, pat it dry, and sprinkle 1/2 tsp salt and 1/4 tsp pepper over both sides.",
+  "In a small bowl, whisk 1/2 cup of the olive oil with the balsamic vinegar, 1 minced garlic clove, honey, Dijon, 1/2 tsp salt and 1/4 tsp pepper.",
+  "Heat the remaining 1 tbsp oil in a heavy 12 inch skillet over medium-high heat until it shimmers.",
+  "Add the steak and cook for 4 minutes without moving it, until the underside is deep brown and lets go of the pan. Flip it and cook for 3 to 4 minutes. You're cooking it to 130°F in the middle for medium-rare, so if you have a thermometer, check it there. No thermometer? Press the center: it should feel springy, like the base of your thumb.",
+  "Transfer the steak to a cutting board and let it rest for 5 minutes.",
+  "Meanwhile, slice the tomatoes and thinly slice half the red onion. Divide the greens among 4 plates and top with the tomatoes and onion.",
+  "Slice the steak thinly across the grain and lay it over the salads.",
+  "Sprinkle the blue cheese on top and drizzle each salad with half of the dressing.",
+  "Serve with the rest of the dressing on the side.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum (5.0 from 22 ratings) tosses sliced steak, tomato, red onion and blue cheese over greens with a balsamic, honey and Dijon dressing, half on the salad and half on the side. It gives no steak method and only 8 oz of steak for 6, so this uses 1 lb of sirloin for 4 and the sear is Pomona's own: a hot skillet, 4 minutes without moving it, then a rest. Amy Casey Cooks and Slow the Cook Down also sear and rest the steak, with only a handful of ratings. About 20 minutes in all.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Steak and Blue Cheese Salad",
+   "url": "https://cupofyum.com/recipes/steak-and-blue-cheese-salad",
+   "rating": 5.0,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Amy Casey Cooks",
+   "title": "Balsamic Herb Steak and Red Onion Salad with Blue Cheese",
+   "url": "https://amycaseycooks.com/balsamic-herb-steak-and-red-onion-salad-with-blue-cheese/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Slow the Cook Down",
+   "title": "Steak Salad with Blue Cheese",
+   "url": "https://slowthecookdown.com/?p=6269",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

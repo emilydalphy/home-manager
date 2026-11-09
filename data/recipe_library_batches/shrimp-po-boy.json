@@ -1,0 +1,153 @@
+{
+ "dish_name": "Shrimp Po' Boy",
+ "cuisine": "American",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Buttermilk",
+   "qty": "1 pint",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Stone-ground mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Cajun seasoning",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Cornmeal",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Dill pickle slices",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "French bread rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 stick",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Iceberg lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, whisk the buttermilk, eggs, stone-ground mustard and 1 tbsp of the Cajun seasoning. Add the shrimp, stir to coat, and let them sit for 10 minutes.",
+  "Meanwhile, chop 1/4 cup of the dill pickle slices. In a small bowl, stir them with the mayonnaise and Dijon.",
+  "Shred about 2 cups of the lettuce from the head and slice the tomatoes. Set out 12 pickle slices.",
+  "In a shallow dish, stir together the flour, cornmeal, the remaining 1 tbsp Cajun seasoning and the salt.",
+  "Pour the oil into a 12 inch heavy skillet and heat over medium-high for 3 to 4 minutes, until it's at 350°F. If you don't have a thermometer, a pinch of the flour mix dropped in should sizzle right away.",
+  "Lift the shrimp out of the buttermilk one at a time, let the extra drip off, and press each into the flour mix to coat. Transfer them to a plate.",
+  "Fry half the shrimp in a single layer for 2 to 3 minutes, turning once, until golden and curled. They're done when they're pink and white all the way through, with no gray or see-through spots.",
+  "Transfer the shrimp to a paper towel lined plate. Let the oil come back to 350°F, then fry the rest.",
+  "While the second batch fries, heat the broiler to high. Split the rolls and butter the cut sides. Broil them cut side up for 1 to 2 minutes, until golden. Stay close, they brown fast.",
+  "Spread the mayonnaise sauce on both halves of each roll. Layer on the lettuce, tomatoes, pickle slices and shrimp.",
+  "Serve with the hot sauce on the table for anyone who wants it.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Billy Parisi (5.0 from 22 ratings, read from the visible vote count) buttermilk-marinates shrimp, dredges them in a flour and cornmeal mix with Cajun seasoning, fries them, and builds the sandwich on buttered, toasted French bread with lettuce, tomato and pickles. Tasting Table (4.9 from 98) is the same method and gives the amounts for the mayonnaise, mustard and chopped pickle sauce used here. Both marinate for 30 to 60 minutes; this cuts it to 10 minutes while the sauce and vegetables are prepped, and shallow-fries in a skillet instead of deep frying to stay at the 30 minute target. Hot sauce is left off the base and goes on the table. It lands right at 30 minutes, so peeled shrimp and a ready-shredded lettuce would give some room.",
+ "sources": [
+  {
+   "name": "Billy Parisi",
+   "title": "Shrimp Po Boy Recipe",
+   "url": "https://www.billyparisi.com/shrimp-po-boy-recipe",
+   "rating": 5.0,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tasting Table",
+   "title": "Shrimp Po Boy Sandwich Recipe",
+   "url": "https://www.tastingtable.com/cook/recipes/shrimp-po-boy-recipe",
+   "rating": 4.9,
+   "rating_count": 98,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Skinnytaste",
+   "title": "Slimmed Down Shrimp Po Boy",
+   "url": "https://www.skinnytaste.com/slimmed-down-shrimp-po-boy",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

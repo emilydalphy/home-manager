@@ -1,0 +1,132 @@
+{
+ "dish_name": "Turkey Chili Mac",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red kidney beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Elbow macaroni",
+   "qty": "1 box (16 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups (6 oz)"
+  },
+  {
+   "item": "Shredded sharp cheddar",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion and slice 3 of the green onions. Rinse and drain both cans of beans.",
+  "Heat the olive oil in a large Dutch oven or deep 12 inch skillet over medium-high heat. Add the onion and 1/4 tsp salt, and cook for 3 to 4 minutes, until it starts to soften.",
+  "Add the turkey and the remaining 1/4 tsp salt. Break it into small pieces with a spoon and cook for 4 to 5 minutes, until it's browned in spots. You're cooking it to 165°F, so if you have a thermometer, check it there. No thermometer? It's done when there's no pink left.",
+  "Add the chili powder, cumin, coriander, garlic powder and pepper. Stir for 30 seconds, until you can smell them.",
+  "Add the chicken broth, tomato sauce, both cans of beans and the macaroni. Stir, scraping up the browned bits from the bottom, and bring to a boil.",
+  "Turn the heat down to a gentle simmer, cover, and cook for 10 minutes, stirring once or twice, until the macaroni is tender.",
+  "Take the pot off the heat. Stir in 1 cup of the cheddar until it melts. If it's thicker than you like, stir in a splash of water.",
+  "Spoon into bowls and top with the remaining 1/4 cup cheddar and the sliced green onions. Put the hot sauce on the table for the adults.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Well Plated (4.95 from 53 ratings) browns turkey with onion, adds chili spices, then cooks dry macaroni right in broth, tomato and beans, finishing with cheddar off the heat. It is written for 6; the amounts here are scaled to 4 and the diced tomatoes with chilies are dropped in favor of one can of tomato sauce. The jalapeno is left out to keep the base mild, and hot sauce goes on the table. About 30 minutes in all, as in the lead.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Chili Mac and Cheese",
+   "url": "https://www.wellplated.com/chili-mac-and-cheese/",
+   "rating": 4.95,
+   "rating_count": 53,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,128 @@
+{
+ "dish_name": "Turkey Patty Melts",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Smoked Gouda",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup grated"
+  },
+  {
+   "item": "Wheat sandwich bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Canola oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Halve and thinly slice the onion. Grate the Gouda on the big holes of a box grater. That should be about 1 cup.",
+  "In a small bowl, stir the ketchup, chili powder, cumin, Worcestershire and 1/4 tsp of the pepper.",
+  "Mix the turkey with 1/2 tsp salt, the garlic powder and the remaining 1/4 tsp pepper. Don't overwork it.",
+  "With damp hands, shape it into 4 thin patties about 4 inches wide and 1/2 inch thick.",
+  "Heat 1 1/2 tbsp of the oil in a 12 inch skillet over medium-high heat. Add the patties and cook for 3 to 4 minutes, until deep brown on the bottom.",
+  "Flip the patties and sprinkle 1/4 cup Gouda on each. Cook for 3 minutes, until the Gouda melts. You're cooking them to 165°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into one: it's done when there's no pink left.",
+  "Transfer the patties to a plate and cover with foil.",
+  "Add the remaining 1 tbsp oil and the onion to the same skillet. Turn the heat to medium and cook for 7 to 8 minutes, stirring and scraping up the browned bits, until the onion is soft and golden. Stir in 1/4 tsp salt.",
+  "Meanwhile, toast the 8 slices of bread.",
+  "Put a patty on 4 slices of toast. Top each with a quarter of the onions and 1 tbsp of the ketchup sauce, then a second slice of toast.",
+  "Serve with the rest of the ketchup sauce on the side.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 17,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Anthony Kitchen (4.34 from 6 ratings, so this is a fallback lead; no version with 20 or more ratings could be read) sears seasoned turkey patties, melts smoked cheese on them, and serves them with sauteed onions and a spicy ketchup sauce on toasted wheat bread. Canadian Turkey and the Food Network Kitchen version differ: they grill the whole sandwich in butter, with Swiss or Monterey Jack. This follows the lead, with the chili in the sauce cut to 1 tsp to keep it mild, the liquid smoke left out, and salt, pepper and garlic powder standing in for its house seasoning. The onions are golden and soft, not deeply caramelized, to stay at about 29 minutes.",
+ "sources": [
+  {
+   "name": "The Anthony Kitchen",
+   "title": "Easy Patty Melt Recipe with Ground Turkey",
+   "url": "https://www.theanthonykitchen.com/easy-patty-melt-recipe-with-ground-turkey/",
+   "rating": 4.34,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Think Turkey",
+   "title": "Turkey Patty Melt",
+   "url": "https://www.canadianturkey.ca/wprm_print/turkey-patty-melt",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Network",
+   "title": "Turkey Patty Melt",
+   "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/turkey-patty-melt-recipe-1928039.amp",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
