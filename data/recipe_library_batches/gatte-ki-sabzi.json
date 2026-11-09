@@ -1,0 +1,153 @@
+{
+ "dish_name": "Gatte ki Sabzi",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Besan (gram flour)",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain whole-milk yogurt",
+   "qty": "1 cup plus 2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ajwain (carom seeds)",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida (gluten-free)",
+   "qty": "2 pinches",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi (dried fenugreek leaves)",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger-garlic paste",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1/4 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups basmati rice until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups water and 1/2 tsp of the salt, bring to a boil over high heat, then cover, turn the heat to low and cook for 12 minutes. Leave it covered off the heat until you serve.",
+  "Meanwhile, put 4 cups water in a large pot and bring it to a boil over high heat.",
+  "In a medium bowl, mix the besan with the coriander seeds (lightly crushed), ajwain, 1/4 tsp of the turmeric, 1/4 tsp of the chili powder, 1 pinch of the asafoetida and 1/4 tsp salt. Stir in the melted ghee, 2 tbsp of the yogurt and 2 tbsp water. Knead for 2 minutes into a smooth, soft dough.",
+  "Divide the dough into 3 equal pieces. With oiled hands, roll each into a log about 6 inches long.",
+  "Lower the logs into the boiling water. Boil for 10 minutes, until they float to the top.",
+  "Scoop out 1 cup of the cooking water and set it aside. Lift the logs out with a slotted spoon and let them cool for a few minutes, then slice them into 1/2-inch rounds.",
+  "Finely chop the onion. Heat the oil in a large deep skillet over medium heat. Add the cumin seeds, kasuri methi, bay leaf, fennel seeds and the other pinch of asafoetida and cook for 20 seconds, until fragrant.",
+  "Add the onion and cook for 5 minutes, until golden. Stir in the ginger-garlic paste for 1 minute.",
+  "Turn the heat to low. Stir in the remaining 1/4 tsp turmeric, the remaining 1/2 tsp chili powder, the ground coriander and the ground cumin and cook for 30 seconds.",
+  "Pour in the reserved cooking water. Whisk the remaining 1 cup yogurt until smooth, then add it a little at a time, stirring the whole time, until it comes to a gentle boil.",
+  "Add the gatte and 1/2 tsp salt. Cover and simmer over low heat for 10 minutes. Add a splash of water if it gets too thick.",
+  "Stir in the garam masala and half the cilantro, chopped. Serve with the rice and the rest of the cilantro on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen leads (5.0 from 279 ratings): spiced besan dough rolled into logs, boiled until they float, sliced, then simmered in a whisked yogurt gravy thinned with the boiling water. Cook with Manali (4.29 from 7) fries the gatte and uses amchur and sugar, which were left out. It is the longest dish in this set at about 50 minutes, because the dough, the boil and the simmer can't overlap.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "gatte ki sabji recipe | gatte ki sabzi recipe | besan ke gatte recipe",
+   "url": "https://hebbarskitchen.com/gatte-ki-sabji-recipe-gatte-ki-sabzi/",
+   "rating": 5,
+   "rating_count": 279,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Gatte Ki Sabzi",
+   "url": "https://www.cookwithmanali.com/gatte-ki-sabzi/",
+   "rating": 4.29,
+   "rating_count": 7,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

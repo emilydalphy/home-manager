@@ -1,0 +1,157 @@
+{
+ "dish_name": "Kaju Curry",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Raw cashews",
+   "qty": "1/2 cup plus 2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger-garlic paste",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain whole-milk yogurt",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Kasuri methi (dried fenugreek leaves)",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1/4 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups basmati rice until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups water and 1/2 tsp of the salt, bring to a boil over high heat, then cover, turn the heat to low and cook for 12 minutes. Leave it covered off the heat until you serve.",
+  "Put 2 tbsp of the cashews in a small bowl, cover with hot water and leave them for 10 minutes.",
+  "Meanwhile, finely chop the onions. Drain the soaked cashews and blend them with the quartered tomatoes until smooth. That should be about 1 cup.",
+  "Heat the ghee in a large skillet over medium heat. Add the 1/2 cup cashews and cook for 2 minutes, stirring, until golden. Transfer them to a plate.",
+  "Add the oil to the same skillet over medium heat, then the cumin seeds, cinnamon, cloves and peppercorns. Cook for 30 seconds, until fragrant.",
+  "Add the onions and ginger-garlic paste. Cook for 8 minutes, stirring often, until golden.",
+  "Turn the heat to low. Stir in the turmeric, ground cumin, coriander and chili powder and cook for 30 seconds.",
+  "Add the tomato and cashew puree, the yogurt and 3/4 tsp salt. Cook for 6 to 8 minutes, stirring now and then, until oil shows at the edges.",
+  "Pour in 1 cup hot water and simmer for 5 minutes.",
+  "Stir in the cream, the fried cashews and the kasuri methi, crushing it between your fingers. Cook for 1 minute. Turn off the heat and stir in the garam masala.",
+  "Top with chopped cilantro and serve with the rice. Slit the green chilies and put them on the table for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen leads (4.98 from 267 ratings): a tomato and cashew puree cooked into onions and yogurt, fried cashews added at the end, kasuri methi to finish. Its paneer cubes were left out so the cashews are the star, and the chili was cut well back from its 1 tbsp to keep it mild. Cook with Manali (5.0 from 4) uses a simpler tomato base with cream, and agrees on the roasted cashews.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Kaju Masala Recipe | Kaju Curry (Hotel Style)",
+   "url": "https://hebbarskitchen.com/kaju-masala-recipe-kaju-curry-recipe/",
+   "rating": 4.98,
+   "rating_count": 267,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Kaju Masala",
+   "url": "https://www.cookwithmanali.com/wprm_print/kaju-masala",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

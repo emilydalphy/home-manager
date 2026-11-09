@@ -1,0 +1,155 @@
+{
+ "dish_name": "Anda Keema",
+ "cuisine": "Indian",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1/2 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger-garlic paste",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "2 tbsp",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1/4 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups basmati rice until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups water and 1/2 tsp of the salt, bring to a boil over high heat, then cover, turn the heat to low and cook for 12 minutes. Leave it covered off the heat until you serve.",
+  "At the same time, put the eggs in a medium pot, cover with cold water and bring to a boil over high heat. Turn off the heat, cover, and leave them for 10 minutes. Transfer them into a bowl of ice water and leave them for 5 minutes.",
+  "Meanwhile, finely chop the onion and tomato. Chop the mint and cilantro together.",
+  "Peel the eggs and grate them on the large holes of a box grater into a bowl. Handle them gently so the yolks stay in crumbs.",
+  "Heat the oil in a large skillet over medium heat. Add the bay leaf, cinnamon, cardamom, cloves and cumin seeds and cook for 30 seconds, until they sizzle.",
+  "Add the onion and the green chili, slit lengthwise, and cook for 6 minutes, until golden. Stir in the ginger-garlic paste for 1 minute.",
+  "Add the tomato and cook for 4 minutes, until completely soft and mushy.",
+  "Stir in the turmeric, chili powder, garam masala and coriander and cook for 1 minute. Add the peas and cook for 2 minutes.",
+  "Add 1/4 cup water, 3/4 tsp salt and the mint and cilantro. Cook for 2 to 3 minutes, until most of the water is gone and the masala is thick.",
+  "Add the grated eggs and fold them in gently for 1 to 2 minutes, until coated. Stirring too hard turns the yolks mushy.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes leads (5.0 from 22 ratings): a thick onion, tomato and whole spice masala with the boiled eggs added last and folded in gently so the yolks stay in pieces. Swasthi chops the eggs, but the list promises grated, as Go Healthy Ever After (5.0 from 1) and Visma's Food do, so they are grated. Its meat masala is replaced with garam masala to keep it vegetarian. Mint and peas are optional in the lead and kept.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Egg Keema Recipe",
+   "url": "https://www.indianhealthyrecipes.com/egg-keema-recipe",
+   "rating": 5,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Go Healthy Ever After",
+   "title": "Healthy Egg Kheema Masala (Anda Keema)",
+   "url": "https://www.gohealthyeverafter.com/egg-keema-masala-anda-keema/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Visma's Food",
+   "title": "Dabha Style Egg Kheema Masala",
+   "url": "https://vismaifood.com/dabha-style-egg-kheema-masala-anda-kheema-masala-boiled-egg-keema-masala-curry",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
