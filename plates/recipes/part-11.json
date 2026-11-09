@@ -1,0 +1,736 @@
+[
+{
+"dish_name": "Egg Foo Young",
+"cuisine": "Chinese",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Bean sprouts",
+"Green onions",
+"Garlic",
+"Jasmine rice",
+"Vegetable broth",
+"Cornstarch",
+"Light soy sauce",
+"Vegetarian oyster sauce",
+"Shaoxing wine",
+"Toasted sesame oil",
+"White pepper",
+"Salt",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Eomuk Bokkeum",
+"cuisine": "Korean",
+"main_protein": "fish",
+"ingredients": [
+"Korean fish cake sheets",
+"Yellow onion",
+"Carrots",
+"Green bell pepper",
+"Garlic",
+"Green onions",
+"Short-grain rice",
+"Vegetable oil",
+"Soy sauce",
+"Mirin",
+"Sugar",
+"Black pepper",
+"Gochugaru (Korean chili flakes)"
+]
+},
+{
+"dish_name": "Escalopes de Dinde a la Creme",
+"cuisine": "French",
+"main_protein": "turkey",
+"ingredients": [
+"Turkey breast cutlets",
+"Unsalted butter",
+"Olive oil",
+"Garlic",
+"Lemon",
+"Heavy cream",
+"Fresh parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Fakorizo",
+"cuisine": "Greek",
+"main_protein": "lentils",
+"ingredients": [
+"Canned brown lentils",
+"Olive oil",
+"Yellow onion",
+"Garlic",
+"Canned diced tomatoes",
+"Bay leaf",
+"Basmati rice",
+"Salt",
+"Black pepper",
+"Flat-leaf parsley",
+"Kalamata olives",
+"Lemon"
+]
+},
+{
+"dish_name": "Fasolia Salata",
+"cuisine": "Greek",
+"main_protein": "beans",
+"ingredients": [
+"Canned white beans",
+"Red onion",
+"Green bell pepper",
+"Cherry tomatoes",
+"Lemons",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Flat-leaf parsley",
+"Dried oregano"
+]
+},
+{
+"dish_name": "Fettuccine ai Funghi",
+"cuisine": "Italian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Fettuccine",
+"Dried porcini mushrooms",
+"Shiitake mushrooms",
+"Unsalted butter",
+"Mascarpone",
+"Heavy cream",
+"Salt"
+]
+},
+{
+"dish_name": "Fish and Chips",
+"cuisine": "American",
+"main_protein": "fish",
+"ingredients": [
+"Russet potatoes",
+"White fish fillets (cod or haddock)",
+"All-purpose flour",
+"Saltine crackers",
+"Eggs",
+"Onion powder",
+"Garlic powder",
+"Paprika",
+"Vegetable oil",
+"Butter",
+"Lemon",
+"Malt vinegar",
+"Salt"
+]
+},
+{
+"dish_name": "Fish Fillet with Black Bean Sauce",
+"cuisine": "Chinese",
+"main_protein": "fish",
+"ingredients": [
+"Cod fillets",
+"Fermented black beans",
+"Oyster sauce",
+"Soy sauce",
+"Shaoxing wine",
+"Sugar",
+"Cornstarch",
+"Salt",
+"Ginger",
+"Scallions",
+"Vegetable oil",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Fish Tikka",
+"cuisine": "Indian",
+"main_protein": "fish",
+"ingredients": [
+"Cod fillets",
+"Greek yogurt",
+"Garlic",
+"Ginger",
+"Lemon",
+"Vegetable oil",
+"Kashmiri chili powder",
+"Garam masala",
+"Ground coriander",
+"Ground turmeric",
+"Black pepper",
+"Salt"
+]
+},
+{
+"dish_name": "Frittata di Zucchine",
+"cuisine": "Italian",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Zucchini",
+"Shallots",
+"Parmesan",
+"Milk",
+"Butter",
+"Olive oil",
+"Black pepper",
+"Salt"
+]
+},
+{
+"dish_name": "Gaji Namul",
+"cuisine": "Korean",
+"main_protein": "vegan",
+"ingredients": [
+"Asian eggplants",
+"Short-grain white rice",
+"Green onions",
+"Garlic",
+"Soy sauce",
+"Sesame oil",
+"Sugar",
+"Sesame seeds",
+"Gochugaru",
+"Black pepper"
+]
+},
+{
+"dish_name": "Gamberi all'Aglio e Olio",
+"cuisine": "Italian",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp",
+"Garlic",
+"Italian parsley",
+"Lemon",
+"Extra virgin olive oil",
+"Dry white wine",
+"Red pepper flakes",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Gamja Jeon",
+"cuisine": "Korean",
+"main_protein": "vegan",
+"ingredients": [
+"Russet potatoes",
+"Yellow onion",
+"Salt",
+"Vegetable oil",
+"Gluten-free tamari",
+"Rice vinegar",
+"Sugar",
+"Black pepper"
+]
+},
+{
+"dish_name": "Gamja Jorim",
+"cuisine": "Korean",
+"main_protein": "vegan",
+"ingredients": [
+"Yukon Gold potatoes",
+"Short-grain white rice",
+"Garlic",
+"Soy sauce",
+"Mirin",
+"Sugar",
+"Rice syrup",
+"Vegetable oil",
+"Sesame oil",
+"Sesame seeds",
+"Black pepper"
+]
+},
+{
+"dish_name": "Garides Mykonou",
+"cuisine": "Greek",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp, peeled and deveined",
+"Yellow onion",
+"Red bell pepper",
+"Cherry tomatoes",
+"Garlic",
+"Tomato paste",
+"Tomato sauce",
+"Ouzo",
+"Feta",
+"Fresh parsley",
+"Olive oil",
+"Dried oregano",
+"Paprika",
+"Salt",
+"Black pepper",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Gnocchi with Brown Butter and Sage",
+"cuisine": "Italian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Gnocchi",
+"Unsalted butter",
+"Fresh sage",
+"Olive oil",
+"Parmesan",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Gobi 65",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Cauliflower",
+"Cornstarch",
+"Rice flour",
+"Lemon",
+"Ginger",
+"Garlic",
+"Curry leaves",
+"Cilantro",
+"Kashmiri chili powder",
+"Ground turmeric",
+"Garam masala",
+"Ground coriander",
+"Cumin seeds",
+"Dried red chilies",
+"Salt",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Gobi Matar",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Cauliflower",
+"Frozen peas",
+"Yellow onion",
+"Tomatoes",
+"Ginger",
+"Garlic",
+"Green chili",
+"Cilantro",
+"Vegetable oil",
+"Cinnamon stick",
+"Whole cloves",
+"Green cardamom pods",
+"Bay leaves",
+"Black peppercorns",
+"Cumin seeds",
+"Ground turmeric",
+"Kashmiri chili powder",
+"Ground coriander",
+"Garam masala",
+"Salt"
+]
+},
+{
+"dish_name": "Gochujang Salmon",
+"cuisine": "Korean",
+"main_protein": "fish",
+"ingredients": [
+"Salmon fillets, skin-on",
+"Short-grain white rice",
+"Gochujang",
+"Garlic",
+"Limes",
+"Honey",
+"Sesame oil",
+"Soy sauce",
+"Rice vinegar",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Sesame seeds",
+"Green onions"
+]
+},
+{
+"dish_name": "Hindbeh",
+"cuisine": "Lebanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Dandelion greens or chicory",
+"Yellow onions",
+"Extra virgin olive oil",
+"Lemons",
+"Salt",
+"Basmati rice"
+]
+},
+{
+"dish_name": "Hobak Bokkeum",
+"cuisine": "Korean",
+"main_protein": "vegan",
+"ingredients": [
+"Zucchini",
+"Garlic",
+"Green onions",
+"Short-grain rice",
+"Vegetable oil",
+"Sesame oil",
+"Sesame seeds",
+"Salt"
+]
+},
+{
+"dish_name": "Honey Mustard Salmon",
+"cuisine": "American",
+"main_protein": "fish",
+"ingredients": [
+"Salmon fillets, skin on or off",
+"Dijon mustard",
+"Whole grain mustard",
+"Honey",
+"Apple cider vinegar",
+"Vegetable oil",
+"Olive oil",
+"Garlic",
+"Salt",
+"Black pepper",
+"Baby arugula"
+]
+},
+{
+"dish_name": "Hot and Sour Napa Cabbage",
+"cuisine": "Chinese",
+"main_protein": "vegan",
+"ingredients": [
+"Napa cabbage",
+"Garlic",
+"Scallions",
+"Vegetable oil",
+"Soy sauce",
+"Chinese black vinegar",
+"Sugar",
+"Cornstarch",
+"Salt",
+"Red pepper flakes",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Inguday Tibs",
+"cuisine": "Ethiopian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Cremini mushrooms",
+"Olive oil",
+"Red onion",
+"Green bell pepper",
+"Tomatoes",
+"Garlic",
+"Fresh rosemary",
+"Berbere",
+"Lemons",
+"Fresh parsley",
+"Jalape\u00f1o",
+"Salt",
+"100% teff injera"
+]
+},
+{
+"dish_name": "Italian Turkey Zucchini Skillet",
+"cuisine": "Italian",
+"main_protein": "turkey",
+"ingredients": [
+"Ground turkey",
+"Italian seasoning",
+"Salt",
+"Black pepper",
+"Garlic powder",
+"Sweet paprika",
+"Olive oil",
+"Zucchini",
+"Red onion",
+"Red bell pepper",
+"Garlic",
+"Tomato sauce",
+"Parsley"
+]
+},
+{
+"dish_name": "Jeera Aloo",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Basmati rice",
+"Yukon Gold potatoes",
+"Cumin seeds",
+"Turmeric",
+"Mild red chili powder",
+"Garam masala",
+"Vegetable oil",
+"Lemon",
+"Salt"
+]
+},
+{
+"dish_name": "Kadai Paneer",
+"cuisine": "Indian",
+"main_protein": "paneer",
+"ingredients": [
+"Paneer",
+"Green bell pepper",
+"Yellow onion",
+"Roma tomatoes",
+"Ginger",
+"Garlic",
+"Green chili",
+"Cilantro",
+"Heavy cream",
+"Ghee",
+"Coriander seeds",
+"Fennel seeds",
+"Dried red chilies",
+"Green cardamom pods",
+"Whole cloves",
+"Kashmiri chili powder",
+"Garam masala",
+"Kasuri methi",
+"Salt"
+]
+},
+{
+"dish_name": "Kakiage",
+"cuisine": "Japanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Short-grain rice",
+"Yellow onion",
+"Carrots",
+"Green beans",
+"Green onions",
+"All-purpose flour",
+"Vegetable oil",
+"Soy sauce",
+"Mirin",
+"Salt"
+]
+},
+{
+"dish_name": "Kalamari Tiganito",
+"cuisine": "Greek",
+"main_protein": "seafood",
+"ingredients": [
+"Cleaned calamari",
+"Flour",
+"Semolina flour",
+"Salt",
+"Black pepper",
+"Paprika",
+"Dried oregano",
+"Vegetable oil",
+"Lemons"
+]
+},
+{
+"dish_name": "Kay Sir Alicha",
+"cuisine": "Ethiopian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Yukon Gold potatoes",
+"Cooked beets",
+"Yellow onion",
+"Garlic",
+"Fresh ginger",
+"Olive oil",
+"Ground turmeric",
+"Vegetable broth",
+"Fresh parsley",
+"Salt",
+"Black pepper",
+"100% teff injera"
+]
+},
+{
+"dish_name": "Kinoko Soba",
+"cuisine": "Japanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Dried soba noodles",
+"Shiitake mushrooms",
+"Shimeji mushrooms",
+"Baby spinach",
+"Garlic",
+"Green onions",
+"Sesame oil",
+"Vegetable broth",
+"Soy sauce",
+"Mirin",
+"Sesame seeds",
+"Salt"
+]
+},
+{
+"dish_name": "Kinpira Gobo",
+"cuisine": "Japanese",
+"main_protein": "vegan",
+"ingredients": [
+"Burdock root (gobo)",
+"Carrots",
+"Short-grain rice",
+"Sesame oil",
+"Soy sauce",
+"Mirin",
+"Sake",
+"Sugar",
+"Sesame seeds",
+"Salt"
+]
+},
+{
+"dish_name": "Kolokithia me Avga",
+"cuisine": "Greek",
+"main_protein": "eggs",
+"ingredients": [
+"Zucchini",
+"Butter",
+"Salt",
+"Black pepper",
+"Flat-leaf parsley",
+"Eggs",
+"Halloumi"
+]
+},
+{
+"dish_name": "Kolokithokeftedes",
+"cuisine": "Greek",
+"main_protein": "vegetarian",
+"ingredients": [
+"Zucchini",
+"Salt",
+"Scallions",
+"Fresh mint",
+"Feta",
+"Eggs",
+"Plain breadcrumbs",
+"Black pepper",
+"Vegetable oil",
+"Tzatziki"
+]
+},
+{
+"dish_name": "Kotopoulo Riganato",
+"cuisine": "Greek",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Lemons",
+"Olive oil",
+"Garlic",
+"Dried oregano",
+"Salt",
+"Black pepper",
+"Cherry tomatoes",
+"Kalamata olives"
+]
+},
+{
+"dish_name": "Kounoupidi Yahni",
+"cuisine": "Greek",
+"main_protein": "vegetarian",
+"ingredients": [
+"Cauliflower",
+"Yellow onion",
+"Garlic",
+"Olive oil",
+"Tomato paste",
+"Canned crushed tomatoes",
+"Cinnamon stick",
+"Bay leaf",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Kritharoto",
+"cuisine": "Greek",
+"main_protein": "vegetarian",
+"ingredients": [
+"Cremini mushrooms",
+"Yellow onion",
+"Tomatoes",
+"Garlic",
+"Orzo",
+"Vegetable broth",
+"Dry red wine",
+"Cinnamon stick",
+"Bay leaf",
+"Olive oil",
+"Pecorino Romano",
+"Fresh basil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Lamb Chops Provencale",
+"cuisine": "French",
+"main_protein": "lamb",
+"ingredients": [
+"Lamb loin chops",
+"Garlic",
+"Herbes de Provence",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Lentil Sloppy Joes",
+"cuisine": "American",
+"main_protein": "lentils",
+"ingredients": [
+"Olive oil",
+"Yellow onion",
+"Garlic",
+"Paprika",
+"Chili powder",
+"Ground cumin",
+"Tomato paste",
+"Brown lentils",
+"Ketchup",
+"Maple syrup",
+"Apple cider vinegar",
+"Soy sauce",
+"Vegan hamburger buns",
+"Dill pickle slices",
+"Hot sauce",
+"Salt"
+]
+},
+{
+"dish_name": "Lentil Vegetable Soup",
+"cuisine": "American",
+"main_protein": "lentils",
+"ingredients": [
+"Olive oil",
+"Yellow onion",
+"Carrots",
+"Celery",
+"Garlic",
+"Paprika",
+"Ground cumin",
+"Ground coriander",
+"Red lentils",
+"Crushed tomatoes",
+"Vegetable broth",
+"Bay leaves",
+"Baby spinach",
+"Lemon",
+"Parsley",
+"Salt",
+"Black pepper"
+]
+}
+]

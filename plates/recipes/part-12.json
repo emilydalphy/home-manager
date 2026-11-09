@@ -1,0 +1,742 @@
+[
+{
+"dish_name": "Linguine al Pesto Trapanese",
+"cuisine": "Italian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Slivered almonds",
+"Olive oil",
+"Basil",
+"Garlic",
+"Salt",
+"Plum tomatoes",
+"Parmesan",
+"Black pepper",
+"Linguine"
+]
+},
+{
+"dish_name": "Lobia Masala",
+"cuisine": "Indian",
+"main_protein": "beans",
+"ingredients": [
+"Canned black-eyed peas",
+"Yellow onion",
+"Tomatoes",
+"Fresh ginger",
+"Garlic",
+"Vegetable oil",
+"Cumin seeds",
+"Ground turmeric",
+"Kashmiri chili powder",
+"Ground coriander",
+"Garam masala",
+"Salt",
+"Lime",
+"Cilantro",
+"Green chili",
+"Basmati rice"
+]
+},
+{
+"dish_name": "Makaronia me Feta ke Domata",
+"cuisine": "Greek",
+"main_protein": "vegetarian",
+"ingredients": [
+"Spaghetti",
+"Olive oil",
+"Yellow onion",
+"Garlic",
+"Tomato paste",
+"Canned crushed tomatoes",
+"Salt",
+"Black pepper",
+"Fresh basil",
+"Feta"
+]
+},
+{
+"dish_name": "Makaronia me Kima",
+"cuisine": "Greek",
+"main_protein": "beef",
+"ingredients": [
+"Ground beef",
+"Spaghetti",
+"Olive oil",
+"Red onion",
+"Garlic",
+"Tomato paste",
+"Dry white wine",
+"Crushed tomatoes",
+"Ground cinnamon",
+"Ground allspice",
+"Ground cloves",
+"Dried oregano",
+"Sugar",
+"Fresh mint",
+"Fresh parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Maple Dijon Pork Chops",
+"cuisine": "American",
+"main_protein": "pork",
+"ingredients": [
+"Boneless pork loin chops, 3/4 to 1 inch thick",
+"Pure maple syrup",
+"Dijon mustard",
+"Apple cider vinegar",
+"Fresh thyme",
+"Vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Medaillons de Porc a la Moutarde",
+"cuisine": "French",
+"main_protein": "pork",
+"ingredients": [
+"Pork tenderloin",
+"Butter",
+"Vegetable oil",
+"Garlic",
+"Chicken broth",
+"Herbes de Provence",
+"Heavy cream",
+"Dijon mustard",
+"Parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Meen Fry",
+"cuisine": "Indian",
+"main_protein": "fish",
+"ingredients": [
+"Cod fillets",
+"Garlic",
+"Ginger",
+"Lemon",
+"Curry leaves",
+"Red onion",
+"Coconut oil",
+"Rice flour",
+"Chickpea flour",
+"Kashmiri chili powder",
+"Garam masala",
+"Ground coriander",
+"Ground turmeric",
+"Salt"
+]
+},
+{
+"dish_name": "Mentaiko Pasta",
+"cuisine": "Japanese",
+"main_protein": "fish",
+"ingredients": [
+"Spaghetti",
+"Mentaiko (cod roe)",
+"Butter",
+"Whole milk",
+"Heavy cream",
+"Soy sauce",
+"Nori",
+"Black pepper",
+"Salt"
+]
+},
+{
+"dish_name": "Methi Chicken",
+"cuisine": "Indian",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Fresh fenugreek leaves (methi)",
+"Yellow onions",
+"Tomatoes",
+"Fresh ginger",
+"Garlic",
+"Vegetable oil",
+"Whole cloves",
+"Green cardamom pods",
+"Cinnamon stick",
+"Bay leaf",
+"Kashmiri chili powder",
+"Ground turmeric",
+"Garam masala",
+"Ground fennel",
+"Black pepper",
+"White vinegar",
+"Salt",
+"Green chili",
+"Basmati rice"
+]
+},
+{
+"dish_name": "Methi Malai Matar",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Fresh methi",
+"Frozen peas",
+"Yellow onion",
+"Green chili",
+"Ginger",
+"Garlic",
+"Raw cashews",
+"Heavy cream",
+"Vegetable oil",
+"Cumin seeds",
+"Sugar",
+"Garam masala",
+"Salt"
+]
+},
+{
+"dish_name": "Midia Saganaki",
+"cuisine": "Greek",
+"main_protein": "seafood",
+"ingredients": [
+"Mussels",
+"Olive oil",
+"Red onion",
+"Carrot",
+"Celery",
+"Green bell pepper",
+"Garlic",
+"Cherry tomatoes",
+"Dry white wine",
+"Fresh parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Miso Cod",
+"cuisine": "Japanese",
+"main_protein": "fish",
+"ingredients": [
+"Cod fillets",
+"White miso paste",
+"Mirin",
+"Brown sugar",
+"Salt",
+"Neutral oil",
+"Short-grain rice"
+]
+},
+{
+"dish_name": "Mushroom Chow Mein",
+"cuisine": "Chinese",
+"main_protein": "vegan",
+"ingredients": [
+"Cremini mushrooms",
+"Vegan chow mein noodles",
+"Yellow onion",
+"Garlic",
+"Scallions",
+"Bean sprouts",
+"Soy sauce",
+"Vegan oyster sauce",
+"Sugar",
+"Toasted sesame oil",
+"Sesame seeds",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Mushroom Masala",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Basmati rice",
+"White mushrooms",
+"Yellow onion",
+"Fresh ginger",
+"Garlic",
+"Tomato puree",
+"Raw cashews",
+"Vegetable oil",
+"Turmeric",
+"Kashmiri red chili powder",
+"Garam masala",
+"Dried fenugreek leaves (kasoori methi)",
+"Fresh cilantro",
+"Salt"
+]
+},
+{
+"dish_name": "Odeng Tang",
+"cuisine": "Korean",
+"main_protein": "fish",
+"ingredients": [
+"Flat fish cakes (odeng or eomuk)",
+"Dried anchovies, heads removed",
+"Dried kelp (kombu)",
+"Korean radish or daikon",
+"Onion",
+"Garlic",
+"Green onions",
+"Soy sauce",
+"Mirin",
+"Salt",
+"Sugar",
+"Toasted sesame oil",
+"Gochugaru (Korean chili flakes)"
+]
+},
+{
+"dish_name": "Oeufs Mayonnaise",
+"cuisine": "French",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Mayonnaise",
+"Dijon mustard",
+"Lemon",
+"Chives",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Omeleta me Feta",
+"cuisine": "Greek",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Feta cheese",
+"Tomatoes",
+"Kalamata olives",
+"Dried oregano",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Omelette Curry",
+"cuisine": "Indian",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Yellow onion",
+"Tomatoes",
+"Fresh ginger",
+"Garlic",
+"Vegetable oil",
+"Cumin seeds",
+"Ground turmeric",
+"Kashmiri chili powder",
+"Ground coriander",
+"Garam masala",
+"Salt",
+"Cilantro",
+"Green chili",
+"Basmati rice"
+]
+},
+{
+"dish_name": "Omelette Savoyarde",
+"cuisine": "French",
+"main_protein": "eggs",
+"ingredients": [
+"Yukon Gold potatoes",
+"Yellow onion",
+"Olive oil",
+"Unsalted butter",
+"Eggs",
+"Milk",
+"Gruyere",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Palak Rice",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Basmati rice",
+"Fresh spinach",
+"Garlic",
+"Fresh ginger",
+"Yellow onion",
+"Carrot",
+"Potato",
+"Red bell pepper",
+"Frozen sweet corn",
+"Frozen peas",
+"Vegetable oil",
+"Cumin seeds",
+"Garam masala",
+"Lemon",
+"Salt",
+"Green chilies"
+]
+},
+{
+"dish_name": "Pasta alla Norcina",
+"cuisine": "Italian",
+"main_protein": "pork",
+"ingredients": [
+"Penne",
+"Pork sausage",
+"Onion",
+"Olive oil",
+"Dry white wine",
+"Heavy cream",
+"Pecorino Romano",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Pasta be Siga",
+"cuisine": "Ethiopian",
+"main_protein": "beef",
+"ingredients": [
+"Spaghetti",
+"Ground beef",
+"Yellow onion",
+"Garlic",
+"Berbere",
+"Tomato paste",
+"Crushed tomatoes",
+"Olive oil",
+"Fresh parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Pasta e Broccoli",
+"cuisine": "Italian",
+"main_protein": "vegan",
+"ingredients": [
+"Broccoli",
+"Garlic",
+"Olive oil",
+"Salt",
+"Red pepper flakes",
+"Penne"
+]
+},
+{
+"dish_name": "Pesce al Cartoccio",
+"cuisine": "Italian",
+"main_protein": "fish",
+"ingredients": [
+"White fish fillets",
+"Salt",
+"Black pepper",
+"Cherry tomatoes",
+"Pitted black olives",
+"Capers",
+"Lemon",
+"Garlic",
+"Thyme",
+"Dry white wine",
+"Olive oil",
+"Parchment paper"
+]
+},
+{
+"dish_name": "Pitaroudia",
+"cuisine": "Greek",
+"main_protein": "chickpeas",
+"ingredients": [
+"Canned chickpeas",
+"Yellow onion",
+"Garlic",
+"Fresh mint",
+"Ground cumin",
+"Salt",
+"Black pepper",
+"All-purpose flour",
+"Olive oil",
+"Tahini",
+"Lemon"
+]
+},
+{
+"dish_name": "Pizza Marinara",
+"cuisine": "Italian",
+"main_protein": "vegan",
+"ingredients": [
+"Pizza dough",
+"Whole peeled tomatoes",
+"Garlic",
+"Dried oregano",
+"Extra virgin olive oil",
+"Salt",
+"All-purpose flour"
+]
+},
+{
+"dish_name": "Pork Souvlaki",
+"cuisine": "Greek",
+"main_protein": "pork",
+"ingredients": [
+"Pork tenderloin",
+"Lemons",
+"Olive oil",
+"Red wine vinegar",
+"Garlic",
+"Dried oregano",
+"Fresh thyme",
+"Salt",
+"Black pepper",
+"Long-grain white rice",
+"Wooden skewers"
+]
+},
+{
+"dish_name": "Poulet a la Creme",
+"cuisine": "French",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"White mushrooms",
+"Butter",
+"Dry white wine",
+"Heavy cream",
+"Fresh tarragon",
+"Long grain white rice",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Prawn Tawa Fry",
+"cuisine": "Indian",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp",
+"Garlic",
+"Ginger",
+"Lemon",
+"Curry leaves",
+"Coconut oil",
+"Kashmiri chili powder",
+"Ground turmeric",
+"Black pepper",
+"Garam masala",
+"Salt"
+]
+},
+{
+"dish_name": "Saewoo Bokkeum",
+"cuisine": "Korean",
+"main_protein": "shrimp",
+"ingredients": [
+"Shrimp, peeled and deveined",
+"Short-grain white rice",
+"Green beans",
+"Garlic",
+"Fresh ginger",
+"Green onions",
+"Gochujang",
+"Soy sauce",
+"Sesame oil",
+"Vegetable oil",
+"Sesame seeds",
+"Salt"
+]
+},
+{
+"dish_name": "Salmon Sushi Bowls",
+"cuisine": "Japanese",
+"main_protein": "fish",
+"ingredients": [
+"Skinless salmon fillets",
+"Sushi rice",
+"Soy sauce",
+"Toasted sesame oil",
+"Rice vinegar",
+"Fresh ginger",
+"Garlic",
+"Maple syrup",
+"English cucumber",
+"Carrots",
+"Avocado",
+"Green onions",
+"Sesame seeds"
+]
+},
+{
+"dish_name": "Salt and Pepper Pork Chops",
+"cuisine": "Chinese",
+"main_protein": "pork",
+"ingredients": [
+"Boneless pork chops",
+"Vegetable oil",
+"Shaoxing wine",
+"Cornstarch",
+"Salt",
+"White pepper",
+"Garlic",
+"Jalape\u00f1o",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Salt and Pepper Tofu",
+"cuisine": "Chinese",
+"main_protein": "tofu",
+"ingredients": [
+"Firm tofu",
+"Salt",
+"Sugar",
+"White pepper",
+"Ground Sichuan peppercorn",
+"All-purpose flour",
+"Cornstarch",
+"Sesame oil",
+"Shaoxing wine",
+"Vegetable oil",
+"Garlic",
+"Green bell pepper",
+"Shallot",
+"Scallions",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Samgyeopsal",
+"cuisine": "Korean",
+"main_protein": "pork",
+"ingredients": [
+"Thin-sliced pork belly",
+"Short-grain white rice",
+"Red leaf lettuce",
+"Garlic",
+"Green onions",
+"Jalapeno",
+"Doenjang",
+"Sesame oil",
+"Maple syrup",
+"Rice vinegar",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Sardeles Psites",
+"cuisine": "Greek",
+"main_protein": "fish",
+"ingredients": [
+"Whole fresh sardines, scaled and gutted",
+"Olive oil",
+"Lemons",
+"Salt",
+"Dried oregano"
+]
+},
+{
+"dish_name": "Saumon a l'Oseille",
+"cuisine": "French",
+"main_protein": "fish",
+"ingredients": [
+"Skinless salmon fillets",
+"Fresh sorrel",
+"Shallots",
+"Unsalted butter",
+"Creme fraiche",
+"Lemon",
+"Dijon mustard",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Scallops with Garlic Sauce",
+"cuisine": "Chinese",
+"main_protein": "seafood",
+"ingredients": [
+"Sea scallops",
+"Salt",
+"Garlic",
+"Red bell peppers",
+"Scallions",
+"Cilantro",
+"Chicken broth",
+"Oyster sauce",
+"Shaoxing wine",
+"Sugar",
+"Cornstarch",
+"Vegetable oil",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Sesame Soba Salad",
+"cuisine": "Japanese",
+"main_protein": "vegan",
+"ingredients": [
+"Dried soba noodles",
+"Neutral oil",
+"Toasted sesame oil",
+"Maple syrup",
+"Soy sauce",
+"English cucumber",
+"Carrots",
+"Frozen shelled edamame",
+"Green onions",
+"Fresh cilantro",
+"Toasted white sesame seeds",
+"Shichimi togarashi"
+]
+},
+{
+"dish_name": "Shabu Shabu",
+"cuisine": "Japanese",
+"main_protein": "beef",
+"ingredients": [
+"Thinly sliced ribeye (shabu shabu cut)",
+"Kombu",
+"Napa cabbage",
+"Enoki mushrooms",
+"Shiitake mushrooms",
+"Carrot",
+"Medium-firm tofu",
+"Green onions",
+"Daikon",
+"Frozen udon noodles",
+"Ponzu",
+"Sesame sauce (goma dare)",
+"Shichimi togarashi"
+]
+},
+{
+"dish_name": "Shahi Paneer",
+"cuisine": "Indian",
+"main_protein": "paneer",
+"ingredients": [
+"Paneer",
+"Raw cashews",
+"Almonds",
+"Yellow onion",
+"Ginger",
+"Garlic",
+"Plain yogurt",
+"Heavy cream",
+"Ghee",
+"Green cardamom pods",
+"Whole cloves",
+"Cinnamon stick",
+"Cumin seeds",
+"Kashmiri chili powder",
+"Ground turmeric",
+"Garam masala",
+"Black pepper",
+"Salt"
+]
+}
+]
