@@ -1,0 +1,84 @@
+{
+ "dish_name": "Turkey Reuben",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Rye bread",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Thousand Island dressing",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Swiss cheese",
+   "qty": "8 slices",
+   "category": "dairy"
+  },
+  {
+   "item": "Sliced deli turkey breast",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sauerkraut",
+   "qty": "1 jar (16 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  }
+ ],
+ "instructions": [
+  "Spoon the sauerkraut into a strainer and press out the liquid with the back of a spoon, then squeeze it in your hands. That should be about 2 cups.",
+  "Lay the 8 slices of rye on a board. Spread 1/2 tbsp soft butter over one side of each slice, out to the edges.",
+  "Flip the slices so the buttered side is down. Spread 1 tbsp dressing on the top of each slice.",
+  "Build 4 sandwiches on 4 of the slices. Layer 1 slice of Swiss, a quarter of the turkey and a quarter of the sauerkraut, then a second slice of Swiss. Close with the remaining slices, dressing side down and buttered side up.",
+  "Heat a large skillet over medium-low heat for 1 minute. Cook 2 sandwiches with a lid set loosely on top for 3 to 4 minutes, until the underside is golden.",
+  "Flip them and cook the other side for 3 to 4 minutes, until golden and the cheese has melted. Transfer them to a plate and cook the other 2 sandwiches the same way.",
+  "Cut each sandwich in half on the diagonal and serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 16,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish has 20 or more ratings, so this is a fallback lead: Insanely Good Recipes' Turkey Reuben (5.0 from 5). Sarcastic Cooking, Well Stated and Closet Cooking (all unrated) agree on rye, deli turkey, Swiss, sauerkraut and Russian or Thousand Island dressing, buttered and griddled on medium-low heat. Bought Thousand Island is used so there is no sauce to invent, and the optional caraway is left out. RecipeTin's Reuben is a pastrami sandwich, a different dish, so it is not the lead.",
+ "sources": [
+  {
+   "name": "Insanely Good Recipes",
+   "title": "Turkey Reuben Sandwich",
+   "url": "https://insanelygoodrecipes.com/turkey-reuben-sandwich/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sarcastic Cooking",
+   "title": "Turkey Reuben Sandwich (aka Rachel)",
+   "url": "https://www.sarcasticcooking.com/?p=15340",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Closet Cooking",
+   "title": "The Rachel Sandwich (aka Roast Turkey Reuben)",
+   "url": "https://www.closetcooking.com/rachel-sandwich-aka-roast-turkey-reuben",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

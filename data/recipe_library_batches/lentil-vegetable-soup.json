@@ -1,0 +1,150 @@
+{
+ "dish_name": "Lentil Vegetable Soup",
+ "cuisine": "American",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce",
+   "cook_qty": "2 medium"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 ribs"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Red lentils",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Dice the onion, the carrots and the celery into small pieces, about 1/4 inch. Mince the 3 garlic cloves.",
+  "Rinse the 1 1/2 cups red lentils in a strainer under cold water until it runs mostly clear.",
+  "Heat the 2 tbsp olive oil in a large pot over medium-high heat. Add the onion, carrots, celery and 1/2 tsp salt. Cook, stirring now and then, for 5 minutes, until the onion is soft and see-through.",
+  "Add the garlic, 1 tsp paprika, 1/2 tsp cumin and 1/2 tsp coriander. Stir for 1 minute, until it smells toasty.",
+  "Add the can of crushed tomatoes, the 5 cups broth, the lentils, the 2 bay leaves, the remaining 1/2 tsp salt and 1/4 tsp pepper. Stir, turn the heat to high and bring it to a boil.",
+  "Turn the heat down to a steady simmer and set the lid on slightly ajar. Cook for 14 to 16 minutes, stirring once or twice, until the lentils are soft and starting to fall apart.",
+  "While the soup simmers, zest the lemon, squeeze 2 tbsp of the juice and chop 2 tbsp of the parsley.",
+  "Take out the bay leaves. Stir in the spinach and cook for 2 minutes, until it's wilted.",
+  "Take the pot off the heat and stir in the lemon zest and juice.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Ladle into bowls and top with the parsley."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats' lentil soup leads (4.95 from 966 ratings): onion, carrot and celery softened first, then lentils, crushed tomato, cumin, coriander, paprika and bay, finished with lemon and parsley. Adapted: red lentils instead of green or brown so the soup is ready in about 35 minutes instead of 55 (green lentils need 35 to 45 minutes), vegetable broth only to keep it vegan, no blending, and the spinach added at the end from Attainable Sustainable's vegan lentil soup (4.43 from 7). Honest total is about 35 minutes, over the 30 minute target. Gluten-free as written: no bread served.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Lentil Soup (seriously amazing!)",
+   "url": "https://www.recipetineats.com/lentil-soup/",
+   "rating": 4.95,
+   "rating_count": 966,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Attainable Sustainable",
+   "title": "Fast-Fixing Hearty Vegan Lentil Soup Recipe for Busy Cooks",
+   "url": "https://www.attainable-sustainable.net/vegan-lentil-soup-recipe/",
+   "rating": 4.43,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Nuts and Twigs",
+   "title": "Lentil Vegetable Soup",
+   "url": "https://nutsandtwigs.com/lentil-vegetable-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

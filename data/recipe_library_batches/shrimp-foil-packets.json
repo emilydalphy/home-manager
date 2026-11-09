@@ -1,0 +1,124 @@
+{
+ "dish_name": "Shrimp Foil Packets",
+ "cuisine": "American",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Heavy-duty aluminum foil",
+   "qty": "1 roll",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a strainer until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and 1/4 tsp salt. Bring to a boil over high heat, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered, without lifting the lid, for 5 minutes.",
+  "While the rice cooks, heat the oven to 425°F. Lay out 4 sheets of heavy-duty foil, each about 15 inches long.",
+  "Halve the tomatoes, slice the zucchini into 1/2 inch half-moons and cut the pepper into 1 inch pieces. Mince the 3 garlic cloves.",
+  "Cut 4 thin slices from 1 lemon. Squeeze the juice from the other lemon. That should be about 3 tbsp.",
+  "Pat the shrimp dry with paper towels. In a large bowl, toss the shrimp with the tomatoes, zucchini, pepper, garlic, 2 tbsp olive oil, the lemon juice, 1 tsp salt and 1/2 tsp pepper.",
+  "Divide the mixture between the 4 sheets of foil. Top each with a lemon slice and 1/2 tbsp butter.",
+  "Fold the foil over each pile and crimp the edges to seal it tight, leaving a little room inside for steam. Set the packets on a baking sheet.",
+  "Bake for 14 to 16 minutes. You're cooking the shrimp to 145°F, so if you have a thermometer, check through the foil at the thickest shrimp. No thermometer? Open one packet carefully, away from your face. The shrimp are done when they're pink and opaque and curled into a loose C.",
+  "Let the packets sit for 3 minutes, then open them carefully. The steam is hot. Chop 2 tbsp parsley and sprinkle it over the shrimp.",
+  "Taste the sauce at the bottom of a packet. If it's flat, add a pinch more salt.",
+  "Serve the packets over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish has 20 or more ratings, so this is a fallback lead: Noshtastic's Shrimp Foil Packets (unrated), the closest to the plain dish, with shrimp, tomato, zucchini, pepper, garlic and lemon in foil. The butter and lemon come from Skinnytaste's shrimp piccata foil packets (5.0 from 10); Eatwell101's baked version (unrated) agrees on the 425°F oven and 15 to 20 minutes. Shrimp is cut to 1 1/2 lb for four, and jasmine rice is added so the meal is complete. Gluten-free as written.",
+ "sources": [
+  {
+   "name": "Noshtastic",
+   "title": "Shrimp Foil Packets",
+   "url": "https://www.noshtastic.com/wprm_print/shrimp-foil-packets",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Skinnytaste",
+   "title": "Grilled Shrimp Piccata in Foil",
+   "url": "https://www.skinnytaste.com/shrimp-piccata-foil-packets",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true
+  },
+  {
+   "name": "Eatwell101",
+   "title": "Baked Shrimp in Foil Packets",
+   "url": "https://www.eatwell101.com/shrimp-in-foil-packets-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
