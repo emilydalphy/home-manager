@@ -1,0 +1,150 @@
+{
+ "dish_name": "Enchiladas Mineras",
+ "cuisine": "Mexican",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Dried guajillo chiles",
+   "qty": "10",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "pantry"
+  },
+  {
+   "item": "Queso fresco",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Pickled jalapeños",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Put a large skillet over medium heat and toast the 10 guajillo chiles for about 15 seconds on each side, until they smell toasty.",
+  "Transfer the chiles into a saucepan, cover them with 3 cups of hot water, and simmer over medium heat for 10 minutes, until soft.",
+  "Meanwhile, bring a medium pot of salted water to a boil. Peel the potatoes and carrots and cut both into 1/4 inch dice.",
+  "Boil the potatoes for 4 to 5 minutes. Add the carrots and boil for 3 to 4 minutes more, until both are tender but still firm. Drain and spread them on a plate to cool.",
+  "Chop 4 tsp of the onion and stir it into the queso fresco, crumbling the cheese as you go. Dice 4 of the radishes and slice 4 romaine leaves thinly.",
+  "Blend the softened chiles with 1 1/2 cups of the soaking liquid, the garlic, the oregano and 1/2 tsp of the salt until smooth.",
+  "Heat 2 tbsp of the vegetable oil in the large skillet over medium-high heat. Stand back and pour in the chile purée. It will spatter. Cook, stirring, for 3 to 4 minutes, until it darkens.",
+  "Stir in the broth and cook for 2 minutes. Take the skillet off the heat and cover it to keep the sauce warm.",
+  "Whisk the vinegar, the olive oil, the remaining 1/2 tsp salt, the pepper and a pinch of sugar in a bowl. Add the potatoes, carrots and diced radishes and toss.",
+  "Heat the remaining 1 tbsp vegetable oil in a clean skillet over medium heat. Warm the tortillas a few at a time for about 15 seconds on each side and stack them under a towel.",
+  "Dip each tortilla in the warm sauce. Lay it on a baking sheet, put 2 tbsp of the cheese mixture down the middle, and fold it into a half moon. You'll have 12.",
+  "Spoon the rest of the sauce over the enchiladas. Bake for 10 minutes, until the sauce is bubbling at the edges.",
+  "Divide the sliced romaine among plates and set 3 enchiladas on each. Top with the potato and carrot mix and the remaining 1/2 cup cheese. Serve with the pickled jalapeños on the side.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 32,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish has 20 ratings, so the lead is the one that matches the dish as named: Hispanic Food Network's cheese enchiladas with a guajillo sauce, queso fresco filling, and boiled potatoes and carrots in a vinegar dressing (5.0 from 1 vote). Dora's Table (4.86 from 7) and Paulina Cocina (3.8 from 4) agree on the guajillo sauce, the dipped corn tortillas and the potato and carrot topping; Dora's fills with mushrooms and Paulina's fries the vegetables. The lead's 15 chiles and 1 1/2 cups of chicken broth are cut to 10 chiles and vegetable broth, the vegetables go down to a lighter dressing, and the sauce is not strained. The list says 12 tortillas and 1 lb each of potatoes and carrots, which the lead leaves out and Dora's gives.",
+ "sources": [
+  {
+   "name": "Hispanic Food Network",
+   "title": "Enchiladas Mineras Guanajuato",
+   "url": "https://hispanicfoodnetwork.com/enchiladas-mineras-guanajuato",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dora's Table",
+   "title": "Guanajuato's Vegan Potato Enchiladas (Enchiladas Mineras)",
+   "url": "https://dorastable.com/easy-vegan-enchiladas/",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Paulina Cocina",
+   "title": "Enchiladas Mineras (Guanajuato style)",
+   "url": "https://paulinacocina.net/enchiladas-mineras/",
+   "rating": 3.8,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,118 @@
+{
+ "dish_name": "Crema de Poblano",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Poblano peppers",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow potatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the broiler to high and set a rack about 4 inches from the heat. Line a baking sheet with foil and put the 5 poblanos on it.",
+  "Broil the poblanos for about 12 minutes, turning them every 4 minutes, until the skins are blistered and black in spots.",
+  "Meanwhile, dice the onion, mince the 4 garlic cloves, and peel the potato and cut it into 1/2 inch cubes.",
+  "Transfer the hot poblanos into a bowl and cover it with a plate. Let them steam for 10 minutes.",
+  "Melt the butter in a large pot over medium heat. Add the onion and 1/4 tsp of the salt and cook, stirring now and then, until soft, about 6 minutes. Add the garlic and cook for 1 minute.",
+  "Add the potato, the broth, the oregano, the cumin and the pepper. Bring it to a boil, then turn the heat to medium-low, cover, and cook for 10 minutes, until a fork slides easily into the potato.",
+  "While that cooks, peel the skins off the poblanos with your fingers. Pull off the stems, scrape out the seeds, and chop the peppers roughly.",
+  "Add the chopped poblanos to the pot and cook for 3 minutes. Take the pot off the heat.",
+  "Blend the soup in 2 or 3 batches, filling the blender no more than halfway and holding the lid down with a towel. It's hot, so let the steam out before you start.",
+  "Pour the soup back into the pot and warm it over low heat for 2 minutes. Stir in the remaining 1/2 tsp salt and the juice of half the lime.",
+  "Ladle the soup into bowls. Divide the 1/2 cup crema among the bowls and add a pinch of chopped cilantro, using about 1/4 cup cilantro in all. Put the hot sauce on the table for anyone who wants heat.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the other half of the lime."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 33,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Mexican Please's roasted poblano soup (4.42 from 258 ratings): roasted poblanos, onion and garlic simmered in stock, blended, then topped with crema. The flour the lead stirs in for body is replaced with a diced potato, which keeps the soup gluten-free and thickens it the same way, and the poblanos are broiled instead of oven-roasted to save about 15 minutes. Mexican Please garnishes with crema because stirring it in dulls the pepper flavor, so the crema goes on top here. Pati Jinich's creamy poblano soup (3.86 from 7) uses corn and milk and stays chunky; it confirms the onion-then-poblano order. Vegetable broth stands in for the lead's stock so it stays vegetarian.",
+ "sources": [
+  {
+   "name": "Mexican Please",
+   "title": "Roasted Poblano Soup",
+   "url": "https://www.mexicanplease.com/?p=5766",
+   "rating": 4.42,
+   "rating_count": 258,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pati Jinich",
+   "title": "Creamy Poblano Soup",
+   "url": "https://patijinich.com/creamy_poblano_soup/",
+   "rating": 3.86,
+   "rating_count": 7,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": false,
+ "origin": "seed"
+}

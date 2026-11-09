@@ -1,0 +1,84 @@
+{
+ "dish_name": "Arroz con Rajas y Queso",
+ "cuisine": "Mexican",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Poblano peppers",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Monterey Jack cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice, 2 cups of water and 1/2 tsp of the salt in a medium saucepan and bring it to a boil. Turn the heat to low, cover, and cook for 15 minutes. Take it off the heat and leave it covered for 5 minutes.",
+  "While the rice cooks, heat the broiler to high with a rack about 4 inches from the heat. Line a baking sheet with foil and put the 5 poblanos on it.",
+  "Broil the poblanos for about 12 minutes, turning them every 4 minutes, until the skins are blistered and black in spots.",
+  "Transfer the poblanos into a bowl and cover it with a plate. Let them steam for 10 minutes.",
+  "Meanwhile, cut the onion into thin slivers and shred the Monterey Jack. That should be about 2 cups.",
+  "Melt 1 tbsp of the butter in a large skillet over medium heat. Cook the onion, stirring now and then, until soft, about 8 minutes.",
+  "Peel the skins off the poblanos. Pull off the stems and scrape out the seeds. Cut 3 of the poblanos into strips about 1/2 inch wide.",
+  "Blend the 2 remaining poblanos with the crema and 1/2 tsp of the salt until smooth.",
+  "Add the poblano strips and the remaining 1/2 tsp salt to the onion and cook for 2 minutes. Take the skillet off the heat.",
+  "Fluff the rice with a fork. Stir in the poblano crema, then the onion and poblano strips, until the rice is evenly coated.",
+  "Heat the broiler again. Butter a 9 by 9 inch broiler-safe baking dish with the remaining 1 tbsp butter. Spread half the rice in the dish and sprinkle on half the cheese. Add the rest of the rice and top with the rest of the cheese.",
+  "Broil for 4 to 6 minutes, until the cheese is melted and browned in spots. Let it sit for 3 minutes, then serve hot.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 32,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has the 20 ratings, so the lead is The Other Side of the Tortilla's poblano cheese rice (unrated): roasted poblanos blended with crema to coat the rice, a layer of cheese in the middle and on top, and a trip under the broiler. Pati Jinich's rice and rajas casserole (3.75 from 8) adds the onion cooked in butter and poblano strips, which is where the rajas come from here. Both use more cheese than rice would hold on its own; the lead's Chihuahua is swapped for Monterey Jack, which Pati allows. Rice is cooked from scratch rather than from a pouch, so it adds the stove time shown.",
+ "sources": [
+  {
+   "name": "The Other Side of the Tortilla",
+   "title": "Arroz poblano (Mexican poblano chile cheese rice)",
+   "url": "https://theothersideofthetortilla.com/2012/11/arroz-poblano-mexican-rice-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pati Jinich",
+   "title": "White Rice and Poblano Rajas Casserole",
+   "url": "https://patijinich.com/white-rice-and-poblano-rajas-casserole/",
+   "rating": 3.75,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": true,
+ "origin": "seed"
+}

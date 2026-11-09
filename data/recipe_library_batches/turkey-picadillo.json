@@ -1,0 +1,134 @@
+{
+ "dish_name": "Turkey Picadillo",
+ "cuisine": "Mexican",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Baby red potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "15 oz can",
+   "category": "pantry"
+  },
+  {
+   "item": "Sliced green olives",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice, 2 cups of water and 1/4 tsp of the salt in a medium saucepan and bring it to a boil. Turn the heat to low, cover, and cook for 15 minutes. Take it off the heat and leave it covered until you serve.",
+  "Meanwhile, dice the onion and the bell pepper, mince the 2 garlic cloves, and cut the potatoes into 1/2 inch cubes.",
+  "Heat the oil in a large deep skillet with a lid over medium-high heat. Add the onion and pepper and cook, stirring now and then, until soft, about 5 minutes. Add the garlic and cook for 30 seconds.",
+  "Add the turkey, 1/2 tsp of the salt and the pepper. Break the turkey up with a spoon and cook until it's browned and there's no pink left, about 5 minutes.",
+  "Stir in the cumin, oregano and paprika and cook for 1 minute, until you can smell them.",
+  "Add the tomato sauce, 1/2 cup of water, the potatoes and the olives. Bring it to a boil, then turn the heat to medium-low, cover, and cook for 15 minutes, stirring once, until a fork slides easily into the potatoes.",
+  "Take the skillet off the heat and stir in the vinegar and 2 tbsp of chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the picadillo over the rice."
+ ],
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the turkey picadillos read has 20 ratings, so the lead is Recipe Runner's (4.34 from 3): onion, pepper and garlic, then turkey, spices, green olives and tomato sauce simmered in a covered pan, with vinegar and cilantro stirred in at the end. Sandra Valvassori's (4.75 from 4) agrees on the build but simmers 30 minutes and has no potatoes. Baking with Josh and Ange's turkey picadillo (unrated) is the one that has potatoes, in 1/2 inch cubes that cook in about 20 minutes, which is where they come from here. The lead's raisins and cayenne are left out to keep the pot mild.",
+ "sources": [
+  {
+   "name": "Recipe Runner",
+   "title": "Turkey Picadillo",
+   "url": "https://reciperunner.com/turkey-picadillo/",
+   "rating": 4.34,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sandra Valvassori",
+   "title": "Turkey Picadillo",
+   "url": "https://www.sandravalvassori.com/turkey-picadillo/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Baking with Josh and Ange",
+   "title": "One-Pot Cuban Picadillo",
+   "url": "https://www.bakingwithjoshandange.com/onepot-cuban-picadillo",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": true,
+ "origin": "seed"
+}

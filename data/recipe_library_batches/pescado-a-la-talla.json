@@ -1,0 +1,107 @@
+{
+ "dish_name": "Pescado a la Talla",
+ "cuisine": "Mexican",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Red snapper fillets, skin on",
+   "qty": "4 (6 oz each)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried guajillo chiles",
+   "qty": "10",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Achiote paste",
+   "qty": "2 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put a large skillet over low heat and toast the 10 guajillo chiles for 1 to 2 minutes, turning them, until they smell toasty. Transfer them into a medium saucepan.",
+  "Heat 1 tbsp of the oil in the same skillet over medium-high heat. Thinly slice the onion and add it. Cook, stirring now and then, until browned at the edges, about 6 minutes. Slice the 5 garlic cloves, add them, and cook for 30 seconds.",
+  "Scrape the onion and garlic into the saucepan. Add the thyme, oregano, bay leaf, cloves and 2 1/2 cups of water.",
+  "Bring it to a boil, then turn the heat to medium-low and simmer for 10 minutes, until the chiles are soft. Take out the bay leaf and let the pan cool for 5 minutes.",
+  "Meanwhile, pat the fish dry and sprinkle 1/2 tsp of the salt over both sides of the fillets. Cut the limes into wedges.",
+  "Blend the chile mixture with the achiote paste and 1/2 tsp of the salt until smooth. Pour it through a fine sieve into a bowl, pressing on the solids.",
+  "Spoon 1/2 cup of the sauce over the fish and turn the fillets to coat them. Let them sit for 10 minutes. Pour the rest of the sauce into the saucepan and warm it over low heat.",
+  "Wipe out the skillet and heat the remaining 1 tbsp oil over medium-high heat until it shimmers. Shake the extra sauce off the fillets and put them in skin side down, in two batches if they don't fit with room between them.",
+  "Cook for about 4 minutes, until the skin is crisp and lets go of the pan. Flip the fillets and cook for 2 to 3 minutes. They're done when the fish flakes easily with a fork.",
+  "Spoon the warm sauce onto plates and set the fish on top, skin side up. Serve with the lime wedges and the rest of the sauce.",
+  "Taste the sauce. If it's flat, add the last 1/2 tsp salt or a squeeze of lime."
+ ],
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 33,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Pescado a la talla is a whole butterflied fish painted with red chile adobo and grilled. The only version read that works as a weeknight dish is Tasting Table's (unrated, adapted from Johnny Hernandez): skin-on snapper fillets in a guajillo, achiote and herb sauce, charred in a skillet instead of on a grill. Gabriela Cámara's Contramar version, as published by Penguin Random House (unrated), agrees on guajillo, onion, garlic, achiote and a char on the skin, but is for a 3 lb whole fish on a grill and finishes with butter in the paste. The lead's 30 minute rest in the sauce is cut to 10, and no green sauce is included because neither version read has one.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Pescado a la Talla",
+   "url": "https://www.tastingtable.com/687420/pescado-a-la-talla-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Penguin Random House",
+   "title": "Pescado a la Talla (Gabriela Cámara)",
+   "url": "https://www.penguinrandomhouse.com/articles/pescado-a-la-talla-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": true,
+ "origin": "seed"
+}
