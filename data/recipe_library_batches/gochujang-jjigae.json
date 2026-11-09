@@ -1,0 +1,132 @@
+{
+ "dish_name": "Gochujang Jjigae",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork belly, thinly sliced",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Gochujang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "3 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Scallions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of rice until the water runs mostly clear. Add it to a medium saucepan with 2 1/4 cups of water, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes, then take it off the heat and leave the lid on.",
+  "Peel the potatoes and slice them 1/4 inch thick. Cut the zucchini into half-moons, slice the onion, cut the tofu into 1-inch cubes, slice the scallions and mince the garlic. Cut the pork into 1-inch pieces.",
+  "Heat the oil in a large pot over medium-high. Add the pork and the salt. Cook for 4 minutes, until it's browned in spots.",
+  "Turn the heat to low. Stir in the gochujang and 1 tbsp of the gochugaru, and cook for 1 minute, stirring so it doesn't burn.",
+  "Add 5 cups of water and scrape up anything stuck to the bottom of the pot. Add the potatoes, turn the heat to high and bring it to a boil, then simmer for 6 minutes.",
+  "Add the onion, zucchini, soy sauce and sugar. Simmer for 4 minutes, until the potatoes are tender when you poke them.",
+  "Add the tofu, garlic and most of the scallions. Simmer for 2 minutes, then season with the pepper.",
+  "Taste it. If it's flat, add a splash more soy sauce.",
+  "Put the remaining 1 tbsp gochugaru in a small bowl for the adults to stir in at the table. Top the stew with the last of the scallions and serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Jongwon Baek's Pork Gochujang Jjigae on 10000recipe (4.79, linked to 39 reviews): pork browned, gochujang stirred in, then water, vegetables, gochugaru, soy sauce, garlic and tofu. Gangnam Kitchen's pork and potato stew agrees on pork, potato and a gochujang and gochugaru base. The lead leaves the potato out, so the potato and its cooking time come from Gangnam Kitchen and a second 10000recipe stew. Only 1 tbsp of the gochugaru goes in the pot and the rest goes on the table to keep the base mild. Honest time is a little over 30 minutes.",
+ "sources": [
+  {
+   "name": "10000recipe",
+   "title": "Pork Gochujang Jjigae (Jongwon Baek)",
+   "url": "https://www.10000recipe.com/en/6866044/The_golden_recipe_for_pork_gochujang_jjigae_is_art",
+   "rating": 4.79,
+   "rating_count": 39,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gangnam Kitchen",
+   "title": "Gamja Duejigogi Jjigae: Spicy Pork and Potato Stew",
+   "url": "https://gangnamkitchen.com/2013/04/12/gamja-duejigogi-jjigae-%EA%B0%90%EC%9E%90%EB%8F%BC%EC%A7%80%EA%B3%A0%EA%B8%B0%EC%B0%8C%EA%B0%9C-spicy-pork-and-potato-stew/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "10000recipe",
+   "title": "Gochujang jjigae is thick, let's boil it like a soup",
+   "url": "https://www.10000recipe.com/en/6946274/Gochujang_jjigae_is_thick_Let_is_boil_it_like_a_soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

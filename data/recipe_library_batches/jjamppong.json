@@ -1,0 +1,148 @@
+{
+ "dish_name": "Jjamppong",
+ "cuisine": "Korean",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Mussels",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Squid tubes, cleaned",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh udon noodles",
+   "qty": "26 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 onion"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1/4 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh shiitake mushrooms",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2 tsp minced"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water and put it on to boil for the noodles.",
+  "Scrub the mussels and pull off the beards. Cut the squid into 1-inch pieces. Pat the shrimp dry.",
+  "Slice the onion, cut the carrot and zucchini into matchsticks, cut the cabbage into 2-inch pieces and slice the shiitake. Cut the scallions into 2-inch lengths, mince the ginger and mince the garlic.",
+  "Heat the oil in a wide pot over medium-high. Add the onion, carrot, cabbage, zucchini, shiitake, the scallions and the salt. Cook for 3 minutes, stirring, until the cabbage starts to wilt.",
+  "Add the ginger, garlic and 2 tbsp of the gochugaru. Stir for 30 seconds, until it smells fragrant. Don't let it scorch.",
+  "Add the broth, 4 cups of water and the soy sauce. Bring it to a boil and simmer for 4 minutes.",
+  "While the soup simmers, boil the udon in the pot of water for the time on the package, usually 2 to 3 minutes. Drain and divide it among 4 bowls.",
+  "Add the mussels to the soup, cover, and cook for 2 minutes. Add the shrimp and squid and cook for 3 minutes, until the mussel shells open, the shrimp are pink and curled, and the squid is white all the way through. Throw away any mussels that stay shut.",
+  "Season with the pepper. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the soup and seafood over the noodles. Put the remaining 1 tbsp gochugaru in a small bowl for the adults to stir in at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 18,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Korean Bapsang is the lead (4.54 from 65 ratings): vegetables stir-fried with ginger, scallion and gochugaru, then stock, then clams, mussels, shrimp and squid, ladled over noodles. Two Plaid Aprons and Beyond Kimchee agree on a gochugaru-red broth, vegetables first and seafood last, and noodles cooked separately. The lead includes pork and clams; here the pork is dropped (Beyond Kimchee lists it as optional) and clams are skipped to keep the shopping and the time down. Only 2 tbsp of gochugaru goes in the pot, and the rest goes on the table, to keep the base mild. Honest time is just over 30 minutes.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Jjamppong (Spicy Seafood Noodle Soup)",
+   "url": "https://www.koreanbapsang.com/jjam-bbong-korean-chinese-spicy-noodle/",
+   "rating": 4.54,
+   "rating_count": 65,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Two Plaid Aprons",
+   "title": "Jjamppong (Korean Spicy Seafood Noodle Soup)",
+   "url": "https://twoplaidaprons.com/jjamppong/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Jjamppong (Korean Seafood Noodle Soup)",
+   "url": "https://www.beyondkimchee.com/korean-spicy-seafood-noodle-soup-jjamppong",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

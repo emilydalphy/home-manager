@@ -1,0 +1,123 @@
+{
+ "dish_name": "Tonpeiyaki",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Thinly sliced pork belly",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dashi powder",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tonkatsu sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Japanese mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of rice until the water runs mostly clear. Add it to a medium saucepan with 2 1/4 cups of water, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes, then take it off the heat and leave the lid on.",
+  "Cut the cabbage into thin strips, about 1/4 inch wide. That should be about 8 cups. Cut the pork into 1-inch pieces and thinly slice the scallions.",
+  "In a small bowl, stir the cornstarch with 4 tbsp of water until smooth and runny, with no lumps left at the bottom. Beat the eggs in a large bowl with a pinch of salt, then stir in the cornstarch mixture.",
+  "Heat 1 tbsp of the oil in a 12-inch nonstick skillet over medium-high. Add the pork and cook for 3 minutes, until it's no longer pink and browned in spots.",
+  "Add the cabbage and cook for 4 to 5 minutes, stirring often, until it has shrunk by about half.",
+  "Add the dashi powder, mirin and soy sauce. Cook for 1 minute, until the liquid is gone. Taste it. If it's flat, add a pinch more salt. Transfer the filling to a bowl and wipe out the pan.",
+  "Heat 1 tbsp of the oil in the same pan over medium-low. Pour in half of the egg mixture. When the edges start to set, gently stir the middle for about 20 seconds, then stop while the top is still a little wet.",
+  "Spoon half of the filling in a band down the middle. Fold both sides of the egg over it, then slide the omelette onto a plate, seam side down.",
+  "Wipe the pan, heat the last 1 tbsp of oil over medium-low, and make the second omelette in the same way with the rest of the egg and filling.",
+  "Drizzle the tonkatsu sauce over both omelettes in a thin zig-zag, then do the same with the mayonnaise. Sprinkle the scallions over the top.",
+  "Cut each omelette in half and serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats is the lead (a fallback, since it has only 4 ratings): pork and cabbage stir-fried with dashi, mirin and soy, folded into a thin cornstarch-set omelette and topped with tonkatsu sauce and mayo. Okonomi Kitchen and Kikkoman agree on the plan; Okonomi Kitchen uses okonomiyaki sauce and extra toppings, and Kikkoman uses only soy sauce for the filling. The omelette here is made with water, not milk, to stay dairy-free, and the amounts are scaled from 2 servings to 4 as two large omelettes in a 12-inch pan.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Pork and Cabbage Omelette (Tonpeiyaki)",
+   "url": "https://japan.recipetineats.com/pork-and-cabbage-omelette-tonpeiyaki/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Okonomi Kitchen",
+   "title": "Tonpeiyaki (Pork and Cabbage Omelette)",
+   "url": "https://www.okonomikitchen.com/tonpeiyaki-pork-and-cabbage-omelette/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Kikkoman",
+   "title": "Shredded Cabbage and Sliced Pork Omelette",
+   "url": "https://www.kikkoman.com/en/cookbook/recipe/00002002.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

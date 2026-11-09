@@ -1,0 +1,111 @@
+{
+ "dish_name": "Bugeoguk",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Dried pollock strips",
+   "qty": "2 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Daikon radish",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Soft tofu",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Scallions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the pollock and put it in a bowl with 2 cups of warm water. Let it soak for 15 minutes, until soft.",
+  "Meanwhile, rinse 1 1/2 cups of rice until the water runs mostly clear. Add it to a medium saucepan with 2 1/4 cups of water, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes, then take it off the heat and leave the lid on.",
+  "Peel the daikon and slice it into thin half-moons, about 1/8 inch thick. Cut the tofu into 1/2-inch cubes. Cut the scallions into 1-inch lengths and mince the garlic. Beat the eggs in a small bowl.",
+  "Drain the pollock and keep the soaking water. Squeeze the pollock lightly and tear it into bite-size pieces.",
+  "Heat the sesame oil in a large pot over medium-high. Add the pollock and daikon and cook for 3 minutes, stirring. Sprinkle the salt over them.",
+  "Add the soaking water and 4 more cups of water, plus the soy sauce. Cover and bring it to a boil, then boil for 8 minutes.",
+  "Add the tofu and garlic and simmer for 4 minutes, until the daikon is tender when you poke it.",
+  "Turn the heat to medium-low and add the scallions. Stir the soup once, then slowly pour in the beaten egg in a thin stream. Leave it alone for 20 seconds, then stir gently. Turn off the heat.",
+  "Season with the pepper. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the soup into bowls and serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Korean Bapsang's Bukeoguk is the lead (4.77 from 34 ratings): dried pollock sautéed in sesame oil, then simmered in water with soy sauce, vegetables and tofu, with beaten egg poured in at the end. Kimchimari and My Korean Kitchen agree on pollock, radish, garlic, scallions and egg, but make an anchovy stock instead of using water. This version follows the lead's water and uses daikon in place of its potato, since the list promises radish. Salt is added lightly because the pollock is already salty.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Bukeoguk (Dried Pollock Soup)",
+   "url": "https://www.koreanbapsang.com/quick-and-easy-winter-soup-bukeo-guk/",
+   "rating": 4.77,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kimchimari",
+   "title": "Dried Pollock Soup (Bugeo Guk)",
+   "url": "https://kimchimari.com/?p=1554",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Kimchimari",
+   "title": "15-Minute Dried Pollock Soup (Bugeo-guk)",
+   "url": "https://kimchimari.com/bugeo-gook/",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

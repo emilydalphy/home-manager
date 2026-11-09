@@ -1,0 +1,113 @@
+{
+ "dish_name": "Yudofu",
+ "cuisine": "Japanese",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Medium-firm tofu",
+   "qty": "28 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Dried kombu",
+   "qty": "1 piece",
+   "category": "pantry",
+   "cook_qty": "one 6-inch piece"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "5 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2-inch piece"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Wipe the kombu with a damp cloth, but don't rinse it. Put it in a wide pot with 5 cups of water over the lowest heat. Heat it for about 10 minutes, until tiny bubbles form around the edge. Don't let it boil.",
+  "Meanwhile, rinse 1 1/2 cups of rice until the water runs mostly clear. Add it to a medium saucepan with 2 1/4 cups of water, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes, then take it off the heat and leave the lid on.",
+  "Thinly slice the scallions and grate the ginger. Cut each block of tofu into 6 pieces.",
+  "Make the dipping sauce. Combine the soy sauce, 2 tbsp of the sake and the mirin in a small saucepan over medium heat. Bring it to a boil, then take it off the heat. Once the kombu broth is ready, stir in 1/4 cup of it. Pour the sauce into a small serving bowl.",
+  "When tiny bubbles form around the edge of the kombu pot, take the kombu out. Add the remaining 2 tbsp sake and the salt, and bring the broth to a gentle boil.",
+  "Lower the heat to medium-low. Add the tofu and heat it for 5 minutes, until it's hot all the way through. Keep the broth just below a rolling boil.",
+  "Add the spinach and cook for 1 minute, until it wilts.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Ladle the tofu, spinach and a little broth into bowls. Set out the dipping sauce, scallions, ginger and shichimi at the table. Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook is the lead (4.74 from 15 ratings, so a fallback): tofu heated in kombu water with sake and salt, served with a soy, sake and mirin dipping sauce. Japanese Cooking 101 and Asian Inspirations agree on kombu water and a soy dipping sauce. This version leaves out the bonito flakes the sources put in the sauce, so it stays vegan, and the kombu is steeped for 10 minutes rather than soaked for 1 to 2 hours to keep it quick. The spinach stands in for the mitsuba, which Just One Cookbook allows any green vegetable for.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Hot Tofu (Yudofu)",
+   "url": "https://www.justonecookbook.com/hot-tofu-yudofu/",
+   "rating": 4.74,
+   "rating_count": 15,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Yudofu Recipe",
+   "url": "https://www.japanesecooking101.com/yudofu-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Asian Inspirations",
+   "title": "Hot Tofu (Yudofu)",
+   "url": "https://asianinspirations.com.au/recipes/hot-tofu-yudofu/",
+   "rating": null,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
