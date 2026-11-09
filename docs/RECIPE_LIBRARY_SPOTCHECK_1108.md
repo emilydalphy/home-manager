@@ -55,6 +55,7 @@ Existing plates draw exactly as before. Some plates read weakly and want a new p
 
 - **Call 2, weekend baking:** "Keep and add a weekend tag now". Every library breakfast of 2 hours or more carries `"weekend": true` on the starter list (11 dishes: the six above plus Cinnamon Rolls, Shokupan, Tamales de Rajas con Queso, Ambasha and Patjuk) and never lands on a Monday-to-Friday morning (breakfast_variety.weekend_only).
 - **Call 3, special pans:** "Call out that it needs a real pan. If there is an alternative pan that works you can leave it. if not just cut them". Cut: Takoyaki, Bungeoppang, Khanom Krok, Egg Waffles, Murukku (a press), Paniyaram, and Thai Coconut Pancakes (an older, already-live twin of Khanom Krok; it must also be taken out of the live library when this round is filed). Kept because the recipe names an everyday stand-in: Financiers (mini muffin tin), Chinese Egg Tarts (muffin cups), Sopes (heavy dish instead of a press), Paletas de Fresa (paper cups, added). Tebasaki, Yakgwa, Vada Pav, Pizzette and Khanom Chan need no special pan and stay.
+- **Call 5, added sauces:** "As long as the sauces make sense keep them, if they don't make sense find an alterative that does". Kept: Cumin Tofu's soy glaze, Steak Hache's Dijon cream pan sauce (classic French), Stromboli's warm pizza sauce (its taste step moved before serving). Changed: Kakiage's dip is now a proper dashi, soy and mirin dip (kombu dashi powder, vegetarian); Hoy Tod is served with Sriracha, the sauce Thai stalls serve it with, instead of sweet chili.
 
 ## Calls for Emily
 

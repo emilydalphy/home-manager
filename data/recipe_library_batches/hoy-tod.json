@@ -60,10 +60,10 @@
    "category": "pantry"
   },
   {
-   "item": "Sweet chili sauce",
+   "item": "Sriracha",
    "qty": "1 bottle",
    "category": "pantry",
-   "cook_qty": "1/2 cup"
+   "cook_qty": "1/4 cup"
   },
   {
    "item": "Jasmine rice",
@@ -81,14 +81,14 @@
   "Cook for 3 to 4 minutes, until the underside is golden and the batter has set. Flip it and cook the other side for 2 minutes. Keep flipping until both sides are golden and crisp. Transfer it to a plate.",
   "Add the remaining 4 tablespoons of oil to the pan and make the second pancake the same way with the rest of the batter, eggs, green onions and cilantro.",
   "Stir-fry the bean sprouts in the same pan over high heat for 1 to 2 minutes, until they soften but still crunch.",
-  "Pile the bean sprouts on a platter and top with the pancakes, cut into wedges. Serve with the rice and the sweet chili sauce in a small bowl."
+  "Pile the bean sprouts on a platter and top with the pancakes, cut into wedges. Serve with the rice and the Sriracha in a small bowl for dipping."
  ],
  "default_servings": 4,
  "prep_time_minutes": 12,
  "cook_time_minutes": 18,
  "advance_prep_notes": "",
  "advance_prep_step_indices": [],
- "method_notes": "Only two close versions could be read, from Hungry in Thailand and Cup of Yum, and they share one recipe (5 from 1 and 5 from 2 ratings). The batter is tapioca starch and tempura flour whisked with ice-cold water, with eggs cracked over the top and a pile of fried bean sprouts underneath. The source is written for 2, so it is doubled and cooked as two pancakes. The sources give no dip; sweet chili sauce is what other Hoy Tod pages serve, and rice is added to make it a dinner. Golden Mountain sauce contains soy and wheat.",
+ "method_notes": "Only two close versions could be read, from Hungry in Thailand and Cup of Yum, and they share one recipe (5 from 1 and 5 from 2 ratings). The batter is tapioca starch and tempura flour whisked with ice-cold water, with eggs cracked over the top and a pile of fried bean sprouts underneath. The source is written for 2, so it is doubled and cooked as two pancakes. The sources give no dip; Thai stalls serve Hoy Tod with Sriracha (Sriraja) sauce, so that is the dip, and rice is added to make it a dinner. Golden Mountain sauce contains soy and wheat.",
  "sources": [
   {
    "name": "Hungry in Thailand",
