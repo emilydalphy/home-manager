@@ -1,0 +1,88 @@
+{
+ "dish_name": "Salade de Haricots Verts",
+ "cuisine": "French",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Green beans",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of well-salted water to a boil. Fill a big bowl with ice water and set it next to the stove.",
+  "Meanwhile, trim the stem ends off the green beans and mince the shallot.",
+  "In a large bowl, whisk the shallot with the 3 tbsp olive oil, 1 tbsp red wine vinegar, 2 tsp Dijon and a few grinds of pepper.",
+  "Add the beans to the boiling water and cook for 4 to 5 minutes, until they're bright green and still have a little snap. Bite one to check.",
+  "Drain the beans and transfer them straight into the ice water for 2 minutes. Drain them well and pat them dry.",
+  "Add the beans to the bowl and toss until every bean is coated. Taste one. If it's flat, add a pinch more salt.",
+  "Serve cold or at room temperature. For a packed lunch, keep the dressing in a jar and toss it with the beans just before eating, since the vinegar turns the beans a dull green if they sit in it for hours. Undressed beans keep 3 days in the fridge."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum (the lead) blanches haricots verts for 4 to 5 minutes, chills them in ice water and tosses them with shallot, red wine vinegar, Dijon and olive oil, with an optional warm sauté. A Chef's Kitchen adds lemon, garlic, honey and walnuts, and the Dana's Table version steams and dresses them while warm; both were left out here to keep the plain mustard vinaigrette the dish is named for. Regular green beans work in place of the thin French ones and need a minute or two longer.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Haricot Verts with Dijon Vinaigrette",
+   "url": "https://cupofyum.com/recipes/haricot-verts-with-dijon-vinaigrette",
+   "rating": 4.9,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "From A Chef's Kitchen",
+   "title": "Green Bean Salad Recipe with Mustard Vinaigrette",
+   "url": "https://www.fromachefskitchen.com/green-bean-salad-recipe-with-mustard-vinaigrette",
+   "rating": 4.58,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Dana's Table",
+   "title": "French Green Beans",
+   "url": "https://danastable.com/french-green-beans/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,139 @@
+{
+ "dish_name": "Lamb Gyro Bowls",
+ "cuisine": "Greek",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Ground lamb",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1/2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring 2 1/4 cups water and 1/2 tsp of the salt to a boil in a medium pot. Add the rice, stir once, cover and reduce the heat to low. Cook for 15 minutes, then take it off the heat and leave it covered for 5 minutes.",
+  "Meanwhile, make the tzatziki. Grate half the cucumber on the big holes of a box grater and squeeze it hard in a clean kitchen towel. That should be about 1/2 cup.",
+  "Zest the lemon, then halve it. Squeeze 1 tbsp of juice from one half and cut the other half into wedges.",
+  "In a bowl, stir the squeezed cucumber with the yogurt, 1 grated garlic clove, 2 tbsp each of chopped dill and mint, the lemon juice and 1/4 tsp of the salt. Chill it.",
+  "Dice the other half of the cucumber, halve the cherry tomatoes and mince a quarter of the red onion. Keep them in a bowl.",
+  "Dice the yellow onion and mince the remaining 2 garlic cloves. Heat 1 tbsp of the olive oil in a large skillet over medium-high heat. Add the onion and cook for 2 to 3 minutes, until soft. Add the garlic and cook for 30 seconds.",
+  "Add the lamb, cumin, oregano, the remaining 3/4 tsp salt and the pepper. Break the lamb up with a spoon, then leave it alone for 2 minutes so it browns. Stir and keep cooking for 6 to 8 minutes. You're cooking it to 160°F, so if you have a thermometer, check it there. No thermometer? It's done when there's no pink left.",
+  "Fluff the rice with a fork and stir in the lemon zest and the remaining 1 tbsp olive oil.",
+  "Divide the rice among 4 bowls. Top with the lamb, the cucumber and tomato mix, a spoonful of tzatziki and the crumbled feta. Sprinkle with a little more dill and mint, and taste it. If it's flat, add a pinch more salt.",
+  "Serve with the lemon wedges. For packed lunches, store the lamb, rice, vegetables and tzatziki in separate containers for up to 3 days in the fridge."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Platings and Pairings' Greek lamb bowls (the lead) cook onion, garlic and ground lamb with cumin and oregano, then top lemon orzo with feta, tomato, cucumber and a mint and dill tzatziki; the author says plain rice works in place of the orzo, which keeps this gluten-free. The tzatziki is made while the rice cooks and the cucumber is squeezed instead of salted for 20 minutes, to hold it to about 30 minutes. Wendy Polisi's quinoa bowl and Pinch and Swirl's gyro-loaf bowl agree on cumin and oregano with lamb; the loaf takes nearly 2 hours. The lead has only 5 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Platings and Pairings",
+   "title": "Greek Lamb Bowls",
+   "url": "https://www.platingsandpairings.com/?p=39023",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wendy Polisi",
+   "title": "Gyro Bowl with Quinoa",
+   "url": "https://wendypolisi.com/gyro-quinoa-bowl/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Pinch and Swirl",
+   "title": "Gyro Bowl",
+   "url": "https://pinchandswirl.com/gyro-bowl/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

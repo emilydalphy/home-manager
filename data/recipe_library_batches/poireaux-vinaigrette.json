@@ -1,0 +1,93 @@
+{
+ "dish_name": "Poireaux Vinaigrette",
+ "cuisine": "French",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Leeks",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large wide pot of water to a boil with 3/4 tsp of the salt.",
+  "Meanwhile, trim the roots and the dark green tops off the leeks. Cut each leek into 3 pieces and halve each piece lengthwise. Rinse them well under cold water, spreading the layers to wash out any grit.",
+  "Add the leeks to the boiling water and simmer for 15 to 20 minutes, until a knife slides in with no resistance.",
+  "While they cook, finely dice the shallot and chop the leaves from 6 sprigs of parsley. In a bowl, whisk the 1 tbsp vinegar with the remaining 1/4 tsp salt until it dissolves. Stir in the shallot, 1 tbsp Dijon, the parsley and the pepper, then slowly whisk in the olive oil until the dressing thickens.",
+  "Lift the leeks out with a slotted spoon and lay them on a clean kitchen towel. Press gently to squeeze out the water. Handle them with care, since they fall apart easily.",
+  "Arrange the leeks on a platter and spoon the vinaigrette over them. Taste it. If it's flat, add a pinch more salt.",
+  "Serve warm, at room temperature or cold. The dressed leeks keep for 2 days in a covered container in the fridge, and are best taken out 20 minutes before eating."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Pardon Your French (the lead) simmers leeks until tender, drains them well and spoons over a vinaigrette of shallot, Dijon, parsley, red wine vinegar and a lot of olive oil. Not Quite Nigella cooks the leeks up to 3 days ahead and uses sherry vinegar, balsamic glaze, sugar and crispy shallots; Food.com's version is a plainer oil and vinegar dressing with dry mustard. Neither has 20 ratings, so this is a fallback lead; the egg that many bistro versions add was left out to keep it vegan.",
+ "sources": [
+  {
+   "name": "Pardon Your French",
+   "title": "Leeks with Dijon Shallot Vinaigrette (Poireaux Vinaigrette)",
+   "url": "https://www.pardonyourfrench.com/leeks-with-dijon-shallot-vinaigrette-poireaux-vinaigrette/",
+   "rating": 4.8,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Not Quite Nigella",
+   "title": "Leeks in Vinaigrette (Poireaux Vinaigrette)",
+   "url": "https://notquitenigella.com/2023/07/12/leek-recipe-vinaigrette",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Poireaux En Salade (Leeks Vinaigrette)",
+   "url": "https://www.food.com/recipe/poireaux-en-salade-leeks-vinaigrette-306602",
+   "rating": null,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

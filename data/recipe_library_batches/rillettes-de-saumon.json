@@ -1,0 +1,113 @@
+{
+ "dish_name": "Rillettes de Saumon",
+ "cuisine": "French",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Salmon fillet",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Smoked salmon",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cream cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Remove the skin from the salmon fillet if it has any. Halve the shallot and slice one half. Mince the other half.",
+  "In a skillet, combine the wine, 1/2 cup water, the sliced shallot and a sprig each of dill and parsley. Bring to a simmer over medium heat.",
+  "Add the salmon fillet, cover and poach for 8 to 10 minutes, until it flakes easily with a fork.",
+  "Transfer the salmon to a plate and let it cool for 10 minutes. Meanwhile, chop 2 tbsp of dill, 1 tbsp of parsley, 1 tbsp of the capers and the smoked salmon. Zest the lemon and squeeze 1 tbsp of juice.",
+  "Flake the poached salmon into a bowl with a fork. Add the smoked salmon, cream cheese, minced shallot, dill, parsley, capers, lemon zest and lemon juice. Add the salt and pepper.",
+  "Mash with the fork until it's spreadable but still has some texture. Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Transfer to a jar or container and chill for at least 30 minutes. Slice the baguette and toast the slices.",
+  "Serve on the toasted baguette. The rillettes keep for 2 to 3 days in an airtight container in the fridge, and up to 1 month in the freezer, though the texture changes slightly. Take it out of the fridge 10 minutes before serving."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "La Cuisine de Géraldine (the lead) poaches fresh salmon in white wine and water with shallot and herbs, then mixes the flakes with smoked salmon, cream cheese, dill, parsley, capers, lemon and a little of the poaching flavor. Rhubarb and Lavender and Beer and Croissants use butter and mayonnaise instead of cream cheese and chives instead of dill; those were left out. The lead makes about 8 small servings, so the amounts here are scaled to fill 4 lunches on toast. Its shallot and sprig amounts disagree between list and method, so half the shallot poaches and half goes into the mix.",
+ "sources": [
+  {
+   "name": "La Cuisine de Géraldine",
+   "title": "Salmon Rillettes (French spread recipe)",
+   "url": "https://lacuisinedegeraldine.fr/en/salmon-rillettes",
+   "rating": 4.89,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rhubarb and Lavender",
+   "title": "Salmon Rillettes",
+   "url": "https://www.rhubarbandlavender.com/salmon-rillettes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Beer and Croissants",
+   "title": "Easy Salmon Rillettes",
+   "url": "https://www.beerandcroissants.com/easy-salmon-rillettes-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,104 @@
+{
+ "dish_name": "Soupe de Legumes",
+ "cuisine": "French",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Leeks",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow potatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cauliflower",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the olive oil in a large pot over medium heat. Add the fennel seeds and cook for about 20 seconds, until they smell toasty.",
+  "Meanwhile, dice the onion and cut the carrots into thin half moons. Add both to the pot and cook for 5 minutes, stirring now and then, until the onion is soft. Don't let it brown.",
+  "Slice the leek, rinse it well in a bowl of water, and dice the potato into 1/2 inch cubes. Add both to the pot with 4 cups of water, the salt and a few grinds of pepper.",
+  "Bring it to a boil and skim off any foam. Reduce the heat to medium-low and partly cover the pot.",
+  "Meanwhile, cut half of the cauliflower into small florets and the green beans into 1 inch pieces. Add them to the pot and simmer for 10 minutes, until the vegetables are tender.",
+  "Chop the tomatoes and 2 tbsp of the parsley. Stir them in off the heat and let them sit for 1 minute.",
+  "Taste it. If it's flat, add a pinch more salt. Blend part of the soup with an immersion blender or a few ladlefuls in a blender if you like it thicker.",
+  "Serve hot. To keep it, cool the soup completely and store it in airtight containers for up to 4 days in the fridge, or up to 3 months in the freezer, leaving 1 inch of room at the top. Thaw overnight in the fridge and reheat in a pot over medium-low heat, stirring, until steaming, or in the microwave, covered, for about 2 minutes per bowl."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mad About Macarons (Jill Colonna, the lead) sweats onion and carrot in butter, adds leek, turnip or potato and water, simmers the harder vegetables first and stirs in tomato, peas and herbs at the end. This version uses olive oil (her vegan option) and fennel seed (her alternative to tarragon or chervil), swaps the turnip for potato, and gives amounts for the cauliflower and green beans her method mentions but doesn't list. Gourmande in the Kitchen and Le Chef's Wife simmer longer and blend the soup smooth; Le Chef's Wife says it keeps 5 days in the fridge and freezes well. The lead has only 2 ratings, so this is a fallback lead. It runs over 30 minutes but is a batch soup for packing and freezing.",
+ "sources": [
+  {
+   "name": "Mad About Macarons",
+   "title": "Homemade Vegetable Soup (Soupe de légumes)",
+   "url": "https://www.madaboutmacarons.com/?p=128302",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gourmande in the Kitchen",
+   "title": "French Vegetable Soup",
+   "url": "https://gourmandeinthekitchen.com/french-vegetable-soup-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

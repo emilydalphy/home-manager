@@ -1,0 +1,83 @@
+{
+ "dish_name": "Salade de Pommes de Terre",
+ "cuisine": "French",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Baby potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornichons",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 cornichons"
+  },
+  {
+   "item": "White wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the potatoes in a large pot, halve any that are bigger than a golf ball, and cover them with cold water by 1 inch. Add the salt.",
+  "Bring to a boil, then simmer for 12 to 15 minutes, until a knife slides in with no resistance.",
+  "Meanwhile, finely dice the shallot, chop 1/4 cup of chives and slice the cornichons.",
+  "In a large bowl, whisk the vinegar, Dijon, olive oil, a pinch of salt and the pepper.",
+  "Drain the potatoes and let them steam dry for 2 minutes. Halve them lengthwise and add them to the bowl while they're still warm.",
+  "Add the shallot, cornichons and chives and toss gently. Taste it. If it's flat, add a pinch more salt.",
+  "Serve warm or at room temperature. It keeps for 3 days in a covered container in the fridge."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Taste of France (the lead) steams small waxy potatoes, then tosses them with shallot, chives, cornichons and a Dijon, white wine vinegar and olive oil dressing, with no mayonnaise. Here the potatoes are halved and boiled to cut the time from 20 minutes to about 15, and dressed while warm, which the other mustard-vinaigrette versions recommend so they absorb the dressing. The lead calls for Burgundy mustard; Dijon is used instead.",
+ "sources": [
+  {
+   "name": "Taste France",
+   "title": "Potato salad",
+   "url": "https://www.tastefrance.com/us/recipes/everyday-recipes/french-potato-salad",
+   "rating": 4.0,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
