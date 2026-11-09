@@ -1,0 +1,732 @@
+[
+{
+"dish_name": "Cola Chicken Wings",
+"cuisine": "Chinese",
+"main_protein": "chicken",
+"ingredients": [
+"Chicken wings",
+"Vegetable oil",
+"Ginger",
+"Regular cola",
+"Shaoxing wine",
+"Dark soy sauce",
+"Light soy sauce",
+"Salt",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Conchas",
+"cuisine": "Mexican",
+"main_protein": "vegetarian",
+"ingredients": [
+"Active dry yeast",
+"Sugar",
+"All-purpose flour",
+"Evaporated milk",
+"Unsalted butter",
+"Egg",
+"Ground cinnamon",
+"Vanilla extract",
+"Salt"
+]
+},
+{
+"dish_name": "Corned Beef and Cabbage",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Corned beef brisket",
+"Bay leaves",
+"Black peppercorns",
+"Carrots",
+"Small red potatoes",
+"Green cabbage"
+]
+},
+{
+"dish_name": "Creamy Tomato Tortellini",
+"cuisine": "Italian",
+"main_protein": "cheese",
+"ingredients": [
+"Refrigerated cheese tortellini",
+"Butter",
+"Garlic",
+"Tomato paste",
+"Canned tomato sauce",
+"Heavy cream",
+"Italian seasoning",
+"Parmesan cheese",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Daikon and Pork Rib Soup",
+"cuisine": "Chinese",
+"main_protein": "pork",
+"ingredients": [
+"Pork ribs (spareribs, cut into 2-inch pieces)",
+"Daikon",
+"Carrots",
+"Dried red dates (jujubes)",
+"Fish sauce",
+"White pepper",
+"Tamari",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Dal Gosht",
+"cuisine": "Indian",
+"main_protein": "lamb",
+"ingredients": [
+"Chana dal",
+"Bone-in lamb shoulder",
+"Yellow onions",
+"Tomatoes",
+"Garlic",
+"Salt",
+"Ground turmeric",
+"Ground cumin",
+"Ground coriander",
+"Vegetable oil",
+"Cumin seeds",
+"Cilantro",
+"Green chilies"
+]
+},
+{
+"dish_name": "Daube Provencale",
+"cuisine": "French",
+"main_protein": "beef",
+"ingredients": [
+"Dried porcini mushrooms",
+"Beef chuck roast, boneless",
+"Salt",
+"Black pepper",
+"Olive oil",
+"Salt pork",
+"Carrots",
+"Onions",
+"Garlic",
+"Tomato paste",
+"Dry red wine",
+"Low sodium chicken broth",
+"Water",
+"Orange",
+"Ni\u00e7oise olives, pitted",
+"Anchovy fillets",
+"Fresh thyme",
+"Bay leaves",
+"Whole canned tomatoes",
+"Fresh parsley"
+]
+},
+{
+"dish_name": "Ensaimada",
+"cuisine": "Spanish",
+"main_protein": "vegetarian",
+"ingredients": [
+"All-purpose flour",
+"Instant yeast",
+"Sugar",
+"Salt",
+"Milk",
+"Eggs",
+"Olive oil",
+"Unsalted butter",
+"Powdered sugar"
+]
+},
+{
+"dish_name": "Fideos a la Cazuela",
+"cuisine": "Spanish",
+"main_protein": "pork",
+"ingredients": [
+"Pork spare ribs",
+"Fideo noodles",
+"Yellow onion",
+"Red bell pepper",
+"Roma tomatoes",
+"Garlic",
+"Smoked paprika",
+"Bay leaves",
+"Chicken broth",
+"Frozen peas",
+"Fresh parsley",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "French Dip Sandwiches",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Beef chuck roast",
+"Yellow onions",
+"Garlic",
+"Fresh rosemary",
+"Low-sodium beef broth",
+"Worcestershire sauce",
+"French rolls or hoagie rolls",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Frijoles Charros",
+"cuisine": "Mexican",
+"main_protein": "pork",
+"ingredients": [
+"Thick-cut bacon",
+"Mexican chorizo",
+"Yellow onion",
+"Jalape\u00f1o",
+"Garlic",
+"Ground cumin",
+"Brown sugar",
+"Dried oregano",
+"Smoked paprika",
+"Ground coriander",
+"Salt",
+"Canned pinto beans",
+"Fire-roasted diced tomatoes",
+"Chicken broth",
+"Cilantro",
+"Limes"
+]
+},
+{
+"dish_name": "Frijoles de la Olla",
+"cuisine": "Mexican",
+"main_protein": "beans",
+"ingredients": [
+"Dried pinto beans",
+"Yellow onion",
+"Garlic",
+"Olive oil",
+"Salt"
+]
+},
+{
+"dish_name": "Gaeng Hang Lay",
+"cuisine": "Thai",
+"main_protein": "pork",
+"ingredients": [
+"Pork belly",
+"Shallots",
+"Lemongrass",
+"Galangal",
+"Garlic",
+"Garam masala",
+"Chili powder",
+"Ground turmeric",
+"Shrimp paste",
+"Star anise",
+"Tamarind paste",
+"Sugar",
+"Dark soy sauce",
+"Fish sauce",
+"Apple cider vinegar",
+"Vegetable oil",
+"Salt",
+"Jasmine rice",
+"Persian cucumbers"
+]
+},
+{
+"dish_name": "Gai Tod Hat Yai",
+"cuisine": "Thai",
+"main_protein": "chicken",
+"ingredients": [
+"Chicken wings",
+"Shallots",
+"Garlic",
+"Fresh cilantro",
+"Black peppercorns",
+"White peppercorns",
+"Sugar",
+"Light soy sauce",
+"Sweet dark soy sauce",
+"Rice flour",
+"Sweet chili sauce",
+"Jasmine rice",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Galbitang",
+"cuisine": "Korean",
+"main_protein": "beef",
+"ingredients": [
+"Beef short ribs",
+"Daikon",
+"Yellow onion",
+"Leeks",
+"Garlic",
+"Green onions",
+"Korean glass noodles",
+"Soy sauce",
+"Salt",
+"Black pepper",
+"Short-grain rice"
+]
+},
+{
+"dish_name": "Galette Saucisse",
+"cuisine": "French",
+"main_protein": "pork",
+"ingredients": [
+"Pork sausages (long, thin, such as chipolatas)",
+"Buckwheat flour",
+"Whole milk",
+"Eggs",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Gamjatang",
+"cuisine": "Korean",
+"main_protein": "pork",
+"ingredients": [
+"Pork spare ribs",
+"Russet potatoes",
+"Napa cabbage",
+"Green onions",
+"Fresh ginger",
+"Garlic",
+"Black peppercorns",
+"Mirin",
+"Doenjang",
+"Gochujang",
+"Gochugaru",
+"Ground perilla seeds",
+"Soy sauce",
+"Black pepper",
+"Salt",
+"Short-grain rice"
+]
+},
+{
+"dish_name": "Garbure",
+"cuisine": "French",
+"main_protein": "pork",
+"ingredients": [
+"Dried white beans (cannellini or great northern)",
+"Pork belly, fresh or lightly salted",
+"Leeks",
+"Carrots",
+"Yellow onion",
+"Turnips",
+"Garlic",
+"Fresh thyme",
+"Fresh parsley",
+"Bay leaves",
+"Black peppercorns",
+"Potatoes",
+"Savoy cabbage",
+"Salt",
+"Water"
+]
+},
+{
+"dish_name": "Garlic Noodles",
+"cuisine": "Chinese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Spaghetti or fettuccine",
+"Garlic",
+"Green onions",
+"Vegetable oil",
+"Brown sugar",
+"Vegetarian oyster sauce",
+"Soy sauce",
+"Sesame oil",
+"Salt"
+]
+},
+{
+"dish_name": "Gateau di Patate",
+"cuisine": "Italian",
+"main_protein": "cheese",
+"ingredients": [
+"Yukon Gold or russet potatoes",
+"Eggs",
+"Parmesan, freshly grated",
+"Whole milk",
+"Mozzarella or provola",
+"Cooked ham, sliced",
+"Unsalted butter",
+"Plain breadcrumbs",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Gigot d'Agneau",
+"cuisine": "French",
+"main_protein": "lamb",
+"ingredients": [
+"Bone-in leg of lamb (half leg)",
+"Garlic",
+"Fresh rosemary",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Chicken broth"
+]
+},
+{
+"dish_name": "Gujarati Dal",
+"cuisine": "Indian",
+"main_protein": "lentils",
+"ingredients": [
+"Toor dal",
+"Tomato",
+"Kokum (dried)",
+"Ground turmeric",
+"Kashmiri chili powder",
+"Ground coriander",
+"Ground cumin",
+"Garam masala",
+"Ginger",
+"Salt",
+"Jaggery",
+"Vegetable oil",
+"Mustard seeds",
+"Cumin seeds",
+"Fenugreek seeds",
+"Cinnamon stick",
+"Dried red chili",
+"Curry leaves",
+"Cilantro"
+]
+},
+{
+"dish_name": "Haleem",
+"cuisine": "Indian",
+"main_protein": "lamb",
+"ingredients": [
+"Bone-in lamb shoulder",
+"Cracked wheat (dalia)",
+"Pearl barley",
+"Chana dal",
+"Masoor dal (red lentils)",
+"Moong dal",
+"Urad dal",
+"Yellow onions",
+"Vegetable oil",
+"Ginger",
+"Garlic",
+"Garam masala",
+"Ground coriander",
+"Ground cumin",
+"Kashmiri chili powder",
+"Ground turmeric",
+"Black pepper",
+"Salt",
+"Cilantro",
+"Mint",
+"Lemon",
+"Green chili"
+]
+},
+{
+"dish_name": "Ham and Bean Soup",
+"cuisine": "American",
+"main_protein": "pork",
+"ingredients": [
+"Dried navy beans",
+"Baking soda",
+"Meaty ham bone",
+"Cooked ham",
+"Yellow onion",
+"Olive oil",
+"Diced tomatoes",
+"Chili powder",
+"Dried basil",
+"Garlic powder",
+"Kosher salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Hobakjuk",
+"cuisine": "Korean",
+"main_protein": "vegan",
+"ingredients": [
+"Kabocha squash",
+"Sweet rice",
+"Brown sugar",
+"Salt"
+]
+},
+{
+"dish_name": "Honey Glazed Ham",
+"cuisine": "American",
+"main_protein": "pork",
+"ingredients": [
+"Fully cooked spiral-cut bone-in ham",
+"Honey",
+"Brown sugar",
+"Dijon mustard",
+"Garlic powder",
+"Ground cloves"
+]
+},
+{
+"dish_name": "Huevos Tirados",
+"cuisine": "Mexican",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Refried black beans (check the label for lard)",
+"White onion",
+"Garlic",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Irish Stew",
+"cuisine": "American",
+"main_protein": "lamb",
+"ingredients": [
+"Lamb shoulder chops",
+"Vegetable oil",
+"Yellow onions",
+"All-purpose flour",
+"Fresh thyme",
+"Yukon Gold potatoes",
+"Fresh parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Japanese Cream Stew",
+"cuisine": "Japanese",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Yellow onion",
+"Carrots",
+"Yukon Gold potatoes",
+"Broccoli",
+"Butter",
+"All-purpose flour",
+"Chicken broth",
+"Dashi granules",
+"White miso",
+"Onion powder",
+"Milk",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Jjimdak",
+"cuisine": "Korean",
+"main_protein": "chicken",
+"ingredients": [
+"Bone-in chicken thighs",
+"Korean glass noodles",
+"Yellow onion",
+"Potatoes",
+"Carrots",
+"Garlic",
+"Fresh ginger",
+"Green onions",
+"Green chilies",
+"Soy sauce",
+"Oyster sauce",
+"Brown sugar",
+"Rice vinegar",
+"Sesame oil",
+"Vegetable oil",
+"Salt",
+"Short-grain rice"
+]
+},
+{
+"dish_name": "Kahvalti Tabagi",
+"cuisine": "Turkish",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Cherry tomatoes",
+"Baby cucumbers",
+"Small mild green peppers (sivri biber or padron)",
+"Ka\u015far cheese",
+"Feta",
+"Black and green olives",
+"Kaymak or clotted cream",
+"Sour cherry jam (or honey)",
+"Extra virgin olive oil",
+"Dried oregano",
+"Pul biber (Turkish chili flakes)",
+"Salt"
+]
+},
+{
+"dish_name": "Kanom Pang Sangkaya",
+"cuisine": "Thai",
+"main_protein": "vegetarian",
+"ingredients": [
+"Pandan leaves (fresh or frozen)",
+"Full-fat coconut milk",
+"Egg yolks",
+"Sugar",
+"Cornstarch",
+"Salt",
+"Soft white bread"
+]
+},
+{
+"dish_name": "Kasarli Tost",
+"cuisine": "Turkish",
+"main_protein": "cheese",
+"ingredients": [
+"Sandwich bread",
+"Ka\u015far cheese (or kasseri)",
+"Butter"
+]
+},
+{
+"dish_name": "Khanom Kluay",
+"cuisine": "Thai",
+"main_protein": "vegan",
+"ingredients": [
+"Ripe bananas",
+"Coconut cream",
+"Sugar",
+"Rice flour",
+"Tapioca starch",
+"Salt",
+"Unsweetened shredded coconut"
+]
+},
+{
+"dish_name": "Khanom Pang Na Moo",
+"cuisine": "Thai",
+"main_protein": "pork",
+"ingredients": [
+"Sandwich bread",
+"Ground pork",
+"Cilantro",
+"Garlic",
+"Ground white pepper",
+"Soy sauce",
+"Sugar",
+"Eggs",
+"Vegetable oil",
+"Sweet chili sauce"
+]
+},
+{
+"dish_name": "Khao Kai Dao",
+"cuisine": "Thai",
+"main_protein": "eggs",
+"ingredients": [
+"Jasmine rice",
+"Eggs",
+"Vegetable oil",
+"English cucumber",
+"Thai chilies",
+"Fish sauce"
+]
+},
+{
+"dish_name": "Kibbeh Labanieh",
+"cuisine": "Lebanese",
+"main_protein": "lamb",
+"ingredients": [
+"Ground lamb",
+"Fine bulgur",
+"Yellow onions",
+"Plain yogurt",
+"Short-grain rice",
+"Garlic",
+"Cilantro",
+"Butter",
+"Cornstarch",
+"Seven-spice",
+"Sumac",
+"Dried mint",
+"Black pepper",
+"Salt",
+"Olive oil",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "King Ranch Chicken",
+"cuisine": "American",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Olive oil",
+"Salt",
+"Yellow onion",
+"Red bell pepper",
+"Cream of chicken soup",
+"Diced tomatoes with green chiles (mild)",
+"Chicken broth",
+"Chili powder",
+"Garlic powder",
+"Shredded cheddar cheese",
+"Corn tortillas (6-inch)"
+]
+},
+{
+"dish_name": "Kongnamul Gukbap",
+"cuisine": "Korean",
+"main_protein": "vegetarian",
+"ingredients": [
+"Soybean sprouts",
+"Cooked short-grain rice",
+"Dried kelp (dasima)",
+"Yellow onion",
+"Garlic",
+"Eggs",
+"Scallions",
+"Salt",
+"Sesame oil",
+"Sesame seeds",
+"Korean red pepper flakes"
+]
+},
+{
+"dish_name": "Korean Ground Beef Bowls",
+"cuisine": "Korean",
+"main_protein": "beef",
+"ingredients": [
+"Ground beef",
+"Short-grain rice",
+"Yellow onion",
+"Red apple",
+"Garlic",
+"Fresh ginger",
+"Baby spinach",
+"Carrots",
+"Avocado",
+"Pickled ginger",
+"Romaine hearts",
+"Green onions",
+"Neutral oil",
+"Soy sauce",
+"Toasted sesame oil",
+"Mirin",
+"Brown sugar",
+"Rice vinegar",
+"Black pepper",
+"White sesame seeds"
+]
+}
+]

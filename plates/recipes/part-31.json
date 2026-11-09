@@ -1,0 +1,779 @@
+[
+{
+"dish_name": "Sahanda Yumurta",
+"cuisine": "Turkish",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Butter",
+"Gluten-free bread",
+"Salt",
+"Black pepper",
+"Chili flakes"
+]
+},
+{
+"dish_name": "Scalloped Potatoes and Ham",
+"cuisine": "American",
+"main_protein": "pork",
+"ingredients": [
+"Butter",
+"Yellow onion",
+"Dried thyme",
+"Cornstarch",
+"Whole milk",
+"Gluten-free chicken broth",
+"Yukon Gold potatoes",
+"Salt",
+"Black pepper",
+"Cooked ham, diced (gluten-free)",
+"Sharp cheddar cheese, shredded"
+]
+},
+{
+"dish_name": "Shish Barak",
+"cuisine": "Lebanese",
+"main_protein": "lamb",
+"ingredients": [
+"Ground lamb",
+"All-purpose flour",
+"Red onion",
+"Plain yogurt",
+"Garlic",
+"Cilantro",
+"Butter",
+"Cornstarch",
+"Olive oil",
+"Sugar",
+"Pomegranate molasses",
+"Sumac",
+"Seven-spice",
+"Black pepper",
+"Salt"
+]
+},
+{
+"dish_name": "Shokupan",
+"cuisine": "Japanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Bread flour",
+"Instant yeast",
+"Salt",
+"Sugar",
+"Milk",
+"Eggs",
+"Unsalted butter",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Smothered Chicken",
+"cuisine": "American",
+"main_protein": "chicken",
+"ingredients": [
+"Bone-in chicken thighs",
+"All-purpose flour",
+"Yellow onion",
+"Garlic",
+"Chicken broth",
+"Whole milk",
+"Vegetable oil",
+"Long-grain white rice",
+"Garlic powder",
+"Onion powder",
+"Smoked paprika",
+"Celery seed",
+"Poultry seasoning",
+"Kosher salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Sobao Pasiego",
+"cuisine": "Spanish",
+"main_protein": "vegetarian",
+"ingredients": [
+"Unsalted butter",
+"Sugar",
+"Eggs",
+"All-purpose flour",
+"Baking powder",
+"Honey",
+"Lemon",
+"Vanilla extract",
+"Salt",
+"Paper baking cups"
+]
+},
+{
+"dish_name": "Sofrito",
+"cuisine": "Greek",
+"main_protein": "beef",
+"ingredients": [
+"Beef top round",
+"All-purpose flour",
+"Butter",
+"Olive oil",
+"Garlic",
+"White wine vinegar",
+"Dry white wine",
+"Beef broth",
+"Fresh parsley",
+"Long-grain white rice",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Sogogi Juk",
+"cuisine": "Korean",
+"main_protein": "beef",
+"ingredients": [
+"Short-grain rice",
+"Ground beef",
+"Yellow onion",
+"Zucchini",
+"Carrots",
+"Shiitake mushrooms",
+"Scallions",
+"Sesame oil",
+"Soy sauce",
+"Salt",
+"Black pepper",
+"Sesame seeds"
+]
+},
+{
+"dish_name": "Souris d'Agneau",
+"cuisine": "French",
+"main_protein": "lamb",
+"ingredients": [
+"Lamb shanks (souris)",
+"Onions",
+"Garlic",
+"Carrots",
+"Celery",
+"Chicken broth",
+"Dry red wine",
+"Tomato paste",
+"Olive oil",
+"Fresh thyme",
+"Bay leaves",
+"Salt",
+"Black pepper",
+"Long grain white rice",
+"Water"
+]
+},
+{
+"dish_name": "Soy Sauce Chicken",
+"cuisine": "Chinese",
+"main_protein": "chicken",
+"ingredients": [
+"Bone-in skin-on chicken thighs",
+"Vegetable oil",
+"Ginger",
+"Scallions",
+"Star anise",
+"Shaoxing wine",
+"Light soy sauce",
+"Dark soy sauce",
+"Sugar",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Spaghetti Pie",
+"cuisine": "Italian",
+"main_protein": "cheese",
+"ingredients": [
+"Spaghetti",
+"Butter",
+"Eggs",
+"Parmesan cheese",
+"Ricotta cheese",
+"Fresh parsley",
+"Dried basil",
+"Yellow onion",
+"Olive oil",
+"Canned diced tomatoes",
+"Marinara sauce",
+"Shredded mozzarella",
+"Salt"
+]
+},
+{
+"dish_name": "Spinach Artichoke Pasta Bake",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Rigatoni",
+"Butter",
+"Garlic",
+"Cream cheese",
+"Sour cream",
+"Parmesan cheese, grated",
+"Baby spinach",
+"Artichoke hearts in water",
+"Mozzarella cheese, shredded",
+"Salt",
+"Black pepper",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Spinach Lasagna Roll-Ups",
+"cuisine": "Italian",
+"main_protein": "cheese",
+"ingredients": [
+"Lasagna noodles",
+"Frozen chopped spinach",
+"Ricotta cheese",
+"Parmesan cheese",
+"Eggs",
+"Garlic",
+"Fresh basil",
+"Italian seasoning",
+"Marinara sauce",
+"Shredded mozzarella",
+"Black pepper",
+"Salt"
+]
+},
+{
+"dish_name": "Stromboli",
+"cuisine": "Italian",
+"main_protein": "pork",
+"ingredients": [
+"Thin-crust pizza dough",
+"Pizza sauce",
+"Sliced salami",
+"Sliced pepperoni",
+"Shredded mozzarella",
+"Eggs",
+"Dried oregano",
+"Salt"
+]
+},
+{
+"dish_name": "Stuffed Cabbage Rolls",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Green cabbage",
+"Lean ground beef",
+"Long-grain brown rice",
+"Yellow onion",
+"Garlic",
+"Eggs",
+"Fresh parsley",
+"Tomato sauce",
+"Crushed tomatoes",
+"Bay leaves",
+"Red wine vinegar",
+"Honey",
+"Dried oregano",
+"Ground nutmeg",
+"Garlic powder",
+"Kosher salt",
+"Black pepper",
+"Olive oil"
+]
+},
+{
+"dish_name": "Stuffed Pepper Soup",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Lean ground beef",
+"Mild Italian sausage (gluten-free)",
+"Yellow onion",
+"Garlic",
+"Green bell pepper",
+"Red bell pepper",
+"Beef broth",
+"Diced tomatoes",
+"Crushed tomatoes",
+"Gluten-free Worcestershire sauce",
+"Long-grain white rice",
+"Fresh parsley",
+"Italian seasoning",
+"Black pepper",
+"Kosher salt"
+]
+},
+{
+"dish_name": "Sunday Gravy",
+"cuisine": "Italian",
+"main_protein": "pork",
+"ingredients": [
+"Olive oil",
+"Bone-in pork country-style ribs or neck bones",
+"Sweet Italian sausage",
+"Fully cooked beef meatballs (dairy-free)",
+"Yellow onion",
+"Garlic",
+"Red pepper flakes",
+"Tomato paste",
+"Whole peeled tomatoes",
+"Bay leaves",
+"Fresh parsley",
+"Spaghetti or rigatoni",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Sweet and Sour Meatballs",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Ground beef",
+"Breadcrumbs",
+"Eggs",
+"Yellow onion",
+"Red bell pepper",
+"Green bell pepper",
+"Garlic",
+"Canned pineapple chunks in juice",
+"Jasmine rice",
+"Garlic powder",
+"Low-sodium chicken broth",
+"Brown sugar",
+"Ketchup",
+"Rice vinegar",
+"Soy sauce",
+"Tomato paste",
+"Cornstarch",
+"Vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Taco Casserole",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Lean ground beef",
+"Black beans",
+"Salsa",
+"Taco seasoning",
+"Tortilla chips",
+"Red bell pepper",
+"Green onions",
+"Sliced black olives",
+"Shredded cheddar or Monterey Jack cheese",
+"Tomato",
+"Romaine lettuce"
+]
+},
+{
+"dish_name": "Taco Soup",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Ground beef",
+"Olive oil",
+"Yellow onion",
+"Tomato paste",
+"Garlic",
+"Chili powder",
+"Ground cumin",
+"Smoked paprika",
+"Garlic powder",
+"Onion powder",
+"Dried oregano",
+"Salt",
+"Gluten-free beef broth",
+"Diced tomatoes with green chiles (mild)",
+"Pinto beans",
+"Corn",
+"Avocado",
+"Corn tortilla chips"
+]
+},
+{
+"dish_name": "Tacos Dorados",
+"cuisine": "Mexican",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken breasts",
+"Yellow onion",
+"Garlic",
+"Salt",
+"Roma tomatoes",
+"Black pepper",
+"Dried oregano",
+"Corn tortillas",
+"Vegetable oil",
+"Oaxaca or Monterey Jack cheese",
+"Iceberg lettuce",
+"Sour cream",
+"Salsa"
+]
+},
+{
+"dish_name": "Tahin Pekmez",
+"cuisine": "Turkish",
+"main_protein": "vegan",
+"ingredients": [
+"Tahini",
+"Grape molasses (pekmez)",
+"Crusty bread or flatbread (vegan)"
+]
+},
+{
+"dish_name": "Taiwanese Popcorn Chicken",
+"cuisine": "Chinese",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless chicken thighs, skin on",
+"Light soy sauce",
+"Shaoxing wine",
+"Garlic",
+"Five-spice powder",
+"Egg",
+"Rice flour",
+"Tapioca starch",
+"Thai basil",
+"Vegetable oil",
+"Salt",
+"White pepper",
+"Garlic powder"
+]
+},
+{
+"dish_name": "Tater Tot Casserole",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Ground beef",
+"Frozen tater tots",
+"Cream of chicken soup",
+"Frozen peas",
+"Frozen corn",
+"Frozen diced carrots",
+"Shredded cheddar cheese",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tavuklu Pilav",
+"cuisine": "Turkish",
+"main_protein": "chicken",
+"ingredients": [
+"Chicken drumsticks",
+"Long-grain white rice",
+"Chickpeas",
+"Butter",
+"Olive oil",
+"Greek yogurt",
+"English cucumber",
+"Garlic",
+"Fresh mint",
+"Salt"
+]
+},
+{
+"dish_name": "Tom Jued Woon Sen",
+"cuisine": "Thai",
+"main_protein": "pork",
+"ingredients": [
+"Ground pork",
+"Glass noodles",
+"Dried shiitake mushrooms",
+"Napa cabbage",
+"Chicken broth",
+"Garlic",
+"Green onions",
+"Limes",
+"Thai red chilies",
+"Ground coriander",
+"White pepper",
+"Fish sauce",
+"Soy sauce",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Tomates Farcies",
+"cuisine": "French",
+"main_protein": "pork",
+"ingredients": [
+"Large tomatoes",
+"Yellow onion",
+"Garlic",
+"Olive oil",
+"Ground beef",
+"Ground pork sausage",
+"Plain breadcrumbs",
+"Herbes de Provence",
+"Fresh parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tomato Beef Brisket Stew",
+"cuisine": "Chinese",
+"main_protein": "beef",
+"ingredients": [
+"Beef brisket",
+"Tomatoes",
+"Potatoes",
+"Green onions",
+"Fresh ginger",
+"Star anise",
+"Cinnamon stick",
+"Sugar",
+"Light soy sauce",
+"Oyster sauce",
+"Salt",
+"Vegetable oil",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Tonteki",
+"cuisine": "Japanese",
+"main_protein": "pork",
+"ingredients": [
+"Boneless pork loin chops, 1/2 inch thick",
+"Yellow onion",
+"Green cabbage",
+"Tomatoes",
+"All-purpose flour",
+"Neutral oil",
+"Ponzu",
+"Sake",
+"Soy sauce",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tortitas de Carne",
+"cuisine": "Mexican",
+"main_protein": "beef",
+"ingredients": [
+"Long-grain white rice",
+"Ground beef",
+"Eggs",
+"Plain breadcrumbs",
+"White onion",
+"Garlic",
+"Fresh parsley",
+"Roma tomatoes",
+"Jalapeno",
+"Vegetable oil",
+"Kosher salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Undhiyu",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Fresh fenugreek leaves (methi)",
+"Chickpea flour (besan)",
+"Whole wheat flour (atta)",
+"Carom seeds (ajwain)",
+"Sugar",
+"Lemon",
+"Baking soda",
+"Baby potatoes",
+"Baby eggplants",
+"Sweet potato",
+"Green plantain",
+"Frozen pigeon peas (tuvar lilva)",
+"Frozen green peas",
+"Cilantro",
+"Ginger",
+"Green chilies",
+"Garlic",
+"Unsweetened desiccated coconut",
+"Kashmiri chili powder",
+"Ground coriander",
+"Ground cumin",
+"Garam masala",
+"Sesame seeds",
+"Asafoetida (hing)",
+"Black mustard seeds",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Xiao Ji Dun Mo Gu",
+"cuisine": "Chinese",
+"main_protein": "chicken",
+"ingredients": [
+"Bone-in chicken thighs and drumsticks, cut into 2-inch pieces",
+"Potatoes",
+"Yellow onion",
+"Dried shiitake mushrooms",
+"Glass noodles (mung bean)",
+"Fresh ginger",
+"Garlic",
+"Green onions",
+"Bay leaves",
+"Star anise",
+"Light soy sauce",
+"Dark soy sauce",
+"Oyster sauce",
+"Five-spice powder",
+"Shaoxing wine",
+"Toasted sesame seeds",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Xoi Xeo",
+"cuisine": "Vietnamese",
+"main_protein": "vegan",
+"ingredients": [
+"Glutinous (sweet) rice",
+"Split mung beans",
+"Ground turmeric",
+"Salt",
+"Coconut milk",
+"Shallots",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Yakhnet Batata",
+"cuisine": "Lebanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Potatoes",
+"Butter beans",
+"Yellow onion",
+"Garlic",
+"Cilantro",
+"Tomato paste",
+"Ground coriander",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Basmati rice",
+"Lemon"
+]
+},
+{
+"dish_name": "Yukgaejang",
+"cuisine": "Korean",
+"main_protein": "beef",
+"ingredients": [
+"Beef brisket",
+"Yellow onion",
+"Garlic",
+"Daikon",
+"Mung bean sprouts",
+"Shiitake mushrooms",
+"Green onions",
+"Gochujang",
+"Soy sauce",
+"Gochugaru (Korean chili flakes)",
+"Neutral oil",
+"Toasted sesame oil",
+"Black pepper",
+"Salt"
+]
+},
+{
+"dish_name": "Yumurtali Ekmek",
+"cuisine": "Turkish",
+"main_protein": "eggs",
+"ingredients": [
+"Thick-sliced stale bread",
+"Eggs",
+"Olive oil",
+"Butter",
+"Ground cumin",
+"Dried mint",
+"Salt",
+"Black pepper",
+"Chili flakes"
+]
+},
+{
+"dish_name": "Zucchine Ripiene",
+"cuisine": "Italian",
+"main_protein": "cheese",
+"ingredients": [
+"Zucchini",
+"Arborio rice",
+"Tomato passata",
+"Olive oil",
+"Garlic",
+"Fresh basil",
+"Butter",
+"Grana Padano",
+"Fontina",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Zucchini and Egg Stir-Fry",
+"cuisine": "Chinese",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Zucchini",
+"Tomatoes",
+"Garlic",
+"Scallions",
+"Gluten-free soy sauce",
+"Sugar",
+"White vinegar",
+"Cornstarch",
+"Salt",
+"Vegetable oil",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Zucchini Lasagna",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Zucchini",
+"Salt",
+"Black pepper",
+"Ricotta cheese",
+"Parmesan",
+"Shredded mozzarella",
+"Eggs",
+"Garlic",
+"Fresh basil",
+"Tomato sauce"
+]
+},
+{
+"dish_name": "Zucchini Tomato Casserole",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Roma tomatoes",
+"Zucchini",
+"Olive oil",
+"Italian seasoning",
+"Garlic",
+"Salt",
+"Black pepper",
+"Yellow onion",
+"Butter",
+"Parmesan",
+"Shredded mozzarella",
+"Fresh basil"
+]
+}
+]
