@@ -1,0 +1,117 @@
+{
+ "dish_name": "Hash Brown Casserole",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Frozen shredded hash browns",
+   "qty": "1 lb bag",
+   "category": "frozen",
+   "cook_qty": "15 oz"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 1/2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sharp cheddar",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or the morning of: thaw the hash browns in the fridge, then press them between paper towels to take out the extra water. Grate the cheddar. That should be about 1 cup.",
+  "Heat the oven to 350°F and grease an 8 by 8 inch baking dish.",
+  "Melt 2 tbsp of the butter in a medium saucepan over medium heat. Dice the onion, add it and cook for 3 to 4 minutes, until soft and lightly browned at the edges.",
+  "Stir in the flour and cook for 1 minute. Whisk in the broth and milk and cook for 1 to 2 minutes, until thickened.",
+  "Take the pan off the heat. Stir in the salt, pepper, paprika, sour cream and cheddar until smooth.",
+  "Add the hash browns and stir until they're coated.",
+  "Spread the mix in the baking dish. If you're making it ahead, cover and refrigerate it now for up to 2 days. Let it sit on the counter while the oven heats.",
+  "Melt the remaining 1 1/2 tbsp butter, stir in the panko and scatter it over the top.",
+  "Cover with foil and bake for 45 minutes. Remove the foil and bake for 15 minutes, until the top is browned and the edges bubble.",
+  "Let it sit for 5 minutes before serving. Leftovers keep in the fridge for up to 4 days in an airtight container. Reheat them covered with foil in a 325°F oven until hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 70,
+ "advance_prep_notes": "assemble up to 2 days ahead, covered in the fridge",
+ "advance_prep_step_indices": [
+  7
+ ],
+ "method_notes": "The Toasty Kitchen leads (4.86 from only 7 ratings, so this is a fallback): a from-scratch cheese sauce of onion, butter, flour, broth, milk, sour cream and cheddar stirred into thawed hash browns, with a panko topping. Carlsbad Cravings is the same idea with Gruyere and cracker crumbs, and Crayons and Cravings uses cream of chicken soup and cornflakes; all three assemble without the topping and refrigerate for 1 to 2 days. Quantities are halved from the 9 by 13 originals to fit an 8 by 8 dish, and the bake times are slightly shorter than the source's because the dish is smaller.",
+ "sources": [
+  {
+   "name": "The Toasty Kitchen",
+   "title": "Cheesy Hash Brown Potato Casserole",
+   "url": "https://thetoastykitchen.com/cheesy-hash-brown-potato-casserole/",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Carlsbad Cravings",
+   "title": "Cheesy Hashbrown Casserole",
+   "url": "https://carlsbadcravings.com/hashbrown-casserole/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Crayons and Cravings",
+   "title": "Cheesy Potatoes with Corn Flakes",
+   "url": "https://crayonsandcravings.com/hashbrown-casserole/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

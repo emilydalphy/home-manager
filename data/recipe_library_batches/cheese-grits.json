@@ -1,0 +1,81 @@
+{
+ "dish_name": "Cheese Grits",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Quick grits",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sharp cheddar",
+   "qty": "5 oz",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Put 2 2/3 cups water, the butter and 1 tsp salt in a medium saucepan and bring it to a boil over high heat.",
+  "Meanwhile, grate the cheddar on the big holes of a box grater. That should be about 1 1/4 cups.",
+  "Turn the heat to medium. Whisk in the grits in a slow, steady stream, then keep whisking for 30 seconds so there are no lumps.",
+  "Cover, turn the heat to low and cook for 5 to 10 minutes, stirring once or twice, until the grits are thick and soft. Go by the time on your package.",
+  "Take the pan off the heat. Stir in the pepper and garlic powder, then add the cheese a handful at a time, stirring until each handful melts.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot in bowls."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lana's Cooking leads: 4.97 from 134 ratings. It boils the water with butter and salt, whisks in the grits, and stirs in pepper, garlic powder and grated sharp cheddar at the end. Two smaller pages (water with cream, and half and half with Parmesan) agree on the quick-grits method, but both had fewer than 20 ratings. Only quick or regular grits fit a 15 minute morning; stone-ground takes much longer.",
+ "sources": [
+  {
+   "name": "Lana's Cooking",
+   "title": "Cheese Grits",
+   "url": "https://www.lanascooking.com/cheese-grits/",
+   "rating": 4.97,
+   "rating_count": 134,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Delicious Little Bites",
+   "title": "Cheddar Cheese Grits",
+   "url": "https://deliciouslittlebites.com/cheddar-cheese-grits/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "Life Made Simple",
+   "title": "Cheese Grits",
+   "url": "https://lifemadesimplebakes.com/cheese-grits/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

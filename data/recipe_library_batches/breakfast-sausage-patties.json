@@ -1,0 +1,91 @@
+{
+ "dish_name": "Breakfast Sausage Patties",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Ground pork",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh sage",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Line a rimmed baking sheet with parchment.",
+  "In a large bowl, mix the ground pork with the maple syrup, onion powder, garlic powder, 2 tbsp minced sage, salt and pepper. Use your hands and stop as soon as it's evenly mixed. Any longer and the patties turn tough.",
+  "Scoop out about 2 tbsp of the mix at a time and press each into a patty about 2 1/2 inches wide. You should get about 20 patties. Set them on the baking sheet.",
+  "Set aside 8 patties for breakfast. Freeze the other 12 on the baking sheet until they're firm, about 1 hour.",
+  "Meanwhile, heat the oil in a large nonstick or cast iron skillet over medium heat.",
+  "Cook the 8 patties in a single layer, 4 minutes per side, until they're deep brown. Lower the heat if they brown too fast. The pork is cooked at 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Transfer the patties to a plate lined with paper towels. Serve warm, with the red pepper flakes on the table for anyone who wants heat.",
+  "Once the frozen patties are firm, transfer them to a freezer bag. They keep for 3 months. Cook them from frozen over medium heat for 5 minutes per side, until there's no pink in the middle.",
+  "Leftover cooked patties keep in the fridge for 3 to 4 days in an airtight container. Reheat them in a skillet over medium heat for 2 minutes per side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum leads: 5.0 from 82 ratings, 2 lbs of ground pork with maple syrup, onion and garlic powder, sage, salt, pepper and chili flakes, 4 minutes per side. A Spicy Perspective agrees on the mix and adds fennel and thyme, and gives the storage times used here: 3 to 4 days in the fridge, 3 months in the freezer. The chili flakes are moved to the table to keep the base mild. Written as a batch: cook 8 now and freeze the rest raw.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Homemade Breakfast Sausage Patties Recipe",
+   "url": "https://cupofyum.com/recipes/homemade-breakfast-sausage-patties-recipe",
+   "rating": 5,
+   "rating_count": 82,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "A Spicy Perspective",
+   "title": "Breakfast Sausage Recipe",
+   "url": "https://www.aspicyperspective.com/breakfast-sausage-recipe/",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

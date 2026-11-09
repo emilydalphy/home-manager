@@ -1,0 +1,82 @@
+{
+ "dish_name": "Acai Bowl",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Frozen acai puree packets",
+   "qty": "4 packets (3.5 oz each)",
+   "category": "frozen"
+  },
+  {
+   "item": "Bananas",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen mixed berries",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Apple juice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Strawberries",
+   "qty": "1 cup",
+   "category": "produce"
+  },
+  {
+   "item": "Dairy-free granola",
+   "qty": "1 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: peel 2 of the bananas, cut them into 1 inch chunks and freeze them on a plate or tray.",
+  "Run the sealed acai packets under warm water for 10 seconds, then break them up by pressing and squeezing them.",
+  "Put the acai, the frozen banana chunks, the frozen berries and the apple juice in a blender. Blend on low, using the tamper or stopping to scrape, until it's thick and smooth. If your blender is small, blend half at a time.",
+  "Add a splash more juice only if the blades aren't catching. It should be thick enough to eat with a spoon.",
+  "Meanwhile, slice the last banana and hull and slice the strawberries.",
+  "Divide the acai between 4 bowls and serve right away, topped with the banana, strawberries and granola."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "freeze two bananas ahead, at least 4 hours",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Spend With Pennies leads (5.0 from 14 ratings, under the 20 needed, so this is a fallback): frozen acai packet, frozen banana and berries, apple juice, granola and fruit on top. Cooking Classy agrees on the packets, banana, blueberries and juice, and says to warm the packets briefly so they break up. The honey and vanilla yogurt in those pages are left out to keep the bowl vegan and dairy-free. Check the granola label for nuts.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Easy Acai Bowl Recipe",
+   "url": "https://www.spendwithpennies.com/easy-acai-bowl-recipe/",
+   "rating": 5,
+   "rating_count": 14,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Acai Bowl Recipe",
+   "url": "https://www.cookingclassy.com/acai-bowl/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "Cook With Manali",
+   "title": "Acai Bowl",
+   "url": "https://www.cookwithmanali.com/acai-bowl/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

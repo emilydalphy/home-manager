@@ -1,0 +1,76 @@
+{
+  "dish_name": "Johnnycakes",
+  "cuisine": "American",
+  "main_protein": "vegetarian",
+  "ingredients": [
+    {
+      "item": "Stone-ground cornmeal",
+      "qty": "1 cup",
+      "category": "pantry"
+    },
+    {
+      "item": "Sugar",
+      "qty": "1 bag",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Salt",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Butter",
+      "qty": "4 tbsp",
+      "category": "dairy"
+    },
+    {
+      "item": "Vegetable oil",
+      "qty": "3 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Maple syrup",
+      "qty": "1 bottle",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "In a medium bowl, mix the cornmeal, sugar and salt.",
+    "Bring 2 1/2 cups water to a boil in a medium saucepan. Pour in the cornmeal mix slowly, whisking the whole time.",
+    "Take the pan off the heat and whisk until smooth. Stir in 2 tbsp of the butter until it melts.",
+    "Let the batter rest for 15 minutes. It should thicken until it holds its shape on a spoon. If it's still runny, give it a little longer.",
+    "Heat 1 tbsp of the oil in a large cast iron or nonstick skillet over medium-high heat.",
+    "Drop the batter into the pan in scoops of about 1/4 cup, leaving 3 inches between them. Cook, without moving them, for 6 to 12 minutes, until the edges are browned.",
+    "Flip the cakes and press each one with a spatula until it's no thicker than 1/4 inch. Add a little more oil to the pan and cook the second side until golden and crisp, 5 to 6 minutes.",
+    "Transfer the cakes to a wire rack set over a baking sheet and keep them warm in a 200°F oven. Cook the rest in batches, adding oil to the pan each time. You should get about 12 cakes.",
+    "Serve with the remaining 2 tbsp butter and the maple syrup."
+  ],
+  "default_servings": 4,
+  "prep_time_minutes": 5,
+  "cook_time_minutes": 25,
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "Daring Gourmet leads: 4.94 from 29 ratings, a Rhode Island style cake made only with cornmeal, boiled water, sugar, salt and butter, rested until thick and fried thin. Other pages (Cooking Classy, Small Town Woman) are Southern hoecake batters with flour, eggs and buttermilk, so they aren't gluten-free and aren't the thin cakes the list describes. The honest total is 45 minutes with the 15 minute rest and frying in batches, which is over a 15 minute morning. Use cornmeal labeled gluten-free.",
+  "sources": [
+    {
+      "name": "The Daring Gourmet",
+      "title": "Traditional Johnny Cakes",
+      "url": "https://www.daringgourmet.com/traditional-johnny-cakes/",
+      "rating": 4.94,
+      "rating_count": 29,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Cooking Classy",
+      "title": "Johnny Cakes (Hoecakes)",
+      "url": "https://www.cookingclassy.com/johnny-cakes-hoecakes/",
+      "rating": 5,
+      "rating_count": 1,
+      "read": true
+    }
+  ],
+  "fallback_used": false,
+  "origin": "seed"
+}

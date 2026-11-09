@@ -1,0 +1,99 @@
+{
+ "dish_name": "Cottage Cheese Toast",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Sourdough bread",
+   "qty": "4 thick slices",
+   "category": "pantry"
+  },
+  {
+   "item": "Cottage cheese",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Balsamic glaze",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mixed berries",
+   "qty": "1 cup",
+   "category": "produce"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Halve the cherry tomatoes, pat them dry with a paper towel and season them with the salt and pepper.",
+  "Stir the cottage cheese well so any extra liquid mixes back in.",
+  "Heat a large skillet over medium-high heat. Brush both sides of the bread with the olive oil.",
+  "Toast the bread in the skillet for 1 to 2 minutes per side, until golden. Do it in two batches if they don't all fit.",
+  "Spread about 1/2 cup of the cottage cheese on each slice.",
+  "Pile the tomatoes on 2 of the slices and drizzle them with the balsamic glaze.",
+  "Scatter the berries on the other 2 slices and drizzle with the honey.",
+  "Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 5,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cottage cheese toast pages are all small (every one under 20 ratings), so this is a fallback. Emily Laurae (5.0 from 4) leads the tomato toast: olive oil toasted bread, cottage cheese, halved cherry tomatoes, balsamic glaze. Gathering Dreams (5.0 from 3) leads the fruit toast, berries with honey, and Piper Cooks (5.0 from 2) agrees on the cottage cheese base with salt and pepper. The tomato and fruit versions are both written, 2 slices each.",
+ "sources": [
+  {
+   "name": "Emily Laurae",
+   "title": "Cottage Cheese Toast",
+   "url": "https://emilylaurae.com/cottage-cheese-toast/",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gathering Dreams",
+   "title": "Cottage Cheese Toast",
+   "url": "https://gatheringdreams.com/cottage-cheese-toast/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Piper Cooks",
+   "title": "Easy Cottage Cheese Toast with 4 Topping Ideas",
+   "url": "https://www.pipercooks.com/cottage-cheese-toast/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

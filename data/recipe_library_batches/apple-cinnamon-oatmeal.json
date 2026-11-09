@@ -1,0 +1,91 @@
+{
+ "dish_name": "Apple Cinnamon Oatmeal",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Rolled oats",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Granny Smith apple",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Raisins",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Peel the apple, cut it into small cubes and set it aside.",
+  "In a medium saucepan, bring 2 cups water, the milk, brown sugar, cinnamon and salt to a boil over medium-high heat.",
+  "Stir in the oats, apple and raisins. Turn the heat to low so it simmers gently.",
+  "Cook for 13 to 16 minutes, stirring often, until the oats are thick and the apple is soft. Keep stirring so the milk doesn't scorch.",
+  "Off the heat, stir in the butter.",
+  "Spoon into bowls and serve warm."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 16,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies leads: 5.0 from 25 ratings, old-fashioned oats simmered in water and milk with chopped Granny Smith, raisins, cinnamon and brown sugar, finished with butter. Living Lou (2 ratings) and Fannetastic Food agree on rolled oats, milk and a 10 to 15 minute simmer. Every version chops the apple, and none grates it, so the apple is cubed here; it takes about 20 minutes in all, longer than the ten the list promised. The walnuts in two of the pages are left out to keep it nut-free.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Apple Cinnamon Oatmeal",
+   "url": "https://www.spendwithpennies.com/apple-cinnamon-oatmeal/",
+   "rating": 5,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Living Lou",
+   "title": "Apple Cinnamon Oatmeal",
+   "url": "https://www.livinglou.com/apple-cinnamon-oatmeal/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Fannetastic Food",
+   "title": "Apple Cinnamon Oatmeal",
+   "url": "https://www.fannetasticfood.com/apple-cinnamon-oatmeal/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
