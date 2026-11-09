@@ -458,10 +458,14 @@ button.tile { cursor: pointer; }
 .tile-row {
   flex-direction: row;
   text-align: left;
-  height: 68px;
-  padding: 0 12px;
+  /* Grows with the name: a long snack ("Hard-Boiled Eggs with Cherry
+     Tomatoes and Everything Seasoning") used to spill out of a fixed 68px
+     onto the tile below (Emily, 2026-11-08). */
+  min-height: 68px;
+  padding: 12px;
   gap: 10px;
 }
+.tile-row > :first-child { flex: 0 0 auto; }
 .tile-row .tile-name { font-size: 14px; line-height: 18px; }
 .tile-text {
   align-items: stretch;

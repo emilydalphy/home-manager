@@ -108,6 +108,25 @@ def test_a_dish_that_names_food_past_its_date_by_then_is_said(household, stub_mo
     assert spinach  # the row itself is untouched
 
 
+def test_past_date_notes_are_one_sentence_and_plurals_agree():
+    """Emily, 2026-11-08: five stacked "The … turns before …" lines above
+    Approve, one reading "The apples turns". One sentence now, each item
+    once at its first meal, items sharing a meal named together."""
+    from app.tools.use_up import past_date_summary
+    rows = [
+        {"item": "Romaine lettuce", "date": "2026-11-08", "slot": "lunch"},
+        {"item": "Romaine lettuce", "date": "2026-11-09", "slot": "lunch"},
+        {"item": "Celery", "date": "2026-11-09", "slot": "snack"},
+        {"item": "Apples", "date": "2026-11-09", "slot": "snack"},
+        {"item": "Eggs", "date": "2026-11-12", "slot": "snack"},
+    ]
+    assert past_date_summary(rows) == (
+        "A few things turn before they’re cooked: the romaine lettuce (Sunday’s lunch); "
+        "the celery and apples (Monday’s snack); the eggs (Thursday’s snack).")
+    assert past_date_summary(rows[3:4]) == "The apples turn before Monday’s snack."
+    assert past_date_summary([]) == ""
+
+
 # 3 -------------------------------------------------------------------
 
 def test_a_switched_off_item_is_not_in_any_list_the_generator_sees(household, stub_model):

@@ -578,10 +578,10 @@ def test_onboarding_introduces_the_kitchen_with_set_up_later():
     Kitchen does, a photo-first primary, and a clear "Set up later"."""
     html = _intro_markup()
     assert 'class="intro-screen"' in html and 'class="intro-title is-lead"' in html
-    assert "I&rsquo;ll keep track of what&rsquo;s home." in html
-    assert "plan around whatever needs using up first" in html
-    assert '<button class="intro-next" id="kitchen-intro-start" type="button">Take three photos</button>' in html
-    assert '<button class="kitchen-intro-later" id="kitchen-intro-later" type="button">Set up later</button>' in html
+    assert "Start with what&rsquo;s already home?" in html
+    assert "plan your first week around what&rsquo;s there" in html
+    assert '<button class="intro-next" id="kitchen-intro-start" type="button">Show me how</button>' in html
+    assert '<button class="kitchen-intro-later" id="kitchen-intro-later" type="button">Skip for now</button>' in html
     assert html.count('class="intro-next"') == 1, "one apricot"
 
 
@@ -602,7 +602,7 @@ def test_the_setup_sheet_is_the_mockups_three_photos():
     next with the camera, Pantry next; Skip the freezer; the receipt line."""
     html = _ka("k.htmlFor({mode: 'setup', step: 'setup', setup: {fridge: 14, freezer: null, pantry: null}})")
     assert "Kitchen · getting started" in html
-    assert "Show me <em>your kitchen</em>" in html and "Three photos. About two minutes." in html
+    assert "Show me <em>your kitchen</em>" in html and "Three photos, one shelf at a time. About five minutes." in html
     assert re.findall(r'<p class="ka-step-title">(\w+)</p><p class="ka-step-line">([^<]*)</p>', html) == [
         ("Fridge", "14 things added"), ("Freezer", "Open the door and take one photo"), ("Pantry", "Next")]
     assert "Take a photo of the freezer" in html and "Skip the freezer" in html
@@ -720,4 +720,4 @@ def test_set_up_later_only_moves_on():
     assert ONBOARDING.index('src="/static/api.js"') < ONBOARDING.index('src="/static/kitchen-add.js"')
     # Its markup is outside the reveal, which is hidden while it shows.
     assert ONBOARDING.index('<div id="kitchen-intro"') < ONBOARDING.index('<div id="step-reveal"')
-    assert "Your first week can use what&rsquo;s already here." in _intro_markup()
+    assert "About five minutes." in _intro_markup()
