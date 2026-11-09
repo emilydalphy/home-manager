@@ -1,0 +1,110 @@
+{
+ "dish_name": "Pollo en Pipian Verde",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Hulled pumpkin seeds",
+   "qty": "1 1/4 cups",
+   "category": "pantry",
+   "cook_qty": "2 tbsp reserved for the top"
+  },
+  {
+   "item": "Tomatillos",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 onion"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup leaves"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Pat the chicken thighs dry and rub them with the oil, 1/2 tsp of the salt and the pepper. Set them on a rimmed baking sheet and roast for 22 to 25 minutes. You're cooking them to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into one. It's done when the juices run clear and there's no pink.",
+  "Meanwhile, toast the pumpkin seeds in a large dry skillet over medium heat, stirring constantly, for 3 to 5 minutes, until they puff and start to pop. Keep them golden, not dark. Transfer them to a bowl and set aside 2 tbsp for the top.",
+  "Husk and rinse the tomatillos. Put them in a saucepan with the jalapeño (stem removed, seeds shaken out) and half the onion, roughly chopped. Cover with water and simmer over medium heat for about 10 minutes, until the tomatillos turn dark olive green.",
+  "Using a slotted spoon, transfer the tomatillos, jalapeño and onion to a blender. Pour out the cooking water. Add the toasted seeds, the broth, the cilantro leaves and the sugar. Blend until smooth but still a little coarse, then stir in the remaining 1/2 tsp salt.",
+  "Pour the sauce back into the saucepan and warm it over low heat for 4 to 5 minutes, stirring. If it is very thick, stir in a splash of water.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Slice the chicken. Spoon the sauce onto plates, set the chicken on top and sprinkle with the reserved pumpkin seeds. Serve with rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Marcela Valladolid's chicken in green pipian sauce (Food Network), which has no rating shown, so this is a fallback lead; Rick Bayless's and In Mama Maggie's Kitchen (4.86 from 7) versions agree on toasted pumpkin seeds blended with tomatillos, chile and cilantro. Marcela's method is the only one that fits 45 minutes: the sauce is blended from simmered tomatillos and warmed rather than fried and simmered for 30 minutes as Bayless does. Skinless boneless thighs are roasted instead of skin-on breasts, a jalapeño replaces the serrano to keep the sauce mild, and Bayless's epazote, marjoram and chayote are left out.",
+ "sources": [
+  {
+   "name": "Food Network (Marcela Valladolid)",
+   "title": "Chicken in Green Pipian Sauce",
+   "url": "https://www.foodnetwork.com/recipes/marcela-valladolid/chicken-in-green-pipian-sauce-recipe-1952844",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rick Bayless",
+   "title": "Chicken in Easy Green Pumpkin Seed Sauce",
+   "url": "https://www.rickbayless.com/recipe/chicken-in-easy-green-pumpkin-seed-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "In Mama Maggie's Kitchen",
+   "title": "Pipian Verde",
+   "url": "https://inmamamaggieskitchen.com/pipian-verde",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

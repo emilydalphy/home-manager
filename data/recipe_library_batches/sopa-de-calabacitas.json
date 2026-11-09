@@ -1,0 +1,111 @@
+{
+ "dish_name": "Sopa de Calabacitas",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "2 cups",
+   "category": "frozen"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 sprigs"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Monterey Jack cheese",
+   "qty": "4 oz",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Tortilla chips",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  }
+ ],
+ "instructions": [
+  "Heat the oil in a large pot over medium heat. Dice the onion and cook it with 1/4 tsp of the salt for 4 to 5 minutes, until soft. Mince the garlic, add it and cook for 1 minute.",
+  "Dice the tomatoes. Add them to the pot and cook for 4 to 5 minutes, until they break down and the pot looks saucy.",
+  "Meanwhile, trim the zucchini and dice it into 1/2-inch pieces.",
+  "Add the broth, zucchini, corn, 3 cilantro sprigs, the oregano and the remaining 1/2 tsp salt. Bring to a simmer, then cover and cook over medium-low heat for 10 minutes, until the zucchini is just tender.",
+  "Turn off the heat. Stir in the milk and remove the cilantro sprigs.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Grate the cheese. Fill each bowl halfway with soup, add a handful of tortilla chips and some cheese, then top with more soup so the cheese melts."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Ali Cooks' calabacitas, corn and tomato soup (5 from 2 ratings, so a fallback lead). Mexican Please has more ratings (3.8 from 29) but sits under the 4.0 floor; it builds a blended roasted tomato broth and keeps the zucchini in small dice, which matches here. Both finish quickly so the zucchini stays slightly firm. The lead stirs in unsweetened plant milk; whole milk is used instead so the soup is nut-free.",
+ "sources": [
+  {
+   "name": "Ali Cooks",
+   "title": "Mexican Calabacitas, Corn and Tomato Soup",
+   "url": "https://www.alecooks.com/calabacitas-corn-and-tomato-soup",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mexican Please",
+   "title": "Calabacitas Soup",
+   "url": "https://www.mexicanplease.com/easy-calabacitas-soup/comment-page-1/",
+   "rating": 3.8,
+   "rating_count": 29,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,113 @@
+{
+ "dish_name": "Papadzules",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Hulled pumpkin seeds",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried epazote",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 onion"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "pantry"
+  },
+  {
+   "item": "Habanero chile",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "a few thin slices for the table"
+  }
+ ],
+ "instructions": [
+  "Put the eggs in a saucepan, cover with cold water by an inch and bring to a boil over high heat. Turn the heat to low and simmer for 10 minutes.",
+  "Meanwhile, blend the tomatoes, the quarter of onion (roughly chopped) and 1/4 cup water until smooth. Heat the oil in a medium saucepan over medium heat, add the puree, 1 tsp of the epazote and 1/2 tsp of the salt, and simmer for 8 to 10 minutes, stirring now and then, until thick.",
+  "Transfer the eggs to a bowl of cold water. Toast the pumpkin seeds in a large dry skillet over medium-low heat for 4 to 5 minutes, stirring, until they puff and turn pale gold. Don't let them brown. Transfer them to a plate to cool for 3 minutes.",
+  "Blend the seeds with 1/2 cup of the broth into a thick paste.",
+  "Bring the remaining 2 cups broth to a boil in a saucepan with the remaining 2 tsp epazote and 1/2 tsp of the salt. Boil for 5 minutes, then strain.",
+  "Return the broth to the pan over low heat and stir in the seed paste until the sauce is the thickness of thick cream, about 3 minutes. Don't let it boil. If it looks split, take it off the heat and whisk in a splash of hot water.",
+  "Peel and coarsely chop the eggs and stir in the last 1/4 tsp salt. Warm the tortillas in a dry skillet, about 20 seconds per side, and keep them wrapped in a towel.",
+  "Dip one tortilla in the pumpkin seed sauce to coat both sides. Lay it on a plate, put about 1 1/2 tbsp of the egg in the middle and roll it up. Make 3 rolls for each plate, seam side down.",
+  "Spoon the rest of the pumpkin seed sauce over the rolls, spoon a band of the cooked tomato across them and scatter the rest of the egg on top. Serve right away. Thinly slice the habanero and put it on the table for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is the Hacienda Teya version on El Restaurante (no ratings shown, so a fallback lead): toasted ground seeds stirred into an epazote stock, tortillas dipped, filled with chopped egg and rolled. Tulum Times, Fiery Foods Central and Yucatan Today agree on the egg filling and the second tomato sauce (chiltomate); they differ on how the tomato sauce is made, so here the tomatoes are blended and simmered rather than charred, to fit 45 minutes. Vegetable broth replaces chicken stock, bouillon powder is left out, and the habanero is on the side so the dish stays mild.",
+ "sources": [
+  {
+   "name": "El Restaurante (Cocina Yucateca de la Hacienda Teya)",
+   "title": "Papadzules: Egg Enchiladas",
+   "url": "https://elrestaurante.com/recipes/appetizer/papadzules-egg-enchiladas",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tulum Times",
+   "title": "Papadzules",
+   "url": "https://tulumtimes.com/recipes/papadzules-tortillas-pumpkin-seed-sauce-egg",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Fiery Foods Central",
+   "title": "Enchiladas Stuffed with Hard-Cooked Eggs (Papadzul)",
+   "url": "https://fieryfoodscentral.com/?p=8538",
+   "rating": 0,
+   "rating_count": 0,
+   "read": true
+  },
+  {
+   "name": "Yucatan Today",
+   "title": "Recipe for Papadzules",
+   "url": "https://yucatantoday.com/en/blog/recipe-papadzules",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

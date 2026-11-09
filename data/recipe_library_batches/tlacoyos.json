@@ -1,0 +1,103 @@
+{
+ "dish_name": "Tlacoyos",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Masa harina",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "2 tbsp minced"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "a few leaves, shredded"
+  },
+  {
+   "item": "Queso fresco",
+   "qty": "8 oz",
+   "category": "dairy",
+   "cook_qty": "1 cup crumbled"
+  },
+  {
+   "item": "Salsa roja",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, stir together the 2 cups masa harina and 1/2 tsp of the salt. Add about 1 1/2 cups warm water a little at a time, mixing with your hand until the dough comes together.",
+  "Knead the dough for 2 minutes, until it's smooth and doesn't stick to your hands. If the edges crack when you press a piece flat, knead in a splash of water.",
+  "Cover the bowl with a damp towel and let the dough rest for 15 minutes while you make the beans.",
+  "Mince 2 tbsp of the onion and the garlic clove. Heat 1 tbsp of the oil in a medium skillet over medium heat. Add the onion and garlic and cook for 1 to 2 minutes, until soft but not browned.",
+  "Add the beans with about half of the liquid from the can. Mash them with a fork or a potato masher, stirring often, for about 5 minutes, until they're a thick paste that holds its shape. Stir in the remaining 1/4 tsp salt, then transfer the beans to a bowl.",
+  "Divide the dough into 8 balls and keep them under the towel. Have a small bowl of water nearby to wet your hands.",
+  "Flatten one ball into a disk about 1/4 inch thick. Put 2 tbsp of the beans in the middle, fold the edges over them and pinch the seams closed. Pat it into an oval about 1/4 inch thick. Repeat with the rest.",
+  "Heat a large skillet or griddle over medium heat and add 1 tbsp of the oil. Cook 4 tlacoyos for 4 to 5 minutes per side, until they have golden spots and feel crisp on the outside. Transfer them to a plate.",
+  "Add the last 1 tbsp oil and cook the other 4 tlacoyos the same way. Meanwhile, shred a few lettuce leaves and crumble 1 cup of the queso fresco.",
+  "Serve the warm tlacoyos topped with the lettuce, the queso fresco and the salsa."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Lemon Blossoms (5 from 5 ratings), a bean and cheese version; the dish here keeps the cheese on top so the masa cakes hold only beans, which is how Mexican Made Meatless and Maricruz Avalos also fill them. Dough ratio (about 1 cup masa harina to 3/4 cup water) follows Mexican Made Meatless. All three agree on a thick bean paste, a rest for the dough and a dry or lightly oiled medium griddle; they differ on fat in the dough (only Mexican Made Meatless adds oil) and lard versus oil in the beans, so oil is used here. No version has 20 or more ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Lemon Blossoms",
+   "title": "Mexican Tlacoyos (Bean and Cheese)",
+   "url": "https://www.lemonblossoms.com/?p=42305",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Tlacoyos Recipe (Blue Corn Bean Tlacoyos)",
+   "url": "https://mexicanmademeatless.com/?p=97996",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Tlacoyos de Frijol",
+   "url": "https://www.maricruzavalos.com/?p=29415",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

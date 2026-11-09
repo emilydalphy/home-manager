@@ -1,0 +1,113 @@
+{
+ "dish_name": "Chuletas de Puerco Adobadas",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork chops",
+   "qty": "1.5 lbs (4 chops)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried ancho chiles",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 onion, sliced"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "a few leaves, shredded"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4 radishes, sliced"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: Remove the stems from the ancho chiles, split them open and shake out the seeds. Toast them in a dry skillet over medium heat for about 20 seconds per side, until they smell fruity.",
+  "Transfer the chiles to a bowl, cover them with hot water and let them soak for 20 minutes, until soft.",
+  "Lift the chiles into a blender with a slotted spoon. Add the vinegar, garlic, 2 tsp salt, oregano, cumin and thyme. Blend into a thick, fairly smooth paste. If it won't blend, add 1 tbsp of the soaking water.",
+  "Pat the pork chops dry and spread the paste on both sides. Put them in a covered dish and refrigerate.",
+  "Heat 1 tbsp of the oil in a large heavy skillet over medium heat. Cook the chops in two batches, 5 to 6 minutes per side, until they're deep red-brown. Add the other 1 tbsp oil for the second batch. You're cooking the pork to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest chop. It's done when the juices run clear and the center is just barely blush pink.",
+  "Turn the heat to medium-high and brown each chop for about 30 seconds per side. Transfer the chops to a plate and let them rest for 5 minutes.",
+  "Meanwhile, thinly slice half the red onion and 4 radishes, and shred a few lettuce leaves.",
+  "Serve the chops with the sliced onion, lettuce and radishes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "marinate at least 4 hours ahead (or overnight)",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "Lead is Diana Kennedy's chuletas de puerco adobadas as printed on FoodGeeks (no ratings, so a fallback lead); the Jauja Cocina Mexicana version also has no ratings. Both make an adobo from soaked ancho chiles, garlic, spices and an acid (vinegar here, a sour orange mix in Jauja), marinate the chops, then cook them slowly on medium heat. The marinade is the advance step; it's the step that gives the dish its flavor. Boneless loin chops replace pounded shoulder chops, and vegetable oil replaces lard.",
+ "sources": [
+  {
+   "name": "FoodGeeks",
+   "title": "Mexican Pork Chops Seasoned with Adobo (Chuletas de Puerco Adobadas)",
+   "url": "https://foodgeeks.com/recipes/mexican-pork-chops-seasoned-with-adobo-chuletas-de-puerco-adobadas-20677",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Grupo Animal (Jauja Cocina Mexicana)",
+   "title": "Chuletas Adobadas Jauja Cocina Mexicana",
+   "url": "https://grupoanimal.mx/gastronomia/recetas/chuletas-adobadas-jauja-cocina-mexicana",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

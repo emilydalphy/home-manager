@@ -1,0 +1,110 @@
+{
+ "dish_name": "Sopa de Hongos",
+ "cuisine": "Mexican",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 onion, chopped"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried guajillo chiles",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried epazote",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Wipe the mushrooms clean and slice them. Chop 1/4 of the onion, mince the garlic and chop 1/4 cup of the cilantro. Remove the stems and seeds from the guajillos and cut them into thin strips with scissors.",
+  "Heat the oil in a large pot over medium heat. Add the guajillo strips and stir for 1 to 2 minutes, until they darken a shade and smell toasty. Watch them closely, they burn fast. Transfer the strips to a bowl, cover them with boiling water and leave them to soak until serving.",
+  "In the same pot, cook the onion over medium heat for about 3 minutes, until soft. Add the mushrooms and 1/2 tsp of the salt and cook for about 5 minutes, stirring now and then, until they darken and release their liquid.",
+  "Push the mushrooms to one side, add the garlic to the empty spot and cook for 20 seconds. Stir everything together.",
+  "Pour in the broth and bring it to a boil. Turn the heat to low, cover and simmer for 10 minutes.",
+  "Uncover and stir in the epazote, the cilantro and the pepper. Cook for 2 minutes, stirring, until the cilantro wilts.",
+  "Taste it. If it's flat, add the remaining 1/4 tsp salt.",
+  "Warm the tortillas one at a time in a dry skillet over medium heat for about 30 seconds per side.",
+  "Ladle the soup into bowls and top with the drained guajillo strips. Serve with the warm corn tortillas."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is My Slice of Mexico's mushroom clear soup (caldo de hongos), which has no rating shown, so this is a fallback lead; it is the one version read that has both guajillo and epazote. Mexico in My Kitchen (3.25 from 4) and Maricruz Avalos build a similar mushroom broth with chipotle, tomato paste and squash blossoms. Vegetable broth replaces the chicken broth so the soup is vegan, and dried epazote (about 2 tsp) stands in for the fresh quarter cup, which is hard to find.",
+ "sources": [
+  {
+   "name": "My Slice of Mexico",
+   "title": "Mushroom Clear Soup (Caldo de Hongos)",
+   "url": "https://mysliceofmexico.ca/2023/06/14/mushroom-clear-soup-caldo-de-hongos/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mexico in My Kitchen",
+   "title": "Mexican Mushroom Soup (Sopa de Hongos)",
+   "url": "https://www.mexicoinmykitchen.com/mushroom-soup-sopa-de-hongos/",
+   "rating": 3.25,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Sopa de Hongos (Mexican Mushroom Soup)",
+   "url": "https://www.maricruzavalos.com/wprm_print/sopa-de-hongos-mexican-mushroom-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

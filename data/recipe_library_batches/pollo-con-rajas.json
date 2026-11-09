@@ -1,0 +1,105 @@
+{
+ "dish_name": "Pollo con Rajas",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Poblano chiles",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "4 (about 2 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the broiler and set a rack about 6 inches from the heat. Line a rimmed baking sheet with foil. Cut the poblanos in half, remove the stems and seeds, and set them skin side up on the sheet. Broil for 6 to 8 minutes, turning the sheet halfway, until the skins are well charred.",
+  "Meanwhile, slice each chicken breast in half horizontally into 2 thin cutlets. Pat them dry and season with 1/2 tsp of the salt and the pepper. Halve and slice the onions 1/4 inch thick.",
+  "Transfer the hot poblanos to a bowl and cover it with a plate. Let them steam for 5 minutes.",
+  "While they steam, heat 1 tbsp of the oil in a 12-inch skillet over medium-high heat. Brown the cutlets in two batches, 2 to 3 minutes per side, until golden. They won't be cooked through yet. Transfer them to a plate.",
+  "Peel the skins off the poblanos. Don't rinse them. Slice the peppers into 1/4-inch strips.",
+  "Turn the heat to medium. Add the remaining 1 tbsp oil, the onions and 1/4 tsp of the salt. Cook for about 5 minutes, until the onions are soft and lightly browned. Mince the garlic, add it with the poblano strips and the last 1/4 tsp salt, and cook for 1 minute.",
+  "Pour in the crema and bring it to a boil. Nestle the cutlets and any juices from the plate into the sauce. Turn the heat to medium-low, cover and cook for 5 to 6 minutes. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece. It's done when there's no pink left.",
+  "Transfer the chicken to a cutting board and let it rest for 5 minutes. Meanwhile, cook the sauce over medium heat for 2 to 4 minutes, until a spatula pulled through it leaves a clear trail.",
+  "Take the pan off the heat. Chop 2 tbsp of the cilantro and stir it in with a squeeze of the lime. Taste it. If it's flat, add a pinch more salt.",
+  "Slice the chicken across the grain and serve it with the rajas and the sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is America's Test Kitchen's chicken with rajas (4.5 from 19 ratings, one short of the 20 needed, so a fallback lead). It is a cream dish: the crema is what the sauce is built on, in this and in every other version read (Dish n the Kitchen and Food.com also use crema, cream cheese or sour cream). Because crema defines the dish, the dairy-free tag is dropped. The lead's whole breasts are cut into cutlets so the chicken cooks in 5 to 6 minutes in the sauce and the dish fits about 45 minutes; the broiler charring and steaming of the poblanos is unchanged.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Chicken with Rajas",
+   "url": "https://www.americastestkitchen.com/recipes/11609-chicken-with-rajas",
+   "rating": 4.5,
+   "rating_count": 19,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dish n the Kitchen",
+   "title": "Rajas Poblanas con Pollo",
+   "url": "https://dishnthekitchen.com/rajas-poblanas-con-pollo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Pollo a Las Rajas",
+   "url": "https://www.food.com/recipe/pollo-a-las-rajas-106591",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
