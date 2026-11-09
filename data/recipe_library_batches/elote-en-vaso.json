@@ -1,0 +1,97 @@
+{
+ "dish_name": "Elote en Vaso",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Corn on the cob",
+   "qty": "4 ears",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Water",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Cotija cheese",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Shuck the corn and pull off the silk. Stand each ear upright on a cutting board and slice the kernels off in strips, cutting away from your hand.",
+  "Put the kernels in a large pot with the 1 cup broth, the 4 cups water and 1 tsp salt. Bring to a boil.",
+  "Turn the heat to medium and cook, stirring now and then, until about two thirds of the liquid is gone. That should be about 20 minutes. Drain off what's left.",
+  "Stir the 2 tbsp butter into the hot corn until it melts.",
+  "Spoon the corn into 4 cups. Top each with a spoonful of the 3 tbsp mayonnaise, some of the 1/4 cup cotija and a dusting of the 1/2 tsp chili powder.",
+  "Squeeze the lime over the cups. Serve warm with the hot sauce on the side for anyone who wants it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mamá Maggie's Kitchen leads: kernels simmered in broth and water until most of the liquid cooks off, then layered in cups with mayo, cotija, chili powder, butter, lime and hot sauce. Her page lists a 5 hour cook time that looks like a typo, and her toppings are very light, so mayo and cotija are set a little higher, in line with My Everyday Table's skillet version (frozen corn, mayo and crema, cotija, lime, Tajin). Vegetable broth keeps it vegetarian; the heat is left to the table.",
+ "sources": [
+  {
+   "name": "Mamá Maggie's Kitchen",
+   "title": "Elote en Vaso (Esquites)",
+   "url": "https://inmamamaggieskitchen.com/elote-en-vaso-esquites/",
+   "rating": 5.0,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Everyday Table",
+   "title": "Esquites (Elote in a Cup)",
+   "url": "https://myeverydaytable.com/elote-in-a-cup-recipe-esquites/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

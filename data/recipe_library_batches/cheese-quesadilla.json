@@ -1,0 +1,58 @@
+{
+ "dish_name": "Cheese Quesadilla",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Flour tortillas",
+   "qty": "4 (10-inch)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded cheese (cheddar or Monterey Jack)",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat a large nonstick skillet over medium-high.",
+  "Butter one side of a tortilla with 1/2 tsp of the butter and lay it in the pan, butter side down.",
+  "Scatter about 1/3 cup of the cheese over one half of the tortilla and fold the other half over it.",
+  "Cook 2 to 3 minutes, until the bottom is golden. Flip and cook until the cheese has melted and the edges are crisp.",
+  "Move it to a cutting board and cut it into triangles. Repeat with the rest of the tortillas, butter and cheese.",
+  "Serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Easy Cheese Quesadillas from the Dairy Council (drink-milk.com) leads: a buttered flour tortilla folded over cheese and browned on both sides in a skillet over medium-high. Other pages use oil instead of butter and stack two tortillas, but folding is easier to flip. Cheddar, Monterey Jack or a mix all work.",
+ "sources": [
+  {
+   "name": "ADA Mideast",
+   "title": "Easy Cheese Quesadillas",
+   "url": "https://www.drink-milk.com/easy-cheese-quesadillas/",
+   "rating": 4.9,
+   "rating_count": 29,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dinners, Dishes and Desserts",
+   "title": "Cheese Quesadilla",
+   "url": "https://dinnersdishesanddesserts.com/cheese-quesadilla/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
