@@ -1,0 +1,101 @@
+{
+ "dish_name": "Acma",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Active dry yeast",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "7 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp plus 1 tsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Up to 2 days ahead, or for the freezer: stir 1/4 cup warm water, the sugar and the yeast together in a large bowl. Leave it for about 10 minutes, until it's frothy.",
+  "Add 1/4 cup warm milk, the yogurt, olive oil, salt and 2 1/2 cups of the flour. Stir, then knead on a lightly floured counter for 8 minutes, until it's soft and springs back. Add the rest of the flour a spoonful at a time only if it sticks.",
+  "Return the dough to the bowl, cover and leave it in a warm spot for 1 to 1 1/2 hours, until doubled.",
+  "Divide the dough into 12 balls. Roll each into a rectangle about 4 inches by 2 inches.",
+  "Spread 1 tsp of the softened butter down the middle of each rectangle. Fold the sides over to the center and pinch to seal. Twist, then form a ring and tuck the ends under.",
+  "Set the rings on parchment-lined trays, cover loosely and let them rise for 45 minutes, until slightly puffed. Meanwhile, heat the oven to 400°F.",
+  "Melt the last 1 tsp butter and stir it into 3 tbsp milk. Brush it over the rolls and sprinkle with the sesame seeds.",
+  "Bake for about 20 minutes, until deep golden. Check the bottoms, and slide a second tray underneath if they're browning too fast. Cool on a rack.",
+  "Once completely cool, keep the rolls in an airtight container at room temperature for up to 2 days, or freeze them for up to 2 months.",
+  "To serve, warm them in a 350°F oven for 5 minutes, or 10 to 12 minutes from frozen."
+ ],
+ "advance_prep_notes": "bake the rolls up to 2 days ahead, or freeze them for up to 2 months",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "method_notes": "My Cooking Journey leads (5 from 49): a yogurt and olive oil dough, butter spread inside each roll, a milk and butter wash and sesame on top. Natasha's Baking uses a milk and water dough with an oil-and-butter lamination and agrees on the same ring shape and about 20 minutes at a hot oven. The lead's jam filling is left out, and its yeast amount (1/2 tsp on the card, 1 1/2 tsp in the post) is taken from the post. Neither source gave storage times, so those are general bread guidance. The two rises add about 2 hours.",
+ "sources": [
+  {
+   "name": "My Cooking Journey",
+   "title": "Acma | Soft Turkish Bagel",
+   "url": "https://www.mycookingjourney.com/acma-soft-turkish-bagel/",
+   "rating": 5.0,
+   "rating_count": 49,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Natasha's Baking",
+   "title": "Turkish Acma Bagels",
+   "url": "https://natashasbaking.com/wprm_print/turkish-acma-bagels",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "origin": "seed"
+}

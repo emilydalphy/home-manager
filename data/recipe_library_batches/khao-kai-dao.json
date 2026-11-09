@@ -1,0 +1,74 @@
+{
+ "dish_name": "Khao Kai Dao",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a bowl of cold water until it runs mostly clear. Drain it and add it to a medium pot with 2 1/4 cups water.",
+  "Bring the pot to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat while you do the rest.",
+  "Meanwhile, slice the chilies thin and stir them into the fish sauce in a small bowl. This goes on the table for the adults.",
+  "Cut the cucumber into wedges and divide them between 4 plates.",
+  "Crack one egg into a small bowl. Heat the oil in a wok or deep skillet over medium-high heat until it shimmers and a wisp of smoke rises.",
+  "Slide the egg into the center of the oil. It will puff up and sizzle right away. Fry it for 2 minutes without moving it, until the edges are brown and crisp and the underside is golden.",
+  "Spoon a little hot oil over the yolk if you'd like it set. Lift the egg out, tilt it against the side of the pan to drain, and set it on a bowl of rice.",
+  "Repeat with the other 3 eggs, one at a time. Serve with the cucumber, and the chili fish sauce on the side."
+ ],
+ "method_notes": "Thai Cookbook (4.5 from 6,730) leads: a hot-oil egg over jasmine rice, cucumber wedges and chilies in fish sauce. Hungry in Thailand agrees on a very hot pan and a puffed, crispy-edged egg, and adds cooking to a runny or firmer yolk. The eggs take about 10 minutes; the rice is what brings it to 30, so leftover rice makes it a 10 minute breakfast.",
+ "sources": [
+  {
+   "name": "Thai Cookbook",
+   "title": "Fried Egg over Rice (Kai Dow)",
+   "url": "https://www.thaicookbook.tv/thai-recipes/one-dish-meals/fried-egg-over-rice/",
+   "rating": 4.5,
+   "rating_count": 6730,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Fried Egg (Kai Dao)",
+   "url": "https://hungryinthailand.com/thai-fried-egg-kai-dao/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

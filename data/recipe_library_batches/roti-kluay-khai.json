@@ -1,0 +1,97 @@
+{
+ "dish_name": "Roti Kluay Khai",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "5",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "7 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sweetened condensed milk",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Bananas",
+   "qty": "4",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: whisk the flour and salt in a large bowl. In a second bowl, whisk 1 egg with 3/4 cup plus 1 tbsp water, 1 tbsp of the condensed milk and 3 tbsp melted butter.",
+  "Pour the wet mix into the flour and mix with your hand until no dry flour is left. Cover the bowl and leave it for 20 minutes.",
+  "Knead the dough for 5 minutes, until it's smooth and springs back when you press it.",
+  "Divide the dough into 8 balls, about the size of a small plum. Rub each ball with a little of the oil, set them in a container in a single layer so they don't touch, cover and refrigerate for at least 4 hours or overnight.",
+  "Take the dough out of the fridge 1 to 2 hours before you cook, so it comes to room temperature.",
+  "Peel the bananas and slice them thin. Beat the 4 remaining eggs in a bowl and stir in the banana slices.",
+  "Rub a little oil on the counter and your hands. Flatten one dough ball with your palm, then stretch it with your fingertips, working outward from the center, until it's about 10 inches across and thin enough to see your hand through in places. Small tears are fine.",
+  "Heat a large nonstick skillet or griddle over medium heat and brush it lightly with oil. Lay the dough in the pan. It will bubble and shrink a little, so give it about 30 seconds.",
+  "Spoon about 1/3 cup of the banana and egg mix into the center. Fold the four sides in over the filling to make a square packet.",
+  "Flip the packet with a spatula and add 1/2 tbsp of the remaining butter to the pan. Cook for 2 to 3 minutes, turning once, until both sides are golden and crisp and the egg is set.",
+  "Transfer the roti to a board and cut it into squares. Repeat with the remaining dough balls, stretching the next one while the last one cooks.",
+  "Serve warm, drizzled with the remaining condensed milk."
+ ],
+ "advance_prep_notes": "make the dough the night before, or at least 4 hours ahead, and refrigerate it",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "Only Ian Benites' version (3 ratings) adds the banana and egg together as the filling, so it leads; the dough is his, scaled to 8 roti. Hungry in Thailand and Crafts to Crumbs agree on a soft egg dough that rests before stretching and a hot buttered pan, and they put only banana inside. Ian Benites' dough rests 4 hours or overnight, so it is made ahead, and each roti then cooks in a few minutes; the cooking time is for all 8 and runs past the list's 15 minutes. Hot Thai Kitchen and Authentic Food Quest blocked the reader.",
+ "sources": [
+  {
+   "name": "Ian Benites",
+   "title": "Thai Roti with Banana, Condensed Milk and Egg",
+   "url": "https://www.getrecipecart.com/recipe/thai-roti-with-banana-condensed-milk-and-egg/653e68880a8c8d4c1f3a5e68",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Crafts to Crumbs",
+   "title": "Roti Kuay",
+   "url": "https://craftstocrumbs.com/recipes/roti-kuay/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Authentic Thai Roti Dessert",
+   "url": "https://hungryinthailand.com/thai-roti-dessert/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

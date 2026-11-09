@@ -1,0 +1,87 @@
+{
+ "dish_name": "Khanom Kluay",
+ "cuisine": "Thai",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Ripe bananas",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut cream",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tapioca starch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened shredded coconut",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Up to 3 days ahead: pour 2 inches of water into a pot fitted with a steaming rack, or into a steamer, and bring it to a boil over high heat. Set 12 small heatproof bowls or silicone cupcake cups inside to warm for 5 minutes.",
+  "Mash the bananas in a medium bowl to a smooth pulp.",
+  "Add the coconut cream, sugar, rice flour, tapioca starch and salt. Stir until the sugar dissolves and the batter is smooth.",
+  "Lift the lid and blot any water from the cups with a clean towel. Spoon in the batter, about 1/2 inch deep in each cup.",
+  "Cover and steam for 15 to 20 minutes, until the cakes are set and spring back when you press them. If your steamer is small, steam in two rounds.",
+  "Let the cakes cool for 10 minutes. Cover and refrigerate for up to 3 days.",
+  "To serve, steam the cold cakes for 3 to 4 minutes, until soft and warm, or eat them at room temperature. Sprinkle with the shredded coconut."
+ ],
+ "advance_prep_notes": "steam the cakes up to 3 days ahead and keep them covered in the fridge",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "Messy Vegan Cook leads (no ratings, so this is a fallback lead) with banana, coconut cream, rice flour and tapioca starch steamed in small cups. Areerat Nernnam's version agrees on the rice and tapioca base and steaming 15 to 20 minutes, with more flour and sugar and a sprinkle of salted coconut. Storage here is general guidance; neither source gave it, and it keeps 3 days in the fridge. Dried unsweetened coconut stands in for fresh, and nothing in it is egg or dairy.",
+ "sources": [
+  {
+   "name": "Messy Vegan Cook",
+   "title": "Kanom Kluay (Thai steamed banana cake)",
+   "url": "https://messyvegancook.com/khanom-kluay-steamed-banana-cake/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cookpad",
+   "title": "Banana Coconut Steamed Cake (Khanom Kluay)",
+   "url": "https://cookpad.com/us/recipes/4491677",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

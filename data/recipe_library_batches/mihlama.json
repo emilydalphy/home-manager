@@ -1,0 +1,69 @@
+{
+ "dish_name": "Mihlama",
+ "cuisine": "Turkish",
+ "main_protein": "cheese",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "3 1/2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornmeal",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasseri cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Grate the cheese on the large holes of a box grater. That should be about 2 cups.",
+  "Melt the butter in a nonstick skillet over medium heat. Don't let it brown.",
+  "Add the cornmeal and stir. Turn the heat to low and cook for 2 to 3 minutes, until it's lightly golden and smells toasty.",
+  "Add 1/2 cup water and stir until the cornmeal soaks it up and thickens.",
+  "Stir in the cheese over low heat until it melts and turns stringy.",
+  "Pour in 1/4 cup boiling water and cook, stirring, for about 2 minutes, until it's glossy and the butter rises to the top.",
+  "Taste it and stir in the salt if it needs it. Toast the bread.",
+  "Serve right away in warm bowls with the toast. It stiffens as it cools."
+ ],
+ "method_notes": "Cooking Gorgeous leads (5 from 2 votes, under 20, so this is a fallback lead): butter, cornmeal toasted in it, a little water, then cheese melted in. Dobber Nation Loves agrees on the method and toasts the cornmeal dry first, with a larger ratio of cheese and kaymak. Kasseri stands in for Trabzon cheese. Bread is gluten-free to keep the tag.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Kuymak (Mihlama)",
+   "url": "https://cookingorgeous.com/blog/kuymak-mihlama/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dobber Nation Loves",
+   "title": "Kuymak Mihlama",
+   "url": "https://dobbernationloves.com/?p=145089",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

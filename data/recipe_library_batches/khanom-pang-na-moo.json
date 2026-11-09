@@ -1,0 +1,106 @@
+{
+ "dish_name": "Khanom Pang Na Moo",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Sandwich bread",
+   "qty": "6 slices",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground white pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet chili sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Toast the bread until it's lightly golden and dry. Cut each slice into 4 squares.",
+  "Cut the roots off 2 stems of cilantro and chop them finely with the garlic. Mash them together with the side of your knife into a rough paste, then stir in the white pepper. Pick 24 cilantro leaves and set them aside.",
+  "In a bowl, mix the pork with the soy sauce, the pinch of sugar and the garlic paste, using your hand until it's evenly combined.",
+  "Beat the egg and mix it into the pork until it's smooth and sticky.",
+  "Spread about 1 tsp of the pork over each bread square, right to the edges. Press a cilantro leaf on top of each.",
+  "Heat the oil in a wide, deep skillet over medium-high heat until a small bit of pork sizzles right away when you drop it in.",
+  "Stand back a little. They'll spatter. Slide in 6 to 8 toasts, pork side down, and fry for 1 minute, until the pork side is golden.",
+  "Flip them and fry the other side for 30 seconds. Transfer them to a plate lined with paper towels.",
+  "Repeat with the remaining toasts. You're cooking the pork to 160°F, so if you have a thermometer, check one there. No thermometer? Break one open: it's done when there's no pink left.",
+  "Serve with the sweet chili sauce."
+ ],
+ "method_notes": "Cooking with Nart leads (5 from 11 votes, under 20, so this is a fallback lead): toasted bread, a pounded cilantro root, white pepper and garlic paste, and a pork mix bound with one egg. Rachel Cooks Thai and Don't Go Bacon My Heart agree on the same paste and a quick fry pork side down; they also dip the bread in egg, which this version skips. The sources serve a cucumber relish; this one uses a bottled sweet chili sauce instead. Written for 24 pieces (6 per person); it takes about 40 minutes, over the list's 15.",
+ "sources": [
+  {
+   "name": "Cooking with Nart",
+   "title": "Thai Pork Toast (Khanom Pang Na Moo)",
+   "url": "https://www.cookingwithnart.com/?p=802",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rachel Cooks Thai",
+   "title": "Thai Pork Toast",
+   "url": "https://rachelcooksthai.com/thai-pork-toast/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Don't Go Bacon My Heart",
+   "title": "Crispy Thai Pork Toast",
+   "url": "https://www.dontgobaconmyheart.co.uk/crispy-thai-pork-toast/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}
