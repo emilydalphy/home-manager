@@ -1,0 +1,120 @@
+{
+ "dish_name": "Buticha",
+ "cuisine": "Ethiopian",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 16,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Chickpea flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup (120 g)"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Whisk the 1 cup chickpea flour with 2 cups cool water in a medium saucepan until there are no lumps. Do this off the heat.",
+  "Set the pan over medium-low heat and stir constantly with a spatula. In about 4 minutes it thickens into a glossy paste.",
+  "Lower the heat a little and keep stirring for 8 minutes, until the paste pulls away from the sides of the pan and smells nutty instead of raw.",
+  "Transfer the hot paste to a large plate and spread it about 1/2 inch thick. Put it in the freezer for 10 minutes, until it feels cool and firm.",
+  "While it cools, finely chop half the red onion. Cut the jalapeño in half, scrape out the seeds and ribs, and mince half of it. Juice the lemon. You need 2 tbsp of juice.",
+  "Break the cooled paste up with a fork. Mash it harder for fine crumbs or lightly for bigger curds, so it looks like soft, fine curds.",
+  "Fold in the onion, jalapeño, 2 tbsp olive oil, the 2 tbsp lemon juice, 1 tsp ginger, 1/2 tsp turmeric, 3/4 tsp salt and 1/4 tsp pepper. It should be creamy and crumbly, not wet.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with the injera. Put the rest of the jalapeño, minced, on the table for anyone who wants more heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Culinary Creations calls buticha a chickpea flour scramble, set into a firm paste, chilled and broken up with a fork, which is the version used here (1 part flour to 2 parts water). Ethiopian-Food.org cooks it much longer and chills it for an hour, and Brundo blends it into a dip with extra jalapeño and bell pepper. To fit 30 minutes the paste is cooked about 12 minutes and cooled thin in the freezer instead of the fridge. The chilling is the one step that cannot be skipped. Vegan as written: olive oil is used where some Ethiopian cooks use niter kibbeh, which is butter. Look for 100% teff injera to keep it gluten-free, since store injera is often blended with wheat.",
+ "sources": [
+  {
+   "name": "Culinary Creations",
+   "title": "Buticha (Vegan Scrambled Egg Alternative)",
+   "url": "https://culinarycreationss.com/recipe/buticha-vegan-scrambled-egg-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ethiopian-Food.org",
+   "title": "Buticha Recipe (Ethiopian Chickpea Flour Spread)",
+   "url": "https://ethiopian-food.org/buticha-recipe/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Evolution of Flavour",
+   "title": "Buticha – Classic",
+   "url": "https://evolutionofflavour.com/recipe/buticha-ethiopian-buticha-delight/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "allaboutETHIO",
+   "title": "Ethiopian Buticha (Chickpea Porridge)",
+   "url": "https://allaboutethio.com/rbuticha.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

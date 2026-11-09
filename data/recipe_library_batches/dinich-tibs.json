@@ -1,0 +1,90 @@
+{
+ "dish_name": "Dinich Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Baby potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Put the potatoes, quartered, in a medium pot with cold water to cover and 1 tsp salt. Bring to a boil, then cook 8 minutes, until a knife goes in with a little resistance. Ladle out 1/2 cup of the cooking water, then drain.",
+  "Meanwhile, thinly slice the onion, cut the bell pepper into strips and dice the tomatoes. Mince the garlic. Slice the jalapeño and set it aside for the table.",
+  "Heat 2 tbsp olive oil in a large skillet over medium heat. Add the onion and cook 6 minutes, stirring now and then, until it is golden. Don't rush it. That's where the flavor starts.",
+  "Transfer the onion to a plate. Add the last 1 tbsp olive oil and turn the heat to medium-high.",
+  "Add the drained potatoes in one layer. Leave them alone for 3 minutes, until the undersides are browned, then stir and cook 3 minutes.",
+  "Add the bell pepper and cook 2 minutes. Add the tomatoes and the garlic and cook 3 minutes, until the tomatoes break down.",
+  "Return the onion to the pan with the 1/2 cup potato water, 1/4 tsp salt and 1/2 tsp pepper. Stir and cook 2 minutes, until the potatoes are coated in a thick sauce.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the injera. Put the sliced jalapeño on the table for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one version of dinich tibs turned up: Abyssinia Eats parboils potato wedges, caramelizes onion, cooks down tomato and garlic, then folds the potatoes in with bell pepper. It is a quick pan dish, not the stew called dinich wot. This version browns the potatoes in the pan and moves the jalapeño to the table to keep the base mild. Vegan as written, with olive oil. Look for 100% teff injera to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Abyssinia Eats",
+   "title": "Quick Potato Side Dish: Ethiopian Dinich Tibs",
+   "url": "https://abyssinia-eats.com/quick-potato-side-dish-a-simple-delicious-addition-to-your-meal/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

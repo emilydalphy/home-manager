@@ -1,0 +1,136 @@
+{
+ "dish_name": "Inguday Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 17,
+ "ingredients": [
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Quarter the mushrooms. Cut the onion and bell pepper into thin strips. Dice the tomatoes. Mince the garlic and strip the leaves from the rosemary sprig and chop them fine. Slice the jalapeño and set it aside for the table.",
+  "Heat 2 tbsp olive oil in a large skillet over medium-high heat until it shimmers. Add the mushrooms and 1/2 tsp salt in one layer.",
+  "Leave the mushrooms alone for 2 minutes so they brown, then stir and cook 6 minutes, until they are deep golden and the pan is dry. Transfer them to a plate.",
+  "Add the last 1 tbsp olive oil to the pan, then the onion, bell pepper, rosemary and 1/4 tsp salt. Cook 4 minutes, stirring, until the onion softens and starts to brown.",
+  "Add the tomatoes and cook 3 minutes, until they break down into a thick sauce.",
+  "Add the garlic and 1 tsp berbere and stir for 1 minute, until it smells toasty.",
+  "Return the mushrooms and their juices to the pan with 1/4 cup water. Stir and cook 2 minutes, until everything is coated in the sauce.",
+  "Take the pan off the heat. Stir in 1 tbsp lemon juice and 2 tbsp chopped parsley.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with the injera. Put the sliced jalapeño on the table for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Ethiopian-Food.org and Erta Ale's restaurant version agree on the base of onion, tomato, garlic and berbere cooked with mushrooms; they differ on bell pepper (Ethiopian-Food.org adds it) and on how long the mushrooms cook. This version sears the mushrooms first, then builds the sauce in the same pan. Rosemary is not in either mushroom source. It is taken from the meat tibs recipe at NKENNE, where a sprig goes in as it cooks. Vegan as written: olive oil is used where cooks often use niter kibbeh or clarified butter. Look for 100% teff injera to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Ethiopian-Food.org",
+   "title": "Ingudai Tibs Recipe: Ethiopian Sautéed Mushrooms",
+   "url": "https://ethiopian-food.org/ingudai-tibs-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Erta Ale Ethiopian (Pekin the Chef)",
+   "title": "Mushroom (Inguday) Tibs",
+   "url": "https://pekinthechef.com/ertaaleethiopian/mushroom-inguday-tibs",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Plentiful Blackbird",
+   "title": "Inguday Tibs",
+   "url": "https://plentifulblackbird.com/blogs/plentiful-recipes/inguday-tibs",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "NKENNE",
+   "title": "Tibs (meat and veggie versions, rosemary only)",
+   "url": "https://www.nkenne.com/blog/tibs",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

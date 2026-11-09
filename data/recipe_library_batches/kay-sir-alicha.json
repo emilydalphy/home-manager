@@ -1,0 +1,122 @@
+{
+ "dish_name": "Kay Sir Alicha",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Cooked beets",
+   "qty": "1 package (about 1 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1/2 inch cubes. Dice the onion. Mince the garlic and grate the ginger until you have 1 tbsp. Cut the beets into 1/2 inch cubes and keep them separate so they don't stain the potatoes.",
+  "Heat 3 tbsp olive oil in a large, wide pot over medium heat. Add the onion and a pinch of the salt and cook 5 minutes, until soft and translucent.",
+  "Add the garlic, ginger and 1/2 tsp turmeric and stir for 1 minute, until it smells fragrant.",
+  "Add the potatoes and stir to coat them. Pour in 1 1/2 cups vegetable broth, add 1 tsp salt and 1/4 tsp pepper, and bring to a boil.",
+  "Cover, turn the heat to medium-low and simmer 10 minutes, until a fork goes into the potatoes easily.",
+  "Add the beets and stir gently. Cook uncovered 3 minutes, until the beets are hot and the sauce is slightly thick.",
+  "Take the pot off the heat and stir in 2 tbsp chopped parsley.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the injera."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Flavanova's version sautes onion, garlic and ginger, simmers diced beets for 20 to 25 minutes, then adds potatoes for 15 more. Chopped's version adds turmeric and a little berbere to the onion base and simmers in broth. This one follows Flavanova's order, uses Chopped's turmeric as the alicha (mild) seasoning, and leaves out berbere. To fit 30 minutes it uses vacuum-packed cooked beets (found with the refrigerated produce) and small cubes, since raw beets take 20 minutes or more to soften. With raw beets this is closer to an hour. Vegan as written, with olive oil. Look for 100% teff injera to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Flavanova",
+   "title": "Key Sir Alicha (Ethiopian Beets and Potatoes)",
+   "url": "https://flavanova.com/recipe/key-sir-alicha-ethiopian-beets-and-potatoes",
+   "rating": 4.1,
+   "rating_count": 14,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chopped",
+   "title": "Beets and Potatoes (Dinich ena Key Sir)",
+   "url": "https://chopped.com/recipe/beets-and-potatoes-dinich-ena-key-sir/",
+   "rating": 3.8,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Ethiopian-Food.org",
+   "title": "Key Sir (Ethiopian Beets, Potatoes, and Carrots)",
+   "url": "https://ethiopian-food.org/key-sir-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

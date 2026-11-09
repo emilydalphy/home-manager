@@ -1,0 +1,108 @@
+{
+ "dish_name": "Timatim Fitfit",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce",
+   "cook_qty": "1/4 cup juice"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "3 rounds"
+  }
+ ],
+ "instructions": [
+  "Dice the tomatoes into 1/2 inch pieces and keep all their juice. Finely chop the onion. Cut the jalapeño in half, scrape out the seeds and ribs, and mince it. Mince the garlic clove. Chop the parsley.",
+  "In a large bowl, whisk 1/4 cup lemon juice, 1/4 cup olive oil, 1 tsp berbere and 1 tsp salt until it looks cloudy.",
+  "Add the tomatoes with their juice, the onion, jalapeño and garlic, and toss.",
+  "Tear the injera into bite-size pieces and fold them in gently. Let it sit 10 minutes, until the injera has soaked up the juice and turned soft.",
+  "Fold in the parsley. Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve cold or at room temperature in shallow bowls."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Greatist and MealPlanMe both toss chopped tomato, onion, jalapeño and garlic in a berbere, lemon and oil dressing and fold in torn injera, which is what separates fitfit from a plain tomato salad. They use wine and let it sit an hour. This version leaves the wine out and uses the tomato juice, with 4 tomatoes, and soaks the injera for 10 minutes so it fits a 15 minute dinner. Parsley comes from The Foodie Bunch. It is vegan as written. Look for 100% teff injera to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Greatist",
+   "title": "Timatim Fitfit Recipe: Ethiopian Bread Salad with Injera",
+   "url": "https://greatist.com/healthy/ethiopian-style-timatim-fitfit",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "MealPlanMe",
+   "title": "Ethiopian Tomato Salad (Timatim Fitfit)",
+   "url": "https://www.mealplanme.com/recipes/ethiopian-tomato-salad-timatim-fitfit",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Foodie Bunch",
+   "title": "Timatim Fitfit",
+   "url": "https://thefoodiebunch.com/vegetarian-recipes/vibrant-ethiopian-tomato-salad-bursting-with-fresh-flavor/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
