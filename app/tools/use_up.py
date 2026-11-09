@@ -1014,13 +1014,62 @@ def _freezer_oldest_first(plan_id: int, offered: list[dict], intake: dict | None
     return done
 
 
-def past_date_line(row: dict) -> str:
-    """ "The spinach turns before Monday's breakfast." """
+def _turns(name: str) -> str:
+    """ "spinach turns", "apples turn" — a crude plural read, enough here. """
+    n = (name or "").strip().lower()
+    plural = n.endswith("s") and not n.endswith(("ss", "us", "hummus"))
+    return "turn" if plural else "turns"
+
+
+def _meal_words(row: dict) -> str:
     try:
         weekday = date.fromisoformat(row["date"]).strftime("%A")
     except (KeyError, ValueError):
         return ""
-    return f"The {short_name(row.get('item') or '')} turns before {weekday}’s {row.get('slot') or 'dinner'}."
+    return f"{weekday}’s {row.get('slot') or 'dinner'}"
+
+
+def past_date_line(row: dict) -> str:
+    """ "The spinach turns before Monday's breakfast." """
+    meal = _meal_words(row)
+    if not meal:
+        return ""
+    name = short_name(row.get("item") or "")
+    return f"The {name} {_turns(name)} before {meal}."
+
+
+def _and_list(words: list[str]) -> str:
+    if len(words) <= 1:
+        return "".join(words)
+    return ", ".join(words[:-1]) + " and " + words[-1]
+
+
+def past_date_summary(rows: list[dict]) -> str:
+    """Every past-date note as ONE sentence (Emily, 2026-11-08: five
+    "The … turns before …" lines stacked above Approve read as a wall).
+    Each item is named once, at the first meal it can't make; items that
+    miss the same meal share it. One item reads as before:
+    "The spinach turns before Monday's dinner."
+    More: "A few things turn before they're cooked: the romaine lettuce
+    (Sunday’s lunch), the celery and apples (Monday’s snack)." """
+    seen, order, by_meal = set(), [], {}
+    for r in sorted(rows, key=lambda r: (r.get("date") or "", r.get("slot") or "")):
+        meal = _meal_words(r)
+        name = short_name(r.get("item") or "")
+        if not meal or not name or name in seen:
+            continue
+        seen.add(name)
+        if meal not in by_meal:
+            by_meal[meal] = []
+            order.append(meal)
+        by_meal[meal].append(name)
+    if not order:
+        return ""
+    if len(seen) == 1:
+        name = by_meal[order[0]][0]
+        return f"The {name} {_turns(name)} before {order[0]}."
+    parts = [f"the {_and_list(by_meal[m])} ({m})" for m in order]
+    return "A few things turn before they’re cooked: " + "; ".join(parts) + "."
 
 
 # ---------- the draft's record, read back ----------
@@ -1114,14 +1163,14 @@ def plan_summary(plan_id: int) -> dict | None:
         })
     n_used = sum(1 for c in offered if c["id"] in used)
     by_id = {e["id"]: e for e in entries}
-    past = []
+    past_rows = []
     for p in record.get("past_date") or []:
         e = by_id.get(p.get("entry_id"))
         if e is None or e["slot_state"] != "planned" or _dish_key(e.get("meal")) != _dish_key(p.get("dish")):
             continue
-        line = past_date_line(dict(p, date=e["date"], slot=e["slot"]))
-        if line and line not in past:
-            past.append(line)
+        past_rows.append(dict(p, date=e["date"], slot=e["slot"]))
+    line = past_date_summary(past_rows)
+    past = [line] if line else []
     unfit = []
     for r in rows:
         name = short_name(r["item"]) or (r["item"] or "").strip().lower()

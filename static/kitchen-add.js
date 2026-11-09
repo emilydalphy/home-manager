@@ -45,7 +45,7 @@
     notSure: 'not sure',
     setupEyebrow: 'Kitchen · getting started',
     setupTitle: 'Show me <em>your kitchen</em>',
-    setupSub: 'Three photos. About two minutes.',
+    setupSub: 'Three photos, one shelf at a time. About five minutes.',
     setupNow: 'Open the door and take one photo',
     setupNext: 'Next',
     setupReceipt: 'Or scan your last receipt instead.',
