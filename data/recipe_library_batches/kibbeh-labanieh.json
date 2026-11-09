@@ -1,0 +1,149 @@
+{
+ "dish_name": "Kibbeh Labanieh",
+ "cuisine": "Lebanese",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Ground lamb",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fine bulgur",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "32 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Seven-spice",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sumac",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Up to a day ahead, or weeks ahead if you plan to freeze them: Put the bulgur in a large bowl, cover it with cold water, and let it soak for 20 minutes. Drain it in a fine sieve and squeeze out as much water as you can.",
+  "Heat the olive oil in a large skillet over medium heat. Add 1 of the onions, chopped, and cook for 8 minutes, until golden. Add half of the lamb, 1/2 tsp of the seven-spice, 1/4 tsp of the black pepper and 1/2 tsp of the salt. Turn the heat to medium-high and cook for 6 minutes, breaking up the meat. Take it off the heat, stir in the sumac, and spread the filling on a plate to cool.",
+  "Cut the other onion in quarters and put it in a food processor with the drained bulgur, the rest of the lamb, the other 1/2 tsp seven-spice, the other 1/4 tsp pepper, 3/4 tsp of the salt and 1 tbsp of the cornstarch. Blitz in 2 batches for 1 to 2 minutes, until it forms a smooth sticky paste. Add a spoonful of cold water if it's crumbly.",
+  "Heat the oven to 400°F and line a baking sheet with parchment. Pour the vegetable oil into a small bowl.",
+  "Dip your fingers in the oil. Roll a golf-ball-size piece of the paste, press your thumb into it, and work it into a thin hollow shell. Spoon in about 1 tbsp of the filling, pinch the opening closed, and shape it into an oval with pointed ends. That should be about 16 kibbeh. Set them on the baking sheet.",
+  "Bake for 15 minutes, until set and lightly golden but not browned. Let them cool. Refrigerate them for up to 1 day, or freeze them on the tray for 1 hour, then transfer them to a freezer bag for up to 6 months.",
+  "Rinse the rice and put it in a small pot with 1 cup water. Bring to a boil, then cover and cook over low heat for 20 minutes, until soft.",
+  "Whisk the yogurt, the remaining 2 tbsp cornstarch and 1 tsp of the salt in a large pot, off the heat. Stir in the rice and any water left in its pot.",
+  "Put the pot over medium-high heat and stir constantly in one direction for about 8 minutes, until the sauce comes to a boil. Turn the heat to low.",
+  "Add the kibbeh and simmer gently for 10 minutes, stirring now and then. If they're frozen, simmer for 15 minutes. Add a splash of water if the sauce gets too thick.",
+  "Melt the butter in a small skillet over medium-low heat. Add the garlic, minced, and the cilantro and cook for 1 minute, until fragrant.",
+  "Stir the garlic and cilantro into the pot with the dried mint. Take the pot off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in shallow bowls, hot or cold.",
+  "To store, refrigerate the finished dish in a covered container for up to 3 days. Warm it in a pot over low heat with a splash of water. Don't freeze the finished dish, since the yogurt sauce separates. Freeze the baked kibbeh on their own, as in step 6."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 75,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "make, bake and shape the kibbeh up to a day ahead, or freeze them",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "The lead (Zaatar and Zaytoun, 5.0 from 6) fills a lamb and bulgur shell with spiced meat, bakes it to firm it, then simmers it in a rice and cornstarch yogurt sauce finished with garlic, cilantro and mint. The page's 1500 g of yogurt looks like a typo, so the amount follows The Matbakh and Hadia's versions, scaled to 4. Pine nuts are left out to keep it nut-free. Honest total is about 2 hours; the kibbeh can be made ahead and frozen.",
+ "sources": [
+  {
+   "name": "Zaatar and Zaytoun",
+   "title": "Kibbeh Labanieh (Lebanese Kibbeh in Yoghurt Sauce)",
+   "url": "https://zaatarandzaytoun.com/kibbeh-labanieh/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Kibbeh Labanieh (Kibbeh Balls in Yogurt)",
+   "url": "https://thematbakh.com/?p=10692",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hadia's Lebanese Cuisine",
+   "title": "Kibbeh Bil Laban (Labanieh)",
+   "url": "https://hadiaslebanesecuisine.com/newsite/?p=11231",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,142 @@
+{
+ "dish_name": "Shish Barak",
+ "cuisine": "Lebanese",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Ground lamb",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "24 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Seven-spice",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Up to a day ahead, or weeks ahead if you plan to freeze them: Stir the flour, sugar and 1/2 tsp of the salt together in a large bowl. Add 1 tbsp of the olive oil and 6 tbsp warm water and mix. Knead on the counter for 8 minutes, adding a spoonful more water if it's dry, until smooth. Cover and let it rest for 30 minutes.",
+  "Meanwhile, heat the other 1 tbsp olive oil in a skillet over medium heat. Add the onion, chopped fine, and cook for 5 minutes, until soft. Add the lamb, 1/2 tsp of the salt, the black pepper, the sumac and the seven-spice. Turn the heat to medium-high and cook for 7 minutes, breaking up the meat, until browned. Stir in the pomegranate molasses and let the filling cool for 15 minutes.",
+  "Heat the oven to 400°F and line 2 baking sheets with parchment. Roll out half of the dough on a floured counter until it's about 1/16 inch thick. Cut 2-inch circles with a cutter or a glass. Gather the scraps and roll them again. Cover the circles with a towel while you roll the rest.",
+  "Put about 1 tsp of filling in the middle of each circle. Fold it into a half-moon and press the edge firmly shut. Pull the two corners together around your finger and pinch them, so it looks like a tortellini. That should be about 40 dumplings.",
+  "Bake for 10 minutes, then switch the oven to broil and cook for 2 to 3 minutes, until lightly golden. Watch them closely.",
+  "Let them cool. Refrigerate them for up to 1 day, or freeze them on the tray for 1 hour, then transfer them to a freezer bag for up to 3 months.",
+  "Whisk the yogurt, 1/2 cup cold water, the cornstarch and the remaining 3/4 tsp salt in a large pot while the pot is cold. Put it over medium heat and stir often for about 10 minutes, until it thickens. Don't let it boil.",
+  "Melt the butter in a small skillet over low heat. Add the garlic, minced, and 1/2 cup chopped cilantro and cook for 1 minute, until fragrant. Whisk it into the yogurt sauce.",
+  "Add the dumplings and simmer gently for 10 minutes. If they're frozen, simmer for 15 minutes. Add a splash of water if the sauce gets too thick.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls, topped with a handful of chopped cilantro.",
+  "To store, refrigerate in a covered container for up to 3 days. The sauce thickens as it sits, so loosen it with a splash of water as you warm it over low heat. Freeze the baked dumplings on their own, as in step 6."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 75,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "make, bake and shape the dumplings up to a day ahead, or freeze them",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "The lead (Hungry Paprikas, 5.0 from 8) makes a simple flour and olive oil dough, a spiced beef or lamb filling with sumac and pomegranate molasses, bakes the dumplings, then simmers them in a cornstarch yogurt sauce with garlic and cilantro. Other versions (Reem Assil, SBS) are the same except for a mint oil or ghee. Pine nuts are left out to keep it nut-free, and the quantities are halved to serve 4. The make-ahead part is the dumplings, which freeze well.",
+ "sources": [
+  {
+   "name": "Hungry Paprikas",
+   "title": "Authentic Shish Barak (Dumplings in Yogurt Sauce)",
+   "url": "https://www.hungrypaprikas.com/print/authentic-shish-barak-from-scratch-dumplings-in-yogurt-sauce",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "TASTE",
+   "title": "Shish Barak: Lamb Dumplings in Yogurt Sauce with Mint Oil",
+   "url": "https://tastecooking.com/recipes/shish-barak-lamb-dumplings-in-yogurt-sauce-with-mint-oil/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "SBS Food",
+   "title": "Lamb Dumplings in Yoghurt (Shish Barak)",
+   "url": "https://www.sbs.com.au/food/recipe/lamb-dumplings-in-yoghurt-shish-barak/4js5o8xrr",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

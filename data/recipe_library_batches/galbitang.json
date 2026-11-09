@@ -1,0 +1,105 @@
+{
+ "dish_name": "Galbitang",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef short ribs",
+   "qty": "2 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Daikon",
+   "qty": "1 (about 1 1/2 lbs)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Leeks",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Korean glass noodles",
+   "qty": "3 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the ribs in a large pot, cover them with cold water, and bring to a boil over medium-high heat. Boil for 10 minutes.",
+  "Drain the ribs in a colander and rinse them under hot water, scraping off any scum or bone bits. Wash the pot, then put the ribs back in.",
+  "Cut the daikon in half crosswise. Cut the top half into two thick slices, 2 inches each. Add the thick slices to the pot with the onion, halved, the leek, cut in half, 5 whole garlic cloves and 8 cups water.",
+  "Bring to a boil over medium-high heat and skim off the foam. Turn the heat to medium-low and simmer, uncovered, for 75 minutes, skimming now and then, until the meat is tender and pulls from the bone.",
+  "Meanwhile, peel the rest of the daikon and slice it into thin pieces, about 1 inch wide and 1/8 inch thick. That should be about 2 cups. Mince the 3 remaining garlic cloves. Slice the green onions.",
+  "Near the end, rinse the rice and cook it with 1 3/4 cups water, covered, over low heat for 15 minutes. Leave it covered off the heat for 10 minutes, then fluff it. Put the glass noodles in a bowl of hot water for 10 minutes, then drain.",
+  "Lift out and throw away the onion, leek, thick daikon slices and garlic cloves. Skim the fat off the top with a spoon.",
+  "Add the sliced daikon and the minced garlic. Simmer for 5 minutes, until the daikon is soft and see-through.",
+  "Stir in the soy sauce and the salt.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Divide the noodles between 4 bowls. Ladle in the soup with the ribs and daikon, and top with the green onions and the black pepper. Serve with the rice.",
+  "To store, take the noodles out and cool the soup, then refrigerate it in a covered container for up to 4 days or freeze it in portions for up to 3 months. The fat will harden on top, so lift it off. Reheat in a pot over medium-low heat with a splash of water until it's steaming, and add fresh noodles to each bowl."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 105,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources parboil the ribs, simmer them 1 to 1.5 hours with onion, leek, garlic and daikon, and finish with thin daikon slices and soup soy. The lead (Beyond Kimchee, 5.0 from 2) has dried kelp, shiitake and hwanggi, which are left out here, and Kimchimari's recipe is the stovetop timing check. The soup is clear and gentle, with nothing hot in it. Noodles are added to the bowls so the pot keeps well.",
+ "sources": [
+  {
+   "name": "Beyond Kimchee",
+   "title": "Galbitang (Korean Short Rib Soup)",
+   "url": "https://www.beyondkimchee.com/galbitang/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kimchimari",
+   "title": "Beef Short Rib Soup (Galbitang)",
+   "url": "https://kimchimari.com/beef-short-rib-soup-galbitang/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

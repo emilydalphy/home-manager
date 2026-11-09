@@ -1,0 +1,147 @@
+{
+ "dish_name": "Jjimdak",
+ "cuisine": "Korean",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "2 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Korean glass noodles",
+   "qty": "7 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 inch"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the glass noodles in a large bowl, cover them with cold water, and let them soak while you cook.",
+  "Pat the chicken dry and sprinkle the salt over it. Heat the vegetable oil in a large wide pot over medium-high heat. Brown the thighs for 4 to 5 minutes on each side, in two batches. Transfer them to a plate.",
+  "Meanwhile, cut the potatoes into 1-inch chunks, cut the carrots into thick chunks, and slice the onion into wedges. Slice the ginger. Cut the green onions into 2-inch lengths.",
+  "In a small bowl, stir together the soy sauce, oyster sauce, brown sugar, rice vinegar, sesame oil and 3 of the garlic cloves, grated.",
+  "Put the chicken back in the pot. Add 3 cups water, the onion, the ginger and the other 3 garlic cloves, whole. Bring to a boil over high heat, then keep it at a lively simmer for 15 minutes.",
+  "Add the sauce, the potatoes and the carrots. Turn the heat to medium and simmer for 10 minutes, until the potatoes are tender.",
+  "While that simmers, rinse the rice and cook it with 1 3/4 cups water, covered, over low heat for 15 minutes. Leave it covered off the heat for 10 minutes, then fluff it.",
+  "Drain the noodles and add them with the green onions. Push them under the liquid, cover, and simmer for 5 minutes, until the noodles are soft and chewy.",
+  "You're cooking the chicken to 175°F at the bone, so if you have a thermometer, check it there. No thermometer? The meat should pull easily from the bone and the juices should run clear.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice. Slice the green chilies and put them in a small bowl on the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (The Odehlicious, 4.84 from 24) browns thighs, boils them with onion and ginger, then adds a soy, oyster sauce and brown sugar sauce, potatoes, carrots and noodles at the end. Other versions parboil the chicken and add dried chilies, cocoa or corn syrup. Here the green chilies go on the side to keep the pot mild, and the lead's whole garlic is split between the broth and the sauce. Noodles go in last so they stay chewy.",
+ "sources": [
+  {
+   "name": "The Odehlicious",
+   "title": "Andong Jjimdak (Korean braised chicken)",
+   "url": "https://theodehlicious.com/wprm_print/andong-jjimdak-recipe-korean-braised-chicken",
+   "rating": 4.84,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Jjimdak (Korean Braised Chicken)",
+   "url": "https://www.beyondkimchee.com/wprm_print/jjimdak-korean-braised-chicken",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Subversive Table",
+   "title": "Korean Soy Sauce Braised Chicken (Dak Jjim)",
+   "url": "https://thesubversivetable.com/?p=38563",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,133 @@
+{
+ "dish_name": "Gamjatang",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork spare ribs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Napa cabbage",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2 inches"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Doenjang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Gochujang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground perilla seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the ribs in a large pot, cover them with cold water, and add half of the ginger, sliced, along with the peppercorns and 1 tbsp of the mirin. Bring to a boil over medium-high heat, then boil for 10 minutes.",
+  "Meanwhile, peel the potatoes and cut them into 1 1/2-inch chunks. Cut a quarter of the cabbage head into big pieces. Cut the green onions into 2-inch lengths.",
+  "In a small bowl, stir together 2 tbsp of the doenjang, the gochujang, 2 tsp of the gochugaru, the rest of the ginger grated (that should be about 1 tsp), the garlic minced, the black pepper, the remaining 2 tbsp mirin, the soy sauce, the perilla seeds and 1/2 cup water.",
+  "Drain the ribs in a colander and rinse them under running water to wash off the scum. Wash the pot, then put the ribs back in.",
+  "Add 5 cups water and the sauce. Bring to a boil over medium-high heat and boil for 10 minutes.",
+  "Add the potatoes, cabbage and half of the green onions. Turn the heat to medium-low, cover, and simmer for 35 minutes, until the meat pulls easily off the bone and the potatoes are soft.",
+  "While it simmers, rinse the rice and cook it with 1 3/4 cups water, covered, over low heat for 15 minutes. Leave it covered off the heat for 10 minutes, then fluff it.",
+  "Stir in the rest of the green onions and cook for 2 minutes.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice. Put the last 1 tsp gochugaru in a small bowl on the table for anyone who wants it hotter.",
+  "To store, let the stew cool, then refrigerate in a covered container for up to 3 days. Skim the fat off the top before you reheat it. Warm it in a pot over medium-low heat with a splash of water until it's steaming. Don't freeze it, since the potatoes go grainy."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 65,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Where the sources agree: pork neck bones or ribs are boiled once to clean them, then simmered with potatoes in a doenjang and perilla broth. The lead (Kimchimari, ribs, no soak) cooks in about an hour, where other versions simmer the bones for 1.5 hours or more. Gochugaru and gochujang are kept low here and extra heat goes on the table. Fresh perilla leaves, enoki and crown daisy are left out; fish sauce, coffee and kimchi from other versions are not used. Neck bones work in place of ribs if you soak them 1 hour first. Gamjatang is a batch dish that tastes better on day two.",
+ "sources": [
+  {
+   "name": "Kimchimari",
+   "title": "Gamjatang (Spicy Pork Bone Stew with Potatoes)",
+   "url": "https://kimchimari.com/gamjatang-pork-bone-stew/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Subversive Table",
+   "title": "Spicy Korean Pork Bone Soup (Gamjatang)",
+   "url": "https://thesubversivetable.com/?p=19017",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
