@@ -1,0 +1,127 @@
+{
+ "dish_name": "Lahanorizo",
+ "cuisine": "Greek",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head (about 1.5 lbs)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned diced tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring 3 cups of water to a boil in a kettle or small pot.",
+  "Meanwhile, quarter the cabbage, cut out the core and slice it into thin ribbons. Dice the onion, slice the carrot into thin rounds and mince the garlic. Chop 1 tbsp parsley.",
+  "Heat 3 tbsp of the oil in a large pot over medium-high. Add the onion and carrot and cook for 4 minutes, stirring, until soft. Add the garlic and stir for 30 seconds.",
+  "Add the cabbage with 1 tsp salt, a handful at a time, letting each handful wilt before the next. Cook for 5 minutes, stirring often, until it's soft and starting to brown.",
+  "Add the tomatoes, tomato paste, bay leaf and pepper. Stir for 1 minute.",
+  "Add the hot water, rice, thyme, parsley and the remaining 2 tbsp oil. Stir, bring it to a boil, then cover and turn the heat to medium-low.",
+  "Cook for 18 minutes, until the rice is tender. Stir a couple of times so the rice doesn't stick.",
+  "Take the pot off the heat, remove the bay leaf and stir in the juice of half the lemon. Taste it. If it's flat, add a pinch more salt or a squeeze of the rest of the lemon.",
+  "Serve in bowls with a drizzle of olive oil."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 34,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cabbage cooked down with onion, carrot and tomato, then simmered with rice in the same pot, is what the sources agree on. The lead (Real Greek Recipes, 4.28 from 40) takes 70 minutes with leek, celery and red pepper; those are left out, the cabbage is sliced thin and the rice goes in with the tomatoes so it comes in at about 45 minutes, which is tight. The lemon at the end comes from the other versions. Feta, which some serve on top, is left off to keep it vegan.",
+ "sources": [
+  {
+   "name": "Real Greek Recipes",
+   "title": "Greek Rice And Cabbage (Lahanorizo)",
+   "url": "https://realgreekrecipes.com/rice-and-cabbage/",
+   "rating": 4.28,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mia Kouppa",
+   "title": "Lahanorizo (Greek Cabbage and Rice)",
+   "url": "https://miakouppa.com/lahanorizo-greek-cabbage-and-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Lahanorizo: Greek Cabbage with Rice",
+   "url": "https://www.dimitrasdishes.com/lahanorizo-greek-cabbage-with-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,123 @@
+{
+ "dish_name": "Bamies Ladera",
+ "cuisine": "Greek",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Frozen okra",
+   "qty": "1 lb",
+   "category": "frozen"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Canned diced tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the potatoes into 1/2-inch cubes. Slice the carrot into thin rounds, dice the onion and mince the garlic. Chop 2 tbsp of the parsley.",
+  "Heat the oil in a large pot over medium-high. Add the potatoes, carrot, onion and 1/2 tsp salt. Cook for 4 minutes, stirring, until the edges start to brown.",
+  "Add the garlic and tomato paste. Stir for 1 minute, until the paste darkens.",
+  "Pour in the wine and let it bubble for 1 minute, scraping up the browned bits.",
+  "Add the frozen okra straight from the bag, the tomatoes, broth, 1 1/4 cups water, sugar, parsley, the remaining 1/2 tsp salt and the pepper. Stir gently and bring it to a boil.",
+  "Cover, turn the heat to medium-low and cook for 20 minutes, until the potatoes and okra are tender. Stir gently once or twice, since the okra breaks easily.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls, crumbling the oregano over the top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Okra stewed in tomato and olive oil with onion and a little tomato paste is the base in every version. The lead (My Greek Dish, 4.83 from 496) adds potato, carrot and wine, and this follows it with the potatoes in small cubes and 20 minutes of simmering from frozen okra to fit 45 minutes. Its feta is left out to keep the dish vegan and dairy-free, and spring onions are swapped for a whole red onion. Mia Kouppa's fresh okra version (soaked in vinegar and roasted first) takes well over an hour.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Greek Okra Stew with Tomatoes (Bamies Laderes)",
+   "url": "https://www.mygreekdish.com/recipe/greek-okra-stew-recipe-with-tomatoes-bamies-laderes/",
+   "rating": 4.83,
+   "rating_count": 496,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mia Kouppa",
+   "title": "Greek okra stewed in tomato sauce (Bamies latheres me domata)",
+   "url": "https://miakouppa.com/recipe-greek-okra-stewed-in-tomato-sauce-bamies-latheres-me-domata",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

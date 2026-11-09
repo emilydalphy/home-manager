@@ -1,0 +1,98 @@
+{
+ "dish_name": "Melitzanes me Feta",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Eggplants",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Canned crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F and line two sheet pans with parchment.",
+  "Cut the eggplants into 1/2-inch rounds. Toss them on the pans with 1/4 cup of the oil and 1 tsp salt, and spread them in a single layer.",
+  "Roast for 18 minutes, flipping them once halfway, until they're soft and golden at the edges.",
+  "Meanwhile, slice the garlic. Heat the remaining 1/4 cup oil in a wide pan over medium. Add the garlic and cook for 2 minutes, until fragrant and not browned.",
+  "Add the tomatoes, basil sprigs, the remaining 1/2 tsp salt and the pepper. Fill the empty can halfway with water and add that too. Simmer for 15 minutes, until it's thickened.",
+  "Take out the basil. Stir in the sugar and balsamic vinegar.",
+  "Overlap the roasted eggplant in a 9x13-inch baking dish. Pour the sauce over it, then crumble the feta on top.",
+  "Bake for 10 minutes, until the sauce is bubbling and the feta is browned in spots.",
+  "Taste it. If it's flat, add a pinch more salt. Serve warm."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 33,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Baked eggplant under a garlicky tomato sauce with feta on top is the dish in every version. The lead (Scrummy Lane, 4.91 from 61) bakes halved eggplants for 45 minutes; here they're sliced into rounds and roasted at 425°F, as the second version slices them, so it fits in 45 minutes. That second version fries them, which is left out. The amounts are doubled from the lead, which serves 2 as a main, so 4 can eat it as one.",
+ "sources": [
+  {
+   "name": "Scrummy Lane",
+   "title": "Our Favourite Greek Baked Eggplant With Tomato & Feta",
+   "url": "https://scrummylane.com/our-favourite-baked-eggplant-with-tomato-feta/",
+   "rating": 4.91,
+   "rating_count": 61,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook Me Greek",
+   "title": "Melitzanes me tomata & feta",
+   "url": "https://cookmegreek.blogspot.com/2012/08/melitzanes-me-tomata-feta-baked.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

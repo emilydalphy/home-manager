@@ -1,0 +1,109 @@
+{
+ "dish_name": "Saute de Dinde aux Champignons",
+ "cuisine": "French",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Turkey breast cutlets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "4 sprigs",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a medium pot with 2 1/4 cups water and 1/2 tsp salt. Bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered.",
+  "Meanwhile, cut the turkey cutlets into strips about 1 inch wide. Pat them dry, then sprinkle with 1/2 tsp salt and 1/4 tsp pepper.",
+  "Slice the onion thinly and mince the garlic. Wipe the mushrooms clean and cut them into thick slices.",
+  "Heat a large deep skillet over medium-high. Add 1 tbsp of the oil, then half the turkey in a single layer.",
+  "Cook for 2 minutes without moving it, then stir and cook 1 to 2 minutes, until golden outside. It won't be cooked through yet. Transfer it to a plate and brown the rest the same way with another 1 tbsp oil.",
+  "Add the last 1 tbsp oil and the mushrooms with 1/4 tsp salt. Cook for 6 minutes, stirring now and then, until they've given up their liquid and browned.",
+  "Add the onion and cook for 3 minutes, until soft. Add the garlic and stir for 30 seconds.",
+  "Pour in the wine and let it bubble for 1 minute, scraping up the browned bits from the bottom of the pan.",
+  "Add the broth, thyme sprigs, bay leaf and the rest of the pepper. Simmer for 6 minutes, until the sauce has reduced by about a third.",
+  "Return the turkey and any juices on the plate to the pan. Simmer for 3 minutes. You're cooking it to 160°F in the middle, so if you have a thermometer, check a piece there. No thermometer? Cut a piece open: it's done when there's no pink left.",
+  "Take out the thyme stems and bay leaf. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 28,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (Weight Watchers France) is a plain wine and broth sauté with onion, garlic, wild mushrooms and a bouquet garni, simmered 40 minutes as cubes. Here the turkey is cut into strips and browned first so it takes about 10 minutes in the sauce, and the bouquet garni is thyme and bay. The other French versions finish with cream, which is dropped to keep it dairy-free. Neither page had ratings, so this is a fallback lead; the rice is added as a side since the dish has a lot of sauce.",
+ "sources": [
+  {
+   "name": "Weight Watchers France",
+   "title": "Sauté de dinde aux champignons des bois",
+   "url": "https://www.weightwatchers.com/fr/recette/saute-de-dinde-aux-champignons-des-bois/5625aca3f0f249113466f4f1",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Evous",
+   "title": "Émincés de dinde aux champignons",
+   "url": "https://www.evous.fr/recettes-de-cuisine/Recettes-Plat/Recette-Eminces-de-dinde-aux,1117100.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

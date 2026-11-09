@@ -1,0 +1,82 @@
+{
+ "dish_name": "Crique Ardechoise",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "3 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Mixed salad greens",
+   "qty": "1 box (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "10 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and coarsely grate them into a large bowl. Don't rinse them. The starch holds the crique together.",
+  "Mince the garlic and chop 1/2 cup of the parsley. Add the garlic, 6 tbsp of the parsley, the egg, 1 tsp salt and the pepper to the potatoes. Mix with your hands until it's evenly combined.",
+  "Heat two 10-inch nonstick skillets over medium. Add 3 tbsp oil to each pan.",
+  "Divide the potato mixture between the pans and press it into an even layer about 1/2 inch thick. Cook for 10 to 12 minutes, until the underside is deep golden and the edges look crisp.",
+  "Slide each crique onto a plate. Add 1 tbsp oil to each pan, then slide the crique back in, uncooked side down. Cook for 10 minutes, until golden.",
+  "Meanwhile, whisk 2 tbsp oil, the juice of half the lemon and 1/4 tsp salt in a large bowl. Toss in the salad greens.",
+  "Taste a corner of the crique. If it's flat, add a pinch more salt. Transfer each to a board, sprinkle with the remaining 2 tbsp parsley and cut into wedges.",
+  "Serve with the green salad."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 18,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Grated potato, garlic and parsley fried slowly until golden and crisp is what every version shares. The lead (Obviously French) fries in olive oil and butter; here it's all olive oil to keep it dairy-free, and the egg it lists as optional is in for a firmer crique. The garlic is 2 cloves rather than the lead's 1, and the 10 to 15 minute rest is skipped to stay inside the time. No rated page was readable, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Obviously French",
+   "title": "Potato pancake (Crique Ardéchoise)",
+   "url": "https://obviouslyfrench.com/potato-pancake/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,88 @@
+{
+ "dish_name": "Saint-Jacques Poelees",
+ "cuisine": "French",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Sea scallops",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a medium pot with 2 1/4 cups water and 1/2 tsp salt. Bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered.",
+  "Meanwhile, pull the small tough muscle off the side of each scallop. Pat them very dry with paper towels, then sprinkle them with 1/2 tsp salt and the pepper.",
+  "Mince the garlic. Chop 1/4 cup of the parsley and cut the lemon into wedges.",
+  "Heat a large skillet over medium-high for 2 minutes, until it's very hot. Add 1 tbsp of the oil, then half the scallops in a single layer with space between them.",
+  "Cook without moving them for 2 to 3 minutes, until the underside is deep golden and they let go of the pan. Flip them and cook for 1 minute. They're done when they're just opaque in the middle. Transfer them to a plate.",
+  "Wipe the pan, add 1 tbsp of the oil and cook the rest of the scallops the same way. Transfer them to the plate.",
+  "Take the pan off the heat. Add the remaining 3 tbsp oil, the garlic and two-thirds of the chopped parsley. Stir for 20 seconds, until the garlic smells fragrant and hasn't browned.",
+  "Return the scallops and any juices on the plate to the pan, then squeeze in the juice of 2 lemon wedges. Turn the scallops to coat them in the persillade.",
+  "Taste it. If it's flat, add a pinch more salt. Sprinkle the rest of the parsley over the top.",
+  "Serve with the rice and the remaining lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Scallops seared hard and finished in a garlic and parsley persillade made in the same pan, which is what the sources for this dish share. The lead (Jardiner Malin) uses butter with the oil; butter is left out here to keep the dish dairy-free, so the persillade is all olive oil. The lead suggests tagliatelle, which isn't gluten-free, so plain rice goes with it, and the lemon comes from the other seared and grilled scallop pages. Only unrated pages were readable for the exact dish, so this is a fallback lead; there's a lot less sauce than a cream or wine version, which is the dish.",
+ "sources": [
+  {
+   "name": "Jardiner Malin",
+   "title": "Saint-Jacques en persillade",
+   "url": "https://www.jardiner-malin.fr/recettes/saint-jacques-en-persillade.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "NEFF",
+   "title": "Seared scallops (Garlic and Lemon Seared Scallops with Parmesan Orzo)",
+   "url": "https://www.neff-home.com/fr/the-ingredient/recettes/202_seared_scallops",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
