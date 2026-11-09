@@ -1,0 +1,84 @@
+{
+ "dish_name": "Omeleta me Feta",
+ "cuisine": "Greek",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Kalamata olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "8 olives"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the tomato in half, scoop out the seeds and juice, and dice the flesh small. Pit the olives and cut them into small pieces. Crumble the feta with a fork.",
+  "Crack the eggs into a bowl, add the salt and pepper, and beat with a fork until the yolks and whites are combined. You'll cook this in two batches of 4 eggs each.",
+  "Heat 1 1/2 tbsp of the oil in a 10 inch nonstick frying pan over medium heat for about 1 minute, until it shimmers. Pour in half the eggs.",
+  "Use a spatula to push the eggs toward one side of the pan, tilting the pan so the liquid egg runs into the empty space. Cook for 1 to 2 minutes, until the eggs are set and the top is still slightly moist. Don't flip it.",
+  "Take the pan off the heat. Scatter half the tomato, half the feta, half the olives and 1/4 tsp of the oregano over the omelette. Slide the spatula underneath, loosen it and fold it in half.",
+  "Slide the omelette onto a plate and cover it to keep it warm. Wipe the pan, then make the second omelette the same way with the remaining oil, eggs and fillings.",
+  "Cut each omelette in half. Serve with a green salad."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 8,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "My Greek Dish leads (tomato, olives, feta and oregano, folded off the heat); it makes 3 eggs for 2, so this is scaled to two omelettes of 4 eggs. Real Greek Recipes cooks the feta into the egg with red onion, which was left out to keep to the lead. The lead's grated Graviera was dropped so feta is the only cheese.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Greek Omelette recipe with Feta cheese",
+   "url": "https://www.mygreekdish.com/recipe/greek-omelette-recipe-with-feta/",
+   "rating": 4.85,
+   "rating_count": 458,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Real Greek Recipes",
+   "title": "Feta Omelette With Onions",
+   "url": "https://realgreekrecipes.com/feta-omelette/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

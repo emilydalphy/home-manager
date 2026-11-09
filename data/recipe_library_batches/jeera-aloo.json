@@ -1,0 +1,106 @@
+{
+ "dish_name": "Jeera Aloo",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mild red chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve under cold water for about 30 seconds. Transfer it to a medium saucepan with 2 1/4 cups water and 1/2 tsp salt, and bring it to a boil over high heat. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take the pan off the heat and leave the lid on for 5 minutes.",
+  "Peel the potatoes and cut them into 1/2 inch cubes.",
+  "Heat the oil in a large deep skillet over medium heat. Add the cumin seeds. After about 30 seconds they will crackle and smell toasty.",
+  "Add the potatoes, turmeric, chili powder and 1 1/2 tsp of the salt. Stir for 1 minute, until the potatoes are coated.",
+  "Cover, turn the heat to medium-low and cook for 5 minutes, stirring once a minute.",
+  "Uncover, stir in the garam masala and cook for 5 minutes, stirring now and then, until the potatoes are browned in spots. Press one with a fork: it should be soft in the middle.",
+  "Take the pan off the heat and squeeze in half the lemon.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Easy Cooking with Molly leads: raw potatoes sautéed with cumin seeds, turmeric, chili and garam masala, covered to cook and then uncovered to crisp. Her spice amounts are for 4 large potatoes with a full tablespoon of turmeric; this scales them down for 2 lbs and keeps the chili mild. The lemon at the end comes from Pavani's Kitchen (Molly lists optional dry mango powder). The Foreign Fork boils and chills the potatoes first, which adds an hour, so it was not used.",
+ "sources": [
+  {
+   "name": "Easy Cooking with Molly",
+   "title": "Jeera Aloo Recipe",
+   "url": "https://www.easycookingwithmolly.com/2019/07/jeera-aloo-recipe/",
+   "rating": 4.7,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pavani's Kitchen",
+   "title": "Jeera Aloo Recipe",
+   "url": "https://www.pavaniskitchen.com/jeera-aloo-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "The Foreign Fork",
+   "title": "Jeera Aloo",
+   "url": "https://foreignfork.com/jeera-aloo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Piping Pot Curry",
+   "title": "Easy Jeera Aloo",
+   "url": "https://pipingpotcurry.com/jeera-aloo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,110 @@
+{
+ "dish_name": "Cabbage Thoran",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen grated coconut",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 small bag",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve under cold water for about 30 seconds. Transfer it to a medium saucepan with 2 1/4 cups water and 1/2 tsp salt, and bring it to a boil over high heat. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take the pan off the heat and leave the lid on for 5 minutes.",
+  "Put the coconut in a bowl to thaw. Cut the cabbage in quarters, cut out the core and slice the leaves very thin. Roughly chop the onion, remove the seeds from the chili, and peel and crush the ginger.",
+  "Add the coconut, onion, chili and turmeric to a food processor and pulse into a coarse paste, with no water. Scrape it into a bowl.",
+  "Heat the coconut oil in a wide pan or wok over medium-high heat. Add the mustard seeds. They will pop after 15 to 20 seconds, so partly cover the pan.",
+  "Add the curry leaves and the ginger. Stand back a little, because the leaves will spatter. Stir for 10 seconds.",
+  "Add the coconut paste and stir for 1 minute, until it smells toasty.",
+  "Add the cabbage and 3/4 tsp of the salt and toss until the cabbage is coated. Cover and cook for 5 minutes, until the cabbage is soft but still has a little bite. If there is liquid left in the pan, uncover and stir for 1 to 2 minutes.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Nish Kitchen leads (coconut, green chili, onion and turmeric ground to a coarse paste and fried in the mustard and curry leaf oil, then the cabbage cooked covered for a few minutes). Its 4 cups of cabbage is scaled up for a dinner for 4, and the green chili is cut to one with the seeds out to keep the base mild. Sharmi's Passions and Spice and Life confirm the mustard, curry leaf and coconut base, with the cabbage cooked on its own first; the lead's ground-paste-first order was kept. It's coconut and cabbage only, so it works for vegan and gluten-free tables.",
+ "sources": [
+  {
+   "name": "Nish Kitchen",
+   "title": "Cabbage Thoran",
+   "url": "https://nishkitchen.com/cabbage-thoran-cabbage-stir-fry-video/",
+   "rating": 5,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sharmis Passions",
+   "title": "Cabbage Thoran Recipe",
+   "url": "https://www.sharmispassions.com/cabbage-thoran-recipe/",
+   "rating": 4.13,
+   "rating_count": 8,
+   "read": true
+  },
+  {
+   "name": "Spice and Life",
+   "title": "Delicious Cabbage Thoran",
+   "url": "https://www.spiceandlife.com/cabbage-thoran/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

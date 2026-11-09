@@ -1,0 +1,88 @@
+{
+ "dish_name": "Aloo Methi",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh fenugreek leaves (methi)",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve under cold water for about 30 seconds. Transfer it to a medium saucepan with 2 1/4 cups water and 1/2 tsp salt, and bring it to a boil over high heat. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take the pan off the heat and leave the lid on for 5 minutes.",
+  "Pull the fenugreek leaves off the stems into a large bowl. Cover them with cold water, swish them around and lift them out into a colander. Repeat until the water is clear, then drain and roughly chop them.",
+  "Peel the potatoes and cut them into 3/4 inch cubes. Chop the garlic. Slit the chili open and remove the seeds.",
+  "Heat the oil in a large deep skillet over medium heat. Add the cumin seeds. After about 20 seconds they will crackle. Add the garlic and chili and stir for 30 seconds, until the garlic smells fragrant.",
+  "Add the potatoes and turmeric and stir for 1 minute.",
+  "Cover, turn the heat to low and cook for 10 minutes, stirring now and then, until a fork goes in easily. If the pan gets dry, sprinkle in a spoonful of water.",
+  "Stir in the garam masala and 1/2 tsp of the salt. Cook for 1 minute.",
+  "Add the fenugreek leaves and cook for 3 minutes, stirring, until they wilt completely and smell fragrant.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 13,
+ "cook_time_minutes": 17,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes leads (potatoes with cumin, garlic and green chili, covered to soften, then garam masala and the chopped leaves at the end). The lead makes 250 g of potatoes for 3, so the potatoes and leaves are scaled up for a dinner for 4. Asafoetida is left out so the dish stays gluten-free, since some brands contain wheat. Fresh fenugreek is the whole point of the dish and is sold at Indian and many Middle Eastern grocers; frozen methi also works.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Aloo Methi",
+   "url": "https://www.indianhealthyrecipes.com/aloo-methi-recipe-dry-aloo-methi/",
+   "rating": 4.99,
+   "rating_count": 93,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

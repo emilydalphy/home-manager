@@ -1,0 +1,122 @@
+{
+ "dish_name": "Tamatar Dal",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Red lentils",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri red chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve under cold water for about 30 seconds. Transfer it to a medium saucepan with 2 1/4 cups water and 1/2 tsp salt, and bring it to a boil over high heat. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take the pan off the heat and leave the lid on for 5 minutes.",
+  "Rinse the lentils in a sieve under cold water until the water runs clear. Chop the tomatoes. Slice the garlic.",
+  "Put the lentils, tomatoes, 3 cups water and the turmeric in a medium pot and bring to a boil. Skim off any foam that rises.",
+  "Turn the heat to medium-low, partly cover and simmer for 15 minutes, stirring now and then, until the lentils are soft and falling apart. Mash them with the back of a spoon to a texture you like. If it is too thick, stir in a splash of hot water.",
+  "While the dal simmers, heat the oil in a small pan over medium heat. Add the mustard seeds and cumin seeds. After about 30 seconds they will sputter. Add the garlic and cook for 30 to 60 seconds, until it is just golden.",
+  "Take the small pan off the heat and stir in the chili powder. Pour it all into the dal.",
+  "Add 1 tsp of the salt and simmer for 2 minutes. Take the pot off the heat, then stir in the juice of half the lemon and the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes masoor dal leads (red lentils simmered with chopped tomatoes, then a cumin, mustard and garlic tempering stirred in, finished with lemon and coriander). Her tomato pappu (5 from 83) and Hebbar's Kitchen tomato pappu (5 from 249) are toor dal versions that cook for far longer, so they only confirm the tomato-first, tempering-last order. Tamarind is left out and lemon is used at the end, as in the masoor dal. Asafoetida is left out for gluten-free and the dried and green chilies are left out to keep it mild; the lead's ghee is oil so it stays vegan.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Masoor Dal Recipe (Red Lentil Dal)",
+   "url": "https://www.indianhealthyrecipes.com/masoor-dal-recipe/",
+   "rating": 5,
+   "rating_count": 270,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Tomato Pappu Recipe (Andhra Tomato Dal)",
+   "url": "https://www.indianhealthyrecipes.com/tomato-pappu-recipe/",
+   "rating": 5,
+   "rating_count": 83,
+   "read": true
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Tomato Pappu Recipe",
+   "url": "https://hebbarskitchen.com/tomato-pappu-recipe-tamata-pappu-dal/",
+   "rating": 5,
+   "rating_count": 249,
+   "read": true
+  },
+  {
+   "name": "Kannamma Cooks",
+   "title": "Tomato Dal / Tomato Pappu",
+   "url": "https://www.kannammacooks.com/tomato-dal-tomato-pappu-andhra-style-telugu-red-lentils-masoor-dal-recipe/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

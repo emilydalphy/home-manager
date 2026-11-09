@@ -1,0 +1,88 @@
+{
+ "dish_name": "Dakos",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Barley rusks (paximadia)",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "7 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Kalamata olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "12 olives"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the tomatoes in half. Grate the cut sides on the big holes of a box grater into a colander set over a bowl, until only the skins are left, and throw the skins away. Leave the tomato to drain for 5 minutes.",
+  "Meanwhile, crumble the feta into a bowl with a fork. Pit the olives and cut them in half.",
+  "Set the rusks on four plates. Sprinkle each with 4 tbsp water and drizzle each with 1 tbsp of the oil. Leave them for 2 minutes. They should give a little when you press them but still be firm in the middle.",
+  "Spoon the drained tomato over the rusks and add a pinch of salt and pepper.",
+  "Top with the feta, olives and capers, then sprinkle with the oregano. Drizzle each with another 1 tbsp of the oil. Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "My Greek Dish leads (rusk moistened with water and oil, drained grated tomato, crumbled cheese, olives and capers). It tops the dakos with feta and myzithra; this uses feta alone (7 oz) so there is one cheese to buy. The Hungry Bites uses a quick dip in water instead of sprinkling, and the same tomato and feta. The barley rusks are not gluten-free.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Traditional Cretan Ntakos / Dakos recipe",
+   "url": "https://www.mygreekdish.com/recipe/ntakos-rusks-with-tomatoes-and-feta-cheese/",
+   "rating": 4.9,
+   "rating_count": 563,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Hungry Bites",
+   "title": "Traditional Greek Dakos Salad Recipe",
+   "url": "https://www.thehungrybites.com/dakos-salad/",
+   "rating": 5,
+   "rating_count": 7,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
