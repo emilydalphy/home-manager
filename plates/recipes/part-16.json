@@ -1,0 +1,736 @@
+[
+{
+"dish_name": "Moo Tod Kratiem",
+"cuisine": "Thai",
+"main_protein": "pork",
+"ingredients": [
+"Pork tenderloin",
+"Garlic",
+"Cilantro",
+"White pepper",
+"Oyster sauce",
+"Soy sauce",
+"Fish sauce",
+"Sugar",
+"Cornstarch",
+"Vegetable oil",
+"Salt",
+"Jasmine rice",
+"Cucumber"
+]
+},
+{
+"dish_name": "Muc Xao Sa Ot",
+"cuisine": "Vietnamese",
+"main_protein": "seafood",
+"ingredients": [
+"Cleaned squid tubes",
+"Lemongrass",
+"Garlic",
+"Shallots",
+"Fish sauce",
+"Sugar",
+"Salt",
+"Vegetable oil",
+"Gochugaru",
+"Red chilies",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Nam Xao",
+"cuisine": "Vietnamese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Cremini mushrooms",
+"Garlic",
+"Shallots",
+"Soy sauce",
+"Black pepper",
+"Vegetable oil",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Neua Pad Prik Thai Dum",
+"cuisine": "Thai",
+"main_protein": "beef",
+"ingredients": [
+"Beef sirloin",
+"Eggs",
+"Cornstarch",
+"Oyster sauce",
+"Sesame oil",
+"Soy sauce",
+"Black peppercorns",
+"Yellow onion",
+"Red bell pepper",
+"Green bell pepper",
+"Green onions",
+"Garlic",
+"Vegetable oil",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Nohutlu Pilav",
+"cuisine": "Turkish",
+"main_protein": "chickpeas",
+"ingredients": [
+"Long grain rice",
+"Canned chickpeas",
+"Yellow onion",
+"Green bell pepper",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Nui Xao Bo",
+"cuisine": "Vietnamese",
+"main_protein": "beef",
+"ingredients": [
+"Beef eye of round",
+"Elbow macaroni",
+"Roma tomatoes",
+"Yellow onion",
+"Garlic",
+"Tomato paste",
+"Soy sauce",
+"Oyster sauce",
+"Chicken bouillon powder",
+"Sugar",
+"Cornstarch",
+"Baking soda",
+"Vegetable oil",
+"Salt",
+"Black pepper",
+"Cilantro"
+]
+},
+{
+"dish_name": "Pad Hed",
+"cuisine": "Thai",
+"main_protein": "vegan",
+"ingredients": [
+"Oyster mushrooms",
+"Garlic",
+"Thai basil",
+"Vegetarian oyster sauce",
+"Soy sauce",
+"Sugar",
+"Vegetable oil",
+"Thai chilies",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Peanut Butter and Jelly Sandwiches",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"Sandwich bread (dairy-free)",
+"Peanut butter",
+"Grape jelly"
+]
+},
+{
+"dish_name": "Pimento Cheese Sandwiches",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Sharp cheddar",
+"Mild cheddar",
+"Mayonnaise",
+"Diced pimentos",
+"Dijon mustard",
+"Garlic powder",
+"Onion powder",
+"Smoked paprika",
+"Salt",
+"Black pepper",
+"White sandwich bread"
+]
+},
+{
+"dish_name": "Reuben Sandwiches",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Rye bread",
+"Butter",
+"Thousand Island dressing",
+"Shredded Swiss cheese",
+"Sliced deli corned beef",
+"Sauerkraut"
+]
+},
+{
+"dish_name": "Saksuka",
+"cuisine": "Turkish",
+"main_protein": "vegetarian",
+"ingredients": [
+"Eggplants",
+"Green bell pepper",
+"Yellow onion",
+"Tomatoes",
+"Garlic",
+"Olive oil",
+"Smoked paprika",
+"Ground coriander",
+"Cumin seeds",
+"Red pepper flakes",
+"Dried thyme",
+"Black pepper",
+"White vinegar",
+"Sugar",
+"Tomato paste",
+"Salt",
+"Flat-leaf parsley"
+]
+},
+{
+"dish_name": "Salade de Betteraves",
+"cuisine": "French",
+"main_protein": "vegan",
+"ingredients": [
+"Beets",
+"Olive oil",
+"Shallots",
+"Red wine vinegar",
+"Dijon mustard",
+"Microgreens",
+"Parsley",
+"Lemon",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Salade de Chevre Chaud",
+"cuisine": "French",
+"main_protein": "cheese",
+"ingredients": [
+"Goat cheese rounds",
+"Eggs",
+"All-purpose flour",
+"Panko breadcrumbs",
+"Butter",
+"Red leaf lettuce",
+"Tomatoes",
+"Chives",
+"Shallots",
+"Garlic",
+"Dijon mustard",
+"Balsamic vinegar",
+"Olive oil",
+"Salt"
+]
+},
+{
+"dish_name": "Shanghai Fried Noodles",
+"cuisine": "Chinese",
+"main_protein": "vegan",
+"ingredients": [
+"Fresh shiitake mushrooms",
+"Udon noodles (vegan)",
+"Baby bok choy",
+"Vegetable oil",
+"Light soy sauce",
+"Dark soy sauce",
+"Sugar"
+]
+},
+{
+"dish_name": "Shanghai Stir-Fried Rice Cakes",
+"cuisine": "Chinese",
+"main_protein": "pork",
+"ingredients": [
+"Pork loin",
+"Napa cabbage",
+"Chinese rice cakes (sliced nian gao)",
+"Ginger",
+"Garlic",
+"Scallions",
+"Cornstarch",
+"Light soy sauce",
+"Toasted sesame oil",
+"White pepper",
+"Vegetable oil",
+"Shaoxing wine",
+"Oyster sauce",
+"Chicken stock",
+"Salt"
+]
+},
+{
+"dish_name": "Sweet Potato and Black Bean Bowls",
+"cuisine": "American",
+"main_protein": "beans",
+"ingredients": [
+"Sweet potatoes",
+"Red onion",
+"Black beans",
+"Quick-cooking brown rice",
+"Olive oil",
+"Ground cinnamon",
+"Smoked paprika",
+"Ground cumin",
+"Onion powder",
+"Garlic powder",
+"Salt",
+"Black pepper",
+"Salsa",
+"Limes"
+]
+},
+{
+"dish_name": "Tacos de Nopales",
+"cuisine": "Mexican",
+"main_protein": "vegan",
+"ingredients": [
+"Nopales, cleaned and diced",
+"Vegetable oil",
+"White onion",
+"Garlic",
+"Anaheim chiles",
+"Salt",
+"Corn tortillas",
+"Radishes",
+"Limes"
+]
+},
+{
+"dish_name": "Tacos Gobernador",
+"cuisine": "Mexican",
+"main_protein": "shrimp",
+"ingredients": [
+"Medium shrimp, peeled and deveined",
+"Butter",
+"Poblano chile",
+"Yellow onion",
+"Garlic",
+"Dried oregano",
+"Ground coriander",
+"Ground cumin",
+"Salt",
+"Plum tomatoes",
+"Cilantro",
+"Corn tortillas",
+"Vegetable oil",
+"Monterey Jack cheese",
+"Limes",
+"Salsa"
+]
+},
+{
+"dish_name": "Tantuni",
+"cuisine": "Turkish",
+"main_protein": "beef",
+"ingredients": [
+"Beef top round",
+"Yellow onion",
+"Flat-leaf parsley",
+"Mint",
+"Tomatoes",
+"Lemon",
+"Lavash or large flour tortillas",
+"Paprika",
+"Sumac",
+"Salt",
+"Cayenne pepper",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Thai Basil Eggplant",
+"cuisine": "Thai",
+"main_protein": "vegan",
+"ingredients": [
+"Japanese or Chinese eggplants",
+"Red bell pepper",
+"Yellow onion",
+"Garlic",
+"Fresh ginger",
+"Thai basil",
+"Red Thai chili",
+"Soy sauce",
+"Vegetarian oyster sauce",
+"Rice vinegar",
+"Maple syrup",
+"Cornstarch",
+"Neutral oil",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Thai Coconut Pumpkin Soup",
+"cuisine": "Thai",
+"main_protein": "vegan",
+"ingredients": [
+"Pumpkin puree",
+"Coconut milk",
+"Gluten-free vegetable broth",
+"Vegan gluten-free Thai red curry paste",
+"Yellow onion",
+"Garlic",
+"Fresh ginger",
+"Scallions",
+"Fresh basil",
+"Brown sugar",
+"Lime",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Thai Pineapple Curry with Shrimp",
+"cuisine": "Thai",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp, peeled and deveined",
+"Gluten-free Thai red curry paste",
+"Coconut milk",
+"Pineapple chunks in juice",
+"Makrut lime leaves",
+"Fish sauce",
+"Sugar",
+"Lime",
+"Vegetable oil",
+"Red chilies",
+"Cilantro",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Thai Red Curry with Chicken",
+"cuisine": "Thai",
+"main_protein": "chicken",
+"ingredients": [
+"Chicken tenderloins",
+"Jasmine rice",
+"Scallions",
+"Garlic",
+"Jalape\u00f1o",
+"Coconut milk",
+"Thai red curry paste",
+"Fish sauce",
+"Brown sugar",
+"Vegetable oil",
+"Lime",
+"Cilantro",
+"Salt"
+]
+},
+{
+"dish_name": "Thai Sweet Chili Shrimp",
+"cuisine": "Thai",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp, peeled and deveined",
+"Jasmine rice",
+"Bell peppers",
+"Zucchini",
+"Yellow onion",
+"Garlic",
+"Fresh ginger",
+"Green onions",
+"Thai sweet chili sauce",
+"Tamari",
+"Vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Thai Yellow Curry with Chicken",
+"cuisine": "Thai",
+"main_protein": "chicken",
+"ingredients": [
+"Chicken thighs, boneless and skinless",
+"Gluten-free yellow curry paste",
+"Coconut milk",
+"Gluten-free chicken broth",
+"Yukon gold potatoes",
+"Carrot",
+"Fish sauce",
+"Sugar",
+"Vegetable oil",
+"Salt",
+"Thai basil",
+"Red chili",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Thit Heo Xao Sa Ot",
+"cuisine": "Vietnamese",
+"main_protein": "pork",
+"ingredients": [
+"Pork loin or tenderloin",
+"Lemongrass",
+"Shallots",
+"Garlic",
+"Gluten-free oyster sauce",
+"Fish sauce",
+"Sugar",
+"Black pepper",
+"Salt",
+"Red bell pepper",
+"Green onions",
+"Vegetable oil",
+"Jasmine rice",
+"Thai chilies",
+"Chili oil"
+]
+},
+{
+"dish_name": "Three Bean Salad",
+"cuisine": "American",
+"main_protein": "beans",
+"ingredients": [
+"Canned green beans",
+"Canned yellow wax beans",
+"Canned red kidney beans",
+"Green bell pepper",
+"White onion",
+"Celery",
+"Sugar",
+"White vinegar",
+"Vegetable oil",
+"Salt",
+"Celery seed",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tofu Satay",
+"cuisine": "Thai",
+"main_protein": "tofu",
+"ingredients": [
+"Extra-firm tofu",
+"Soy sauce",
+"Limes",
+"Brown sugar",
+"Garlic",
+"Crunchy peanut butter",
+"Olive oil",
+"Cilantro",
+"Roasted peanuts",
+"Fried shallots",
+"Sriracha",
+"Wooden skewers",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Tom Rang Me",
+"cuisine": "Vietnamese",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shell-on shrimp",
+"Jasmine rice",
+"Tamarind paste block",
+"Shallots",
+"Garlic",
+"Thai basil",
+"Thai chili",
+"Fish sauce",
+"Sugar",
+"Black peppercorns",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Tom Xao Sa Ot",
+"cuisine": "Vietnamese",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp, peeled and deveined",
+"Jasmine rice",
+"Lemongrass",
+"Garlic",
+"Scallions",
+"Red Fresno chili",
+"Thai chili",
+"Lime",
+"Cilantro",
+"Fish sauce",
+"Sugar",
+"Cornstarch",
+"Vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tom Yum Mushroom Noodle Soup",
+"cuisine": "Thai",
+"main_protein": "vegan",
+"ingredients": [
+"Rice noodles",
+"Vegetable broth",
+"Cremini mushrooms",
+"Firm tofu",
+"Tomato",
+"Baby bok choy",
+"Baby corn",
+"Bean sprouts",
+"Lemongrass",
+"Dried makrut lime leaves",
+"Garlic",
+"Fresh ginger",
+"Vegetable oil",
+"Tamari",
+"Brown sugar",
+"Coconut milk",
+"Limes",
+"Green onions",
+"Thai basil",
+"Sambal oelek",
+"Thai chili"
+]
+},
+{
+"dish_name": "Tomato Sandwiches",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"Tomatoes",
+"White sandwich bread",
+"Mayonnaise",
+"Kosher salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tostadas de Atun",
+"cuisine": "Mexican",
+"main_protein": "fish",
+"ingredients": [
+"Canned tuna",
+"Limes",
+"Tomatoes",
+"Jalapeno",
+"Cilantro",
+"English cucumber",
+"Red onion",
+"Salt",
+"Corn tostada shells",
+"Refried beans",
+"Avocados"
+]
+},
+{
+"dish_name": "Tuna Salad Sandwiches",
+"cuisine": "American",
+"main_protein": "fish",
+"ingredients": [
+"Canned tuna",
+"Mayonnaise",
+"Dill pickles",
+"Celery",
+"Green onions",
+"Dijon mustard",
+"Lemon",
+"Salt",
+"Black pepper",
+"Sandwich bread",
+"Butter lettuce"
+]
+},
+{
+"dish_name": "Turkey Taquitos",
+"cuisine": "Mexican",
+"main_protein": "turkey",
+"ingredients": [
+"Olive oil",
+"Yellow onion",
+"Garlic",
+"Ground turkey",
+"Salt",
+"Taco seasoning",
+"Diced tomatoes with green chiles",
+"Flour tortillas (6-inch)",
+"Cheddar cheese",
+"Salsa"
+]
+},
+{
+"dish_name": "Uskumru Izgara",
+"cuisine": "Turkish",
+"main_protein": "fish",
+"ingredients": [
+"Whole mackerel",
+"Salt",
+"Olive oil",
+"Yellow onions",
+"Lemons"
+]
+},
+{
+"dish_name": "Veggie Hummus Wraps",
+"cuisine": "American",
+"main_protein": "chickpeas",
+"ingredients": [
+"Large flour tortillas",
+"Hummus",
+"Yellow bell pepper",
+"English cucumber",
+"Roma tomatoes",
+"Baby spinach",
+"Red cabbage",
+"Carrots"
+]
+},
+{
+"dish_name": "Wafu Mushroom Pasta",
+"cuisine": "Japanese",
+"main_protein": "vegan",
+"ingredients": [
+"Spaghetti",
+"Shiitake mushrooms",
+"King oyster mushrooms",
+"Oyster mushrooms",
+"Garlic",
+"Olive oil",
+"Soy sauce",
+"Mirin",
+"Green onions",
+"Roasted nori sheets",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Waldorf Salad",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"Walnuts",
+"Mayonnaise",
+"Sugar",
+"Lemon",
+"Red apples",
+"Seedless red grapes",
+"Celery",
+"Raisins"
+]
+},
+{
+"dish_name": "Wontons in Chili Oil",
+"cuisine": "Chinese",
+"main_protein": "pork",
+"ingredients": [
+"Frozen pork wontons",
+"Chili oil with chili crisp",
+"Light soy sauce",
+"Chinese black vinegar",
+"Garlic",
+"Sugar",
+"Scallions",
+"Cilantro"
+]
+}
+]

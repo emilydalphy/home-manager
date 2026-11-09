@@ -1,0 +1,706 @@
+[
+{
+"dish_name": "Ali Nazik",
+"cuisine": "Turkish",
+"main_protein": "beef",
+"ingredients": [
+"Eggplants",
+"Greek yogurt",
+"Ground beef",
+"Yellow onions",
+"Garlic",
+"Tomato paste",
+"Red pepper paste",
+"Pul biber (Aleppo pepper)",
+"Black pepper",
+"Salt",
+"Olive oil",
+"Flat-leaf parsley"
+]
+},
+{
+"dish_name": "Apple Cheddar Panini",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Whole grain bread",
+"Honey mustard",
+"Crisp apples",
+"Mild cheddar cheese",
+"Cooking spray"
+]
+},
+{
+"dish_name": "Balik Ekmek",
+"cuisine": "Turkish",
+"main_protein": "fish",
+"ingredients": [
+"Mackerel fillets",
+"Ciabatta rolls",
+"Red onion",
+"Tomatoes",
+"Carrots",
+"Arugula",
+"Fresh mint",
+"Lemons",
+"Garlic",
+"Olive oil",
+"Pomegranate molasses",
+"Sumac",
+"Pul biber (Aleppo pepper)",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Bang Bang Chicken",
+"cuisine": "Chinese",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken breasts",
+"Ginger",
+"Scallions",
+"Cucumber",
+"Light soy sauce",
+"Chinese black vinegar",
+"Sugar",
+"Toasted sesame oil",
+"Toasted sesame seeds",
+"Ground Sichuan peppercorn",
+"Salt",
+"Chili oil"
+]
+},
+{
+"dish_name": "Banh Mi Xiu Mai",
+"cuisine": "Vietnamese",
+"main_protein": "pork",
+"ingredients": [
+"Ground pork",
+"Jicama",
+"Yellow onion",
+"Garlic",
+"Fish sauce",
+"Salt",
+"Black pepper",
+"Sugar",
+"Cornstarch",
+"Toasted sesame oil",
+"Tomato paste",
+"Crushed tomatoes",
+"Chicken broth",
+"Baguettes",
+"Green onions",
+"Cilantro"
+]
+},
+{
+"dish_name": "Barbunya Pilaki",
+"cuisine": "Turkish",
+"main_protein": "beans",
+"ingredients": [
+"Canned borlotti (cranberry) beans",
+"Olive oil",
+"Yellow onion",
+"Celery",
+"Carrots",
+"Garlic",
+"Tomato paste",
+"Sugar",
+"Salt",
+"Flat-leaf parsley",
+"Lemons"
+]
+},
+{
+"dish_name": "BBQ Chicken Salad",
+"cuisine": "American",
+"main_protein": "chicken",
+"ingredients": [
+"Cooked chicken breast",
+"Corn on the cob",
+"Romaine hearts (lettuce)",
+"Tomatoes",
+"Dairy-free ranch dressing",
+"Barbecue sauce"
+]
+},
+{
+"dish_name": "Biberli Yumurta",
+"cuisine": "Turkish",
+"main_protein": "eggs",
+"ingredients": [
+"Long sweet green peppers (sivri, Cubanelle or Anaheim)",
+"Eggs",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Dried thyme"
+]
+},
+{
+"dish_name": "Bo Xao Rau Muong",
+"cuisine": "Vietnamese",
+"main_protein": "beef",
+"ingredients": [
+"Beef sirloin",
+"Fish sauce",
+"Sugar",
+"Black pepper",
+"Vegetable oil",
+"Water spinach (rau muong)",
+"Garlic",
+"White onion",
+"Green onions",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Broccoli Salad",
+"cuisine": "American",
+"main_protein": "pork",
+"ingredients": [
+"Broccoli",
+"Red onion",
+"Bacon",
+"Dried cranberries",
+"Sunflower seeds",
+"Mayonnaise",
+"Apple cider vinegar",
+"Sugar",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Bun Bo Nam Bo",
+"cuisine": "Vietnamese",
+"main_protein": "beef",
+"ingredients": [
+"Beef sirloin",
+"Oyster sauce",
+"Garlic",
+"Lemongrass",
+"Fish sauce",
+"Black pepper",
+"Vegetable oil",
+"Limes",
+"Sugar",
+"Rice vermicelli",
+"Green leaf lettuce",
+"Bean sprouts",
+"Carrots",
+"Cucumber",
+"Cilantro",
+"Mint",
+"Fried shallots",
+"Roasted peanuts"
+]
+},
+{
+"dish_name": "Ca Hap Gung",
+"cuisine": "Vietnamese",
+"main_protein": "fish",
+"ingredients": [
+"White fish fillets",
+"Jasmine rice",
+"Ginger",
+"Green onions",
+"Gluten-free tamari",
+"Fish sauce",
+"Toasted sesame oil",
+"Sugar",
+"Vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Ca Hoi Nuong Xa",
+"cuisine": "Vietnamese",
+"main_protein": "fish",
+"ingredients": [
+"Salmon fillets",
+"Jasmine rice",
+"Lemongrass",
+"Shallot",
+"Garlic",
+"Cucumber",
+"Fish sauce",
+"Gluten-free oyster sauce",
+"Honey",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Ca Tim Nuong Mo Hanh",
+"cuisine": "Vietnamese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Chinese eggplants",
+"Green onions",
+"Vegetable oil",
+"Salt",
+"Soy sauce",
+"Limes",
+"Sugar",
+"Garlic",
+"Roasted peanuts",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Canh Ca Chua Trung",
+"cuisine": "Vietnamese",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Medium tomatoes",
+"Shallots",
+"Chicken broth",
+"Jasmine rice",
+"Green onions",
+"Cilantro",
+"Fish sauce",
+"Sugar",
+"Vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Canh Dau Hu Rau Cai",
+"cuisine": "Vietnamese",
+"main_protein": "tofu",
+"ingredients": [
+"Firm tofu",
+"Mustard greens",
+"Yellow onion",
+"Ginger",
+"Green onions",
+"Gluten-free vegetable broth",
+"Tamari",
+"Vegetable oil",
+"Salt",
+"Sugar",
+"White pepper",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Carottes Rapees",
+"cuisine": "French",
+"main_protein": "vegan",
+"ingredients": [
+"Carrots",
+"Lemon",
+"Dijon mustard",
+"Vegetable oil",
+"Olive oil",
+"Parsley",
+"Green onions",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Chef Salad",
+"cuisine": "American",
+"main_protein": "turkey",
+"ingredients": [
+"Eggs",
+"Iceberg lettuce",
+"Red onion",
+"Cherry tomatoes",
+"Cucumber",
+"Sliced deli ham (gluten-free)",
+"Sliced deli turkey (gluten-free)",
+"Cheddar cheese",
+"Ranch dressing (gluten-free)"
+]
+},
+{
+"dish_name": "Chicken Salad Stuffed Avocados",
+"cuisine": "American",
+"main_protein": "chicken",
+"ingredients": [
+"Rotisserie chicken",
+"Mayonnaise",
+"Yellow mustard",
+"Lemon",
+"Salt",
+"Black pepper",
+"Red onion",
+"Celery",
+"Fresh parsley",
+"Seedless red grapes",
+"Avocados"
+]
+},
+{
+"dish_name": "Cucumber Sandwiches",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Cream cheese",
+"Mayonnaise",
+"Fresh dill",
+"Fresh chives",
+"Garlic powder",
+"Salt",
+"Black pepper",
+"English cucumber",
+"White sandwich bread"
+]
+},
+{
+"dish_name": "Dana Sote",
+"cuisine": "Turkish",
+"main_protein": "beef",
+"ingredients": [
+"Beef sirloin",
+"Yellow onion",
+"Red bell pepper",
+"Green bell pepper",
+"Garlic",
+"Tomatoes",
+"Tomato paste",
+"Olive oil",
+"Dried thyme",
+"Black pepper",
+"Salt",
+"Red pepper flakes",
+"Long-grain white rice"
+]
+},
+{
+"dish_name": "Dau Hu Chien Sa Ot",
+"cuisine": "Vietnamese",
+"main_protein": "tofu",
+"ingredients": [
+"Firm tofu",
+"Lemongrass",
+"Shallots",
+"Garlic",
+"Red chilies",
+"Salt",
+"Vegetable oil",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Dau Hu Sot Nam",
+"cuisine": "Vietnamese",
+"main_protein": "tofu",
+"ingredients": [
+"Firm tofu",
+"Cremini mushrooms",
+"Shiitake mushrooms",
+"Green onions",
+"Soy sauce",
+"Toasted sesame oil",
+"Cornstarch",
+"Vegetable oil",
+"Salt",
+"Red chilies",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Domates Corbasi",
+"cuisine": "Turkish",
+"main_protein": "vegetarian",
+"ingredients": [
+"Crushed tomatoes",
+"Yellow onion",
+"Garlic",
+"Olive oil",
+"Butter",
+"All-purpose flour",
+"Tomato paste",
+"Sweet paprika",
+"Vegetable broth",
+"Salt",
+"Black pepper",
+"Fresh basil"
+]
+},
+{
+"dish_name": "Domatesli Bulgur Pilavi",
+"cuisine": "Turkish",
+"main_protein": "vegetarian",
+"ingredients": [
+"Coarse bulgur",
+"Yellow onion",
+"Green bell pepper",
+"Roma tomatoes",
+"Tomato paste",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Ga Rang Muoi",
+"cuisine": "Vietnamese",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Jasmine rice",
+"Yellow onion",
+"Bell pepper",
+"Garlic",
+"Green onions",
+"Cucumber",
+"Cornstarch",
+"Chinese five spice",
+"Sugar",
+"Vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Gai Pad Prik Gaeng",
+"cuisine": "Thai",
+"main_protein": "chicken",
+"ingredients": [
+"Chicken breasts, boneless and skinless",
+"Green beans",
+"Gluten-free Thai red curry paste",
+"Makrut lime leaves",
+"Fish sauce",
+"Sugar",
+"Vegetable oil",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Gai Tod Kratiem",
+"cuisine": "Thai",
+"main_protein": "chicken",
+"ingredients": [
+"Chicken breasts, boneless and skinless",
+"Garlic",
+"Ground white pepper",
+"Soy sauce",
+"Oyster sauce",
+"Sugar",
+"Salt",
+"Neutral oil",
+"Green leaf lettuce",
+"Cucumber",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Goi Du Du Tom",
+"cuisine": "Vietnamese",
+"main_protein": "shrimp",
+"ingredients": [
+"Green papaya",
+"Large shrimp, peeled and deveined",
+"Limes",
+"Garlic",
+"Cilantro",
+"Mint",
+"Thai basil",
+"Thai chili",
+"Roasted salted peanuts",
+"Fish sauce",
+"Sugar",
+"Salt"
+]
+},
+{
+"dish_name": "Goong Ob Woon Sen",
+"cuisine": "Thai",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp, peeled and deveined",
+"Dried glass noodles (mung bean)",
+"Bacon",
+"Garlic",
+"Fresh ginger",
+"Cilantro",
+"Celery",
+"Scallions",
+"Gluten-free oyster sauce",
+"Tamari (gluten-free)",
+"Toasted sesame oil",
+"Sugar",
+"Black pepper"
+]
+},
+{
+"dish_name": "Grilled Chicken Sandwiches",
+"cuisine": "American",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken breasts",
+"Olive oil",
+"Dill pickle slices",
+"Garlic powder",
+"Onion powder",
+"Paprika",
+"Salt",
+"Black pepper",
+"Mayonnaise",
+"Dairy-free hamburger buns",
+"Iceberg lettuce",
+"Tomatoes",
+"Red onion"
+]
+},
+{
+"dish_name": "Hot Dogs",
+"cuisine": "American",
+"main_protein": "beef",
+"ingredients": [
+"Beef hot dogs",
+"Hot dog buns",
+"Olive oil",
+"Mustard",
+"Ketchup"
+]
+},
+{
+"dish_name": "Hoy Lai Pad Nam Prik Pao",
+"cuisine": "Thai",
+"main_protein": "seafood",
+"ingredients": [
+"Clams",
+"Garlic",
+"Nam prik pao (Thai roasted chili paste)",
+"Oyster sauce",
+"Fish sauce",
+"Sugar",
+"Thai basil",
+"Long red chilies",
+"Lime",
+"Vegetable oil",
+"Salt",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Ji Si Liang Mian",
+"cuisine": "Chinese",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken breasts",
+"Ginger",
+"Scallions",
+"Dried wheat noodles",
+"Cucumber",
+"Bean sprouts",
+"Cilantro",
+"Garlic",
+"Rice vinegar",
+"Light soy sauce",
+"Toasted sesame oil",
+"Sugar",
+"Salt",
+"Chili oil (check the label for nuts)"
+]
+},
+{
+"dish_name": "Kabak Mucver",
+"cuisine": "Turkish",
+"main_protein": "vegetarian",
+"ingredients": [
+"Zucchini",
+"Salt",
+"Feta",
+"Yellow onion",
+"Green onions",
+"Garlic",
+"Fresh dill",
+"Eggs",
+"All-purpose flour",
+"Black pepper",
+"Canola oil",
+"Plain Greek yogurt"
+]
+},
+{
+"dish_name": "Karides Tava",
+"cuisine": "Turkish",
+"main_protein": "shrimp",
+"ingredients": [
+"Medium shrimp",
+"Olive oil",
+"Garlic",
+"Pul biber (Aleppo pepper)",
+"Salt",
+"Flat-leaf parsley",
+"Lemons",
+"Crusty bread"
+]
+},
+{
+"dish_name": "Kasarli Mantar",
+"cuisine": "Turkish",
+"main_protein": "vegetarian",
+"ingredients": [
+"Cremini or white mushrooms",
+"Butter",
+"Garlic",
+"Fresh thyme",
+"Salt",
+"Black pepper",
+"Kashar cheese"
+]
+},
+{
+"dish_name": "Kuzu Pirzola",
+"cuisine": "Turkish",
+"main_protein": "lamb",
+"ingredients": [
+"Lamb rib chops",
+"Lemon",
+"Garlic",
+"Red onion",
+"Tomato",
+"Zucchini",
+"Red bell pepper",
+"Olive oil",
+"Dried oregano",
+"Sumac",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Mantarli Tavuk",
+"cuisine": "Turkish",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken breasts",
+"White button mushrooms",
+"Green bell pepper",
+"Red bell pepper",
+"Tomatoes",
+"Garlic",
+"Olive oil",
+"Dried thyme",
+"Black pepper",
+"Salt",
+"Long-grain white rice"
+]
+},
+{
+"dish_name": "Mercimekli Pilav",
+"cuisine": "Turkish",
+"main_protein": "lentils",
+"ingredients": [
+"Long-grain white rice",
+"Red lentils",
+"Yellow onion",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+}
+]
