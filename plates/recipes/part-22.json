@@ -1,0 +1,731 @@
+[
+{
+"dish_name": "Piperade",
+"cuisine": "French",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Yellow onion",
+"Red bell peppers",
+"Green bell pepper",
+"Garlic",
+"Diced tomatoes",
+"Smoked paprika",
+"Olive oil",
+"Flat-leaf parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Piperies Gemistes me Feta",
+"cuisine": "Greek",
+"main_protein": "cheese",
+"ingredients": [
+"Roasted red peppers",
+"Feta cheese",
+"Olive oil",
+"Dried oregano",
+"Garlic",
+"Yellow onion",
+"Black pepper",
+"Fresh parsley",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Roasted Cauliflower Steaks with Chimichurri",
+"cuisine": "American",
+"main_protein": "vegan",
+"ingredients": [
+"Cauliflower",
+"Olive oil",
+"Salt",
+"Fresh parsley",
+"Shallot",
+"Garlic",
+"Dried oregano",
+"Red wine vinegar",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Saint-Jacques Poelees",
+"cuisine": "French",
+"main_protein": "seafood",
+"ingredients": [
+"Sea scallops",
+"Long-grain white rice",
+"Garlic",
+"Flat-leaf parsley",
+"Lemon",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Salt and Pepper Squid",
+"cuisine": "Chinese",
+"main_protein": "seafood",
+"ingredients": [
+"Cleaned squid",
+"Jasmine rice",
+"Cornstarch",
+"Eggs",
+"Baking powder",
+"Vegetable oil",
+"Garlic",
+"Scallions",
+"Red chile",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Saute de Dinde aux Champignons",
+"cuisine": "French",
+"main_protein": "turkey",
+"ingredients": [
+"Turkey breast cutlets",
+"Cremini mushrooms",
+"Yellow onion",
+"Garlic",
+"Dry white wine",
+"Gluten-free chicken broth",
+"Fresh thyme",
+"Bay leaf",
+"Long-grain white rice",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Shrimp Creole",
+"cuisine": "American",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp",
+"Long-grain white rice",
+"Vegetable oil",
+"Yellow onion",
+"Green bell pepper",
+"Celery",
+"Garlic",
+"Creole seasoning",
+"Dried thyme",
+"Cayenne pepper",
+"Bay leaves",
+"Tomato sauce",
+"Gluten-free Worcestershire sauce",
+"Parsley",
+"Lemon",
+"Louisiana hot sauce",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Stuffed Acorn Squash with Wild Rice",
+"cuisine": "American",
+"main_protein": "vegan",
+"ingredients": [
+"Acorn squash",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Wild rice",
+"Gluten-free vegetable broth",
+"Shallots",
+"Garlic",
+"Cremini mushrooms",
+"Kale",
+"Red apple",
+"Pepitas",
+"Dried cranberries"
+]
+},
+{
+"dish_name": "Su Boregi",
+"cuisine": "Turkish",
+"main_protein": "cheese",
+"ingredients": [
+"All-purpose flour",
+"Eggs",
+"Feta cheese",
+"Parsley",
+"Butter",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Tartine de Chevre et Miel",
+"cuisine": "French",
+"main_protein": "cheese",
+"ingredients": [
+"Baguette",
+"Soft goat cheese",
+"Honey",
+"Fresh thyme",
+"Olive oil",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tavuk Corbasi",
+"cuisine": "Turkish",
+"main_protein": "chicken",
+"ingredients": [
+"Olive oil",
+"Yellow onion",
+"Carrots",
+"Garlic",
+"Dried oregano",
+"Dried mint",
+"Black pepper",
+"Chicken stock",
+"Vermicelli",
+"Flour",
+"Lemons",
+"Eggs",
+"Rotisserie chicken",
+"Parsley",
+"Salt"
+]
+},
+{
+"dish_name": "Temaki Hand Rolls",
+"cuisine": "Japanese",
+"main_protein": "fish",
+"ingredients": [
+"Japanese short-grain rice",
+"Rice vinegar",
+"Sugar",
+"Kosher salt",
+"Nori sheets",
+"Canned tuna, drained",
+"Mayonnaise",
+"Persian cucumbers",
+"Avocados",
+"Soy sauce"
+]
+},
+{
+"dish_name": "Tempura Udon",
+"cuisine": "Japanese",
+"main_protein": "shrimp",
+"ingredients": [
+"Frozen shrimp tempura",
+"Udon noodles, fresh or frozen",
+"Instant dashi granules",
+"Light soy sauce",
+"Mirin",
+"Green onions",
+"Shichimi togarashi"
+]
+},
+{
+"dish_name": "Tendon",
+"cuisine": "Japanese",
+"main_protein": "shrimp",
+"ingredients": [
+"Short-grain white rice",
+"Large shrimp, peeled and deveined",
+"Japanese eggplant",
+"Green bell pepper",
+"Carrot",
+"Eggs",
+"All-purpose flour",
+"Vegetable oil",
+"Soy sauce",
+"Mirin",
+"Dashi granules"
+]
+},
+{
+"dish_name": "Tenshinhan",
+"cuisine": "Japanese",
+"main_protein": "seafood",
+"ingredients": [
+"Short-grain rice",
+"Eggs",
+"Imitation crab sticks",
+"Green onions",
+"Soy sauce",
+"Sugar",
+"Rice vinegar",
+"Chicken bouillon powder",
+"Cornstarch",
+"Neutral oil",
+"Salt"
+]
+},
+{
+"dish_name": "Thai Cucumber Salad",
+"cuisine": "Thai",
+"main_protein": "vegan",
+"ingredients": [
+"Persian cucumbers",
+"Shallots",
+"White vinegar",
+"Sugar",
+"Salt",
+"Red chili"
+]
+},
+{
+"dish_name": "Thalipeeth",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Jowar (sorghum) flour",
+"Gram flour (besan)",
+"Whole wheat flour",
+"Bajra (pearl millet) flour",
+"Rice flour",
+"Yellow onion",
+"Garlic",
+"Ginger",
+"Green chili",
+"Cilantro",
+"Sesame seeds",
+"Turmeric",
+"Ground coriander",
+"Ground cumin",
+"Ajwain (carom seeds)",
+"Salt",
+"Neutral oil",
+"Indian pickle"
+]
+},
+{
+"dish_name": "Three Sisters Stew",
+"cuisine": "American",
+"main_protein": "beans",
+"ingredients": [
+"Olive oil",
+"Yellow onion",
+"Garlic",
+"Butternut squash",
+"Zucchini",
+"Diced tomatoes",
+"Pinto beans",
+"Kidney beans",
+"Frozen corn",
+"Vegetable broth",
+"Ground cumin",
+"Chili powder",
+"Dried oregano",
+"Fresh cilantro",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tian Provencal",
+"cuisine": "French",
+"main_protein": "vegan",
+"ingredients": [
+"Zucchini",
+"Italian eggplant",
+"Roma tomatoes",
+"Garlic",
+"Olive oil",
+"Herbes de Provence",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tiger Skin Peppers",
+"cuisine": "Chinese",
+"main_protein": "vegan",
+"ingredients": [
+"Jasmine rice",
+"Cubanelle peppers",
+"Garlic",
+"Soy sauce",
+"Chinkiang black vinegar",
+"Sugar",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Tom Jued Tao Hu",
+"cuisine": "Thai",
+"main_protein": "tofu",
+"ingredients": [
+"Soft tofu",
+"Glass noodles",
+"Dried shiitake mushrooms",
+"Vegetable broth, gluten-free",
+"Napa cabbage",
+"Carrots",
+"Celery",
+"Garlic",
+"Cilantro",
+"Whole black peppercorns",
+"Gluten-free tamari"
+]
+},
+{
+"dish_name": "Tomato Shorba",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Tomatoes",
+"Neutral oil",
+"Bay leaves",
+"Cinnamon stick",
+"Whole cloves",
+"Green cardamom pods",
+"Cumin seeds",
+"Ginger",
+"Garlic",
+"Gram flour (besan)",
+"Cilantro",
+"Turmeric",
+"Kashmiri chili powder",
+"Ground coriander",
+"Black pepper",
+"Salt",
+"Water"
+]
+},
+{
+"dish_name": "Tomatokeftedes",
+"cuisine": "Greek",
+"main_protein": "vegetarian",
+"ingredients": [
+"Cherry tomatoes",
+"Yellow onion",
+"Green onions",
+"Fresh basil",
+"Fresh mint",
+"Fresh parsley",
+"Feta cheese",
+"All-purpose flour",
+"Baking powder",
+"Soda water",
+"Olive oil",
+"Plain Greek yogurt",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tonpeiyaki",
+"cuisine": "Japanese",
+"main_protein": "pork",
+"ingredients": [
+"Thinly sliced pork belly",
+"Green cabbage",
+"Eggs",
+"Cornstarch",
+"Dashi powder",
+"Mirin",
+"Soy sauce",
+"Vegetable oil",
+"Tonkatsu sauce",
+"Japanese mayonnaise",
+"Scallions",
+"Salt",
+"Short-grain rice"
+]
+},
+{
+"dish_name": "Torta de Huevo",
+"cuisine": "Mexican",
+"main_protein": "eggs",
+"ingredients": [
+"Bolillo or telera rolls",
+"Vegetarian refried beans",
+"Eggs",
+"Mild salsa verde",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Torta de Milanesa",
+"cuisine": "Mexican",
+"main_protein": "beef",
+"ingredients": [
+"Thin beef sandwich steaks",
+"Milk",
+"Plain breadcrumbs",
+"Seasoning salt",
+"Salt",
+"Black pepper",
+"Black beans",
+"Red onion",
+"Cilantro",
+"Vegetable oil",
+"Bolillo rolls",
+"Mayonnaise",
+"Romaine lettuce",
+"Tomatoes",
+"Avocados",
+"Pickled jalape\u00f1os"
+]
+},
+{
+"dish_name": "Tramezzini",
+"cuisine": "Italian",
+"main_protein": "fish",
+"ingredients": [
+"Eggs",
+"Tuna in olive oil",
+"Mayonnaise",
+"Capers",
+"Soft white sandwich bread (dairy-free)",
+"Watercress",
+"Black pepper"
+]
+},
+{
+"dish_name": "Trung Chien",
+"cuisine": "Vietnamese",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Jasmine rice",
+"Dried wood ear mushrooms",
+"Glass noodles",
+"Scallions",
+"Cilantro",
+"Shallots",
+"Fish sauce",
+"Brown sugar",
+"Black pepper",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Tteokguk",
+"cuisine": "Korean",
+"main_protein": "beef",
+"ingredients": [
+"Sliced rice cakes (tteok)",
+"Ground beef",
+"Eggs",
+"Green onions",
+"Garlic",
+"Fresh ginger",
+"Instant dashi granules",
+"Toasted sesame oil",
+"Roasted seaweed (gim) sheets",
+"Toasted sesame seeds",
+"Black pepper",
+"Salt"
+]
+},
+{
+"dish_name": "Turkey Apple Sausage Hash",
+"cuisine": "American",
+"main_protein": "turkey",
+"ingredients": [
+"Cooked turkey sausage links, gluten-free",
+"Red potatoes",
+"Red onion",
+"Granny Smith apples",
+"Fresh sage",
+"Apple cider",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Turkey Cabbage Soup",
+"cuisine": "American",
+"main_protein": "turkey",
+"ingredients": [
+"Ground turkey",
+"Olive oil",
+"Yellow onion",
+"Celery",
+"Carrots",
+"Garlic",
+"Green cabbage",
+"Diced tomatoes",
+"Chicken broth, gluten-free",
+"Dried oregano",
+"Dried thyme",
+"Dried basil",
+"Brown sugar",
+"White vinegar",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Turkey Vegetable Soup",
+"cuisine": "American",
+"main_protein": "turkey",
+"ingredients": [
+"Lean ground turkey (93%)",
+"Olive oil",
+"Carrots",
+"Celery",
+"Yellow onion",
+"Garlic",
+"Russet potatoes",
+"Diced tomatoes",
+"Tomato paste",
+"Chicken broth, gluten-free",
+"Frozen corn",
+"Frozen cut green beans",
+"Dried thyme",
+"Dried oregano",
+"Bay leaf",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Tzatziki Cucumber Pitas",
+"cuisine": "Greek",
+"main_protein": "vegetarian",
+"ingredients": [
+"Pita bread",
+"English cucumber",
+"Tomatoes",
+"Red onion",
+"Feta cheese",
+"Plain Greek yogurt",
+"Garlic",
+"Lemon",
+"Olive oil",
+"Fresh dill",
+"Dried oregano",
+"Salt"
+]
+},
+{
+"dish_name": "Unstuffed Cabbage Roll Skillet",
+"cuisine": "American",
+"main_protein": "turkey",
+"ingredients": [
+"Olive oil",
+"Ground turkey",
+"Yellow onion",
+"Garlic",
+"Long grain white rice",
+"Salt",
+"Black pepper",
+"Dried oregano",
+"Paprika",
+"Diced tomatoes",
+"Tomato sauce",
+"Gluten-free chicken broth",
+"Gluten-free Worcestershire sauce",
+"Golden raisins",
+"Green cabbage"
+]
+},
+{
+"dish_name": "Vegetable Uttapam",
+"cuisine": "Indian",
+"main_protein": "lentils",
+"ingredients": [
+"Idli dosa batter",
+"Yellow onion",
+"Carrots",
+"Green bell pepper",
+"Tomatoes",
+"Ginger",
+"Cilantro",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Veloute de Potiron",
+"cuisine": "French",
+"main_protein": "vegetarian",
+"ingredients": [
+"Kabocha squash",
+"Carrots",
+"Yellow potatoes",
+"Yellow onion",
+"Garlic",
+"Olive oil",
+"Gluten-free vegetable broth",
+"Heavy cream",
+"Fresh parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "White Cut Chicken",
+"cuisine": "Chinese",
+"main_protein": "chicken",
+"ingredients": [
+"Bone-in skin-on chicken thighs",
+"Scallions",
+"Ginger",
+"Neutral oil",
+"Jasmine rice",
+"Ice",
+"Salt"
+]
+},
+{
+"dish_name": "Xifias Souvlaki",
+"cuisine": "Greek",
+"main_protein": "fish",
+"ingredients": [
+"Swordfish steaks",
+"Lemons",
+"Olive oil",
+"Garlic",
+"Dried oregano",
+"Cherry tomatoes",
+"Long-grain white rice",
+"Salt",
+"Black pepper",
+"Wooden skewers"
+]
+},
+{
+"dish_name": "Yam Khai Dao",
+"cuisine": "Thai",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Vegetable oil",
+"Fish sauce",
+"Limes",
+"Light brown sugar",
+"Garlic",
+"Celery",
+"Yellow onion",
+"Carrots",
+"Romaine lettuce",
+"Cilantro",
+"Thai chili"
+]
+},
+{
+"dish_name": "Yang Rou Chuan",
+"cuisine": "Chinese",
+"main_protein": "lamb",
+"ingredients": [
+"Boneless lamb shoulder",
+"Yellow onion",
+"Garlic",
+"Cornstarch",
+"Vegetable oil",
+"Cumin seeds",
+"Red pepper flakes",
+"Salt",
+"Long-grain white rice",
+"English cucumber"
+]
+}
+]
