@@ -1,0 +1,92 @@
+{
+ "dish_name": "Bavette aux Echalotes",
+ "cuisine": "French",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shallots",
+   "qty": "6 large",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Take the steak out of the fridge and pat it dry. Season both sides with 3/4 tsp of the salt and the pepper.",
+  "Peel the shallots and slice them thin.",
+  "Melt 2 tbsp of the butter in a medium skillet over medium heat. Add the shallots and cook for 7 minutes, stirring now and then, until golden and soft.",
+  "Meanwhile, heat the oil in a large skillet over medium-high heat until it shimmers. Add the steak and cook for 5 minutes without moving it, until the underside is deep brown. Flip and cook the other side for 4 minutes. You're cooking it to 130°F in the middle for medium-rare, so if you have a thermometer, check there. No thermometer? Press the steak: it should feel springy, like the base of your thumb.",
+  "Transfer the steak to a cutting board and let it rest for 5 minutes.",
+  "Add the vinegar, thyme, broth and the remaining 1/2 tsp salt to the shallots. Bring to a boil, then cover and simmer for 4 minutes, until the shallots are very soft and most of the liquid is gone.",
+  "Take the pan off the heat and stir in the remaining 1 tbsp butter and any juices from the cutting board. Take out the thyme sprigs.",
+  "Taste it. If it's flat, add a few drops more vinegar.",
+  "Slice the steak thin against the grain. Spoon the shallots over the top and serve with mashed potatoes or steamed green beans."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version with 20 or more ratings could be read, so this is a fallback. The lead is Eat Live Travel Write's bavette aux echalotes: shallots cooked golden in butter, then vinegar, thyme and stock, finished with cold butter. It makes the sauce in the steak's pan; here it goes in a second pan at the same time so the whole dinner stays near 30 minutes. Sized up from a 10 ounce skirt steak to a flank steak, which Margarita's International Recipes found better for bavette than skirt.",
+ "sources": [
+  {
+   "name": "Eat Live Travel Write",
+   "title": "Bavette aux echalotes",
+   "url": "https://www.eatlivetravelwrite.com/easyrecipe-print/26154-0/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "SideChef",
+   "title": "Bavette (Flank Steak) with Shallot Sauce and Fries",
+   "url": "https://www.sidechef.com/recipes/42408/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

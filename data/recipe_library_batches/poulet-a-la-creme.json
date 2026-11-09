@@ -1,0 +1,92 @@
+{
+ "dish_name": "Poulet a la Creme",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh tarragon",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Long grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Put the rice, 2 1/4 cups water and 1/2 tsp of the salt in a medium pot. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take it off the heat for 5 minutes.",
+  "Meanwhile, wipe the mushrooms clean and slice them. Pat the chicken dry and season both sides with 1/2 tsp of the salt and the pepper. Chop 1 tbsp tarragon.",
+  "Melt the butter in a large deep skillet over medium-high heat. Add the chicken in a single layer and cook for 3 minutes without moving it, until the underside is deep golden. Flip and cook the other side for 3 minutes.",
+  "Scatter the mushrooms around the chicken. Pour in the wine and 1/4 cup water, add the remaining 1/4 tsp salt, and bring to a boil.",
+  "Cover, turn the heat to low and simmer for 10 minutes. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check there. No thermometer? Cut into the thickest thigh: it's done when there's no pink left and the juices run clear.",
+  "Uncover, stir in the cream and turn the heat to high. Boil for 2 minutes, until the sauce is slightly thick and coats the chicken.",
+  "Take the pan off the heat and sprinkle the tarragon over the top.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Chicken in a white wine and mushroom cream sauce. RecipeTin Eats' chicken fricassee (the same dish under its other French name) is the lead: brown the chicken in butter, mushrooms, white wine, simmer covered, then finish with cream. Jacques Pepin's poulet a la creme (Sur La Table) is the one under this exact name, and it sets the quick method and the tarragon. Changes: boneless thighs so it cooks in 10 minutes instead of 30, and no flour so it stays gluten-free (the cream is boiled down to thicken the sauce).",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Chicken Fricassee",
+   "url": "https://www.recipetineats.com/chicken-fricassee-quick-french-chicken-stew/",
+   "rating": 4.92,
+   "rating_count": 179,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sur La Table (Jacques Pepin)",
+   "title": "Poulet a la Creme",
+   "url": "https://www.surlatable.com/recipe/poulet-a-la-creme/REC-324087",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

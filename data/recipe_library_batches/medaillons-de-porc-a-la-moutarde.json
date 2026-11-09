@@ -1,0 +1,111 @@
+{
+ "dish_name": "Medaillons de Porc a la Moutarde",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork tenderloin",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Herbes de Provence",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Trim any silver skin from the pork and cut it into rounds about 1 inch thick. Press each round down gently with your palm. Mince the garlic and chop 1 tbsp parsley.",
+  "Pat the pork dry and season both sides with the salt and pepper.",
+  "Heat the oil and 1 tbsp of the butter in a large skillet over medium-high heat until the butter foams. Add half the pork in a single layer and cook for 3 minutes without moving it, until the underside is golden. Flip and cook the other side for 3 minutes. Transfer to a plate and cook the rest the same way.",
+  "Turn the heat to medium-low. Add the remaining 1 tbsp butter and the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Pour in the broth, add the herbes de Provence and scrape up the browned bits. Let it bubble for 1 minute.",
+  "Stir in the cream and the Dijon. Simmer for 3 minutes, until the sauce coats the back of a spoon.",
+  "Return the pork and any juices from the plate to the pan. Simmer for 3 minutes. You're cooking the pork to 145°F in the middle, so if you have a thermometer, check there. No thermometer? Cut into the thickest round: a little blush of pink in the center is right, and the juices should run clear.",
+  "Take the pan off the heat and sprinkle the parsley over the top.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the mustard sauce over the pork and serve."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Salt & Lavender's creamy pork tenderloin medallions is the lead for the method and ratios: sear in butter and oil, garlic, broth and herbes de Provence, then cream, and finish in the sauce. Its flour is left out so it stays gluten-free. That page uses only half a teaspoon of Dijon, which is too little for a dish called a la moutarde, so the mustard follows the 1 tablespoon per half cup of cream used by Seasons & Suppers and The English Kitchen (2 tablespoons here).",
+ "sources": [
+  {
+   "name": "Salt & Lavender",
+   "title": "Creamy Pork Tenderloin Medallions",
+   "url": "https://www.saltandlavender.com/creamy-pork-tenderloin-medallions/",
+   "rating": 4.89,
+   "rating_count": 135,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Seasons & Suppers",
+   "title": "Pork Medallions with Creamy Dijon Sauce",
+   "url": "https://www.seasonsandsuppers.ca/pork-medallions-with-dijon-sauce/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "The English Kitchen",
+   "title": "Pork Medallions with Creamy Dijon Sauce",
+   "url": "https://www.theenglishkitchen.co/2023/05/pork-medallions-with-creamy-dijon-sauce.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,119 @@
+{
+ "dish_name": "Crevettes a la Provencale",
+ "cuisine": "French",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Plum tomatoes",
+   "qty": "8",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried marjoram",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Long grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Put the rice, 2 1/4 cups water and 1/2 tsp of the salt in a medium pot. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take it off the heat for 5 minutes.",
+  "Meanwhile, dice the onion and mince the garlic. Core and dice the tomatoes. That should be about 4 cups. Chop 2 tbsp parsley.",
+  "Pat the shrimp dry and toss them with 1/2 tsp of the salt.",
+  "Heat the oil in a large deep skillet over medium-high heat. Add the onion and cook for 5 minutes, stirring now and then, until soft and clear.",
+  "Add the garlic and cook for 1 minute, until it smells fragrant. Don't let it brown.",
+  "Add the tomatoes, thyme, marjoram and the remaining 1/2 tsp salt. Cook for 5 minutes, until the tomatoes have broken down and released their juice.",
+  "Pour in the wine and simmer for 1 minute.",
+  "Turn the heat to medium. Spread the shrimp over the tomatoes in a single layer and add the bay leaf. Cover and simmer for 2 minutes, then flip the shrimp and cook for 1 minute, until they're pink and curled into a loose C. Take out the bay leaf.",
+  "Take the pan off the heat. Stir in the butter, the juice of the lemon and the parsley.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 19,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Jacques Pepin's shrimp Provencal is the lead because it is the quick one: onion, garlic and plum tomatoes cooked down, a splash of dry white wine, then the shrimp simmered on top with thyme, marjoram and a bay leaf. No version with 20 or more ratings and a rating of 4.0 or higher could be read (Taste France is 3.5 from 47 and takes over an hour), so it is a fallback. The butter and lemon at the end come from Dorothy Lane's version, and the rice is Pepin's own serving.",
+ "sources": [
+  {
+   "name": "The Gazette (Jacques Pepin)",
+   "title": "Jacques Pepin's Shrimp Provencal",
+   "url": "https://gazette.com/2011/09/26/shrimp-dish-a-taste-of-french-cruise-cuisine-e818ad43-41d4-5f99-a0b2-308ad67a5141/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dorothy Lane Market",
+   "title": "Shrimp Provencal",
+   "url": "https://dorothylane.com/recipes/ShrimpProvencal",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

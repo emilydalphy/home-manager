@@ -1,0 +1,108 @@
+{
+ "dish_name": "Steak Hache",
+ "cuisine": "French",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Lean ground beef",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely mince the onion. Melt 1 tbsp of the butter in a large skillet over medium heat, add the onion and 1/4 tsp of the salt, and cook for 6 minutes, stirring now and then, until soft but not browned. Transfer it to a large bowl to cool.",
+  "Meanwhile, finely chop 2 tbsp parsley.",
+  "Add the beef, egg, 3/4 tsp of the salt, the pepper and the thyme to the onion. Mix with your hands until you see no streaks, then stop. Any longer and the patties come out dense.",
+  "Wet your hands and shape the beef into 4 patties, each about 3/4 inch thick. Press a shallow dent into the middle of each one with your thumb.",
+  "Wipe out the skillet and heat the oil over medium-high heat. Add the patties and cook for 3 minutes without moving them, until the underside is deep brown and lets go of the pan. Flip them and cook the other side for 3 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check there. No thermometer? Cut into one patty: it's done when there's no pink left.",
+  "Transfer the patties to a plate and cover them loosely.",
+  "Pour the fat out of the skillet and put the pan back over medium-high heat. Add the broth and scrape up the browned bits. Boil for 2 minutes, until the broth has reduced by half.",
+  "Stir in the cream and the Dijon and simmer for 1 minute. Take the pan off the heat and whisk in the remaining 1 tbsp butter and the parsley. Add the remaining 1/4 tsp salt.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the mustard sauce over the patties and serve."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Julia Child's bifteck hache a la lyonnaise is the lead: minced onion cooked soft, mixed into lean beef with an egg, seared, then a pan sauce made right in the skillet. Two changes: the flour dredge is left out so it stays gluten-free, and the chill before searing is skipped to stay near 30 minutes. The list promises a mustard sauce, and no hamburger-steak page we could read has one, so the pan sauce takes a tablespoon of Dijon and a little cream, borrowed from the cream and Dijon pan sauce on Food52's steak au poivre.",
+ "sources": [
+  {
+   "name": "12 Tomatoes",
+   "title": "Julia Child's Ground Beef Patties",
+   "url": "https://12tomatoes.com/julia-childs-ground-beef-patties",
+   "rating": 4.7,
+   "rating_count": 272,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Olive Magazine",
+   "title": "Steak hache and pokey salad",
+   "url": "https://www.olivemagazine.com/recipes/chef-recipes/steak-hache-and-pokey-salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

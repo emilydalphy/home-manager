@@ -1,0 +1,66 @@
+{
+ "dish_name": "Lamb Chops Provencale",
+ "cuisine": "French",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Lamb loin chops",
+   "qty": "12 (about 2 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Herbes de Provence",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Grate the garlic into a small bowl. Add the herbes de Provence and 4 tbsp of the olive oil and stir with a fork into a loose paste.",
+  "Pat the chops dry and rub the paste over both sides of each one. Let them sit on a board for 10 minutes.",
+  "Season both sides of the chops with the salt and pepper.",
+  "Heat the remaining 1 tbsp oil in a large skillet over medium-high heat until it shimmers. Add 6 chops in a single layer and cook for 2 minutes without moving them, until the underside is deep brown. Flip and cook the other side for 2 minutes. You're cooking them to 135°F in the middle for medium-rare, so if you have a thermometer, check there. No thermometer? Press a chop: it should give a little but spring back.",
+  "Transfer the chops to a plate. Cook the other 6 chops the same way.",
+  "Let all the chops rest on the plate for 3 minutes. Spoon any juices from the plate over them.",
+  "Taste a chop. If it's flat, add a pinch more salt.",
+  "Serve with mashed potatoes or roasted vegetables."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mon Petit Four's lamb chops with herbes de Provence is the lead: a garlic and herbes de Provence paste in olive oil rubbed on the chops, then a quick sear in a hot pan. Its 20 minute rest is cut to 10 so the dinner stays inside 30 minutes. Cup of Yum and Laylita's pan seared lamb chops finish with butter, which is left off to keep it dairy-free. No pan sauce is added, since no source has one.",
+ "sources": [
+  {
+   "name": "Mon Petit Four",
+   "title": "Lamb Chops with Herbes de Provence",
+   "url": "https://www.monpetitfour.com/lamb-chops-recipe/",
+   "rating": 4.4,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

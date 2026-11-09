@@ -1,0 +1,85 @@
+{
+ "dish_name": "Tarte Tomate Moutarde",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Puff pastry sheet",
+   "qty": "1 sheet",
+   "category": "frozen"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Gruyere cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Herbes de Provence",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F (200°C). Line a baking sheet with parchment. If the puff pastry is frozen, thaw it first according to the package.",
+  "Meanwhile, slice the tomatoes into thin rounds, about 1/4 inch. Lay them on a double layer of paper towels and pat the tops dry. Grate the cheese. That should be about 2 cups.",
+  "Unfold the pastry onto the baking sheet. Score a border 1 inch from the edge with the tip of a knife, without cutting through. Prick the middle all over with a fork.",
+  "Spread the Dijon over the middle of the pastry, up to the border.",
+  "Sprinkle two thirds of the cheese over the mustard.",
+  "Lay the tomato slices over the cheese in overlapping rows. Sprinkle with the salt, pepper and herbes de Provence, then scatter the remaining cheese on top and drizzle with the olive oil.",
+  "Bake for 25 minutes, until the pastry is deep golden and the cheese is bubbling.",
+  "Let it rest on the baking sheet for 5 minutes, then slice and serve."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Obviously French's tomato tart is the lead: Dijon spread on puff pastry, cheese, then overlapping tomatoes. Foodie Explorers' version is the same idea with herbes de Provence and a 20 minute bake. The lead salts and drains the tomatoes for 20 to 30 minutes, which would break the 30 minute target, so they are sliced thin and patted dry instead, and the egg glaze and sesame seeds are left off. No rated version could be read, so it is a fallback. Gruyere is normally made with animal rennet, so a strict vegetarian household should check the label.",
+ "sources": [
+  {
+   "name": "Obviously French",
+   "title": "Tomato Tart",
+   "url": "https://obviouslyfrench.com/tomato-tart/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Foodie Explorers",
+   "title": "Tarte Fine a la Tomate & Moutarde",
+   "url": "https://foodieexplorers.co.uk/tomato-mustard-puff-pastry-tart-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
