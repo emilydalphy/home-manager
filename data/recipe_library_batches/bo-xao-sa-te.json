@@ -1,0 +1,126 @@
+{
+ "dish_name": "Bo Xao Sa Te",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sa te sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Curry powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice and 2 cups of water in a pot and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered.",
+  "Cut the beef across the grain into thin slices. Mince the lemongrass bulbs and the shallot, and mince the garlic.",
+  "In a bowl, mix the beef with the sugar, oyster sauce, 1 tbsp of the fish sauce, pepper, tomato paste, curry powder, the shallot and 1 tbsp of the lemongrass. Let it sit for 15 minutes while you prep the rest.",
+  "Cut the onions into wedges. Cut 1 celery stalk into 1 inch pieces. Slice the green onions into 1 inch pieces and chop a handful of cilantro.",
+  "Heat the oil in a large skillet or wok over high heat. Add the garlic, the rest of the lemongrass and 1 tbsp of the sa te sauce. Stir for 30 seconds, until fragrant.",
+  "Add the beef and its marinade with 3/4 cup of water. Stir-fry over high heat for 4 to 5 minutes, until the beef is no longer pink and the sauce thickens.",
+  "Add the remaining 1 tbsp of fish sauce, the onions, the celery and the green onions. Stir for 3 minutes, until the onions are softened but still crisp.",
+  "Take the pan off the heat and stir in the cilantro.",
+  "Serve over the rice, with the remaining 1 tbsp of sa te sauce in a small bowl at the table. Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 18,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No English bo xao sa te page turned up, so the lead is the Vietnamese Dien May Cho Lon recipe (no ratings): beef marinated in oyster sauce, fish sauce, tomato paste and curry powder, then stir-fried hard with lemongrass, onions, celery and green onions in a short sauce. Its ingredient list names sa te sauce but no step uses it, so it goes into the pan with the garlic and lemongrass, with half held back for the table to keep the base mild. Cup of Yum's Bo Xao Sa Ot is a sibling dish and was only used to check the lemongrass and chili approach. Sa te here is the Vietnamese chili and lemongrass oil, not peanut satay.",
+ "sources": [
+  {
+   "name": "Dien May Cho Lon",
+   "title": "Cach lam thit bo xao sa te",
+   "url": "https://dienmaycholon.com/mon-ngon/cach-lam-thit-bo-xao-sa-te",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

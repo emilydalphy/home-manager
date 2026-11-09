@@ -1,0 +1,102 @@
+{
+ "dish_name": "Dau Hu Nhoi Thit",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Fried tofu puffs",
+   "qty": "12 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice and 2 cups of water in a pot and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered.",
+  "Finely chop 1/4 cup of the onion. In a bowl, mix the pork, the chopped onion, 1/2 tsp of the salt, 1 tsp of the sugar and the pepper until it holds together.",
+  "Cut any large tofu puffs in half. Slice a slit in each piece to make a pocket and pack it with the pork mixture. Press it in well.",
+  "Quarter the tomatoes and slice the green onions.",
+  "In a wide pan, add the tomatoes, tomato paste, fish sauce, the remaining 1 tsp of salt, the remaining 2 tsp of sugar and 1/2 cup of water. Set the stuffed tofu on top, meat side down.",
+  "Bring it to a boil over medium-high heat. Turn the heat down to low, cover, and simmer for 10 minutes.",
+  "Halfway through, gently turn the tofu and spoon the sauce over it. Add the green onions for the last 2 minutes.",
+  "The pork is done at 160°F in the middle, so if you have a thermometer, check one piece. No thermometer? Cut one open: there should be no pink.",
+  "Serve over the rice. Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hungry Huy (5 from 7 ratings) is the lead because it simmers the stuffed tofu in a tomato sauce of fish sauce, sugar and tomato paste, which suits a gluten-free table. Vicky Pham's version (no ratings) fries the tofu first and uses oyster sauce, so it isn't used here. Both stuff bought fried tofu, so no frying is needed. Neither source includes rice; it is added to make a dinner. No source gives a tofu pocket without frying, so this keeps to pre-fried puffs.",
+ "sources": [
+  {
+   "name": "Hungry Huy",
+   "title": "Pork Stuffed Tofu in Tomato Sauce",
+   "url": "https://www.hungryhuy.com/pork-stuffed-tofu-in-tomato-sauce/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Stuffed Tofu in Tomato Sauce",
+   "url": "https://vickypham.com/blog/vietnamese-stuffed-tofu-in-tomato-sauce-dau-hu-nhoi-thit/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

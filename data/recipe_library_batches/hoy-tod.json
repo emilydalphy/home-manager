@@ -1,0 +1,113 @@
+{
+ "dish_name": "Hoy Tod",
+ "cuisine": "Thai",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Mussel meat, cooked",
+   "qty": "8 oz",
+   "category": "frozen"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Tapioca starch",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tempura flour",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Golden Mountain sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet chili sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice and 2 cups of water in a pot and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered.",
+  "In a bowl, whisk the tapioca starch, tempura flour, salt, white pepper and Golden Mountain sauce. Slowly whisk in 1 cup of ice-cold water until smooth. Let the batter rest for 10 minutes.",
+  "Meanwhile, thaw the mussel meat if it's frozen and pat it dry. Thinly slice the green onions and chop 1/4 cup of cilantro. Rinse the bean sprouts and drain them well.",
+  "Stir the mussel meat into the batter.",
+  "Heat 4 tablespoons of the oil in a 10 or 12 inch nonstick skillet over medium heat. Pour in half the batter and mussels.",
+  "Right away, crack 2 eggs over the batter and break the yolks with a fork so they spread. Scatter half the green onions and cilantro on top.",
+  "Cook for 3 to 4 minutes, until the underside is golden and the batter has set. Flip it and cook the other side for 2 minutes. Keep flipping until both sides are golden and crisp. Transfer it to a plate.",
+  "Add the remaining 4 tablespoons of oil to the pan and make the second pancake the same way with the rest of the batter, eggs, green onions and cilantro.",
+  "Stir-fry the bean sprouts in the same pan over high heat for 1 to 2 minutes, until they soften but still crunch.",
+  "Pile the bean sprouts on a platter and top with the pancakes, cut into wedges. Serve with the rice and the sweet chili sauce in a small bowl."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only two close versions could be read, from Hungry in Thailand and Cup of Yum, and they share one recipe (5 from 1 and 5 from 2 ratings). The batter is tapioca starch and tempura flour whisked with ice-cold water, with eggs cracked over the top and a pile of fried bean sprouts underneath. The source is written for 2, so it is doubled and cooked as two pancakes. The sources give no dip; sweet chili sauce is what other Hoy Tod pages serve, and rice is added to make it a dinner. Golden Mountain sauce contains soy and wheat.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Fried Mussels Recipe (Hoi Tod)",
+   "url": "https://hungryinthailand.com/fried-mussels-recipe-hoi-tod/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Thai Fried Mussels Recipe (Hoi Tod)",
+   "url": "https://cupofyum.com/recipes/thai-fried-mussels-recipe-hoi-tod",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

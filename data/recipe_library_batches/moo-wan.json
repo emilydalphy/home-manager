@@ -1,0 +1,105 @@
+{
+ "dish_name": "Moo Wan",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork tenderloin",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice and 2 cups of water in a pot and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered until the pork is done.",
+  "Cut the pork across the grain into slices about 1/4 inch thick. Sprinkle the salt over them and toss.",
+  "Thinly slice the shallots. Pound the garlic, the peppercorns and 4 of the cilantro stems into a coarse paste in a mortar, or mince them together on a board.",
+  "Heat the oil in a wide skillet over medium-high heat for 1 minute. Add half the pork in a single layer and cook for 1 minute per side, until browned at the edges. Transfer it to a plate and brown the rest the same way.",
+  "Turn the heat down to medium. Add the shallots, the garlic paste and the brown sugar. Stir for about 2 minutes, until the sugar melts and the shallots turn golden. Don't let the garlic darken.",
+  "Pour in the fish sauce and 2/3 cup of water. Scrape up the browned bits from the bottom of the pan and let it bubble for 2 minutes.",
+  "Return the pork and any juices to the pan. Simmer for 5 to 6 minutes, stirring now and then, until the sauce is a sticky glaze that coats every slice. You're cooking the pork to 145°F in the middle, so if you have a thermometer, check a thick slice. No thermometer? Cut one open: it should be pale with no raw pink.",
+  "Take the pan off the heat. Chop 2 tablespoons of cilantro leaves and sprinkle them over the pork.",
+  "Serve over the rice. Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hungry in Thailand (5 from 6 ratings) and Cup of Yum (5 from 8) both braise pork belly for 15 to 20 minutes and then simmer it in a sweet glaze for another 20, which is 40 to 55 minutes. Food.com's version slices pork tenderloin thin and finishes it in a few minutes with fish sauce, brown sugar, garlic and white pepper. This one uses the tenderloin to fit 30 minutes, with the shallot, pounded garlic, peppercorn and cilantro base from Hungry in Thailand, and brown sugar for palm sugar. Oyster sauce and dark soy sauce are left out so it stays gluten-free. Coriander root is replaced with cilantro stems.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Sweet Pork (Moo Wan Recipe)",
+   "url": "https://hungryinthailand.com/thai-sweet-pork/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Thai Sweet Pork (Moo Wan Recipe)",
+   "url": "https://cupofyum.com/recipes/thai-sweet-pork-moo-wan-recipe",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Thai Sweet Pork (Mu Wan)",
+   "url": "http://www.food.com/recipe/thai-sweet-pork-mu-wan-152372",
+   "rating": null,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
