@@ -349,6 +349,7 @@
 
   function close() {
     if (!sheetEl || sheetEl.hidden) return;
+    dropDictation();
     sheetEl.hidden = true;
     scrimEl.hidden = true;
     var done = st;
@@ -523,9 +524,19 @@
     else if (st.step === 'say') html = sayHtml();
     else if (st.step === 'type') html = typeHtml();
     else if (st.step === 'setup') html = setupHtml();
+    dropDictation();
     sheetEl.innerHTML = html;
     if (st.step === 'say') wireSay();
     if (st.step === 'type') wireType();
+  }
+
+  // The Say it box's mic (static/dictation.js). Let go of it whenever the
+  // sheet redraws or closes, so the iPhone's mic never keeps listening to
+  // a box that is gone.
+  var sayDictation = null;
+  function dropDictation() {
+    if (sayDictation) sayDictation.dispose();
+    sayDictation = null;
   }
 
   function wireSay() {
@@ -539,7 +550,7 @@
     // Next reads the box when it is tapped, so dictation (which writes
     // .value with no 'input' event) needs no listener here.
     if (typeof global.setupDictation === 'function') {
-      global.setupDictation(box, mic, { onMessage: function (msg) {
+      sayDictation = global.setupDictation(box, mic, { onMessage: function (msg) {
         if (note) { note.textContent = msg; note.hidden = false; }
       } });
     } else {

@@ -64,7 +64,7 @@ window.Capacitor = {
   Plugins: { PomonaSpeech: {
     isAvailable: function () { nativeCalls.push('isAvailable'); return Promise.resolve({ available: %(available)s }); },
     start: function () { nativeCalls.push('start'); return %(start)s; },
-    stop: function () { nativeCalls.push('stop'); return Promise.resolve({ text: 'two onions and a lemon.' }); },
+    stop: function () { nativeCalls.push('stop'); return Promise.resolve({ session: 1, text: 'two onions and a lemon.' }); },
     addListener: function (name, fn) { listeners[name] = fn; return Promise.resolve({ remove: function () {} }); }
   } }
 };
@@ -151,18 +151,20 @@ console.log(JSON.stringify({ value: input.value, grew: grew }));
 
 @_needs_node
 def test_the_iphone_app_uses_its_own_engine_when_it_has_one():
-    cap = NATIVE_PLUGIN % {"available": "true", "start": "Promise.resolve({})"}
+    cap = NATIVE_PLUGIN % {"available": "true", "start": "Promise.resolve({ session: 1 })"}
     out = _run(IPHONE_APP_UA, """
 var started = 0;
 var h = window.setupDictation(input, micBtn, { onStart: function () { started += 1; } });
 setTimeout(function () {
   clicks[0]();
-  listeners.partial({ text: 'two onions' });
+  setTimeout(function () {
+  listeners.partial({ session: 1, text: 'two onions' });
   var mid = input.value;
   clicks[0]();
   setTimeout(function () {
     console.log(JSON.stringify({ mode: h.mode(), calls: nativeCalls, mid: mid, value: input.value,
       started: started, recs: log.recognitions.length, active: !!micBtn.classes.active }));
+  }, 10);
   }, 10);
 }, 10);
 """, capacitor=cap)
@@ -177,7 +179,7 @@ setTimeout(function () {
 
 @_needs_node
 def test_the_iphone_app_on_an_older_ios_uses_the_keyboard():
-    cap = NATIVE_PLUGIN % {"available": "false", "start": "Promise.resolve({})"}
+    cap = NATIVE_PLUGIN % {"available": "false", "start": "Promise.resolve({ session: 1 })"}
     out = _run(IPHONE_APP_UA, """
 var h = window.setupDictation(input, micBtn, {});
 setTimeout(function () {
@@ -231,3 +233,85 @@ def test_the_chat_composer_uses_the_shared_helper():
     assert "setupAskDictation(askInput, document.getElementById('ask-mic-btn'))" in SHELL_JS
     html = (ROOT / "static" / "shell.html").read_text()
     assert html.index('src="/static/dictation.js"') < html.index('src="/static/shell.js"')
+
+
+# --- the reviewer's two defects (2026-11-09) -------------------------------
+
+@_needs_node
+def test_cancel_throws_away_words_still_arriving_on_desktop():
+    # The chat cancels on Send. Continuous listening means more results can
+    # arrive after that; none may put the sent words back in the box.
+    out = _run(DESKTOP_UA, """
+var h = window.setupDictation(input, micBtn, {});
+clicks[0]();
+var rec = log.recognitions[0];
+var aborted = 0;
+rec.abort = function () { aborted += 1; if (rec.onerror) rec.onerror({ error: 'aborted' }); };
+rec.onresult({ results: [ { isFinal: true, 0: { transcript: 'add oat milk' } } ] });
+h.cancel();
+input.value = '';   // the chat clears the box once the message is sent
+rec.onresult({ results: [ { isFinal: true, 0: { transcript: 'add oat milk please' } } ] });
+console.log(JSON.stringify({ value: input.value, aborted: aborted, active: !!micBtn.classes.active,
+  messages: log.messages }));
+""")
+    assert out == {"value": "", "aborted": 1, "active": False, "messages": []}
+
+
+@_needs_node
+def test_words_from_another_listen_never_land_in_this_box():
+    cap = NATIVE_PLUGIN % {"available": "true", "start": "Promise.resolve({ session: 2 })"}
+    out = _run(IPHONE_APP_UA, """
+var h = window.setupDictation(input, micBtn, {});
+setTimeout(function () {
+  clicks[0]();
+  setTimeout(function () {
+    listeners.partial({ session: 1, text: 'from the old sheet' });
+    var before = input.value;
+    listeners.partial({ session: 2, text: 'lemons' });
+    console.log(JSON.stringify({ before: before, after: input.value }));
+  }, 10);
+}, 10);
+""", capacitor=cap)
+    assert out == {"before": "", "after": "lemons"}
+
+
+@_needs_node
+def test_cancel_while_starting_stops_the_phone_mic_once_it_starts():
+    cap = NATIVE_PLUGIN % {"available": "true", "start": "Promise.resolve({ session: 3 })"}
+    out = _run(IPHONE_APP_UA, """
+var h = window.setupDictation(input, micBtn, {});
+setTimeout(function () {
+  clicks[0]();
+  h.dispose();          // the sheet closed before start() came back
+  setTimeout(function () {
+    listeners.partial({ session: 3, text: 'nope' });
+    console.log(JSON.stringify({ calls: nativeCalls, value: input.value, active: !!micBtn.classes.active }));
+  }, 10);
+}, 10);
+""", capacitor=cap)
+    assert out["calls"] == ["isAvailable", "start", "stop"]
+    assert out["value"] == ""
+    assert out["active"] is False
+
+
+def test_send_cancels_the_chat_mic_and_the_say_it_sheet_lets_go():
+    a = SHELL_JS.index("  async function sendAskMessage(")
+    head = SHELL_JS[a:a + 400]
+    assert "if (askDictation) askDictation.cancel();" in head
+    assert "var askDictation = setupAskDictation(askInput" in SHELL_JS
+    ka = (ROOT / "static" / "kitchen-add.js").read_text()
+    render = ka[ka.index("  function render() {"):ka.index("  var sayDictation = null;")]
+    assert render.index("dropDictation();") < render.index("sheetEl.innerHTML = html;")
+    close = ka[ka.index("  function close() {"):ka.index("  function close() {") + 200]
+    assert "dropDictation();" in close
+    assert "sayDictation = global.setupDictation(box, mic" in ka
+
+
+@_needs_node
+def test_desktop_safari_stays_one_phrase_at_a_time():
+    out = _run("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15", """
+window.setupDictation(input, micBtn, {});
+clicks[0]();
+console.log(JSON.stringify({ continuous: log.recognitions[0].continuous }));
+""")
+    assert out == {"continuous": False}

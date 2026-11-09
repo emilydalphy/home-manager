@@ -30409,6 +30409,9 @@
 
   async function sendAskMessage(message) {
     if (!message || askSending) return;
+    // Sending ends a listen still running: without this, the next words
+    // to arrive would put the sent message back in the box.
+    if (askDictation) askDictation.cancel();
     // This message's own first round prepares (or reads) the briefing, so
     // no warm-up is due for the rest of the sitting.
     askLastWarmAt = Date.now();
@@ -30768,7 +30771,7 @@
       onText: function () { autoGrowAskInput(input); }
     });
   }
-  setupAskDictation(askInput, document.getElementById('ask-mic-btn'));
+  var askDictation = setupAskDictation(askInput, document.getElementById('ask-mic-btn'));
   // The composer's camera: a cookbook page photographed from the chat goes
   // to the recipe review sheet with the typed words as the note (recipe
   // photo import, 2026-09-13) — never straight to a save.

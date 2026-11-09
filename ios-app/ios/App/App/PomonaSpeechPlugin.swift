@@ -14,14 +14,19 @@ import Speech
 // quarter of those mistakes. This plugin gives the page that engine:
 //
 //   PomonaSpeech.isAvailable()  -> { available }   never asks permission
-//   PomonaSpeech.start()        -> resolves once listening; rejects with
-//                                  code "denied" (microphone off), "busy",
+//   PomonaSpeech.start()        -> { session }     once listening; rejects
+//                                  with code "denied" (microphone off),
+//                                  "stopped" (stop() came first),
 //                                  "unavailable" or "failed"
-//   PomonaSpeech.stop()         -> { text }        the finished words
-//   event "partial"             -> { text }        all the words so far
-//   event "ended"               -> { text, reason } it stopped by itself:
-//                                  "interrupted" (a call, Siri), "background"
-//                                  or "limit" (two minutes)
+//   PomonaSpeech.stop()         -> { session, text }  the finished words
+//   event "partial"             -> { session, text }  all the words so far
+//   event "ended"               -> { session, text, reason }  it stopped by
+//                                  itself: "interrupted" (a call, Siri),
+//                                  "background" or "limit" (two minutes)
+//
+// Every listen gets a session number and every event carries it, so the
+// page never writes one listen's words into another box. A start() while
+// an older listen is still running ends the older one first.
 //
 // Free, and nothing leaves the phone. It keeps listening through pauses
 // until the mic is tapped again. On iOS 15–25 isAvailable says false and
@@ -39,9 +44,11 @@ public class PomonaSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "stop", returnType: CAPPluginReturnPromise),
     ]
 
-    // A PomonaDictation while listening (typed loosely: that class only
-    // exists on iOS 26). Only touched on the main thread.
+    // The current listen: a PomonaDictation (typed loosely, since that
+    // class only exists on iOS 26) and its number. Main thread only.
     private var current: AnyObject?
+    private var currentSession = 0
+    private var lastSession = 0
 
     @objc func isAvailable(_ call: CAPPluginCall) {
         guard #available(iOS 26.0, *) else {
@@ -60,29 +67,38 @@ public class PomonaSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         Task { @MainActor in
-            if self.current != nil {
-                call.reject("Already listening", "busy")
-                return
+            // An older listen nobody stopped (its box went away): end it.
+            if let old = self.current as? PomonaDictation {
+                let oldSession = self.currentSession
+                self.current = nil
+                let text = await old.stop()
+                self.notifyListeners("ended", data: ["session": oldSession, "text": text, "reason": "replaced"])
             }
             guard await Self.microphoneAllowed() else {
                 call.reject("The microphone is off for Pomona", "denied")
                 return
             }
+            self.lastSession += 1
+            let session = self.lastSession
             let dictation = PomonaDictation(
                 onText: { [weak self] text in
-                    self?.notifyListeners("partial", data: ["text": text])
+                    self?.notifyListeners("partial", data: ["session": session, "text": text])
                 },
                 onEnded: { [weak self] text, reason in
-                    self?.current = nil
-                    self?.notifyListeners("ended", data: ["text": text, "reason": reason])
+                    guard let self else { return }
+                    if self.currentSession == session { self.current = nil }
+                    self.notifyListeners("ended", data: ["session": session, "text": text, "reason": reason])
                 }
             )
             self.current = dictation
+            self.currentSession = session
             do {
                 try await dictation.start()
-                call.resolve()
+                call.resolve(["session": session])
+            } catch PomonaSpeechError.stopped {
+                call.reject("Stopped before it started", "stopped")
             } catch {
-                self.current = nil
+                if self.currentSession == session { self.current = nil }
                 await dictation.cancel()
                 call.reject("Couldn't start listening", "failed", error)
             }
@@ -99,9 +115,10 @@ public class PomonaSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
                 call.resolve(["text": ""])
                 return
             }
+            let session = self.currentSession
             self.current = nil
             let text = await dictation.stop()
-            call.resolve(["text": text])
+            call.resolve(["session": session, "text": text])
         }
     }
 
@@ -133,10 +150,14 @@ final class PomonaDictation {
         case dictation(Locale)
     }
 
+    private enum State { case idle, starting, running, done }
+
     // Pomona's copy is written in US English (decided 2026-09-17), and the
     // website's mic listens in en-US too.
     static let language = Locale(identifier: "en-US")
     static let maxSeconds: UInt64 = 120
+    // How long stop() waits for the last words before giving up on them.
+    static let finishSeconds: UInt64 = 3
 
     private let onText: (String) -> Void
     private let onEnded: (String, String) -> Void
@@ -148,7 +169,12 @@ final class PomonaDictation {
     private var observers: [NSObjectProtocol] = []
     private var finalized = ""
     private var volatile = ""
-    private var running = false
+    private var state = State.idle
+    private var tapInstalled = false
+    private var sessionActivated = false
+    private var previousCategory: AVAudioSession.Category?
+    private var previousMode: AVAudioSession.Mode?
+    private var previousOptions: AVAudioSession.CategoryOptions = []
 
     init(onText: @escaping (String) -> Void, onEnded: @escaping (String, String) -> Void) {
         self.onText = onText
@@ -170,10 +196,19 @@ final class PomonaDictation {
         return nil
     }
 
+    // stop() can arrive during any of the waits below (the first-time
+    // model download can take a while). Each wait is followed by a check,
+    // so a stopped listen never goes on to open the microphone.
+    private func checkStillWanted() throws {
+        if state != .starting { throw PomonaSpeechError.stopped }
+    }
+
     func start() async throws {
+        state = .starting
         guard let choice = await PomonaDictation.chooseEngine() else {
             throw PomonaSpeechError.unsupported
         }
+        try checkStillWanted()
         let module: any SpeechModule
         switch choice {
         case .transcriber(let locale):
@@ -203,6 +238,7 @@ final class PomonaDictation {
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [module]) {
             try await request.downloadAndInstall()
         }
+        try checkStillWanted()
 
         guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [module]) else {
             throw PomonaSpeechError.noAudioFormat
@@ -210,18 +246,28 @@ final class PomonaDictation {
         let analyzer = SpeechAnalyzer(modules: [module])
         self.analyzer = analyzer
         try await analyzer.prepareToAnalyze(in: format)
+        try checkStillWanted()
 
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.record, mode: .measurement, options: [.duckOthers])
-        try session.setActive(true)
+        // playAndRecord, not record: duckOthers (lower any music while
+        // listening) is only allowed with playAndRecord. What the app had
+        // before is put back afterwards.
+        let audio = AVAudioSession.sharedInstance()
+        previousCategory = audio.category
+        previousMode = audio.mode
+        previousOptions = audio.categoryOptions
+        try audio.setCategory(.playAndRecord, mode: .measurement, options: [.duckOthers, .defaultToSpeaker])
+        try audio.setActive(true)
+        sessionActivated = true
 
         let (stream, continuation) = AsyncStream<AnalyzerInput>.makeStream()
         input = continuation
         try PomonaDictation.feedMicrophone(of: engine, as: format, into: continuation)
+        tapInstalled = true
         engine.prepare()
         try engine.start()
         try await analyzer.start(inputSequence: stream)
-        running = true
+        try checkStillWanted()
+        state = .running
 
         watchForInterruptions()
         limitTask = Task { [weak self] in
@@ -233,35 +279,70 @@ final class PomonaDictation {
 
     // Tapped again: finish the last words and hand back everything.
     func stop() async -> String {
-        await finish()
-        return text
+        switch state {
+        case .starting:
+            // start() is still waiting on something; it sees this, throws
+            // "stopped", and the plugin's catch tears down via cancel().
+            state = .done
+            await cancel()
+            return ""
+        case .running:
+            await finish()
+            return text
+        case .idle, .done:
+            return text
+        }
     }
 
-    // Start failed part way: let go of the mic without waiting on words.
+    // Let go of the mic and the engine without waiting on words.
     func cancel() async {
+        state = .done
+        limitTask?.cancel()
+        removeObservers()
         teardownAudio()
         input?.finish()
         await analyzer?.cancelAndFinishNow()
         resultsTask?.cancel()
-        limitTask?.cancel()
-        removeObservers()
     }
 
     private func endByItself(_ reason: String) async {
-        guard running else { return }
+        guard state == .running else { return }
         await finish()
         onEnded(text, reason)
     }
 
     private func finish() async {
-        guard running else { return }
-        running = false
+        guard state == .running else { return }
+        state = .done
         limitTask?.cancel()
         removeObservers()
         teardownAudio()
         input?.finish()
-        try? await analyzer?.finalizeAndFinishThroughEndOfInput()
-        await resultsTask?.value
+        do {
+            try await analyzer?.finalizeAndFinishThroughEndOfInput()
+        } catch {
+            await analyzer?.cancelAndFinishNow()
+        }
+        await waitForLastWords()
+    }
+
+    // The results stream ends once the analyzer has finished. Wait for that
+    // so the last words make it in, but never forever: if it hasn't ended
+    // in a few seconds, keep what we have.
+    private func waitForLastWords() async {
+        guard let task = resultsTask else { return }
+        let gate = OneShot()
+        await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
+            Task { @MainActor in
+                await task.value
+                if gate.fire() { done.resume() }
+            }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: PomonaDictation.finishSeconds * 1_000_000_000)
+                if gate.fire() { done.resume() }
+            }
+        }
+        task.cancel()
     }
 
     private func take(_ piece: String, isFinal: Bool) {
@@ -283,8 +364,18 @@ final class PomonaDictation {
 
     private func teardownAudio() {
         if engine.isRunning { engine.stop() }
-        engine.inputNode.removeTap(onBus: 0)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        if tapInstalled {
+            engine.inputNode.removeTap(onBus: 0)
+            tapInstalled = false
+        }
+        if sessionActivated {
+            sessionActivated = false
+            let audio = AVAudioSession.sharedInstance()
+            try? audio.setActive(false, options: .notifyOthersOnDeactivation)
+            if let category = previousCategory, let mode = previousMode {
+                try? audio.setCategory(category, mode: mode, options: previousOptions)
+            }
+        }
     }
 
     private func watchForInterruptions() {
@@ -347,8 +438,20 @@ final class PomonaDictation {
     }
 }
 
+// Lets exactly one of two racing tasks resume a continuation.
+@MainActor
+private final class OneShot {
+    private var fired = false
+    func fire() -> Bool {
+        if fired { return false }
+        fired = true
+        return true
+    }
+}
+
 enum PomonaSpeechError: Error {
     case unsupported
     case noAudioFormat
     case noMicrophone
+    case stopped
 }
