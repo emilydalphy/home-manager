@@ -1,0 +1,132 @@
+{
+ "dish_name": "Goong Pad Pong Karee",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Raw shrimp",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Evaporated milk",
+   "qty": "1 can (12 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Yellow curry powder",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai roasted chili paste (nam prik pao)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red chilies",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups jasmine rice, add it to a pot with 2 1/4 cups water, bring to a boil, then cover and cook on the lowest heat for 12 minutes. Leave it covered off the heat.",
+  "In a bowl, whisk the eggs with the evaporated milk, the chili paste, the oyster sauce, the soy sauce, the fish sauce and the sugar until smooth.",
+  "Pat the shrimp dry. Slice the onion thin, mince the garlic, slice 2 celery stalks thin, and cut the green onions into 2 inch pieces. Slice the red chilies and set them in a small bowl for the table.",
+  "Heat the oil in a wok or large skillet over medium heat. Add the onion and cook for 2 minutes, until it softens.",
+  "Add the garlic and cook for 30 seconds, until it smells good. Add the curry powder and stir for 20 seconds. Don't let it scorch.",
+  "Add the shrimp and stir for 1 to 2 minutes, until they just turn pink on the outside. They'll finish in the sauce.",
+  "Pour in the egg mixture. Stir gently for 2 to 3 minutes, until the egg is in soft curds and the shrimp are opaque and curled into a loose C.",
+  "Take the pan off the heat. Stir in the celery and the green onions.",
+  "Taste it. If it's flat, add a splash more fish sauce.",
+  "Serve over the rice, with the sliced red chilies at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hungry in Thailand leads: curry powder bloomed in oil, shrimp coated in it, then an egg and evaporated milk sauce stirred in until it sets in soft curds, with celery and green onion at the end. Thai Foodie makes a similar sauce with milk and broth and a kale finish, and agrees on the order. The source list never adds garlic but its steps fry it, so 4 cloves are added from Thai Foodie. Heat moves to a bowl of sliced chili. No source had 20 ratings.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Koong Karee Recipe (Shrimp Yellow Curry Stir-Fry)",
+   "url": "https://hungryinthailand.com/koong-karee-shrimp-yellow-curry/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Thai Foodie",
+   "title": "Quick Thai Shrimp Curry Stir-Fry",
+   "url": "https://thai-foodie.com/thaifood/quick-thai-shrimp-curry-stir-fry-recipe-goong-pad-pong-karee/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

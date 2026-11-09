@@ -1,0 +1,129 @@
+{
+ "dish_name": "Nam Tok Moo",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Boneless pork shoulder steaks",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Glutinous rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups jasmine rice, add it to a pot with 2 1/4 cups water, bring to a boil, then cover and cook on the lowest heat for 12 minutes. Leave it covered off the heat.",
+  "Toast the glutinous rice in a dry skillet over medium-high heat, shaking the pan, for 3 to 4 minutes, until it's golden and smells nutty. Transfer it to a bowl and let it cool for a minute.",
+  "Grind the toasted rice to a coarse powder in a spice grinder or a mortar. Set it aside.",
+  "Pound the pork with a rolling pin or the bottom of a pan to about 3/8 inch thick. Stir 1 tbsp fish sauce, 1/2 tsp sugar and the pepper together in a bowl, then rub it over the pork.",
+  "Meanwhile, make the dressing. In a large bowl, stir 3 tbsp fish sauce and 2 tsp sugar until the sugar dissolves. Add the juice of 1 lime (about 2 tbsp) and 1/2 tsp of the red pepper flakes. Put the rest of the flakes in a small bowl for the table.",
+  "Slice the shallots thin, chop the mint leaves from half the bunch, chop 3 tbsp cilantro, and slice 3 green onions. Cut the second lime into wedges. Cut a few wedges of cabbage to serve.",
+  "Heat the oil in a large skillet over medium-high heat. Add the pork and cook for 3 to 4 minutes on each side, until deep brown at the edges.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece. It's done when there's no pink left.",
+  "Transfer the pork to a board and rest it for 3 minutes. Slice it thin against the grain.",
+  "Add the warm pork and the shallots to the dressing. Toss well, then stir in the toasted rice powder, the mint, the cilantro and the green onions.",
+  "Taste it. If it's flat, add a squeeze of lime or a splash of fish sauce.",
+  "Serve with the cabbage wedges, the lime wedges, the rice and the bowl of red pepper flakes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 16,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Marion's Kitchen leads: thin pounded pork seared hard, tossed warm in a fish sauce, palm sugar, lime and chili dressing with shallots, herbs and toasted rice powder, served with raw cabbage. Cup of Yum and Rachel Cooks Thai agree on the toasted rice and dressing but marinate in oyster sauce, which has wheat, so the Marion's fish sauce marinade is used to keep it gluten-free. The chili flakes are cut in the dressing and the rest goes on the table. No source had 20 ratings.",
+ "sources": [
+  {
+   "name": "Marion's Kitchen",
+   "title": "Thai Grilled Pork Salad (Moo Nam Tok)",
+   "url": "https://www.marionskitchen.com/thai-grilled-pork-salad/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Nam Tok Moo Recipe (Thai Grilled Pork Salad)",
+   "url": "https://cupofyum.com/recipes/nam-tok-moo-recipe-thai-grilled-pork-salad",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Rachel Cooks Thai",
+   "title": "Moo Nam Tok (Thai Grilled Pork Salad)",
+   "url": "https://rachelcooksthai.com/moo-nam-tok/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

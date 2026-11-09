@@ -1,0 +1,150 @@
+{
+ "dish_name": "Pad Cha Talay",
+ "cuisine": "Thai",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Raw shrimp",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Squid",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresno chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red Thai chilies",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Bamboo shoots",
+   "qty": "1 can (8 oz)",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Green peppercorns in brine",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Pickled fingerroot (krachai)",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "4 leaves",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups jasmine rice, add it to a pot with 2 1/4 cups water, bring to a boil, then cover and cook on the lowest heat for 12 minutes. Leave it covered off the heat.",
+  "Thaw the squid and shrimp if they're frozen. Pat both dry. Cut the squid into rings or pieces.",
+  "Stir the oyster sauce, soy sauce, fish sauce, sugar, pepper and 3 tbsp water together in a small bowl.",
+  "Seed 2 Fresno chilies and mince them with the garlic until it's a rough paste. Slice the Thai chilies thin and set them in a small bowl for the table.",
+  "Slice the carrot into thin coins and the onion into thin wedges. Drain the bamboo shoots, the peppercorns and the fingerroot, and rinse the fingerroot. Tear the lime leaves in half. Pick the basil leaves.",
+  "Heat the oil in a wok or large skillet over medium heat. Add the garlic and chili paste and stir for 45 seconds, until it smells sharp and good.",
+  "Add the carrot and bamboo shoots and stir for 1 minute. Turn the heat to high.",
+  "Add the shrimp and stir for 1 minute, until they turn pink. Add the squid and stir for 30 seconds, until it turns white and curls.",
+  "Pour in the sauce and add the peppercorns and fingerroot. Toss for 1 minute.",
+  "Add the onion and the lime leaves and toss for 30 seconds. Take the pan off the heat and stir in the basil.",
+  "Taste it. If it's flat, add a splash more fish sauce.",
+  "Serve over the rice, with the sliced Thai chilies at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Thai Caliente leads (5 from 3 votes): a garlic and chili paste fried in oil, then seafood, then bamboo, carrot, green peppercorns, fingerroot and lime leaves tossed in an oyster and soy sauce, finished with basil. Asian Inspirations agrees on the order and has a tighter 15 minute cook. The seafood here is shrimp and squid only, and the heat is cut to Fresno chilies in the paste with Thai chilies on the side. Carrot and bamboo go in before the seafood so the squid doesn't toughen. No source had 20 ratings.",
+ "sources": [
+  {
+   "name": "Thai Caliente",
+   "title": "Pad Cha Talay",
+   "url": "https://thaicaliente.com/pad-cha-talay/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Asian Inspirations",
+   "title": "Spicy Thai Seafood Stir-fry (Pad Cha Talay)",
+   "url": "https://asianinspirations.com.au/recipes/spicy-thai-seafood-stir-fry-pad-cha-talay/",
+   "rating": 3.5,
+   "rating_count": 13,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

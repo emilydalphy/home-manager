@@ -1,0 +1,96 @@
+{
+ "dish_name": "Khao Kluk Kapi",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Cooked jasmine rice",
+   "qty": "2 pouches (8.5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chinese sausage",
+   "qty": "2 links",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Shrimp paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Green mango",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Beat the eggs in a bowl. Heat 1 tbsp oil in a nonstick skillet over medium heat and pour in half the eggs, tilting the pan so they spread thin. Cook for 1 minute, until set, then roll it up and transfer it to a board. Repeat with the rest of the eggs.",
+  "Slice the egg rolls into thin strips.",
+  "Cut the sausage into thin diagonal slices. Add them to the same skillet over medium heat and cook for 3 minutes, until the edges brown and some fat comes out.",
+  "Meanwhile, peel the mango and cut the flesh into thin matchsticks. Slice the red onion thin, slice the cucumbers on the diagonal, and slice the chilies thin. Cut the lime into wedges.",
+  "Warm the rice pouches in the microwave as the package says.",
+  "Push the sausage to the side of the pan. Add the shrimp paste to the fat and stir for 30 seconds. Stand back, the smell is strong.",
+  "Add the rice and stir for 3 to 4 minutes, breaking it up, until the paste is mixed through and no streaks are left.",
+  "Taste the rice. If it's flat, add a squeeze of lime.",
+  "Pack the rice into a bowl, press it down, and turn it out onto a large plate. Arrange the egg strips, mango, onion and cucumber around it. Serve with the lime wedges and the chilies."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Foxy Folksy leads: shrimp paste fried into the sausage fat, then rice, packed into a dome and surrounded by omelet strips, green mango, red onion, cucumber and chili. Lion Brand's longer version agrees on the toppings but adds a separate sweet pork (about 45 minutes of simmering) and dried shrimp, so it's not used here. The pork comes from the Chinese sausage, so the list's sweet pork is not in this version. Ready-to-heat rice keeps it near 25 minutes. No source had 20 ratings.",
+ "sources": [
+  {
+   "name": "Foxy Folksy",
+   "title": "Simple Thai Fried Rice with Shrimp Paste (Khao Kluk Kapi)",
+   "url": "https://www.foxyfolksy.com/thai-fried-rice/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lion Brand",
+   "title": "Shrimp Paste Fried Rice Recipe: Khao kluk kapi",
+   "url": "https://lionbrand.com.au/recipes/shrimp-paste-fried-rice-recipe-khao-kluk-kapi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

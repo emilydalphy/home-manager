@@ -1,0 +1,98 @@
+{
+ "dish_name": "Kai Yat Sai",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups jasmine rice, add it to a pot with 2 1/4 cups water, bring to a boil, then cover and cook on the lowest heat for 12 minutes. Leave it covered off the heat.",
+  "Dice the onion and the tomatoes, and mince the garlic. Crack the eggs into a bowl with 1/4 cup water and whisk until no streaks are left.",
+  "Heat 2 tbsp of the oil in a large skillet over medium-high heat. Add the onion and cook for 3 minutes, until soft.",
+  "Add the garlic and stir for 30 seconds. Add the pork and cook for 5 minutes, breaking it up as you go, until it's browned and no pink is left.",
+  "Add the fish sauce, the sugar and the white pepper and stir for 1 minute. Add the tomatoes and stir for 1 minute, until they start to soften. Take the pan off the heat and keep it warm.",
+  "Heat 3/4 tbsp of the oil in a 10 inch nonstick skillet over medium heat. Pour in one quarter of the eggs and tilt the pan so they spread thin.",
+  "Cook for 1 to 2 minutes, until the top is just set with a little shine left. Spoon about 1/2 cup of the filling into the center.",
+  "Fold the four sides in over the filling like an envelope. Slide it onto a plate, fold side down. Repeat with the rest of the oil, eggs and filling to make 4 omelets.",
+  "Taste the filling that's left in the pan. If it's flat, add a pinch more fish sauce.",
+  "Serve the omelets with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Marion's Kitchen leads: a pork, onion, garlic and tomato filling seasoned with fish sauce, sugar and white pepper, spooned into a thin omelet and folded shut. Tara's Multicultural Table agrees on the filling and fold, and adds oyster sauce and carrot, which this version leaves out. Eggs are cut from 12 to 8 and the filling is scaled to match. No source had ratings.",
+ "sources": [
+  {
+   "name": "Marion's Kitchen",
+   "title": "Thai Stuffed Omelette 'Kai Yat Sai'",
+   "url": "https://www.marionskitchen.com/thai-stuffed-omelette-kai-yat-sai/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Kai Yad Sai (Thai Stuffed Omelet)",
+   "url": "https://tarasmulticulturaltable.com/kai-yad-sai-thai-stuffed-omelet/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

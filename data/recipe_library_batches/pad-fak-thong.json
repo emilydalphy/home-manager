@@ -1,0 +1,107 @@
+{
+ "dish_name": "Pad Fak Thong",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Butternut squash",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups jasmine rice, add it to a pot with 2 1/4 cups water, bring to a boil, then cover and cook on the lowest heat for 12 minutes. Leave it covered off the heat.",
+  "Peel and seed the squash if it's whole, then cut it into 1/2 inch cubes. Mince the garlic, cut 4 green onions into 2 inch pieces, and beat the eggs in a bowl.",
+  "Stir the oyster sauce, soy sauce, fish sauce and sugar into 1/2 cup water in a small bowl.",
+  "Heat the oil in a large skillet or wok over high heat. Add the garlic and stir for 20 to 30 seconds, until it turns light gold.",
+  "Add the squash and stir for 1 minute to coat it in the garlic oil.",
+  "Pour in the sauce, cover, and cook on medium-high for 6 to 8 minutes, until a knife slides into the squash with no push. If the pan looks dry, add a splash of water.",
+  "Uncover and push the squash to one side. Pour the eggs into the empty space and let them sit for 15 seconds, then scramble them gently and stir everything together.",
+  "Take the pan off the heat and stir in the green onions. Taste it. If it's flat, add a splash more fish sauce.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "ImportFood's stir-fried pumpkin leads: garlic fried gold, pumpkin simmered covered in a little stock and oyster and soy sauce, then eggs broken in at the end with green onion. Make That Dish and Thai Fresh agree on the order and add fish sauce, which this version keeps. Their pork is left out here since the dish is built on the egg, and the squash is cut small so it cooks in minutes. Butternut stands in for kabocha. No source had 20 ratings.",
+ "sources": [
+  {
+   "name": "ImportFood",
+   "title": "Thai Stir-Fried Pumpkin, 'Pad Phuk Tong'",
+   "url": "https://importfood.com/recipes/recipe/1222-thai-stir-fried-pumpkin-pad-phuk-tong",
+   "rating": 4.3,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Make That Dish",
+   "title": "Authentic Thai Pumpkin Stir Fry (Pad Fak Tong)",
+   "url": "https://makethatdish.com/thai-pumpkin-stir-fry-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Thai Fresh",
+   "title": "Stir Fried Pumpkin and Egg: Pad Fak Tong",
+   "url": "https://www.thai-fresh.com/single-post/2015/12/05/stir-fried-pumpkin-and-egg-pad-fak-tong",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
