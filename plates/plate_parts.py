@@ -842,7 +842,11 @@ def calamari(rng, o):  # fried squid rings, golden with a hole; optional tentacl
     n, r = o[1:3]
     cx = at(o, 3, 50); cy = at(o, 4, 50)
     t = at(o, 5, 0)
+    mode = at(o, 6, "")  # "" fried; "braised" or a sauce colour: smooth tender squid, no batter
     batter, edge, light = "#E3A54A", "#A9661F", "#F7D58C"
+    if mode:
+        tint, k_ = ("#E7B9A8", .3) if mode == "braised" else (mode, .7)
+        batter, edge, light = mix("#F6ECE2", tint, k_), mix("#A86C62", tint, k_), "#FFFFFF"
     pos = list(spots(rng, n + t, r, cx, cy))
     tidx = {round((j + .5) * len(pos) / t) % len(pos) for j in range(t)} if t else set()
     out = ""
@@ -857,7 +861,7 @@ def calamari(rng, o):  # fried squid rings, golden with a hole; optional tentacl
             out += (f'<g transform="translate({x:.1f} {y:.1f}) rotate({a:.0f})"><ellipse rx="6.4" ry="5.5" fill="none" stroke="{edge}" stroke-width="4.6"/>'
                     f'<ellipse rx="6.4" ry="5.5" fill="none" stroke="{batter}" stroke-width="3.3"/>'
                     f'<path d="M-4.6 -3.4Q-1 -6.2 3 -5.2" fill="none" stroke="{light}" stroke-width="1.3" stroke-linecap="round"/>')
-            for ang in (.4, 1.5, 2.6, 3.7, 4.9):
+            for ang in (.4, 1.5, 2.6, 3.7, 4.9) if not mode else ():
                 out += f'<circle cx="{6.4*math.cos(ang):.1f}" cy="{5.5*math.sin(ang):.1f}" r=".6" fill="{edge}" opacity=".7"/>'
             out += "</g>"
     return out
@@ -1174,8 +1178,341 @@ def volauvent(rng, o):  # round puff pastry shells: tall flaky golden rim, cream
     return out
 
 
+def _ring(n, r, cx, cy, start=-1.571):  # n places evenly around (cx, cy), the first at the top; one place sits in the middle
+    if n == 1 or not r:
+        return [(cx, cy, 0)]
+    return [(cx + r * math.cos(start + 6.283 * i / n), cy + r * math.sin(start + 6.283 * i / n), math.degrees(start + 6.283 * i / n)) for i in range(n)]
+
+
+def _cubic(p0, p1, p2, p3, t):
+    u = 1 - t
+    return tuple(u ** 3 * a + 3 * u * u * t * b + 3 * u * t * t * c + t ** 3 * d for a, b, c, d in zip(p0, p1, p2, p3))
+
+
+def croissant(rng, o):  # fat golden crescents with curved layer lines; for a croissant sandwich the fillings ruffle out of the cut
+    f1, f2 = at(o, 1, ""), at(o, 2, "")
+    n = at(o, 3, 3 if not f1 else 2); sz = at(o, 4, 1 if n > 2 else 1.05); r = at(o, 5, 14 if n > 2 else (12 if n > 1 else 0))
+    cx = at(o, 6, 50); cy = at(o, 7, 50)
+    c, shade, dark, light = "#D9933A", "#A35C1C", "#7A4214", "#F7CD7E"
+    outer = ((-18, 7), (-17, -15), (17, -15), (18, 7))  # the top of the crescent
+    inner = ((18, 7), (9, 1), (-9, 1), (-18, 7))  # the inside curve, back to the first tip
+    ts = (0, .2, .37, .63, .8, 1)
+    def edge(curve, bulge, flip):  # scalloped: each layer bulges out between the layer lines
+        d = ""
+        for t0, t1, b in zip(ts, ts[1:], bulge):
+            p0, p1 = _cubic(*curve, t0), _cubic(*curve, t1)
+            dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+            L = math.hypot(dx, dy) or 1
+            q = ((p0[0] + p1[0]) / 2 + dy / L * b * flip, (p0[1] + p1[1]) / 2 - dx / L * b * flip)
+            d += f"Q{q[0]:.1f} {q[1]:.1f} {p1[0]:.1f} {p1[1]:.1f}"
+        return d
+    body = "M-18 7" + edge(outer, (1.6, 2.4, 2.8, 2.4, 1.6), 1) + edge(inner, (1, 1.4, 1.4, 1.4, 1), 1) + "z"
+    out = ""
+    for x, y, deg in _ring(n, r, cx, cy, -1.571 if n != 2 else -2.2):
+        rot = (deg + 90) * .25 + (-14 if n == 2 else 0)
+        out += f'<g transform="translate({x:.1f} {y+1:.1f}) rotate({rot:.0f}) scale({sz})">'
+        if f1 or f2:  # the bottom half of the cut croissant, then the fillings ruffling out
+            out += f'<path d="{body}" fill="{shade}" transform="translate(0 5.4)"/>'
+            for col, dy in ((f2, 4.6), (f1, 2.8)):
+                if col:
+                    for t in [i / 9 for i in range(1, 9)]:
+                        px, py = _cubic(*inner, t)
+                        out += f'<path d="{blob(rng,px,py+dy,3.4,2.6,8,.22)}" fill="{col}"/>'
+                    for t in (.15, .45, .75):
+                        px, py = _cubic(*outer, t)
+                        out += f'<path d="{blob(rng,px,py+dy*.4-1,3,2.4,8,.22)}" fill="{col}"/>'
+        out += f'<path d="{body}" fill="{dark}" transform="translate(0 1.4)"/><path d="{body}" fill="{c}" stroke="{shade}" stroke-width="1"/>'
+        for t in (.2, .37, .63, .8):  # layer lines from the top edge round to the inside curve
+            ox, oy = _cubic(*outer, t)
+            ix, iy = _cubic(*inner, 1 - t)
+            mx, my = (ox + ix) / 2 + (2.6 if t < .5 else -2.6), (oy + iy) / 2
+            out += f'<path d="M{ox:.1f} {oy:.1f}Q{mx:.1f} {my:.1f} {ix:.1f} {iy:.1f}" fill="none" stroke="{shade}" stroke-width="1.3" stroke-linecap="round"/>'
+        out += (f'<path d="M-8 -5.4Q0 -9.4 8 -5.4" fill="none" stroke="{light}" stroke-width="2.2" stroke-linecap="round"/>'
+                f'<path d="M-15 1Q-14.4 -3.6 -11.4 -6M15 1Q14.4 -3.6 11.4 -6" fill="none" stroke="{light}" stroke-width="1.2" stroke-linecap="round" opacity=".8"/></g>')
+    return out
+
+
+def biscuits(rng, o):  # tall buttermilk biscuits: craggy golden-brown tops, pale sides pulling apart in flaky layers; the front one split
+    butter, jam = at(o, 1, ""), at(o, 2, "")
+    n = at(o, 3, 3); sz = at(o, 4, 1); r = at(o, 5, 14 if n > 1 else 0)
+    cx = at(o, 6, 50); cy = at(o, 7, 50)
+    side, layer, top, topd, crumb = "#F1DDB0", "#B98444", "#C7782A", "#94531A", "#FAEED6"
+    places = sorted(_ring(n, r, cx, cy, -1.571 if n != 2 else -2.6), key=lambda p: p[1])
+    out = ""
+    for i, (x, y, _) in enumerate(places):
+        split = i == len(places) - 1 and (butter or jam)
+        h = 6 if split else 10
+        out += f'<g transform="translate({x:.1f} {y+h/2-2:.1f}) scale({sz})">'
+        out += (f'<ellipse cx="0" cy=".8" rx="11.8" ry="6.4" fill="{layer}"/><path d="M-11.6 {-h}V0A11.6 6.2 0 0 0 11.6 0V{-h}z" fill="{side}"/>'
+                f'<path d="M-11.6 0A11.6 6.2 0 0 0 11.6 0" fill="none" stroke="{mix(side, layer, .5)}" stroke-width="1.6"/>')
+        if not split:  # the layers pulling apart half way up, with flaky edges
+            yy = -h * .48
+            out += (f'<path d="M-11.6 {yy:.1f}Q-11 {yy+5.2:.1f} -4 {yy+6:.1f}L-2 {yy+5.2:.1f}L0 {yy+6.3:.1f}L2.4 {yy+5.4:.1f}L4.6 {yy+6:.1f}Q11 {yy+5.2:.1f} 11.6 {yy:.1f}" fill="none" stroke="{layer}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>'
+                    f'<path d="M-9 {yy+2.2:.1f}l2.4 .6M5.6 {yy+2.8:.1f}l2.6 -.4M-6 {-h*.12:.1f}l2 .3M3 {-h*.1:.1f}l2.6 0" stroke="{layer}" stroke-width=".9" stroke-linecap="round" opacity=".6"/>')
+        if split:  # the soft crumb face of the bottom half
+            out += f'<path d="{blob(rng,0,-h,11.6,6.2,12,.06)}" fill="{side}"/><path d="{blob(rng,0,-h,10,5.2,12,.06)}" fill="{crumb}"/>'
+            for bx, by, ba in spots(rng, 9, 6.6, 0, -h):
+                out += f'<ellipse cx="{bx:.1f}" cy="{by*.55-h*.45:.1f}" rx="1.1" ry=".6" fill="{layer}" opacity=".35"/>'
+            if jam:
+                out += f'<path d="{blob(rng,-2.6 if butter else 0,-h+.6,5.4,3,9,.18)}" fill="{jam}"/><ellipse cx="{-4 if butter else -1.4}" cy="{-h-.4:.1f}" rx="1.8" ry=".7" fill="#FFFFFF" opacity=".45"/>'
+            if butter:
+                bx = 3.4 if jam else 0
+                out += (f'<path d="M{bx-4.4:.1f} {-h-1.6:.1f}L{bx+.6:.1f} {-h-3.6:.1f}L{bx+4.8:.1f} {-h-1:.1f}L{bx-.2:.1f} {-h+1.2:.1f}z" fill="{mix(butter, "#B88A2A", .3)}" transform="translate(0 1)"/>'
+                        f'<path d="M{bx-4.4:.1f} {-h-1.6:.1f}L{bx+.6:.1f} {-h-3.6:.1f}L{bx+4.8:.1f} {-h-1:.1f}L{bx-.2:.1f} {-h+1.2:.1f}z" fill="{butter}"/>'
+                        f'<path d="M{bx-2.6:.1f} {-h-1.8:.1f}L{bx+.4:.1f} {-h-3:.1f}" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".7"/>')
+        else:  # a craggy golden-brown top with darker baked patches and a shine
+            out += f'<path d="{blob(rng,0,-h+.4,11.8,6.6,12,.07)}" fill="{topd}"/><path d="{blob(rng,0,-h-.3,11,6,12,.08)}" fill="{top}"/>'
+            for bx, by, ba in spots(rng, 6, 7, 0, -h):
+                out += f'<ellipse cx="{bx:.1f}" cy="{by*.6-h*.4:.1f}" rx="2.2" ry="1.2" fill="{topd}" opacity=".45" transform="rotate({ba*.2:.0f} {bx:.1f} {by*.6-h*.4:.1f})"/>'
+            out += f'<path d="M-7 {-h-2.4}Q-3 {-h-5} 2.4 {-h-4.6}" fill="none" stroke="#FFE2A8" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>'
+        out += "</g>"
+    return out
+
+
+def braidbread(rng, o):  # a braided loaf with a glossy egg-wash top, or round brioche buns with a fluted base and a topknot
+    c = at(o, 1, "#C0722A"); speck = at(o, 2, "")
+    shape = at(o, 3, "loaf")
+    bun = shape == "bun"
+    n = at(o, 4, 3 if bun else 1); sz = at(o, 5, 1 if bun else 1.1); r = at(o, 6, 15 if n > 1 else 0)
+    cx = at(o, 7, 50); cy = at(o, 8, 50)
+    shade, dark, light = mix(c, "#5A2A0A", .35), mix(c, "#3A1A06", .55), mix(c, "#FFE2A8", .55)
+    out = ""
+    if not bun:
+        out += f'<g transform="translate({cx} {cy}) rotate(-24) scale({sz})"><ellipse cx="0" cy="1.6" rx="28" ry="10.6" fill="{dark}"/>'
+        lobes = []
+        for i in range(9):  # three strands seen from above: plump lobes slanting alternately, a chevron down the loaf
+            x = -24 + i * 6
+            t = 1 - .45 * (abs(x) / 26) ** 2
+            side_ = 1 if i % 2 else -1
+            lobes.append((x, side_ * 4.2 * t, side_ * 48, 9.6 * t, 6.2 * t))
+        for x, y, a, rx, ry in lobes:
+            out += f'<ellipse cx="{x:.1f}" cy="{y+1.2:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="{shade}" transform="rotate({a:.0f} {x:.1f} {y+1.2:.1f})"/>'
+        for x, y, a, rx, ry in lobes:
+            out += (f'<g transform="translate({x:.1f} {y:.1f}) rotate({a:.0f})"><ellipse rx="{rx:.1f}" ry="{ry:.1f}" fill="{c}" stroke="{dark}" stroke-width="1.2"/>'
+                    f'<ellipse cx="{-rx*.15:.1f}" cy="{-ry*.3:.1f}" rx="{rx*.6:.1f}" ry="{ry*.42:.1f}" fill="{mix(c, "#F2B860", .4)}"/>'
+                    f'<path d="M{-rx*.55:.1f} {-ry*.45:.1f}Q{-rx*.1:.1f} {-ry*.85:.1f} {rx*.4:.1f} {-ry*.6:.1f}" fill="none" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".6"/></g>')
+        if speck:
+            for x, y, a, rx, ry in lobes:
+                for _ in range(3):
+                    px, py = x + rng.uniform(-rx * .55, rx * .55), y + rng.uniform(-ry * .5, ry * .5)
+                    out += f'<ellipse cx="{px:.1f}" cy="{py:.1f}" rx="1" ry=".55" fill="{speck}" transform="rotate({rng.uniform(0,180):.0f} {px:.1f} {py:.1f})"/>'
+        return out + "</g>"
+    for x, y, _ in sorted(_ring(n, r, cx, cy, -1.571 if n != 2 else -2.6), key=lambda p: p[1]):
+        out += f'<g transform="translate({x:.1f} {y:.1f}) scale({sz})"><circle cx="0" cy="1.4" r="13.4" fill="{dark}"/>'
+        out += "".join(f'<circle cx="{11.4*math.cos(6.283*i/12):.1f}" cy="{11.4*math.sin(6.283*i/12):.1f}" r="2.6" fill="{shade}"/>' for i in range(12))
+        out += f'<circle cx="0" cy="0" r="11.4" fill="{shade}"/><circle cx="0" cy="-.8" r="10.6" fill="{c}"/>'
+        out += "".join(f'<path d="M{7*math.cos(6.283*(i+.5)/12):.1f} {7*math.sin(6.283*(i+.5)/12)-.8:.1f}L{10.6*math.cos(6.283*(i+.5)/12):.1f} {10.6*math.sin(6.283*(i+.5)/12)-.8:.1f}" stroke="{shade}" stroke-width=".9" stroke-linecap="round" opacity=".7"/>' for i in range(12))
+        out += (f'<ellipse cx="-1.6" cy="-3.6" rx="6.4" ry="4.6" fill="{mix(c, "#F2B860", .4)}"/>'
+                f'<circle cx="1.2" cy="-.4" r="6.6" fill="{dark}" opacity=".6"/><circle cx=".6" cy="-2.2" r="6.2" fill="{c}" stroke="{shade}" stroke-width=".8"/>'
+                f'<circle cx="-.6" cy="-4" r="3" fill="{mix(c, "#F2B860", .45)}"/>'
+                f'<path d="M-7.4 -5Q-4.6 -9.2 .4 -9.4" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity=".6"/><path d="M-1.6 -4.6Q0 -6.2 2 -6" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity=".7"/>')
+        if speck:
+            for px, py, a in spots(rng, 9, 8, 0, -1):
+                out += f'<ellipse cx="{px:.1f}" cy="{py:.1f}" rx="1" ry=".55" fill="{speck}" transform="rotate({a:.0f} {px:.1f} {py:.1f})"/>'
+        out += "</g>"
+    return out
+
+
+def danish(rng, o):  # square pastries, corners folded in to the middle over a glossy filling; optional icing drizzle
+    fill = at(o, 1, "#F4E3BC"); icing = at(o, 2, "")
+    n = at(o, 3, 3); sz = at(o, 4, 1); r = at(o, 5, 14 if n > 1 else 0)
+    cx = at(o, 6, 50); cy = at(o, 7, 50)
+    c, shade, dark, light = "#DDA04A", "#B06E24", "#8A4E16", "#F6CF84"
+    fs, fl = mix(fill, "#6E4A20", .3), mix(fill, "#FFFFFF", .6)
+    out = ""
+    for x, y, a in _ring(n, r, cx, cy, -1.571 if n != 4 else -.785):
+        out += f'<g transform="translate({x:.1f} {y:.1f}) rotate({(a+90)*.15+8:.0f}) scale({sz})">'
+        out += f'<rect x="-11.6" y="-10.4" width="23.2" height="23.2" rx="4" fill="{dark}"/><rect x="-11.6" y="-11.6" width="23.2" height="23.2" rx="4" fill="{c}"/>'
+        for k_ in range(4):  # each corner folded toward the middle: a lighter flap with a crease
+            out += (f'<g transform="rotate({k_*90})"><path d="M-10.4 -10.4Q-9 -3.6 -3.6 -1.4Q-1.4 -6.6 -10.4 -10.4z" fill="{light}" stroke="{shade}" stroke-width=".9" stroke-linejoin="round"/>'
+                    f'<path d="M-8 -7.6Q-6 -4.4 -3.8 -3.6" fill="none" stroke="{shade}" stroke-width=".7" stroke-linecap="round" opacity=".6"/></g>')
+        out += (f'<circle cx="0" cy=".6" r="6.4" fill="{fs}"/><path d="{blob(rng,0,0,6,5.6,9,.1)}" fill="{fill}"/>'
+                f'<path d="M-3.4 -2.4Q-1.4 -4 1.4 -3.6" fill="none" stroke="{fl}" stroke-width="1.2" stroke-linecap="round"/>')
+        if icing:
+            out += f'<path d="M-9 -4L-4 -9M-9 3L4 -9.6M-6 8L8 -5.6M2 9L9 2" stroke="{icing}" stroke-width="1.3" stroke-linecap="round" opacity=".9"/>'
+        out += "</g>"
+    return out
+
+
+def banana(rng, o):  # "split": banana halves cut lengthwise, flesh up with a yellow peel edge; "slices": a shingled row or fan of rounds
+    shape = at(o, 1, "split")
+    sl = shape == "slices"
+    n = at(o, 2, 7 if sl else 2); sz = at(o, 3, 1); r = at(o, 4, 0 if sl else 14)
+    cx = at(o, 5, 50); cy = at(o, 6, 50)
+    flesh, peel, seed, tip = "#F7E8B0", "#EEC33A", "#C9A564", "#6B4A2A"
+    out = ""
+    if sl:
+        rad = 6 * sz
+        if r:  # a fan of slices around (cx, cy)
+            step = rad * 1.25 / r
+            places = [(cx + r * math.cos(-2.4 + step * i), cy + r * math.sin(-2.4 + step * i)) for i in range(n)]
+        else:  # a shingled row, tilted
+            g = rad * 1.25
+            places = [(cx + (i - (n - 1) / 2) * g * .92, cy + (i - (n - 1) / 2) * g * -.39) for i in range(n)]
+        for x, y in places:
+            out += (f'<circle cx="{x:.1f}" cy="{y+.8:.1f}" r="{rad+.4:.1f}" fill="#D9B45A"/><circle cx="{x:.1f}" cy="{y:.1f}" r="{rad:.1f}" fill="#F2DC8E"/>'
+                    f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{rad*.82:.1f}" fill="{flesh}"/><circle cx="{x:.1f}" cy="{y:.1f}" r="{rad*.32:.1f}" fill="#EFDDA0"/>')
+            for k_ in range(3):
+                a = rng.uniform(0, 1) + k_ * 2.094
+                out += f'<ellipse cx="{x+rad*.22*math.cos(a):.1f}" cy="{y+rad*.22*math.sin(a):.1f}" rx="{rad*.11:.1f}" ry="{rad*.07:.1f}" fill="{seed}" transform="rotate({math.degrees(a):.0f} {x+rad*.22*math.cos(a):.1f} {y+rad*.22*math.sin(a):.1f})"/>'
+        return out
+    out += f'<g transform="translate({cx} {cy}) rotate(-20) scale({sz})">'
+    for i in range(n):
+        dy = (i - (n - 1) / 2) * 2 * r / max(n - 1, 1) if n > 1 else 0
+        f = 1 if dy >= 0 else -1  # concave sides face the middle
+        out += f'<g transform="translate(0 {dy:.1f}) scale(1 {f})">'
+        body = "M-22 -2Q-12 2.4 0 2.4Q12 2.4 22 -2Q21 6 12 10.6Q0 15.6 -12 10.6Q-21 6 -22 -2z"
+        out += (f'<path d="{body}" fill="#B8901E" transform="translate(0 1)"/><path d="{body}" fill="{peel}"/>'
+                f'<path d="M-19.4 -.4Q-11 3.6 0 3.8Q11 3.6 19.4 -.4Q18 4.8 10.6 8.6Q0 12.8 -10.6 8.6Q-18 4.8 -19.4 -.4z" fill="{flesh}"/>'
+                f'<path d="M-14 4.6Q0 10 14 4.6" fill="none" stroke="{seed}" stroke-width="1.2" stroke-linecap="round" stroke-dasharray=".3 2.2"/>'
+                f'<path d="M-22.6 -2.6l-1.6 -1.4M22.6 -2.6l1.6 -1.4" stroke="{tip}" stroke-width="2.4" stroke-linecap="round"/>'
+                f'<path d="M-11 5Q-4 7.6 3 7.2" fill="none" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".6"/></g>')
+    return out + "</g>"
+
+
+def tamales(rng, o):  # tamales in corn husks side by side; the front one opened to show masa and its filling
+    f1, f2 = at(o, 1, "#B8442A"), at(o, 2, "")
+    masa = at(o, 3, "#F2CF73")
+    n = at(o, 4, 3); cx = at(o, 5, 50); cy = at(o, 6, 50)
+    husk, rib, hshade, tie = "#E4C483", "#BD9552", "#AE8650", "#9A733C"
+    ms = mix(masa, "#8A5A1A", .3)
+    out, offs = _row(n, 15, cx, cy - 2, -24)
+    for i, dy in enumerate(offs):
+        sx = rng.uniform(-1.2, 1.2)
+        out += f'<g transform="translate({sx:.1f} {dy:.1f})">'
+        if i == n - 1:  # opened: the husk spread wide, a log of masa with the filling down the middle
+            out += (f'<path d="M-25 0Q-22 -10.6 -4 -11Q14 -11 22 -4L27 0L22 4Q14 11 -4 11Q-22 10.6 -25 0z" fill="{hshade}" transform="translate(0 1)"/>'
+                    f'<path d="M-25 0Q-22 -10.6 -4 -11Q14 -11 22 -4L27 0L22 4Q14 11 -4 11Q-22 10.6 -25 0z" fill="{husk}"/>'
+                    f'<path d="M-21 -6Q0 -9.6 22 -3M-21 6Q0 9.6 22 3M-23 0H26" fill="none" stroke="{rib}" stroke-width=".8" stroke-linecap="round" opacity=".8"/>'
+                    f'<rect x="-18" y="-7" width="32" height="14" rx="4" fill="{ms}" transform="translate(0 .8)"/><rect x="-18" y="-7" width="32" height="14" rx="4" fill="{masa}"/>'
+                    f'<path d="{blob(rng,-2,0,11.4,4.4,10,.18)}" fill="{mix(f1, "#3A1A08", .25)}"/>')
+            for _ in range(9):  # shreds of filling heaped down the middle
+                bx, by, da = rng.uniform(-11, 7), rng.uniform(-2.4, 2.4), rng.uniform(-.6, .6)
+                out += f'<path d="M{bx-2.6*math.cos(da):.1f} {by-2.6*math.sin(da):.1f}L{bx+2.6*math.cos(da):.1f} {by+2.6*math.sin(da):.1f}" stroke="{f1}" stroke-width="2.2" stroke-linecap="round"/>'
+            if f2:
+                for bx, by in ((-9.6, -1.4), (-2.6, 1.2), (3.6, -1.2)):
+                    out += f'<rect x="{bx-1.7:.1f}" y="{by-1.7:.1f}" width="3.4" height="3.4" rx=".8" fill="{f2}" transform="rotate({rng.uniform(-20,20):.0f} {bx:.1f} {by:.1f})"/>'
+            out += '<path d="M-15.4 -5H6" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".55"/></g>'
+        else:  # closed: a plump husk bundle, folded tail, tied
+            out += (f'<path d="M-20 -5.6Q-22 0 -20 5.6H10L22 1.4Q24 0 22 -1.4L10 -5.6z" fill="{hshade}" transform="translate(0 1)"/>'
+                    f'<path d="M-20 -5.6Q-22 0 -20 5.6H10L22 1.4Q24 0 22 -1.4L10 -5.6z" fill="{husk}"/>'
+                    f'<path d="M-19 -2.6H12M-19.6 1H14M-19 4H10M10 -5.4L21 -1" fill="none" stroke="{rib}" stroke-width=".8" stroke-linecap="round" opacity=".85"/>'
+                    f'<rect x="8.4" y="-6.2" width="2.6" height="12.4" rx="1.2" fill="{tie}"/>'
+                    f'<ellipse cx="-20" cy="0" rx="2.4" ry="4.6" fill="{ms}"/><ellipse cx="-20.4" cy="-.2" rx="1.8" ry="3.8" fill="{masa}"/>'
+                    '<path d="M-17 -3.8H4" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".5"/></g>')
+    return out + "</g>"
+
+
+def gimbap(rng, o):  # round slices: dark nori ring, white rice, a coloured filling centre; plain rice when the list is empty
+    fills = at(o, 1, [])
+    if isinstance(fills, str):
+        fills = [fills]
+    n = at(o, 2, 7); sz = at(o, 3, 1); r = at(o, 4, 21 if n > 1 else 0)
+    cx = at(o, 5, 50); cy = at(o, 6, 50)
+    rice = at(o, 7, "#FBF8F0")
+    spots_ = ((0, 0), (-2.4, -1.6), (2.4, -1.6), (-2.2, 2), (2.2, 2), (0, -3.4))
+    out = ""
+    for x, y, a in _ring(n, r, cx, cy):
+        out += (f'<g transform="translate({x:.1f} {y:.1f}) rotate({a+rng.uniform(-30,30):.0f}) scale({sz})"><circle cx="0" cy="1" r="8.2" fill="#0E1611"/>'
+                f'<circle cx="0" cy="0" r="8.2" fill="#22302A"/><circle cx="0" cy="0" r="6.6" fill="{rice}"/>')
+        for _ in range(9):
+            ga, gd = rng.uniform(0, 6.28), rng.uniform(3.6, 5.6)
+            gx, gy = gd * math.cos(ga), gd * math.sin(ga)
+            out += f'<ellipse cx="{gx:.1f}" cy="{gy:.1f}" rx="1.1" ry=".55" fill="#DDD6C4" transform="rotate({math.degrees(ga)+90:.0f} {gx:.1f} {gy:.1f})"/>'
+        k_ = len(fills)
+        if k_ == 1:
+            out += f'<rect x="-2.3" y="-2.3" width="4.6" height="4.6" rx="1" fill="{fills[0]}"/>'
+        elif k_:
+            for j, col in enumerate(fills[:6]):
+                fx, fy = (0, 0) if k_ == 1 else (2.1 * math.cos(6.283 * j / k_ - 1.571), 2.1 * math.sin(6.283 * j / k_ - 1.571))
+                out += f'<rect x="{fx-1.5:.1f}" y="{fy-1.5:.1f}" width="3" height="3" rx=".7" fill="{col}"/>'
+        out += '<path d="M-6.4 -3.6Q-4.4 -7 -.6 -7.6" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity=".3"/></g>'
+    return out
+
+
+def pitapocket(rng, o):  # pita halves standing cut side up, stuffed so the filling and greens show at the top
+    fill = at(o, 1, "#E9D9B8"); greens = at(o, 2, ""); f2 = at(o, 3, "")
+    n = at(o, 4, 2); sz = at(o, 5, 1 if n < 3 else .8)
+    cx = at(o, 6, 50); cy = at(o, 7, 50)
+    pita, pshade, toast = "#E9C58A", "#C2914E", "#C98E4A"
+    gap = 28 * sz
+    out = ""
+    for i in range(n):
+        x = cx + (i - (n - 1) / 2) * gap
+        y = cy + 6 + (-2.4 if i % 2 else 2.4) * (n > 1)
+        out += f'<g transform="translate({x:.1f} {y:.1f}) rotate({-9 + 18 * (i % 2)}) scale({sz})">'
+        if greens:
+            for gx in (-9, -3, 3.4, 9):
+                out += f'<path d="{blob(rng,gx,-7.4,4.4,3.6,8,.3)}" fill="{greens}"/>'
+            out += f'<path d="M-10 -6.6Q-9 -8.6 -7.4 -7.8M2 -7.6Q3.4 -9.4 5 -8.4" fill="none" stroke="{mix(greens, "#FFFFFF", .4)}" stroke-width=".8" stroke-linecap="round"/>'
+        out += f'<path d="{blob(rng,0,-2.6,13.4,6.4,10,.14)}" fill="{mix(fill, "#5A3210", .25)}"/><path d="{blob(rng,0,-3.2,12.6,5.8,10,.14)}" fill="{fill}"/>'
+        if f2:
+            for bx, by in ((-6.6, -4.4), (-.4, -6), (5.6, -4)):
+                out += f'<rect x="{bx-1.7:.1f}" y="{by-1.7:.1f}" width="3.4" height="3.4" rx=".9" fill="{f2}" transform="rotate({rng.uniform(-25,25):.0f} {bx:.1f} {by:.1f})"/>'
+        out += (f'<path d="M-15 -1.6A15 15 0 0 0 15 -1.6z" fill="{pshade}" transform="translate(0 1)"/><path d="M-15 -1.6A15 15 0 0 0 15 -1.6z" fill="{pita}"/>'
+                f'<path d="M-14.4 -1.6H14.4" stroke="{pshade}" stroke-width="1.2" stroke-linecap="round"/>')
+        for px, py, pa in spots(rng, 5, 7, 0, 5):
+            out += f'<ellipse cx="{px:.1f}" cy="{py:.1f}" rx="2" ry="1.2" fill="{toast}" opacity=".6" transform="rotate({pa:.0f} {px:.1f} {py:.1f})"/>'
+        out += '<path d="M-10 4Q-6 9.6 0 10.6" fill="none" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".4"/></g>'
+    return out
+
+
+def kibbeh(rng, o):  # fried kibbeh: deep brown footballs with pointed ends; with a filling colour, one is cut open to show it
+    c = at(o, 1, "#94501F"); fill = at(o, 2, "")
+    n = at(o, 3, 4); sz = at(o, 4, 1.2); r = at(o, 5, 14 if n > 1 else 0)
+    cx = at(o, 6, 50); cy = at(o, 7, 50)
+    shade, dark, light = mix(c, "#2A1206", .4), mix(c, "#1A0A02", .6), mix(c, "#F7CF86", .6)
+    shell = "M-12 0C-8.6 -6.8 8.6 -6.8 12 0C8.6 6.8 -8.6 6.8 -12 0z"
+    out = ""
+    places = list(spots(rng, n, r, cx, cy)) if n > 1 else [(cx, cy, 30)]
+    if fill:  # the cut one goes on top
+        places = places[1:] + places[:1]
+    for i, (x, y, a) in enumerate(places):
+        cut = fill and i == len(places) - 1
+        out += f'<g transform="translate({x:.1f} {y:.1f}) rotate({a*.6-30:.0f}) scale({sz})"><path d="{shell}" fill="{dark}" transform="translate(0 1.2)"/>'
+        out += f'<path d="{shell}" fill="{c}" stroke="{shade}" stroke-width="1"/>'
+        if cut:  # cut in half lengthwise: a bulgur shell round the filling
+            fs = mix(fill, "#1A0A02", .35)
+            out += (f'<path d="M-9.6 0C-6.6 -4.6 6.6 -4.6 9.6 0C6.6 4.6 -6.6 4.6 -9.6 0z" fill="{mix(c, "#EBC089", .62)}"/>'
+                    f'<path d="M-7 0C-4.6 -3.2 4.6 -3.2 7 0C4.6 3.2 -4.6 3.2 -7 0z" fill="{fill}"/>')
+            for bx, by, ba in spots(rng, 7, 3, 0, 0):
+                out += f'<circle cx="{bx*1.7:.1f}" cy="{by*.6:.1f}" r=".8" fill="{fs}"/>'
+        else:  # one hand-pressed seam and a crisp fried shine
+            out += (f'<path d="M-8.6 1.6Q0 3.8 8.6 1.6" fill="none" stroke="{shade}" stroke-width="1" stroke-linecap="round" opacity=".7"/>'
+                    f'<path d="M-6.6 -2.6Q0 -5.2 6 -2.8" fill="none" stroke="{light}" stroke-width="1.6" stroke-linecap="round" opacity=".9"/>')
+        out += "</g>"
+    return out
+
+
+def lettucecups(rng, o):  # crisp lettuce leaf cups holding a filling heap with bits on top, for larb and ssam
+    fill = at(o, 1, "#B07A4E"); b1, b2 = at(o, 2, ""), at(o, 3, "")
+    n = at(o, 4, 3); sz = at(o, 5, 1); r = at(o, 6, 15 if n > 1 else 0)
+    cx = at(o, 7, 50); cy = at(o, 8, 50)
+    leaf, edge, pale, rib = "#8CC152", "#5E9A3A", "#CFE7A0", "#EAF4CF"
+    fs = mix(fill, "#2A1206", .3)
+    out = ""
+    for x, y, a in _ring(n, r, cx, cy, -1.571 if n != 2 else -2.6):
+        out += f'<g transform="translate({x:.1f} {y:.1f}) rotate({a+90:.0f}) scale({sz})">'
+        out += (f'<path d="{blob(rng,0,0,13.4,11,14,.12)}" fill="{edge}"/><path d="{blob(rng,0,-.6,12.4,10,14,.12)}" fill="{leaf}"/>'
+                f'<path d="{blob(rng,0,.6,8.6,7.4,10,.1)}" fill="{pale}"/>'
+                f'<path d="M0 10.4V6.4" fill="none" stroke="{rib}" stroke-width="1.2" stroke-linecap="round"/>')
+        out += f'<path d="{blob(rng,0,1.4,7.6,6.4,10,.18)}" fill="{fs}"/><path d="{blob(rng,-.2,.8,7,5.8,10,.18)}" fill="{fill}"/>'
+        for bx, by, _ in spots(rng, 8, 4.6, 0, .8):  # crumbly texture
+            out += f'<circle cx="{bx:.1f}" cy="{by:.1f}" r=".9" fill="{fs}" opacity=".7"/>'
+        if b1:
+            for bx, by, ba in spots(rng, 3, 4, 0, .8):
+                out += f'<ellipse cx="{bx:.1f}" cy="{by:.1f}" rx="1.9" ry="1" fill="{b1}" transform="rotate({ba:.0f} {bx:.1f} {by:.1f})"/>'
+        if b2:
+            for bx, by, _ in spots(rng, 2, 3.4, 0, .8):
+                out += f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="1.2" fill="none" stroke="{b2}" stroke-width=".9"/>'
+        out += '<path d="M-8 -6Q-4 -10 2 -10" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity=".5"/></g>'
+    return out
+
+
 NEWER = dict(cauliflower=cauliflower, calamari=calamari, orzo=orzo, shortpasta=shortpasta, scallops=scallops, fritters=fritters,
-             sausages=sausages, tart=tart, hotdog=hotdog, avocado=avocado, leeks=leeks, sardines=sardines, porkbelly=porkbelly, volauvent=volauvent)
+             sausages=sausages, tart=tart, hotdog=hotdog, avocado=avocado, leeks=leeks, sardines=sardines, porkbelly=porkbelly, volauvent=volauvent,
+             croissant=croissant, biscuits=biscuits, braidbread=braidbread, danish=danish, banana=banana, tamales=tamales, gimbap=gimbap,
+             pitapocket=pitapocket, kibbeh=kibbeh, lettucecups=lettucecups)
 
 
 

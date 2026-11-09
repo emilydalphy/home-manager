@@ -13,8 +13,10 @@ ARITY = dict(well=1, pool=(2, 3), rice=7, mash=7, band=4, strips=(6, 8), slices=
              rounds=6, glass=3, eggplant=(3, 5), ribbons=5, shrimp=(5, 7), omelette=5, steak=7, bread=5, tortellini=5, fillet=8, bacon=4, chop=6, potatoes=4, wedgering=5, noodles=5, wrap=4, pizza=4, pancakes=3, flatbread=3, dipbowl=3, bowl=2, pastries=4, stuffed=3, cutlet=7, block=7, rolls=3, wedges=5, yolk=3, ringbread=1, skewers=(1, 4), tacos=(1, 5), sandwiches=1, toast=(1, 4), cups=(1, 5),
              drumstick=(7, 8), muffin=(3, 5), quesadilla=5, burger=(2, 7), mushroom=(5, 7), broccoli=(4, 6), chip=(6, 8), chipring=5, pretzel=(1, 4), waffle=(1, 3),
              shell=(5, 7), sando=(4, 5), onigiri=(1, 5), bao=3, spiral=(3, 4), ricecakes=(5, 7), sticks=5, ribs=(3, 4), smallfish=5, wholefish=7, pecans=5, okra=(3, 5), tamagoyaki=(1, 3), summerroll=1, madeleine=5, teaegg=3,
-             cauliflower=(5, 7), calamari=(3, 6), orzo=(5, 6), shortpasta=(5, 7), scallops=(4, 6), fritters=(7, 9),
-             sausages=(1, 7), tart=(1, 7), hotdog=(1, 4), avocado=(1, 7), leeks=(1, 6), sardines=(1, 5), porkbelly=(1, 6), volauvent=(1, 8))
+             cauliflower=(5, 7), calamari=(3, 7), orzo=(5, 6), shortpasta=(5, 7), scallops=(4, 6), fritters=(7, 9),
+             sausages=(1, 7), tart=(1, 7), hotdog=(1, 4), avocado=(1, 7), leeks=(1, 6), sardines=(1, 5), porkbelly=(1, 6), volauvent=(1, 8),
+             croissant=(1, 8), biscuits=(1, 8), braidbread=(1, 9), danish=(1, 8), banana=(1, 7), tamales=(1, 7), gimbap=(1, 8),
+             pitapocket=(1, 8), kibbeh=(1, 8), lettucecups=(1, 9))
 bad = []
 for r in recs:
     name = r["dish_name"]
@@ -42,7 +44,8 @@ import re, collections
 EX = json.load(open(f"{H}/examples.json"))
 LOCKED = json.load(open(f"{H}/locked.json"))
 FOOD = set(ARITY) - {"well", "pool"}
-WHOLE = {"tart", "hotdog", "baguette", "flautas", "phyllo", "loaf", "ringbread", "skewers", "tacos", "sandwiches", "toast", "cups", "omelette", "steak", "bread", "fillet", "chop", "potatoes", "wrap", "pizza", "pancakes", "flatbread", "pastries", "stuffed", "rolls", "patties", "glass", "wedgering", "noodles", "cutlet", "block", "bowl", "dipbowl", "drumstick", "muffin", "quesadilla", "burger", "pretzel", "waffle", "sando", "onigiri", "bao", "spiral", "ribs", "tamagoyaki", "summerroll", "madeleine", "smallfish", "wholefish", "sticks", "teaegg"}
+WHOLE = {"tart", "hotdog", "baguette", "flautas", "phyllo", "loaf", "ringbread", "skewers", "tacos", "sandwiches", "toast", "cups", "omelette", "steak", "bread", "fillet", "chop", "potatoes", "wrap", "pizza", "pancakes", "flatbread", "pastries", "stuffed", "rolls", "patties", "glass", "wedgering", "noodles", "cutlet", "block", "bowl", "dipbowl", "drumstick", "muffin", "quesadilla", "burger", "pretzel", "waffle", "sando", "onigiri", "bao", "spiral", "ribs", "tamagoyaki", "summerroll", "madeleine", "smallfish", "wholefish", "sticks", "teaegg",
+         "croissant", "biscuits", "braidbread", "danish", "tamales", "gimbap", "pitapocket", "kibbeh", "lettucecups"}
 PASTA = re.compile(r"pasta|spaghetti|penne|rigatoni|bucatini|linguine|fettuccine|pappardelle|tagliatelle|carbonara|tortellini|ravioli|bolognese|macaroni|mac and cheese|ziti|orecchiette|fusilli|cacio|lasagn", re.I)
 SOUPY = re.compile(r"soup|salad|e fagioli|e ceci|e piselli|lasagn|bake", re.I)
 DRINK = re.compile(r"smoothie(?! bowl)|\\blassi|lemonade|horchata|milkshake", re.I)
@@ -71,7 +74,8 @@ MEATSHAPES = {"bacon": r"bacon|pancetta|guanciale|lardon", "chop": r"pork|lamb|v
               "drumstick": r"chicken|turkey|duck", "ribs": r"\bribs?\b|pork|beef", "shell": r"clam|mussel|cockle", "smallfish": r"anchov|sardine|smelt|fish",
               "calamari": r"squid|calamar|kalamar", "scallops": r"scallop",
               "sausages": r"sausage|chorizo|merguez|kielbasa|bratwurst|hot dog|frank|makanek|ground (beef|lamb|pork|chicken|turkey)|minced|kofta|kafta|lamb|beef",
-              "hotdog": r"hot dog|frank|sausage|wiener|bratwurst", "sardines": r"sardine", "porkbelly": r"pork belly|pork|samgyeopsal"}
+              "hotdog": r"hot dog|frank|sausage|wiener|bratwurst", "sardines": r"sardine", "porkbelly": r"pork belly|pork|samgyeopsal",
+              "kibbeh": r"lamb|beef|veal|goat|ground meat|minced meat|pumpkin|potato|squash"}  # kibbeh is meat unless it's the pumpkin or potato kind
 NOTMEAT = re.compile(r"vegan|vegetarian|plant[- ]based|meatless|\bbroth\b|\bstock\b|bouillon|\bsauce\b|\bpaste\b|\bpowder\b", re.I)
 def has_meat(r, pattern):
     return any(re.search(pattern, i, re.I) and not NOTMEAT.search(i) for i in r.get("ingredients", []))
@@ -143,6 +147,36 @@ for r in recs:
         elif o[0] == "volauvent":
             n_ = v(3, 3)
             reach = (v(6, 50), v(7, 50), v(5, 15 if n_ > 1 else 0) + 1.5 + 14 * v(4, 1.25))
+        elif o[0] in ("croissant", "biscuits", "danish", "gimbap", "kibbeh", "lettucecups"):  # pieces around a centre
+            # (count index, default count, size index, default size, r index, default r when count > 1, reach of one piece at size 1)
+            ci_, dn, si_, ds, ri_, dr, one = {"croissant": (3, 2 if v(1, "") else 3, 4, None, 5, None, 21.5 if v(1, "") or v(2, "") else 19.5), "biscuits": (3, 3, 4, 1, 5, 14, 14),
+                                               "danish": (3, 3, 4, 1, 5, 14, 16.4), "gimbap": (2, 7, 3, 1, 4, 21, 9.2),
+                                               "kibbeh": (3, 4, 4, 1.2, 5, 14, 12.8), "lettucecups": (4, 3, 5, 1, 6, 15, 13.8)}[o[0]]
+            n_ = v(ci_, dn)
+            if o[0] == "croissant":
+                ds, dr = (1 if n_ > 2 else 1.05), (14 if n_ > 2 else (12 if n_ > 1 else 0))
+            r_ = v(ri_, dr if n_ > 1 else 0)
+            reach = (v(ri_ + 1, 50), v(ri_ + 2, 50), r_ * (1.05 if o[0] == "kibbeh" else 1) + one * v(si_, ds))
+        elif o[0] == "braidbread":
+            bun = v(3, "loaf") == "bun"
+            n_ = v(4, 3 if bun else 1); sz_ = v(5, 1 if bun else 1.1)
+            reach = (v(7, 50), v(8, 50), (v(6, 15 if n_ > 1 else 0) + 14.6 * sz_) if bun else 30.5 * sz_)
+        elif o[0] == "banana":
+            sz_ = v(3, 1)
+            if v(1, "split") == "slices":
+                n_, r_ = v(2, 7), v(4, 0)
+                far = r_ + 6.4 * sz_ if r_ else (n_ - 1) / 2 * 7.5 * sz_ + 6.4 * sz_
+            else:
+                r_ = v(4, 14)
+                far = max((24.5 ** 2 + (r_ + 3) ** 2) ** .5, r_ + 16.6) * sz_
+            reach = (v(5, 50), v(6, 50), far)
+        elif o[0] == "tamales":
+            ext = (v(4, 3) - 1) / 2 * 15
+            reach = (v(5, 50), v(6, 50), max((27 ** 2 + ext ** 2) ** .5, (10 ** 2 + (ext + 11) ** 2) ** .5) + 2)
+        elif o[0] == "pitapocket":
+            n_ = v(4, 2); sz_ = v(5, 1 if n_ < 3 else .8)
+            ext = (n_ - 1) / 2 * 28 * sz_
+            reach = (v(6, 50), v(7, 50), max(((ext + 15.4 * sz_) ** 2 + (8.4 + 4 * sz_) ** 2) ** .5, (ext ** 2 + (8.4 + 15 * sz_) ** 2) ** .5))
         if reach and ((reach[0] - 50) ** 2 + (reach[1] - 50) ** 2) ** .5 + reach[2] > 39:
             bad.append(f"{name}: {o[0]} spills past the plate; make it smaller or move it in")
         if o[0] == "orzo" and ((o[1] - 50) ** 2 + (o[2] - 50) ** 2) ** 0.5 + max(o[3], o[4]) * 1.08 > 37:
