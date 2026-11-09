@@ -1,0 +1,128 @@
+{
+ "dish_name": "Tofu Larb",
+ "cuisine": "Thai",
+ "main_protein": "tofu",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 lb",
+   "category": "dairy"
+  },
+  {
+   "item": "Sticky rice (glutinous rice)",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Red chiles",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bibb lettuce",
+   "qty": "2 heads",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pat the tofu dry with paper towels and let it sit on a clean towel.",
+  "Toast the sticky rice in a large dry skillet over medium heat, stirring, for 3 to 5 minutes, until it's golden and smells toasty. Transfer it to a plate.",
+  "Grind the rice to a powder in a spice grinder or a mortar and pestle.",
+  "Meanwhile, crumble the tofu by hand into small pieces about 1/4 inch.",
+  "Slice the shallots thinly and mince the garlic. Chop the cilantro and mint leaves together until you have 2 cups loosely packed. Cut 2 of the limes in half to juice and the other 2 into wedges. Slice the red chiles thinly and put them in a small bowl for the table. Separate the lettuce leaves.",
+  "Heat the oil in the same skillet over medium-high. Add the tofu with 1/2 tsp salt, the pepper and 1 tsp sugar. Cook, stirring now and then, for 8 to 10 minutes, until it's browned in spots.",
+  "Add the garlic and stir for 30 seconds. Take the skillet off the heat.",
+  "Transfer the tofu to a large bowl. Add the herbs, shallots, 2 tbsp tamari and the juice of the 2 halved limes. Toss.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Sprinkle on the toasted rice powder. Serve in the lettuce leaves with the lime wedges and the sliced chiles."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Bittman Project version, the lead, browns crumbled tofu with garlic, sugar and soy, tosses it with a big handful of herbs, shallots, chiles and lime, and finishes with toasted sticky rice powder in lettuce cups. Rabbit and Wolves does the same with vegan fish sauce and scallions, and Crazy Cucumber adds lemongrass, galangal and kaffir lime. No version has ratings, so the fallback flag is set. Tamari keeps it gluten-free, and the lead's 4 chiles are cut to 2 and moved to the table for a milder base. The tofu is crumbled by hand instead of in a food processor.",
+ "sources": [
+  {
+   "name": "The Bittman Project",
+   "title": "Tofu \"Larb\"",
+   "url": "https://bittmanproject.com/recipe/tofu-larb/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rabbit and Wolves",
+   "title": "The Best Vegan Larb Inspired Tofu",
+   "url": "https://www.rabbitandwolves.com/the-best-vegan-larb-inspired-tofu/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Crazy Cucumber",
+   "title": "Thai Tofu Larb",
+   "url": "https://www.crazy-cucumber.com/thai-tofu-larb/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

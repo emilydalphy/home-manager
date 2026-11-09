@@ -1,0 +1,123 @@
+{
+ "dish_name": "Sayadieh",
+ "cuisine": "Lebanese",
+ "main_protein": "fish",
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Seven spice",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Slivered almonds",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the onions, cut them in half and slice them thinly.",
+  "Heat 3 tbsp of the oil in a large deep skillet with a lid over medium-high. Add the onions and cook, stirring now and then, for 10 minutes, until they're light golden.",
+  "Meanwhile, rinse the rice in cold water until it runs mostly clear, then drain it.",
+  "Mix the cornstarch in a shallow dish with 1/2 tsp of the turmeric, 1 tsp of the cumin, 1/2 tsp of the seven spice, 1 tsp of the salt and 1/2 tsp of the pepper.",
+  "Pat the cod dry and cut it into 6 pieces. Press each piece into the cornstarch mixture to coat both sides, and shake off the extra.",
+  "Lift half of the onions out onto a plate for the top. Keep cooking the rest, stirring, for 2 minutes, until they're a deeper brown.",
+  "Add the rice, the rest of the turmeric, cumin and seven spice, 1 1/2 tsp of the salt and the rest of the pepper. Stir for 1 minute.",
+  "Pour in 2 1/4 cups water and bring it to a boil. Cook uncovered for 5 minutes, then turn the heat to the lowest setting, cover and cook for 12 minutes, until the water is absorbed. No peeking.",
+  "While the rice cooks, heat 1 tbsp of the oil in a large skillet over medium. Add the almonds and stir for 1 to 2 minutes, until golden. Transfer them to a plate.",
+  "Add 2 tbsp of the oil to the same skillet and heat it over medium-high. Cook half of the cod for 4 minutes on each side, until golden and the flesh flakes when you press it. Transfer it to a paper-towel-lined plate.",
+  "Add the last 2 tbsp of oil and cook the rest of the cod the same way.",
+  "Leave the rice covered off the heat for 5 minutes, then fluff it with a fork. Taste it. If it's flat, add a pinch more salt.",
+  "Spread the rice on a platter. Serve with the fish on top, then the reserved onions and the toasted almonds."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version builds the rice on slowly browned onions, spices it with cumin, turmeric and seven spice, and serves floured fried fish on top with toasted nuts. Simply Leb, the lead, fries the fish and onions in the same oil and cooks the rice in the pan with the onions; Mighty Sesame roasts the fish and adds a tahini sauce, and Every Little Crumb blends the onions into a sauce for the rice. No version has 20 ratings, so the fallback flag is set. Cornstarch replaces the flour for gluten-free, as Falasteeni Foodie does, and the oil is cut well below the lead's half cup per batch. Written at 47 minutes, so it sits near the top of the 45 minute target.",
+ "sources": [
+  {
+   "name": "Simply Lebanese",
+   "title": "Sayadieh (Lebanese Rice & Fish)",
+   "url": "https://www.simplyleb.com/recipe/sayadieh-lebanese-rice-fish/",
+   "rating": 4.75,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Every Little Crumb",
+   "title": "Sayadieh (Lebanese Fish and Rice)",
+   "url": "https://everylittlecrumb.com/sayadieh/",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Falasteeni Foodie",
+   "title": "Sayadieh (Lebanese Rice and Fish)",
+   "url": "https://falasteenifoodie.com/sayadieh-lebanese-rice-and-fish/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mighty Sesame Co.",
+   "title": "Sayadieh",
+   "url": "https://mightysesameco.com/sayadieh/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

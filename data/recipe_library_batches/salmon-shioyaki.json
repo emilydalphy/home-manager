@@ -1,0 +1,102 @@
+{
+ "dish_name": "Salmon Shioyaki",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Salmon fillets, skin-on",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood",
+   "cook_qty": "4 fillets"
+  },
+  {
+   "item": "Kosher salt (5% of the salmon's weight)",
+   "qty": "3 1/2 tbsp (34 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Daikon radish",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "a 3-inch piece"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Two days ahead: cut the salmon into 4 fillets about 1 inch thick. Pour the 2 tbsp sake over them, turn them so both sides are coated, and leave them for 10 minutes.",
+  "Weigh the salmon. The salt is 5% of its weight, so for 1 1/2 lbs that's 34 g, about 3 1/2 tbsp of Diamond Crystal kosher salt. Pat the fillets dry with paper towels, sprinkle some of the salt over the skin, then the rest over both sides.",
+  "Line an airtight container with paper towels. Lay the fillets in it skin side up with paper towels between them and on top. Cover and refrigerate for 2 days.",
+  "Rinse the rice in cold water until it runs mostly clear. Put it in a medium pot with 1 3/4 cups water, bring it to a boil over high heat, then cover and cook on the lowest heat for 15 minutes. Leave it covered off the heat for 10 minutes.",
+  "Meanwhile, set a rack about 9 inches from the broiler and heat the broiler to high for 5 minutes. Line a baking sheet with foil and rub the 1 tsp oil over it.",
+  "Peel the 3-inch piece of daikon and grate it. Squeeze it gently so it stays moist but isn't dripping.",
+  "Take the fillets out of the container and throw away the wet paper towels. Pat the fillets dry and lay them skin side up on the baking sheet.",
+  "Broil the salmon for 8 to 10 minutes without flipping, until the skin is browned and the flesh flakes when you press the thickest part with a fork.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve the salmon with the rice and the grated daikon."
+ ],
+ "advance_prep_notes": "salt the salmon 2 days ahead and refrigerate it",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Cup of Yum and Just One Cookbook give the same method: sake on the fillets, salt at 5% of the weight, a 2 day cure between paper towels in the fridge, then broil skin side up for 8 to 10 minutes and serve with grated daikon. Food Republic salts for only 2 to 5 hours and finishes the skin over the grill, and The Daily Meal rinses off the salt after 1 hour. This one follows Cup of Yum for the cure and the broiling. Short-grain rice comes from Food Republic's rice serving. The cure is the dish, so it is written as the first step; the faster ones give a less seasoned fillet.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Japanese Salted Salmon (Shiojake/Shiozake)",
+   "url": "https://cupofyum.com/recipes/japanese-salted-salmon-shiojakeshiozake-5848",
+   "rating": 4.7,
+   "rating_count": 282,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Japanese Salted Salmon (Shiozake)",
+   "url": "https://www.justonecookbook.com/how-to-cook-salmon-salted-salmon/",
+   "rating": 4.64,
+   "rating_count": 173,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Republic",
+   "title": "Salmon Shioyaki (Salt-Grilled Salmon)",
+   "url": "https://www.foodrepublic.com/recipes/salt-grilled-fish-salmon-shioyaki-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Daily Meal",
+   "title": "Sake Shioyaki (Salt-Grilled Salmon)",
+   "url": "https://www.thedailymeal.com/recipes/sake-shioyaki-salt-grilled-salmon-recipe/",
+   "rating": 4.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

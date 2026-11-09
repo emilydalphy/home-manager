@@ -1,0 +1,113 @@
+{
+ "dish_name": "Caldo de Pescado",
+ "cuisine": "Mexican",
+ "main_protein": "fish",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 22,
+ "ingredients": [
+  {
+   "item": "Firm white fish fillets (snapper, cod or halibut)",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fish stock",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 onion"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Chipotle peppers in adobo",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 pepper"
+  },
+  {
+   "item": "Russet potato",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1 leaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried chile de arbol",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Quarter the tomatoes. Put them in a blender with 1 cup water, half of the onion, the garlic clove, the 1 chipotle pepper and 1 tsp of the salt. Blend until smooth.",
+  "Peel the potato and cut it into 3/4-inch cubes. Slice the carrots into 1/4-inch rounds.",
+  "Cut the fish into 1-inch pieces, pat them dry and sprinkle them with the last 1/2 tsp salt.",
+  "Heat the oil in a large pot over medium-high. Stand back a little and pour in the tomato mixture. It will spatter. Cook, stirring the whole time, for 2 minutes.",
+  "Add the 6 cups stock, the potato, the carrots and the bay leaf. Bring it to a boil, then lower the heat and simmer partly covered for 10 to 12 minutes, until the potato is tender when you poke it with a fork.",
+  "Meanwhile, cut the limes into wedges and slice the chiles de arbol into thin rings for the table.",
+  "Add the fish and cook for 3 to 5 minutes, until it's opaque and flakes. Don't stir it much, or it breaks up.",
+  "Take out the bay leaf. Taste it. If it's flat, add a pinch more salt.",
+  "Serve in deep bowls with the lime wedges and the sliced chiles on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mama Maggie's Kitchen, the lead, blends tomatoes with onion, garlic and a chipotle, cooks that sauce in oil for 2 minutes, then simmers potato and carrot in fish broth before the fish goes in for 3 to 5 minutes. Cooking With Our CSA strains a chile and tomato sauce and adds celery and shrimp. The lead makes its broth from a fish head and bones; this one uses store-bought fish stock, which the lead also allows, to stay inside 45 minutes. Check the stock label for gluten. The chile de arbol is the lead's optional garnish, kept on the side for heat.",
+ "sources": [
+  {
+   "name": "Mama Maggie's Kitchen",
+   "title": "Caldo de Pescado (Mexican Fish Soup)",
+   "url": "https://inmamamaggieskitchen.com/mexican-fish-soup-or-caldo-de-pescado/",
+   "rating": 5.0,
+   "rating_count": 59,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking With Our CSA",
+   "title": "Mexican Fish Soup (Caldo de Pescado)",
+   "url": "https://cookingwithourcsa.com/mexican-fish-soup-caldo-de-pescado/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

@@ -1,0 +1,114 @@
+{
+ "dish_name": "Pescado Zarandeado",
+ "cuisine": "Mexican",
+ "main_protein": "fish",
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Whole red snapper, cleaned and butterflied",
+   "qty": "3 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried guajillo chiles",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 onion for the paste and 1/2 onion to serve"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh oregano",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp leaves"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Tear the guajillo chiles open, remove the stems and seeds, and put them in a bowl. Cover with just-boiled water, weigh them down with a plate and leave them for 20 minutes.",
+  "Meanwhile, rinse the fish and pat it dry. Make shallow diagonal cuts about an inch apart in the flesh side, without cutting through the skin. Sprinkle 1 tsp of the salt over the flesh.",
+  "Heat a gas grill to medium-high and oil the grates, or set a grill basket over the heat. Use 1 tbsp of the oil.",
+  "Drain the chiles. Put them in a blender with half of the onion, the garlic, 1 tbsp oregano leaves, the last 1/4 tsp salt and 1/2 cup water. Blend until smooth, adding water 1 tbsp at a time if it's too thick.",
+  "Heat 1 tbsp of the oil in a small saucepan over medium. Pour in the chile paste and simmer for 6 minutes, stirring now and then, until it's thicker and darker. Take it off the heat.",
+  "Spoon 1/3 cup of the paste into a small bowl for the table. Brush the rest generously over the flesh side of the fish.",
+  "Lay the fish skin side down on the grill and cook for 3 minutes. Flip it, brush on more paste and cook 3 minutes. Flip again, brush and cook 3 minutes.",
+  "Check the thickest part. You're cooking it until it flakes and the paste is dark red with dark edges. If it's not there yet, flip it and cook for 2 minutes.",
+  "Brush the last 1 tbsp of oil over the fish and transfer it to a platter.",
+  "Slice the other half of the onion thinly and cut the limes into wedges. Warm the tortillas in a dry skillet for 30 seconds per side, then wrap them in a clean towel.",
+  "Taste the reserved paste. If it's flat, add a pinch more salt.",
+  "Serve the fish with the warm tortillas, the reserved paste, the sliced onion and the lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Chef's Pencil, the lead, simmers a paste of guajillo, onion, garlic and fresh oregano until it darkens, coats a butterflied snapper and grills it in a basket with three flips, basting each time. Rick Bayless uses ancho chile with tomato sauce, soy and Worcestershire and serves tacos with onion and lime; Mama Maggie's and A Spicy Perspective use a mayonnaise and mustard marinade. The lead finishes with melted butter, which is brushed oil here for dairy-free. Part of the paste is set aside before the raw fish touches it, to spoon over at the table. Grilled outdoors; no broiler method was tested.",
+ "sources": [
+  {
+   "name": "Chef's Pencil",
+   "title": "Pescado Zarandeado (Mexican Red Snapper)",
+   "url": "https://www.chefspencil.com/pescado-zarandeado/",
+   "rating": 4.89,
+   "rating_count": 96,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rick Bayless",
+   "title": "Fish Zarandeado",
+   "url": "https://www.rickbayless.com/recipe/fish-zarandeado/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mama Maggie's Kitchen",
+   "title": "Pescado Zarandeado",
+   "url": "https://inmamamaggieskitchen.com/pescado-zarandeado/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "A Spicy Perspective",
+   "title": "Pescado Zarandeado Recipe (Mexican Fish)",
+   "url": "https://www.aspicyperspective.com/pescado-zarandeado-mexican-grilled-red-snapper/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}
