@@ -801,7 +801,173 @@ def op(rng, o):
             out += ('<path d="M-11 -4L-5 -2L-8 4L-1 6L1 -1L-3 -8M1 -1L7 -3L5 -9M7 -3L12 2L6 6L1 6M-8 4L-12 3M6 6L5 10" fill="none" stroke="#7A4A28" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
                     '<ellipse cx="-4" cy="-7" rx="5" ry="2" fill="#FFFFFF" opacity=".3"/></g>')
         return out
+    if k in NEWER:
+        return NEWER[k](rng, o)
     return base_op(rng, o)
+
+
+def mix(c1, c2, t):
+    """Blend two #RRGGBB colours; t=0 gives c1, t=1 gives c2."""
+    a = [int(c1[i:i + 2], 16) for i in (1, 3, 5)]
+    b = [int(c2[i:i + 2], 16) for i in (1, 3, 5)]
+    return "#" + "".join(f"{round(x + (y - x) * t):02X}" for x, y in zip(a, b))
+
+
+def at(o, i, default):
+    """An optional value: o[i] if given and not "", else the default."""
+    return o[i] if len(o) > i and o[i] != "" else default
+
+
+def cauliflower(rng, o):  # florets: a scalloped cream dome with curd texture over a pale branching stalk and green leaves
+    c = at(o, 1, "#F1E2BA")
+    n, sz, r = o[2:5]
+    cx = at(o, 5, 50); cy = at(o, 6, 50)
+    shade, light = mix(c, "#6E3F16", .4), mix(c, "#FFFFFF", .55)
+    bumps = ((-7, -.6, 3.8), (7, -.6, 3.8), (-4.6, -5.4, 4.2), (4.6, -5.4, 4.2), (0, -8, 4.2), (-2.4, -1.4, 4.4), (2.4, -1.4, 4.4))
+    out = ""
+    for x, y, a in spots(rng, n, r, cx, cy):
+        out += (f'<g transform="translate({x:.1f} {y:.1f}) rotate({(a-90)*.35:.0f}) scale({sz/7:.2f})">'
+                '<path d="M-2.6 9.4Q-9.8 10 -11.4 3.6Q-6.4 2.2 -2 5z" fill="#7FA35A"/><path d="M2.6 9.4Q9.8 10 11.4 3.6Q6.4 2.2 2 5z" fill="#7FA35A"/>'
+                '<path d="M-3.4 10.4Q0 11.8 3.4 10.4L3 4.6L6.8 1H-6.8L-3 4.6z" fill="#EDEFD2"/>'
+                '<path d="M0 10V4.6M0 4.6L-3.6 1.6M0 4.6L3.6 1.6" fill="none" stroke="#C9CFA0" stroke-width=".9" stroke-linecap="round"/>')
+        out += "".join(f'<circle cx="{bx}" cy="{by+.7}" r="{br+.7}" fill="{shade}"/>' for bx, by, br in bumps)
+        out += "".join(f'<circle cx="{bx}" cy="{by}" r="{br}" fill="{c}"/>' for bx, by, br in bumps)
+        for bx, by, br in bumps:  # curd texture: little arcs on each bump
+            out += f'<path d="M{bx-1.8:.1f} {by+1.4:.1f}q1 -1.2 2 0M{bx+.4:.1f} {by-1.2:.1f}q1 -1.2 2 0" fill="none" stroke="{shade}" stroke-width=".7" stroke-linecap="round" opacity=".75"/>'
+        out += f'<path d="M-6.6 -5.6Q-4.2 -10 0 -10.8" fill="none" stroke="{light}" stroke-width="1.5" stroke-linecap="round" opacity=".85"/></g>'
+    return out
+
+
+def calamari(rng, o):  # fried squid rings, golden with a hole; optional tentacle bunches
+    n, r = o[1:3]
+    cx = at(o, 3, 50); cy = at(o, 4, 50)
+    t = at(o, 5, 0)
+    batter, edge, light = "#E3A54A", "#A9661F", "#F7D58C"
+    pos = list(spots(rng, n + t, r, cx, cy))
+    tidx = {round((j + .5) * len(pos) / t) % len(pos) for j in range(t)} if t else set()
+    out = ""
+    for i, (x, y, a) in enumerate(pos):
+        if i in tidx:  # a bunch of curled tentacles
+            out += f'<g transform="translate({x:.1f} {y:.1f}) rotate({a*2:.0f})">'
+            legs = "".join(f'M{dx*.4:.1f} -3Q{dx*1.1:.1f} 1.6 {dx*1.9:.1f} 5.6q{.9 if dx <= 0 else -.9} 2 {2.2 if dx <= 0 else -2.2} 1.2' for dx in (-4.4, -2.2, 0, 2.2, 4.4))
+            out += (f'<path d="{legs}" fill="none" stroke="{edge}" stroke-width="3" stroke-linecap="round"/>'
+                    f'<path d="{legs}" fill="none" stroke="{batter}" stroke-width="2" stroke-linecap="round"/>')
+            out += f'<ellipse cx="0" cy="-4.2" rx="4.6" ry="3.4" fill="{edge}"/><ellipse cx="0" cy="-4.6" rx="3.8" ry="2.6" fill="{batter}"/><ellipse cx="-1.2" cy="-5.4" rx="1.6" ry=".8" fill="{light}"/></g>'
+        else:  # a ring: dark outer edge, golden batter, crumb, glossy arc, hole in the middle
+            out += (f'<g transform="translate({x:.1f} {y:.1f}) rotate({a:.0f})"><ellipse rx="6.4" ry="5.5" fill="none" stroke="{edge}" stroke-width="4.6"/>'
+                    f'<ellipse rx="6.4" ry="5.5" fill="none" stroke="{batter}" stroke-width="3.3"/>'
+                    f'<path d="M-4.6 -3.4Q-1 -6.2 3 -5.2" fill="none" stroke="{light}" stroke-width="1.3" stroke-linecap="round"/>')
+            for ang in (.4, 1.5, 2.6, 3.7, 4.9):
+                out += f'<circle cx="{6.4*math.cos(ang):.1f}" cy="{5.5*math.sin(ang):.1f}" r=".6" fill="{edge}" opacity=".7"/>'
+            out += "</g>"
+    return out
+
+
+def orzo(rng, o):  # a mound of rice-shaped pasta: bigger, pointed grains in a pasta yellow; optional sauce tint
+    _, cx, cy, rx, ry = o[:5]
+    sauce = at(o, 5, "")
+    pasta = "#F4D488" if not sauce else mix("#F4D488", sauce, .32)
+    base = "#D3A04A" if not sauce else sauce
+    edge = mix(pasta, "#7A4A16", .35)
+    out = f'<path d="{blob(rng,cx,cy,rx,ry,12,.08)}" fill="{base}"/>'
+    for _ in range(int(rx * ry / 3.2)):
+        a, d = rng.uniform(0, 6.28), math.sqrt(rng.uniform(0, 1))
+        x, y = cx + (rx - 2.6) * d * math.cos(a), cy + (ry - 2.6) * d * math.sin(a)
+        out += f'<path d="M-2.8 0Q0 -1.6 2.8 0Q0 1.6 -2.8 0z" fill="{pasta}" stroke="{edge}" stroke-width=".35" transform="translate({x:.1f} {y:.1f}) rotate({rng.uniform(0,180):.0f})"/>'
+    return out + f'<path d="M{cx-rx*.55:.1f} {cy-ry*.55:.1f}Q{cx:.1f} {cy-ry*.82:.1f} {cx+rx*.4:.1f} {cy-ry*.62:.1f}" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity=".35"/>'
+
+
+def shortpasta(rng, o):  # short pasta: "rotini" twists, "penne" ridged tubes or "shells"
+    shape = o[1]
+    c = at(o, 2, "#EDC46A")
+    n, r = o[3:5]
+    cx = at(o, 5, 50); cy = at(o, 6, 50)
+    shade, dark, light = mix(c, "#7A4A16", .35), mix(c, "#5A3210", .55), mix(c, "#FFFFFF", .45)
+    out = ""
+    for x, y, a in spots(rng, n, r, cx, cy):
+        out += f'<g transform="translate({x:.1f} {y:.1f}) rotate({a*2:.0f})">'
+        if shape == "penne":
+            out += (f'<path d="M-8 -3.4H4.6L8.4 3.4H-4.2z" fill="{shade}" stroke="{shade}" stroke-width="1.2" stroke-linejoin="round"/>'
+                    f'<path d="M-7.6 -3.4H4.6L7.4 1.8H-4.8z" fill="{c}"/>'
+                    f'<path d="M-6.4 -1.6H5.2M-5.4 .2H6.2M-4.4 2H7.2" stroke="{shade}" stroke-width=".7" stroke-linecap="round"/>'
+                    f'<ellipse cx="6.5" cy="0" rx="1.4" ry="3.3" fill="{dark}" transform="rotate(-28 6.5 0)"/>'
+                    f'<path d="M-5.6 -2.6H3.6" stroke="{light}" stroke-width=".9" stroke-linecap="round"/>')
+        elif shape == "shells":
+            out += (f'<path d="M-7 1C-7.6 -5 -2 -7.6 2.4 -6.6C7 -5.6 8.4 -1 7.4 2.6C6.4 6 2 7 -1.6 6.4C-5 5.8 -6.8 4 -7 1z" fill="{shade}"/>'
+                    f'<path d="M-6.4 .4C-6.8 -4.6 -2 -6.8 2.2 -6C6.2 -5 7.4 -1.2 6.6 2C5.6 5 2 5.8 -1.4 5.4C-4.6 4.8 -6.2 3 -6.4 .4z" fill="{c}"/>'
+                    f'<path d="M-1 -5.6Q-3.4 0 -1 5M2.4 -5.6Q.4 0 2.4 5.2M5.2 -3.8Q3.6 0 5 3.6" fill="none" stroke="{shade}" stroke-width="1.1" stroke-linecap="round"/>'
+                    f'<path d="M-5.6 -3.6Q-1.4 -2.6 -1.6 1.4Q-1.8 4.6 -4.4 5Q-7.4 1 -5.6 -3.6z" fill="{dark}"/><path d="M-5.2 -3.2Q-2.2 -1.8 -2.6 2" fill="none" stroke="{light}" stroke-width=".9" stroke-linecap="round"/>'
+                    f'<path d="M-.6 -5.2Q2 -6 4.4 -4.6" fill="none" stroke="{light}" stroke-width=".9" stroke-linecap="round"/>')
+        else:  # rotini: slanted lobes over a darker core read as a twist
+            out += f'<rect x="-9" y="-3.4" width="18" height="6.8" rx="3.4" fill="{dark}"/>'
+            for lx in (-6.4, -2.2, 2, 6.2):
+                out += f'<ellipse cx="{lx}" cy="0" rx="2.3" ry="4.6" fill="{c}" stroke="{dark}" stroke-width=".9" transform="rotate(28 {lx} 0)"/>'
+            out += f'<path d="M-7.4 -2.4l1.4 -1.4M-3.2 -2.4l1.4 -1.4M1 -2.4l1.4 -1.4M5.2 -2.4l1.4 -1.4" stroke="{light}" stroke-width="1" stroke-linecap="round"/>'
+        out += "</g>"
+    return out
+
+
+def scallops(rng, o):  # "seared": golden-brown tops with a pale side; "gratin": shells holding a browned topping
+    mode, n, r = o[1:4]
+    cx = at(o, 4, 50); cy = at(o, 5, 50)
+    out = ""
+    if mode == "gratin":  # shells evenly around the centre, hinges inward
+        at_ = [(cx + r * math.cos(6.283 * i / n - 1.571 + (.524 if n == 2 else 0)), cy + r * math.sin(6.283 * i / n - 1.571 + (.524 if n == 2 else 0)), 0) for i in range(n)]
+    else:
+        at_ = list(spots(rng, n, r, cx, cy))
+    for i, (x, y, a) in enumerate(at_):
+        if mode == "gratin":
+            rot = (-12, 12)[i % 2] if n > 1 else 0
+            out += (f'<g transform="translate({x:.1f} {y:.1f}) rotate({rot:.0f})">'
+                    '<path d="M-4.4 9.6H4.4L5.6 13H-5.6z" fill="#D9B48E"/>'
+                    '<path d="M0 11L-11.6 -1Q-13.2 -8.6 -6.6 -11.4Q0 -13.8 6.6 -11.4Q13.2 -8.6 11.6 -1z" fill="#C99A6E"/>'
+                    '<path d="M0 9.6L-10.4 -1.2Q-11.8 -7.8 -6 -10.2Q0 -12.4 6 -10.2Q11.8 -7.8 10.4 -1.2z" fill="#EBCDA8"/>')
+            for t in (-50, -30, -10, 10, 30, 50):
+                ta = math.radians(t)
+                out += f'<path d="M{2*math.sin(ta):.1f} {8-2*math.cos(ta):.1f}L{13*math.sin(ta):.1f} {8-19*math.cos(ta):.1f}" stroke="#C99A6E" stroke-width="1.1" stroke-linecap="round"/>'
+            out += f'<path d="{blob(rng,0,-3,9,7.4,10,.12)}" fill="#E0A445"/>'
+            for dx, dy, _ in spots(rng, 7, 6, 0, -3):
+                out += f'<ellipse cx="{dx:.1f}" cy="{dy:.1f}" rx="1.7" ry="1.1" fill="#A65F22" opacity=".85"/>'
+            out += '<ellipse cx="-2.8" cy="-6.4" rx="2.6" ry="1.1" fill="#F8DE9A" opacity=".9"/></g>'
+        else:
+            out += (f'<g transform="translate({x:.1f} {y:.1f}) rotate({(a-90)*.25:.0f})">'
+                    '<path d="M-7.6 -1.2V3.2Q-7.6 8.4 0 8.4Q7.6 8.4 7.6 3.2V-1.2z" fill="#E6D3B6"/>'
+                    '<path d="M-7.6 -1.2V2Q-7.6 6.6 0 6.6Q7.6 6.6 7.6 2V-1.2z" fill="#F6ECDC"/>'
+                    '<ellipse cx="0" cy="-1.2" rx="7.6" ry="5.4" fill="#A9611F"/><ellipse cx="0" cy="-1.4" rx="5.8" ry="3.9" fill="#D38E3C"/>'
+                    '<ellipse cx="0" cy="-1.5" rx="3.2" ry="2.1" fill="#E8B060"/><path d="M-4.6 -3.6Q-1.6 -5.6 2 -5" fill="none" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".45"/></g>')
+    return out
+
+
+def fritters(rng, o):  # lacy fried clusters of shredded vegetables: kakiage, pakora, onion bhaji
+    c = at(o, 1, "#DE9F42")
+    s1, s2 = at(o, 2, ""), at(o, 3, "")
+    n, sz, r = o[4:7]
+    cx = at(o, 7, 50); cy = at(o, 8, 50)
+    shade, light = mix(c, "#5A2E0E", .45), mix(c, "#FFFFFF", .45)
+    out = ""
+    for x, y, a in spots(rng, n, r, cx, cy):
+        out += f'<g transform="translate({x:.1f} {y:.1f}) rotate({a:.0f}) scale({sz/7:.2f})">'
+        spikes = ""
+        for i in range(12):  # crisp tangled strands poking out past the edge
+            sa = 6.283 * i / 12 + rng.uniform(-.2, .2)
+            r0, r1, b = rng.uniform(3, 5), rng.uniform(7.6, 8.8), rng.uniform(-2, 2)
+            x0, y0, x1, y1 = r0 * math.cos(sa), r0 * math.sin(sa) * .86, r1 * math.cos(sa + .35), r1 * math.sin(sa + .35) * .86
+            spikes += f'M{x0:.1f} {y0:.1f}Q{(x0+x1)/2+b:.1f} {(y0+y1)/2-b:.1f} {x1:.1f} {y1:.1f}'
+        out += (f'<path d="{spikes}" fill="none" stroke="{shade}" stroke-width="3.4" stroke-linecap="round"/>'
+                f'<path d="{blob(rng,0,0,7.6,6.6,11,.16)}" fill="{shade}"/><path d="{spikes}" fill="none" stroke="{c}" stroke-width="2.1" stroke-linecap="round"/>'
+                f'<path d="{blob(rng,-.3,-.4,6.8,5.8,11,.14)}" fill="{c}"/>')
+        for hx, hy, _ in spots(rng, 4, 4.4, 0, 0):  # lacy gaps
+            out += f'<ellipse cx="{hx:.1f}" cy="{hy:.1f}" rx="1.3" ry=".8" fill="{shade}" transform="rotate({rng.uniform(0,180):.0f} {hx:.1f} {hy:.1f})"/>'
+        for col, m in ((s1, 4), (s2, 3)):
+            if col:
+                for _ in range(m):
+                    px, py, da = rng.uniform(-4, 4), rng.uniform(-3.4, 3.4), rng.uniform(0, 3.14)
+                    out += f'<path d="M{px-3.2*math.cos(da):.1f} {py-3.2*math.sin(da):.1f}Q{px:.1f} {py+1.2:.1f} {px+3.2*math.cos(da):.1f} {py+3.2*math.sin(da):.1f}" fill="none" stroke="{col}" stroke-width="1.5" stroke-linecap="round"/>'
+        out += f'<path d="M-5 -3.6Q-2 -6 1.8 -5.4" fill="none" stroke="{light}" stroke-width="1.3" stroke-linecap="round" opacity=".8"/></g>'
+    return out
+
+
+NEWER = dict(cauliflower=cauliflower, calamari=calamari, orzo=orzo, shortpasta=shortpasta, scallops=scallops, fritters=fritters)
 
 
 

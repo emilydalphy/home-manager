@@ -12,7 +12,8 @@ ARITY = dict(well=1, pool=(2, 3), rice=7, mash=7, band=4, strips=(6, 8), slices=
              leaves=5, frisee=5, cashews=4, poached=3, wontons=3, bokchoy=3, baguette=1, flautas=1, phyllo=1, loaf=1, patties=3,
              rounds=6, glass=3, eggplant=(3, 5), ribbons=5, shrimp=(5, 7), omelette=5, steak=7, bread=5, tortellini=5, fillet=8, bacon=4, chop=6, potatoes=4, wedgering=5, noodles=5, wrap=4, pizza=4, pancakes=3, flatbread=3, dipbowl=3, bowl=2, pastries=4, stuffed=3, cutlet=7, block=7, rolls=3, wedges=5, yolk=3, ringbread=1, skewers=(1, 4), tacos=(1, 5), sandwiches=1, toast=(1, 4), cups=(1, 5),
              drumstick=(7, 8), muffin=(3, 5), quesadilla=5, burger=(2, 7), mushroom=(5, 7), broccoli=(4, 6), chip=(6, 8), chipring=5, pretzel=(1, 4), waffle=(1, 3),
-             shell=(5, 7), sando=(4, 5), onigiri=(1, 5), bao=3, spiral=(3, 4), ricecakes=(5, 7), sticks=5, ribs=(3, 4), smallfish=5, wholefish=7, pecans=5, okra=(3, 5), tamagoyaki=(1, 3), summerroll=1, madeleine=5, teaegg=3)
+             shell=(5, 7), sando=(4, 5), onigiri=(1, 5), bao=3, spiral=(3, 4), ricecakes=(5, 7), sticks=5, ribs=(3, 4), smallfish=5, wholefish=7, pecans=5, okra=(3, 5), tamagoyaki=(1, 3), summerroll=1, madeleine=5, teaegg=3,
+             cauliflower=(5, 7), calamari=(3, 6), orzo=(5, 6), shortpasta=(5, 7), scallops=(4, 6), fritters=(7, 9))
 bad = []
 for r in recs:
     name = r["dish_name"]
@@ -50,7 +51,7 @@ for r in recs:
     kinds = [o[0] for o in parts]
     if "pool" in kinds[1:] and any(k in FOOD for k in kinds[:kinds.index("pool", 1)]):
         bad.append(f"{name}: a pool is drawn over food; move it first")
-    if PASTA.search(name) and not SOUPY.search(name) and "strips" not in kinds and "noodles" not in kinds and "ribbons" not in kinds and "tortellini" not in kinds:
+    if PASTA.search(name) and not SOUPY.search(name) and "strips" not in kinds and "noodles" not in kinds and "ribbons" not in kinds and "tortellini" not in kinds and "shortpasta" not in kinds and "orzo" not in kinds:
         bad.append(f"{name}: pasta needs a noodle nest of strips with sauce on top")
     if PASTA.search(name) and not SOUPY.search(name) and "strips" in kinds and parts[0][0] == "pool" and (len(parts[0]) == 2) and "rice" not in kinds and "mash" not in kinds:
         bad.append(f"{name}: pasta must be noodles with sauce on top, not noodles in a full pool of sauce")
@@ -66,7 +67,8 @@ MEATFREE = {"tofu", "vegetarian", "vegan", "none", "beans", "legumes", "lentils"
 _ANYMEAT = r"bacon|pancetta|guanciale|lardon|ham\b|prosciutto|sausage|chorizo|pork|beef|steak|lamb|veal|chicken|turkey|duck|salmon|tuna|cod\b|tilapia|trout|halibut|sole\b|snapper|mackerel|sardine|anchov|fish|shrimp|prawn"
 MEATSHAPES = {"bacon": r"bacon|pancetta|guanciale|lardon", "chop": r"pork|lamb|veal", "steak": r"steak|beef|sirloin|ribeye|flank", "shrimp": r"shrimp|prawn",
               "fillet": r"salmon|tuna|cod\b|tilapia|trout|halibut|sole\b|snapper|mackerel|sardine|fish|haddock|branzino|bass\b", "slices": _ANYMEAT,
-              "drumstick": r"chicken|turkey|duck", "ribs": r"\bribs?\b|pork|beef", "shell": r"clam|mussel|cockle", "smallfish": r"anchov|sardine|smelt|fish"}
+              "drumstick": r"chicken|turkey|duck", "ribs": r"\bribs?\b|pork|beef", "shell": r"clam|mussel|cockle", "smallfish": r"anchov|sardine|smelt|fish",
+              "calamari": r"squid|calamar|kalamar", "scallops": r"scallop"}
 NOTMEAT = re.compile(r"vegan|vegetarian|plant[- ]based|meatless|\bbroth\b|\bstock\b|bouillon|\bsauce\b|\bpaste\b|\bpowder\b", re.I)
 def has_meat(r, pattern):
     return any(re.search(pattern, i, re.I) and not NOTMEAT.search(i) for i in r.get("ingredients", []))
@@ -97,7 +99,9 @@ for r in recs:
             if off + spread * 1.05 + size > 37.5:
                 bad.append(f"{name}: {k} spills past the plate; reduce r or move it in")
     for o in parts:  # newer scattered parts: (size index or fixed size, r index, cx index, how far the drawing reaches past size)
-        where = {"mushroom": (3, 4, 5, 1.3), "broccoli": (2, 3, 4, 1.45), "chip": (4, 5, 6, 1.15), "shell": (3, 4, 5, 1.7), "okra": (None, 2, 3, 13), "ricecakes": (None, 4, 5, 10)}.get(o[0])
+        where = {"mushroom": (3, 4, 5, 1.3), "broccoli": (2, 3, 4, 1.45), "chip": (4, 5, 6, 1.15), "shell": (3, 4, 5, 1.7), "okra": (None, 2, 3, 13), "ricecakes": (None, 4, 5, 10),
+                 "cauliflower": (3, 4, 5, 1.7), "calamari": (None, 2, 3, 9), "shortpasta": (None, 4, 5, 9.5), "fritters": (5, 6, 7, 1.5),
+                 "scallops": (None, 3, 4, 14 if len(o) > 1 and o[1] == "gratin" else 8.5)}.get(o[0])
         if where:
             si, ri, ci, reach = where
             size = (o[si] * reach) if si is not None else reach
@@ -105,6 +109,8 @@ for r in recs:
             cy = o[ci + 1] if len(o) > ci + 1 else 50
             if ((cx - 50) ** 2 + (cy - 50) ** 2) ** 0.5 + o[ri] * 1.05 + size > 39:
                 bad.append(f"{name}: {o[0]} spills past the plate; reduce r or move it in")
+        if o[0] == "orzo" and ((o[1] - 50) ** 2 + (o[2] - 50) ** 2) ** 0.5 + max(o[3], o[4]) * 1.08 > 37:
+            bad.append(f"{name}: orzo spills past the plate; make it smaller or move it in")
     if "band" in kinds:
         bad.append(f"{name}: stripes look rigid; pile toppings on rice with soft edges")
     # rule 18: stir-fries are long strips
