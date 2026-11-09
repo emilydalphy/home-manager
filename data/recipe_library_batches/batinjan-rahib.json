@@ -1,0 +1,113 @@
+{
+ "dish_name": "Batinjan Rahib",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Large eggplants",
+   "qty": "2 (about 1 lb 10 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce",
+   "cook_qty": "juice of 2 lemons, 1/4 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "3 sprigs"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 small bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Walnuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free pita bread",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "4 pitas"
+  }
+ ],
+ "instructions": [
+  "Pierce each eggplant twice with the tip of a knife. Set a heavy skillet or a foil-lined metal tray over a burner on medium-high heat, or use a gas flame directly.",
+  "Roast the eggplants, turning them every few minutes, for about 15 minutes, until the skin is charred and the eggplants have collapsed and feel very soft. Stand back a little, they'll spit.",
+  "Cover the eggplants with a lid or an upturned bowl and leave them for 8 minutes.",
+  "Meanwhile, finely dice both bell peppers. Dice the tomatoes, transfer them to a sieve and let the juice drain off. Pick the parsley leaves off the stems and chop them fine. Crush the garlic.",
+  "Peel the skin off the eggplants and transfer the flesh to a strainer. Leave it for 5 minutes, then scoop out any big seeds.",
+  "Roughly chop the eggplant with a knife.",
+  "In a bowl, gently mix the eggplant, peppers, tomatoes, parsley, garlic, the juice of the 2 lemons, which should be about 1/4 cup, and the salt.",
+  "Spread the salad on a shallow plate. Drizzle the olive oil and then the pomegranate molasses over the top, and scatter the walnuts.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Warm the pitas and serve them alongside the salad."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 6,
+ "cook_time_minutes": 29,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Batinjan rahib is charred eggplant chopped with diced pepper, tomato, parsley, garlic and lemon, then finished with olive oil and pomegranate molasses. Hadia's Lebanese Cuisine chars the eggplants on the stovetop for a smoky flavor and about 34 minutes in all, while Sodelicious bakes halved eggplants for 25 minutes in a 360°F oven and adds a spring onion. This one follows Hadia's stovetop char, which is the faster way. The pita is gluten-free so the dish stays gluten-free. Neither source has 20 ratings, so it is a fallback lead.",
+ "sources": [
+  {
+   "name": "Hadia's Lebanese Cuisine",
+   "title": "Raheb Salad (Lebanese-Style Roasted Eggplant with Vegetables)",
+   "url": "https://hadiaslebanesecuisine.com/blog/?p=5748",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sodelicious",
+   "title": "Raheb Salad",
+   "url": "https://sodelicious.recipes/recipe/raheb-salad/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,144 @@
+{
+ "dish_name": "Cauliflower Shawarma",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "1 large head, about 2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Canned chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1/2 large",
+   "category": "produce",
+   "cook_qty": "1/2 large onion"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 450°F (230°C) with a rack in the middle.",
+  "Cut the cauliflower into florets about 1 inch wide. Slice the bell pepper and onion thin. Drain and rinse the chickpeas, then pat them dry.",
+  "In a small bowl, mix the cumin, paprika, turmeric, cinnamon, garlic powder, black pepper and salt.",
+  "In a large bowl, toss the cauliflower, chickpeas, pepper and onion with the olive oil and the spice mix until everything is coated.",
+  "Spread it out in a single layer on two baking sheets. Crowded vegetables steam instead of browning.",
+  "Roast for 12 minutes, then toss everything and roast for 10 minutes, until the cauliflower is golden brown at the edges and tender.",
+  "While the vegetables roast, put 1 1/2 cups rinsed rice and 2 1/4 cups water in a medium pot. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Make the sauce. Mince the garlic and juice 1 lemon, which should be about 3 tbsp. In a small bowl, stir the tahini, lemon juice and garlic together, then stir in water 1 tbsp at a time until the sauce is thin enough to pour. That should be about 1/4 cup of water.",
+  "Dice the cucumber.",
+  "When the vegetables come out of the oven, squeeze the juice of half the second lemon over them. Cut the rest of that lemon into wedges.",
+  "Taste the cauliflower. If it's flat, add a pinch more salt.",
+  "Spoon the rice into bowls, top with the roasted vegetables and the cucumber, and drizzle the tahini sauce over the top. Serve with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 23,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sheet-pan versions all toss cauliflower with a shawarma spice mix of cumin, paprika, turmeric and cinnamon, roast it hot, and finish with lemon and a tahini sauce. Eating by Elaine adds chickpeas, pepper and onion and roasts at 425°F for 40 minutes; Snixy Kitchen roasts the cauliflower and chickpeas at 450°F in 20 to 25 minutes. This one uses Elaine's vegetables with Snixy's hotter, faster roast, serves them over rice with a tahini and lemon sauce, and leaves out the cayenne so the pan is mild. Neither source has 20 ratings, so it is a fallback lead.",
+ "sources": [
+  {
+   "name": "Eating by Elaine",
+   "title": "One-Pan Veggie Shawarma (Vegan)",
+   "url": "https://www.eatingbyelaine.com/vegan-sheet-pan-shawarma-bowls/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Snixy Kitchen",
+   "title": "Vegetarian Shawarma Tacos",
+   "url": "https://www.snixykitchen.com/?p=21727",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

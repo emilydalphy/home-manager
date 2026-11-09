@@ -1,0 +1,79 @@
+{
+ "dish_name": "Hindbeh",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Dandelion greens or chicory",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water and bring it to a boil over high heat. Put 1 1/2 cups rinsed rice and 2 1/4 cups water in a medium pot, bring that to a boil, then cover and turn it to the lowest heat for 15 minutes. Take it off the heat and leave the lid on until you serve.",
+  "While the water heats, wash the greens well. Trim about 1 inch off the stems and chop the rest into 2-inch pieces.",
+  "Add the greens to the boiling water and boil for 15 minutes, until the stems are tender.",
+  "Meanwhile, slice the onions into thin half-moons. Heat 3 tbsp of the olive oil in a large skillet over medium-high heat. Add the onions and 1/4 tsp of the salt.",
+  "Cook the onions for 10 to 12 minutes, stirring often, until they're deep golden and crisp at the edges. If they start to burn, turn the heat down a little.",
+  "Drain the greens in a colander and let them cool for a couple of minutes. Squeeze out as much water as you can, a handful at a time.",
+  "Transfer the greens to a bowl. Squeeze in the juice of 1 lemon, which should be about 3 tbsp, and add the remaining 1 tbsp olive oil and 3/4 tsp salt. Toss well.",
+  "Cut the other lemon into wedges.",
+  "Taste the greens. If they're flat, add a pinch more salt or a squeeze from a lemon wedge.",
+  "Spoon the rice into bowls, top with the greens and then the caramelized onions, and serve with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions boil the greens until the stems are tender, squeeze them dry, dress them with olive oil, lemon and salt, and top them with onions fried until deep golden. Simply Lebanese boils for 15 to 20 minutes and uses one small onion for two servings, while Alphafoodie boils longer and lets you cook the onions slowly or quickly. This one takes Simply Lebanese's 15-minute boil and quick onions, scaled to four, and serves it over rice. Neither source has 20 ratings, so it is a fallback lead.",
+ "sources": [
+  {
+   "name": "Simply Lebanese",
+   "title": "Hindbeh",
+   "url": "https://www.simplyleb.com/recipe/hindbeh/",
+   "rating": 4.93,
+   "rating_count": 13,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Alphafoodie",
+   "title": "Lebanese Hindbeh (Sauteed Dandelion Greens/Spinach) and Caramelized Onions",
+   "url": "https://www.alphafoodie.com/lebanese-hindbeh/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

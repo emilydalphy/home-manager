@@ -1,0 +1,126 @@
+{
+ "dish_name": "Shorbet Khodra",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Dried marjoram",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  }
+ ],
+ "instructions": [
+  "Put 5 cups of water in a kettle or covered pot and bring it to a boil.",
+  "Meanwhile, slice the onions thin and chop the garlic. Dice the carrots, potatoes and bell pepper into 1/2-inch pieces, and chop the tomatoes.",
+  "Heat the olive oil in a large pot over medium heat. Add the onions and 1/2 tsp of the salt, and cook for 5 minutes, stirring now and then, until they're soft and see-through.",
+  "Add the garlic, cumin, marjoram, paprika and tomato paste. Stir for 1 minute, until the paste turns a shade darker.",
+  "Add the carrots, potatoes, pepper and tomatoes and stir for 1 minute.",
+  "Pour in the hot water and add the remaining 1 tsp salt. Bring it to a boil, then cover and simmer over medium-low heat for 12 to 15 minutes, until a fork slides easily into the potato and carrot.",
+  "Take the pot off the heat. Chop the parsley, which should be about 1/4 cup, and stir it in.",
+  "Taste the soup. If it's flat, add a pinch more salt.",
+  "Ladle into bowls and serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lebanese shorbet khodra is a vegetable soup in a light tomato broth, built from onion, carrot, potato, peppers and tomato with cumin, marjoram and paprika. Hadia's Lebanese Cuisine and The Cook's Cook make it with beef simmered for over an hour, and the Cookpad version adds tomato paste in water and fresh parsley with beef in a pressure cooker. This one leaves out the beef, which keeps it vegan, dices the vegetables small so it cooks in about 15 minutes, and takes the tomato paste and parsley from the Cookpad version. No Lebanese version found has any ratings, so it is a fallback lead and the meat-free change is Pomona's.",
+ "sources": [
+  {
+   "name": "Hadia's Lebanese Cuisine",
+   "title": "Vegetable and Beef Soup (Shorbit Khodra Bil Lahmeh)",
+   "url": "https://hadiaslebanesecuisine.com/blog/vegetable-and-beef-soup-shorbit-khodra-bil-lahmeh/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Cook's Cook",
+   "title": "Shorbit Khodra Bil Lahmeh - Hearty Beef Vegetable Soup",
+   "url": "https://www.thecookscook.com/recipes/vegetable-and-beef-soup-shorbit-khodra-bil-lahmeh/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cookpad (Cook Lebanese)",
+   "title": "Vegetables And Meat Soup Shorbet Khodra W Lahmeh",
+   "url": "https://cookpad.com/us/recipes/5559014-vegetables-and-meat-soup-shorbet-khodra-w-lahmeh",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,127 @@
+{
+ "dish_name": "Odeng Tang",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Flat fish cakes (odeng or eomuk)",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried anchovies, heads removed",
+   "qty": "1 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried kelp (kombu)",
+   "qty": "1 piece, about 4 inches",
+   "category": "pantry"
+  },
+  {
+   "item": "Korean radish or daikon",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/2 small onion"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 1/2 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 small bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 small bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Gochugaru (Korean chili flakes)",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Peel the radish and cut it into 1/4-inch slices. Chop half the onion, and smash 2 of the garlic cloves with the side of your knife.",
+  "Put 6 cups of water, the anchovies, the kelp, the radish, the onion and the 2 smashed garlic cloves in a large pot. Bring it to a boil over high heat, then turn it down to a steady simmer.",
+  "Simmer for 10 minutes, then lift out the kelp and throw it away.",
+  "Meanwhile, make the dipping sauce. Mince the last garlic clove and chop 1 green onion. In a small bowl, stir together 3 tbsp of the soy sauce, the sugar, the sesame oil, the minced garlic and the chopped green onion. Put the gochugaru in its own little dish for the adults.",
+  "Cut the fish cakes into strips about 1 inch wide and thread or fold them into bite-size pieces. Thinly slice the other 2 green onions.",
+  "Simmer the broth for 5 minutes, then set a strainer over a clean pot and pour the broth through it. Keep the radish slices and put them back in the broth. Throw away the anchovies, onion and garlic.",
+  "Set the pot over medium heat and add 1 1/2 tbsp soy sauce, the mirin and the salt. Bring it back to a gentle simmer.",
+  "Add the fish cakes and simmer for 4 minutes, until they puff up and are hot all the way through.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Ladle the soup and radish into bowls, scatter the sliced green onions over the top, and serve with the dipping sauce and the dish of gochugaru on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version builds a light broth from dried anchovies, kelp and Korean radish, seasons it with soy sauce, and simmers the fish cakes in it just until they puff. WentHere8This (30 minutes) strains the broth and serves a soy dipping sauce, which this one follows; Beyond Kimchee uses a ready-made dashi packet and a little tuna sauce, and Kimchimari simmers the broth for 30 minutes before the fish cakes go in. The broth here is simmered 15 minutes to stay near 30, and the chili is moved to a dish for the adults so the pot stays mild. None of the three has 20 or more ratings, and RecipeTin Eats has no odeng recipe, so it is a fallback lead.",
+ "sources": [
+  {
+   "name": "WentHere8This",
+   "title": "Korean Fish Cake Soup (Odeng)",
+   "url": "https://www.wenthere8this.com/odeng/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Korean Fish Cake Soup (Eomuk Guk / Odeng Guk)",
+   "url": "https://www.beyondkimchee.com/korean-fish-cake-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kimchimari",
+   "title": "Fish Cake Soup (Odeng Soup)",
+   "url": "https://kimchimari.com/fish-cake-soup-odeng-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

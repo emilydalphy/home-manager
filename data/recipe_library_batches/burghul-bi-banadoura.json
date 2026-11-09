@@ -1,0 +1,88 @@
+{
+ "dish_name": "Burghul bi Banadoura",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Coarse bulgur",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion and dice the tomato. Rinse the bulgur in a fine sieve under cold water 2 or 3 times.",
+  "Heat the olive oil in a medium saucepan over medium heat. Add the onion and cook for 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the tomato and cook for 3 minutes, until it breaks down.",
+  "Add the tomato paste, salt and pepper. Stir for 2 minutes, until the paste turns a shade darker.",
+  "Add the bulgur and the vegetable broth. Turn the heat up to medium-high, stir well and bring it to a simmer. Cook for 6 minutes, until most of the broth is absorbed.",
+  "Turn the heat to low, cover the pot and cook for 10 minutes, until the bulgur is tender.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Fluff the bulgur with a fork and serve warm."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 26,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions soften an onion and tomato in olive oil, cook tomato paste into the base, then simmer coarse bulgur in a measured amount of broth. Simply Lebanese uses about 1 1/2 cups of liquid to every cup of bulgur and covers the pot at the end, while Taste Great Foodie adds red pepper paste and canned chickpeas and spreads the batch over eight servings. This one follows Simply Lebanese's ratios with vegetable broth, so it stays vegan. Coarse bulgur matters, fine bulgur turns soft.",
+ "sources": [
+  {
+   "name": "Simply Lebanese",
+   "title": "Tomato Bulgur Pilaf",
+   "url": "https://www.simplyleb.com/recipe/bulgur/",
+   "rating": 4.73,
+   "rating_count": 74,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste Great Foodie",
+   "title": "Vegetarian Bulgar and Tomato Pilaf (Burghul w Banadoura)",
+   "url": "https://tastegreatfoodie.com/vegetarian-bulgar-and-tomato-pilaf-burghul-w-banadoura/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
