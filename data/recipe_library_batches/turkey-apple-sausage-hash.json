@@ -1,0 +1,92 @@
+{
+ "dish_name": "Turkey Apple Sausage Hash",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 28,
+ "ingredients": [
+  {
+   "item": "Cooked turkey sausage links, gluten-free",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Granny Smith apples",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh sage",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Apple cider",
+   "qty": "1 small bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the potatoes into 1/2-inch cubes first, since they take the longest. Then slice the sausage into 1/2-inch rounds and chop the red onion.",
+  "Set a large skillet over medium-high heat and add the olive oil. Add the sausage rounds in one layer and cook for 4 minutes, until the undersides are browned.",
+  "Add the onion and potatoes with a generous pinch of salt and the pepper. Cook for 6 minutes, stirring every minute or so, until the potatoes pick up brown edges.",
+  "While the potatoes brown, core and dice the apples into 1/2-inch pieces and leave the skin on. Chop 3 tbsp of the sage.",
+  "Stir in the apples, sage and cider. Turn the heat to medium-low, cover, and cook for 15 minutes, stirring once or twice, until a fork slides easily into a potato.",
+  "Take the lid off, turn the heat to medium-high, and cook for 2 minutes, until the cider has cooked down to a glaze.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve straight from the skillet."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mix and Match Mama is the only real sausage and apple hash I could read in full, and it has no published rating, so it leads by default. Pantrylink's turkey sausage, potato and apple hash agrees on the pan order: brown the meat first, then the potatoes, and add the apple late so it keeps its shape. This version follows the lead's amounts for 4, leaves out the optional fried eggs, and uses 1/2-inch potatoes so the hash is done in under 45 minutes. Check the sausage label for gluten-free.",
+ "sources": [
+  {
+   "name": "Mix and Match Mama",
+   "title": "Sausage & Apple Hash",
+   "url": "https://mixandmatchmama.com/2022/08/sausage-apple-hash/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "PantryLink",
+   "title": "Turkey Sausage, Potato, Brussels Sprouts, and Apple Hash",
+   "url": "https://pantrylink.app/recipes/turkey-sausage-potato-brussels-sprouts-and-apple-hash",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

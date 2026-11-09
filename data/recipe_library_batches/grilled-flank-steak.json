@@ -1,0 +1,91 @@
+{
+ "dish_name": "Grilled Flank Steak",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tamari (gluten-free soy sauce)",
+   "qty": "1 small bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Canola oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small knob (1-inch piece)",
+   "category": "produce",
+   "cook_qty": "1 1/2 tsp grated"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 4 hours ahead, or up to 24 hours: pat the steak dry. Score the top in a diamond pattern about 1 inch apart, cutting 1/8 inch deep.",
+  "In a bowl, whisk the tamari, canola oil, honey, 3 minced garlic cloves, the grated ginger, chili powder, cumin and pepper. Put the steak in a zip-top bag, pour in the marinade, press out the air and seal. Refrigerate, turning the bag over now and then.",
+  "Heat the grill to high and wipe the grates with a little oil.",
+  "Lift the steak out, shake off the extra marinade, and throw the rest of the marinade away. Grill for 3 to 4 minutes on each side, without moving it.",
+  "You're cooking it to 130°F in the middle for medium rare, so if you have a thermometer, check it there. No thermometer? Cut a small slit in the center: it should be rosy pink, not red and not gray.",
+  "Transfer the steak to a cutting board and let it rest for 10 minutes.",
+  "Slice it very thin, about 1/8 inch, going across the grain.",
+  "Taste a slice. If it's flat, sprinkle on a pinch of salt."
+ ],
+ "advance_prep_notes": "Marinate at least 4 hours ahead (up to 24 hours)",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Well Plated leads (4.92 from 24 ratings): a soy, oil and honey marinade with garlic, ginger, chili powder and cumin, at least 4 hours, then high-heat grilling 3 to 4 minutes a side, a 10 minute rest and thin slicing across the grain. It is the only flank steak page I could read in full, because the other well-known ones blocked me. Tamari replaces low-sodium soy sauce to keep it gluten-free, and the chili powder is kept to 1 teaspoon so the base is mild. No grill? Broil on a preheated pan 6 inches from the heat for 6 to 8 minutes without flipping.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Flank Steak Marinade",
+   "url": "https://www.wellplated.com/flank-steak-marinade/",
+   "rating": 4.92,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

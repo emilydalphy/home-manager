@@ -1,0 +1,137 @@
+{
+ "dish_name": "Turkey Cabbage Soup",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 33,
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "4 cups chopped"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth, gluten-free",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion, slice the celery, cut the carrots into thin coins, and mince the garlic. Cut the cabbage into 1/2-inch pieces until you have about 4 cups.",
+  "Set a large pot over medium-high heat and add the olive oil. Add the turkey and a pinch of salt. Break it up and cook for 6 minutes, letting it sit between stirs so it browns, until no pink is left.",
+  "Add the onion, celery and carrots. Cook for 5 minutes, stirring now and then, until the onion is soft.",
+  "Add the garlic, oregano, thyme and basil. Stir for 30 seconds, until you can smell the herbs.",
+  "Add the tomatoes with their juice, the broth, the cabbage and the brown sugar. Scrape up anything stuck to the bottom of the pot.",
+  "Bring to a boil, then turn the heat down to a steady simmer. Cover and cook for 15 minutes, until the cabbage and carrots are tender.",
+  "Take the pot off the heat and stir in the vinegar and the pepper.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No turkey cabbage soup I could read had 20 ratings, so there is no rated lead. Premeditated Leftovers' cabbage roll soup with turkey leads because it is the one with turkey, cabbage, tomatoes and broth together (no published rating). Flavorful Eats (5.0 from 17) agrees on browning the turkey with the vegetables and simmering about 30 minutes, but has no tomato and uses butter. Taste of Home's turkey cabbage stew adds the brown sugar and vinegar and a short 12 to 15 minute simmer, which is what keeps this under 45 minutes. Olive oil replaces butter so it stays dairy-free.",
+ "sources": [
+  {
+   "name": "Premeditated Leftovers",
+   "title": "Cabbage Roll Soup Recipe with Ground Turkey",
+   "url": "https://premeditatedleftovers.com/cabbage-roll-soup-with-turkey",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Flavorful Eats",
+   "title": "Ground Turkey Cabbage Soup",
+   "url": "https://flavorfuleats.com/ground-turkey-cabbage-soup/",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Turkey Cabbage Stew",
+   "url": "https://www.tasteofhome.com/recipes/turkey-cabbage-stew/",
+   "rating": null,
+   "rating_count": 19,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

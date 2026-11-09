@@ -1,0 +1,135 @@
+{
+ "dish_name": "Turkey Vegetable Soup",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 13,
+ "cook_time_minutes": 31,
+ "ingredients": [
+  {
+   "item": "Lean ground turkey (93%)",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Chicken broth, gluten-free",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "1 bag (10 oz)",
+   "category": "frozen",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Frozen cut green beans",
+   "qty": "1 bag (12 oz)",
+   "category": "frozen",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the carrots, celery and potatoes into 1/2-inch pieces, dice the onion, and mince the garlic. Small pieces are what get this on the table in time.",
+  "Set a large pot over medium-high heat and add the olive oil. Add the turkey and a pinch of salt. Break it up and cook for 5 minutes, letting it sit between stirs so it browns, until no pink is left.",
+  "Add the carrots, celery and onion. Cook for 4 minutes, stirring now and then, until the onion is soft.",
+  "Add the garlic and cook for 1 minute, until you can smell it.",
+  "Add 3 tbsp of the tomato paste and stir for 1 minute, until it darkens a shade.",
+  "Pour in the broth and the diced tomatoes with their juice, and scrape up anything stuck to the bottom of the pot. Add the potatoes, 1 cup of the corn, 1 cup of the green beans, the thyme, oregano and bay leaf.",
+  "Bring to a boil, then turn the heat down to a steady simmer. Cook for 15 minutes, until a potato piece is tender when you pierce it.",
+  "Take out the bay leaf. Taste it. If it's flat, add a pinch more salt and the pepper.",
+  "Serve in bowls."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Dear Crissy leads (4.45 from 438 ratings): brown the turkey, soften carrot, celery and onion, add garlic, then tomatoes, tomato paste, broth, potatoes, corn, green beans and herbs and simmer. The original makes 8 servings and simmers 30 to 35 minutes with a 1 hour total, so this halves the vegetables and broth, cuts everything to 1/2-inch pieces, and simmers 15 minutes to fit 45 minutes. Recipe Girl's version is faster (40 minutes) but uses kidney beans and cheese, so only its order of steps was a check. Frozen corn and green beans replace the canned ones to save draining.",
+ "sources": [
+  {
+   "name": "Dear Crissy",
+   "title": "Ground Turkey Vegetable Soup",
+   "url": "https://dearcrissy.com/ground-turkey-vegetable-soup-recipe/",
+   "rating": 4.45,
+   "rating_count": 438,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipe Girl",
+   "title": "Turkey Vegetable Soup",
+   "url": "https://www.recipegirl.com/turkey-vegetable-soup/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

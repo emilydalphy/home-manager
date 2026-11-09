@@ -1,0 +1,78 @@
+{
+ "dish_name": "Cedar Plank Salmon",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 28,
+ "ingredients": [
+  {
+   "item": "Cedar grilling plank (6 x 14 inches)",
+   "qty": "1",
+   "category": "other"
+  },
+  {
+   "item": "Skinless salmon fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead: put the cedar plank in a baking dish or the sink, cover it with water, and set a mug on top so it stays under. Soak it for 2 hours, then drain it.",
+  "Heat the grill to medium-high for indirect cooking: turn on one side and leave the other side off.",
+  "Pat the salmon dry. Sprinkle both sides with the salt and pepper.",
+  "Lay the salmon on the soaked plank. Spread the Dijon over the top and sides. Crumble the brown sugar between your fingers and sprinkle it over the mustard.",
+  "Set the plank on the side of the grill that's off. Close the lid and cook for 20 to 30 minutes. If the edges of the plank flame up, mist them with water.",
+  "You're cooking it to 135°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Press a fork into the thickest part: it should flake and look opaque.",
+  "Lift the plank onto a platter or a heatproof board. It will be hot, so use thick oven mitts.",
+  "Taste a piece. If it's flat, sprinkle on a pinch of salt.",
+  "Serve straight from the plank."
+ ],
+ "advance_prep_notes": "Soak the cedar plank for 2 hours ahead",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Food Network's version from Bobby Flay leads because it is the best-known and the cleanest for a mustard and brown sugar rub, but it shows no published rating. Amanda's Cookin' (5 from 8) agrees on a 2 hour or longer plank soak, indirect medium-high heat, and 25 to 30 minutes, though it adds honey and smoked paprika. Layers of Happiness uses smoked paprika and garlic powder and a shorter 15 to 18 minutes. This keeps Food Network's two-ingredient rub and its 135°F target. No grill? Bake on the soaked plank at 400°F for 15 to 20 minutes.",
+ "sources": [
+  {
+   "name": "Food Network",
+   "title": "Cedar Plank Salmon",
+   "url": "https://www.foodnetwork.com/recipes/cedar-plank-salmon-recipe-2013938",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Amanda's Cookin'",
+   "title": "Cedar Plank Salmon",
+   "url": "https://amandascookin.com/cedar-plank-salmon/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

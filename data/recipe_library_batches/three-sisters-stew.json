@@ -1,0 +1,129 @@
+{
+ "dish_name": "Three Sisters Stew",
+ "cuisine": "American",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 28,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Butternut squash",
+   "qty": "1 small (about 1 1/2 lbs)",
+   "category": "produce",
+   "cook_qty": "3 cups cubed"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Pinto beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Kidney beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "1 bag (10 oz)",
+   "category": "frozen",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the squash, scoop out the seeds, and cut it into 3/4-inch cubes until you have 3 cups. Dice the onion and the zucchini, mince the garlic, and drain and rinse both cans of beans.",
+  "Set a large pot over medium heat and add the olive oil. Add the onion and cook for 4 minutes, stirring now and then, until it's soft.",
+  "Add the garlic, cumin, chili powder, oregano and the salt. Stir for 30 seconds, until you can smell the spices.",
+  "Add the squash, the tomatoes with their juice, both kinds of beans, 1 1/2 cups of the corn and the broth. Bring to a gentle simmer.",
+  "Cover and cook for 10 minutes, stirring once or twice. Add the zucchini, cover again, and cook for 8 to 10 minutes, until a fork slides easily into the squash.",
+  "The stew should be thick. If it looks dry, add a splash of water.",
+  "Take the pot off the heat. Chop 1/4 cup of the cilantro and stir it in with the pepper.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No Three Sisters stew I could read had 20 ratings. 31 Daily (5 from 6) leads because it is the only one that honestly fits 45 minutes, using canned beans and a 20 minute simmer. Brand New Vegan (4.8 from 12) agrees on squash, beans, corn and tomatoes with broth but simmers 30 to 45 minutes and adds potatoes and green chiles, making it 75 minutes. This version halves 31 Daily's vegetables for 4, uses both kinds of beans in full, leaves out the bell pepper, and keeps the chili powder to 1 teaspoon so the base stays mild. Vegetable broth keeps it vegan.",
+ "sources": [
+  {
+   "name": "31 Daily",
+   "title": "Three Sisters Stew with Corn, Beans and Squash",
+   "url": "https://31daily.com/three-sisters-stew",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Brand New Vegan",
+   "title": "Three Sisters Stew",
+   "url": "https://www.brandnewvegan.com/recipes/three-sisters-stew/print/22835",
+   "rating": 4.8,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

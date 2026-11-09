@@ -1,0 +1,82 @@
+{
+ "dish_name": "Cauliflower Crust Pizza",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Riced cauliflower",
+   "qty": "1 lb (about 3 cups)",
+   "category": "produce"
+  },
+  {
+   "item": "Egg",
+   "qty": "1 large",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "6 oz (1 1/2 cups)",
+   "category": "dairy"
+  },
+  {
+   "item": "Grated Parmesan (made without animal rennet)",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pizza sauce, gluten-free",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack on the bottom shelf. Line a baking sheet with parchment.",
+  "Put the riced cauliflower in a microwave-safe bowl, cover it, and microwave on high for 5 minutes. Let it cool for 10 minutes.",
+  "Transfer the cauliflower to a clean kitchen towel. Gather the towel and twist it over the sink, squeezing out as much liquid as you can.",
+  "Put the cauliflower in a large bowl with the egg, 3/4 cup of the mozzarella, the Parmesan, 1 crushed garlic clove, the oregano, salt and pepper. Stir until it comes together in a soft dough.",
+  "Transfer the dough to the parchment. Press it with your hands into a 12-inch circle, about 1/4 inch thick.",
+  "Spread the pizza sauce over the crust. Sprinkle on the other 3/4 cup of mozzarella.",
+  "Bake on the bottom shelf for 20 to 25 minutes, until the cheese is golden in spots.",
+  "Let it cool for 5 minutes, then cut it into 8 slices. The crust stays soft, so serve it with a knife and fork."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Bigger Bolder Baking leads (4.82 from 32 ratings): cooked, well-squeezed riced cauliflower bound with an egg, mozzarella and Parmesan, pressed to 12 inches and baked topped at 425°F. Its recipe takes 35 minutes of prep and uses a food processor to rice a whole head, so this uses a pound of ready-riced cauliflower and a 10 minute cool to keep the total near 45 minutes. The page links its 5 minute pizza sauce but doesn't print it, so a jar of pizza sauce goes here. Use Parmesan without animal rennet to keep it vegetarian. The bake time is the lead's.",
+ "sources": [
+  {
+   "name": "Bigger Bolder Baking",
+   "title": "Cauliflower Pizza Crust Recipe in 5 Simple Steps",
+   "url": "https://www.biggerbolderbaking.com/cauliflower-pizza-crust-recipe/",
+   "rating": 4.82,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
