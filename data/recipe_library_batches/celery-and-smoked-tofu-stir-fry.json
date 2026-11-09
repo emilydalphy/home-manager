@@ -1,0 +1,125 @@
+{
+ "dish_name": "Celery and Smoked Tofu Stir-Fry",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked tofu",
+   "qty": "12 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "6 stalks"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "2 tbsp, minced"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 5 minutes. No peeking.",
+  "Meanwhile, bring a medium pot of water to a boil. Cut the celery stalks on a slant into slices about 1/4 inch thick.",
+  "Cut the smoked tofu into strips about 1/4 inch thick and 2 inches long. Slice the green onions, mince the 2 tbsp ginger and mince the 3 garlic cloves.",
+  "In a small bowl, stir together 2 tbsp of the soy sauce, 3 tbsp water, the 1/2 tsp sugar and the 1 tsp cornstarch until the cornstarch dissolves.",
+  "Put the celery in the boiling water for 30 seconds, then drain it and rinse it under cold water. Shake it dry.",
+  "Heat a wok or large skillet over high heat until it's hot. Add 2 tbsp of the oil and spread the tofu in one layer. Leave it for 2 minutes, until the underside is browned.",
+  "Toss the tofu, then add the remaining 1 tbsp soy sauce and the wine around the edge of the pan. Stir for 30 seconds, then transfer the tofu to a plate.",
+  "Add the last 1 tbsp oil to the pan, then the green onions, ginger and garlic. Stir for 30 seconds, until fragrant.",
+  "Add the celery and the 1/4 tsp salt and stir-fry for 1 minute.",
+  "Return the tofu to the pan. Stir the sauce again, since the cornstarch settles, and pour it in. Stir for 1 minute, until it turns glossy and coats the celery and tofu.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "method_notes": "Yang's Kitchen (the lead) is the dish by name: smoked tofu stir-fried with soy and cooking wine, celery blanched first and added at the end for about a minute, ginger and green onion to start. It gives no amounts, so the quantities and the small cornstarch sauce come from Omnivore's Cookbook's dried tofu and celery stir-fry (the pork is left out, as its own vegan note suggests); Cup of Yum has the same recipe. No version has 20 ratings. Smoked tofu stands in for the dried tofu (xiang gan) those pages use.",
+ "sources": [
+  {
+   "name": "Yang's Kitchen",
+   "title": "Stir-Fried Celery with Smoked Tofu (Vegan)",
+   "url": "https://yangs.kitchen/2025/02/21/stir-fried-celery-with-smoked-tofu-vegan/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Dried Tofu and Celery Stir Fry (西芹炒香干)",
+   "url": "https://omnivorescookbook.com/dried-tofu-and-celery-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Dried Tofu and Celery Stir Fry (西芹炒香干)",
+   "url": "https://cupofyum.com/recipes/dried-tofu-and-celery-stir-fry",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

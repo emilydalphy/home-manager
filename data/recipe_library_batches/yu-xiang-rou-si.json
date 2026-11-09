@@ -1,0 +1,147 @@
+{
+ "dish_name": "Yu Xiang Rou Si",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "prep_time_minutes": 18,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Pork loin",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Bamboo shoots",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp, minced"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Doubanjiang (chili bean paste)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1 tsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp + 2 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 5 minutes. No peeking.",
+  "Cut the pork into slices about 1/8 inch thick, then cut the slices into thin strips about 2 inches long.",
+  "Put the pork in a bowl with 1 tbsp of the oil, 1 tbsp of the soy sauce, 2 tsp of the wine, the 1/4 tsp white pepper and 2 tbsp water. Mix well, then stir in 2 tsp of the cornstarch. Leave it for 15 minutes while you cut everything else.",
+  "Cut the carrots into thin matchsticks. Drain and rinse the bamboo shoots and cut them into strips about the same size. Slice the green onions, mince the 1 tbsp ginger and mince the 3 garlic cloves.",
+  "In a bowl, stir together the 2 tbsp rice vinegar, 2 tbsp sugar, the remaining 1 tbsp soy sauce, the remaining 2 tsp wine, 1 1/4 cups water and the last 2 tbsp cornstarch until the sugar and cornstarch dissolve.",
+  "Heat a large skillet over high heat until it's hot. Add 1 tbsp of the oil and spread the pork in one layer. Leave it for 1 minute, until the underside turns golden, then flip it and cook for 30 seconds. Transfer it to a plate. It will finish cooking in the sauce.",
+  "Turn the heat to medium-high and add the remaining 2 tbsp oil and the 1 tbsp doubanjiang. Stir for 1 minute, until the oil turns red.",
+  "Add the ginger and garlic and stir for 15 seconds, until fragrant.",
+  "Add the carrots and bamboo shoots and stir-fry for 2 minutes.",
+  "Stir the sauce again, since the cornstarch settles, and pour it in. Bring it to a boil, stirring, for about 1 minute, until it thickens and turns glossy.",
+  "Return the pork and any juices to the pan, add the green onions and toss for 1 minute. You're cooking the pork to 145°F, so if you have a thermometer, check a thick shred. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Taste it. If it's flat, add a pinch more sugar or a splash more of the rice vinegar.",
+  "Serve over the rice. Put the red pepper flakes on the table for anyone who wants heat."
+ ],
+ "method_notes": "The Woks of Life (the lead, 4.95 from 37 ratings) velvets the pork in cornstarch, sears it and sets it aside, fries doubanjiang until the oil turns red, then adds ginger, garlic, vegetables and a sweet and sour sauce with a lot of liquid. Omnivore's Cookbook and China Sichuan Food make the same dish with the same sauce balance; China Sichuan Food skips the vegetables and takes 25 minutes. This follows the lead scaled to 12 oz of pork, with carrot and bamboo shoots in place of the celtuce and soaked wood ear mushrooms so there is no 30 minute soak. The dried chilies are left out to keep the base mild and red pepper flakes go on the table.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Pork with Garlic Sauce (鱼香肉丝)",
+   "url": "https://thewoksoflife.com/pork-garlic-sauce/",
+   "rating": 4.95,
+   "rating_count": 37,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Shredded Pork with Garlic Sauce (鱼香肉丝, Yu Xiang Rou Si)",
+   "url": "https://omnivorescookbook.com/shredded-pork-with-garlic-sauce/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "China Sichuan Food",
+   "title": "Yu Xiang Pork-Shredded Pork in Hot Garlic Sauce",
+   "url": "https://www.chinasichuanfood.com/yu-xiang-rou-si/",
+   "rating": 5.0,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

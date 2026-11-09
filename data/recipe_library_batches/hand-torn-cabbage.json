@@ -1,0 +1,96 @@
+{
+ "dish_name": "Hand-Torn Cabbage",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 inch, minced"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Chinese black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 5 minutes. No peeking.",
+  "Meanwhile, cut the cabbage in half and cut out the core. Tear the leaves into pieces about 2 inches wide. They don't need to be neat. Leave out any very thick ribs.",
+  "Rinse the torn cabbage in a colander, then shake it well and pat it dry with a clean towel. Wet leaves steam instead of fry.",
+  "Slice the 4 garlic cloves thin and mince the 1 inch of ginger. Put the 2 tbsp soy sauce in a small cup next to the stove. Measure the 1 tbsp black vinegar into another cup.",
+  "Heat a wok or your largest skillet over high heat for 1 minute, until it's very hot. Add 1 1/2 tbsp of the oil, then half the garlic and half the ginger. Stir for 15 seconds, until it smells fragrant.",
+  "Add half the cabbage and stir-fry for 2 to 3 minutes, until the edges are charred in spots and the leaves have wilted but still have crunch.",
+  "Sprinkle on 1/2 tsp of the salt and add 1 tbsp of the soy sauce. Pour 1 tsp of the vinegar down the side of the pan, toss for 30 seconds, then transfer the cabbage to a plate.",
+  "Add the remaining 1 1/2 tbsp oil and the rest of the garlic and ginger, and cook the second half of the cabbage the same way with the remaining salt, soy sauce and 1 tsp more of the vinegar.",
+  "Return the first batch to the pan, add the last 1 tsp vinegar and toss for 15 seconds.",
+  "Taste it. If it's flat, add a pinch more salt or a splash more of the vinegar.",
+  "Serve with the rice. Put the red pepper flakes on the table for anyone who wants heat."
+ ],
+ "method_notes": "Both versions tear the cabbage by hand, dry it well, and stir-fry it in a very hot wok with garlic, soy sauce and black vinegar so the edges char and the leaves stay crisp. China Sichuan Food (the lead) uses ginger, garlic, dried chilies, light soy sauce and a little black vinegar and takes about 10 minutes; Taste Asian Food adds a little sugar, Sichuan peppercorns and rice vinegar. This follows the lead, doubled to make a main for 4 and cooked in two batches so the pan stays hot. The dried chilies are left out to keep the base mild and red pepper flakes go on the table instead; green cabbage is used, as in Taste Asian Food.",
+ "sources": [
+  {
+   "name": "China Sichuan Food",
+   "title": "Chinese Cabbage Stir Fry",
+   "url": "https://www.chinasichuanfood.com/chinese-style-cabbage-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 38,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste Asian Food",
+   "title": "Chinese cabbage stir-fry - quick and easy recipe (手撕包菜)",
+   "url": "https://tasteasianfood.com/chinese-cabbage-stir-fry/",
+   "rating": 4.6,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

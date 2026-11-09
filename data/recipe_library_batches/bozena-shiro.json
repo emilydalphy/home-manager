@@ -1,0 +1,112 @@
+{
+ "dish_name": "Bozena Shiro",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chickpea flour",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Chop the onions as fine as you can. Dice the tomatoes and mince the 4 garlic cloves.",
+  "Heat the 1/3 cup oil in a large heavy pot over medium heat. Add the onions and 1/2 tsp of the salt. Cover and cook for 3 minutes, then uncover and cook for 3 minutes, stirring, until the onions are soft and the water has cooked off.",
+  "Turn the heat to medium-high. Add the beef and 1/4 tsp of the salt and break the meat up with a wooden spoon. Cook for 4 minutes, until it's browned and no pink is left.",
+  "Add the 1 1/2 tbsp berbere and stir for 30 seconds, until it smells toasty.",
+  "Add the tomatoes, the 2 tbsp tomato paste and the garlic. Cook for 4 minutes, stirring, until the tomatoes break down and it looks like a thick sauce.",
+  "Meanwhile, put the 1 1/4 cups chickpea flour in a bowl. Whisk in 3 cups hot water a little at a time until it's smooth, with no lumps.",
+  "Pour the chickpea paste into the pot while you stir, and add the remaining 1/2 tsp salt. Keep stirring until it comes to a bubble.",
+  "Turn the heat to medium-low and cook, uncovered, for 10 to 12 minutes, stirring every minute or two so it doesn't stick, until it's as thick as a loose porridge and a little red oil shows at the edges. Stand back a little. It spits as it thickens.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Slice the jalapeño. Serve the shiro with the injera, with the sliced jalapeño on the table for anyone who wants heat."
+ ],
+ "method_notes": "Bozena shiro is shiro with meat cooked into it. Abyssinia Eats (the lead) browns onion in oil, cooks meat, adds berbere, tomatoes, tomato paste and garlic into a sauce, then stirs in a paste of shiro (chickpea flour) and hot water and simmers it until thick, with jalapeño on top. Ethiopian-food.org (5.0 from 4 ratings) makes a clear beef broth first, adds niter kibbeh and simmers the shiro for about 25 minutes; Pekin the Chef's version is a long beef stew. No version has 20 ratings. This follows the lead scaled to 1 lb of ground beef so it fits half an hour, with plain chickpea flour like the Shiro already in the library, and without the optional butter so it stays dairy free. The jalapeño goes on the table, not in the pot.",
+ "sources": [
+  {
+   "name": "Abyssinia Eats",
+   "title": "Bozena Shiro (ቦዘና ሽሮ)",
+   "url": "https://abyssinia-eats.com/bozena-shiro-%E1%89%A6%E1%8B%98%E1%8A%93-%E1%88%BD%E1%88%AE-a-flavorful-ethiopian-delight/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ethiopian-Food.org",
+   "title": "Bozena Shiro Wot Recipe",
+   "url": "https://ethiopian-food.org/bozena-shiro-wot-recipe/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pekin the Chef",
+   "title": "Bozena Shiro Recipe",
+   "url": "https://pekinthechef.com/ertaaleethiopian/bozena-shiro",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

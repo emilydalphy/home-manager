@@ -1,0 +1,149 @@
+{
+ "dish_name": "Bouchees a la Reine",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "ingredients": [
+  {
+   "item": "Frozen puff pastry shells",
+   "qty": "1 box (6 shells)",
+   "category": "frozen"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "half"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Put the frozen puff pastry shells and their lids on a baking sheet and bake for 18 to 20 minutes, until puffed and deep golden.",
+  "Rinse the 1 cup rice and put it in a saucepan with 1 3/4 cups water. Bring to a boil over high heat, cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 5 minutes.",
+  "Cut the chicken into 1/2-inch cubes, pat them dry and toss them with 1/2 tsp of the salt. Slice the mushrooms thick, mince the shallot and chop 2 tbsp of the parsley.",
+  "Heat a large deep skillet over medium-high heat and add the oil. Spread the chicken in one layer and cook for 4 minutes, stirring now and then, until it's browned. Transfer it to a plate. It isn't cooked through yet.",
+  "Add 1 tbsp of the butter to the skillet, then the mushrooms and a pinch of the salt. Cook for 4 minutes, until they've released their liquid and started to brown. Add 1/4 cup of the wine and cook for 1 minute, until it has cooked off. Transfer the mushrooms to the plate with the chicken.",
+  "Turn the heat to medium and add the remaining 3 tbsp butter and the shallot. Cook for 1 minute, until soft. Sprinkle in the 1/4 cup flour and stir for 1 minute, until it smells slightly toasty.",
+  "Pour in the broth a little at a time, whisking, then add the remaining 1/4 cup wine. Bring to a boil and cook for 2 minutes, until thick and smooth. Stir in the cream and simmer for 1 minute.",
+  "Return the chicken and mushrooms and any juices from the plate to the skillet. Add the nutmeg, the remaining salt and the pepper. Simmer for 5 minutes, until the chicken is cooked through. You're cooking it to 175°F, so if you have a thermometer, check a piece of chicken there. No thermometer? Cut a cube open: it's done when there's no pink left.",
+  "Take the skillet off the heat. Squeeze in half the lemon, which should be about 1 tbsp of juice, and stir in the parsley.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze more of the lemon.",
+  "Lift the lids off the shells. Spoon the filling into the shells, letting it spill a little, and set the lids on top. Serve with the rice and any extra filling spooned over it."
+ ],
+ "method_notes": "Anne's Kitchen (the lead) is the classic: chicken and mushrooms in a white wine, butter and flour sauce with broth, cream, nutmeg, lemon and parsley, spooned into warm vol-au-vent cases and served with rice. It poaches a whole chicken for the broth, which takes about two hours, so this browns cubed thighs and uses boxed broth as the French Countryside Guide does with cubed chicken. The Persnickety Panhandler adds a shallot to the base, which this keeps. No version has 20 ratings (My Cooking Place has 4.1 from 8). Store-bought frozen shells replace homemade ones.",
+ "sources": [
+  {
+   "name": "Anne's Kitchen",
+   "title": "Bouchée à la Reine",
+   "url": "https://anneskitchen.lu/recipes/bouchee-a-la-reine/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Persnickety Panhandler",
+   "title": "Chicken a La King (Bouchee A la Reine)",
+   "url": "https://www.persnicketypanhandler.com/blog/chicken-a-la-king",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "My Cooking Place",
+   "title": "Bouchées à la reine",
+   "url": "https://www.mycookingplace.com/recipes/bouchees-a-la-reine",
+   "rating": 4.1,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The French Countryside Guide",
+   "title": "A French Recipe Americanized: Bouchées à la Reine",
+   "url": "https://frenchcountrysideguide.com/americanized-french-recipe-bouchees-a-la-reine/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

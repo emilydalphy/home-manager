@@ -1,0 +1,92 @@
+{
+ "dish_name": "Coquillettes Jambon Fromage",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Coquillettes pasta",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Cooked ham",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Emmental cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Half-and-half",
+   "qty": "1 pint",
+   "category": "dairy",
+   "cook_qty": "1 3/4 cups"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp + 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot with 4 quarts of water and 1 tbsp of the salt to a boil over high heat.",
+  "Meanwhile, grate the 6 oz Emmental, which should be about 1 1/2 cups. Cut the ham into 1/2-inch cubes. Separate the 2 eggs and put the yolks in a small bowl. You won't need the whites.",
+  "Add the coquillettes to the water and cook them for 1 minute less than the package says, usually about 7 minutes. Stir at the start so they don't stick.",
+  "When the pasta is about halfway done, pour the half-and-half into a large deep skillet. Add the remaining 3/4 tsp salt and the pepper and heat it over medium until it just starts to steam at the edges. Don't let it boil.",
+  "Take the skillet off the heat. Add the ham and the cheese, put the yolks on top and stir quickly until the cheese melts and the sauce is creamy.",
+  "Scoop out 1/2 cup of the pasta water, then drain the pasta.",
+  "Add the pasta to the skillet with the butter and toss until it's coated. If the sauce is too thick, add the pasta water a spoonful at a time.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in shallow bowls with the oregano crumbled over the top."
+ ],
+ "method_notes": "Yumelise (the lead) boils the coquillettes, heats cream until it shivers, then stirs in diced ham, grated Emmental and an egg yolk off the heat and finishes the pasta with butter and plenty of oregano. Petit Bec Gourmand cooks the pasta risotto style in stock and white wine with Comté instead. No version has 20 ratings. This follows the lead scaled to a pound of pasta for 4, with half-and-half in place of the light cream.",
+ "sources": [
+  {
+   "name": "Yumelise",
+   "title": "Coquillettes jambon fromage",
+   "url": "https://www.yumelise.fr/coquillettes-jambon-fromage/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Petit Bec Gourmand",
+   "title": "Les fameuses coquillettes jambon-fromage",
+   "url": "http://www.petitbecgourmand.com/2020/05/les-fameuses-coquillettes-jambon-fromage",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

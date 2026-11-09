@@ -1,0 +1,103 @@
+{
+ "dish_name": "Cabillaud au Beurre Blanc",
+ "cuisine": "French",
+ "main_protein": "fish",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Baby potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "9 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "White wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 1.5 lbs baby potatoes in a pot, halving any bigger than a golf ball. Cover them with cold water by 1 inch, add 1 tsp of the salt and bring to a boil. Turn the heat down to a steady simmer and cook for 15 to 18 minutes, until a knife slides in easily.",
+  "Meanwhile, mince the 3 shallots. Cut 7 tbsp of the butter into small cubes and put them in the fridge so they stay cold.",
+  "Pat the cod dry with paper towels and cut it into 4 portions. Sprinkle 1/2 tsp of the salt and 1/4 tsp of the pepper over both sides.",
+  "Put the shallots, the 3 tbsp wine and the 3 tbsp vinegar in a small saucepan over medium heat. Boil for 4 to 5 minutes, until only about 1 tbsp of liquid is left. Take it off the heat.",
+  "Heat a large nonstick skillet over medium-high heat and add the oil. Lay in the cod and cook for 3 minutes, until the underside is golden and lets go of the pan.",
+  "Flip the cod, add 1 tbsp of the remaining butter to the pan and cook for 2 to 3 minutes, until the fish flakes when you press it with a fork. You're cooking it to 145°F in the thickest part, so if you have a thermometer, check it there. Transfer the cod to a warm plate and cover it with foil.",
+  "Set the saucepan with the shallots over the lowest heat. Add 2 cubes of the cold butter and whisk until they melt. Keep adding the butter, a couple of cubes at a time, whisking after each, for about 3 minutes, until the sauce is pale, thick and coats a spoon. Don't let it bubble. If the pan feels hot to the touch, lift it off the heat and keep whisking.",
+  "Whisk in 1/4 tsp of the salt and the remaining 1/4 tsp pepper. Taste it. If it's flat, add a pinch more salt.",
+  "Drain the potatoes and toss them with the last 1 tbsp butter and the remaining 1/4 tsp salt.",
+  "Spoon the sauce over the cod. Serve with the potatoes."
+ ],
+ "method_notes": "Jardiner Malin (the lead, shown at 4.9 with no count) reduces shallots with white wine and white wine vinegar until about a spoonful is left, then whisks in cold butter bit by bit over very low heat, and serves it with cod. Rouxbe (5.0 from 5 ratings) reduces the shallots and wine by two thirds and keeps the sauce warm, not hot, so it doesn't split; TheYumYumClub pan fries the cod and sauces it the same way. No version has 20 ratings. This follows the lead's sauce ratios, sears the cod in a pan as Rouxbe and TheYumYumClub do rather than baking it, and serves it with boiled potatoes, which the sources leave to the cook.",
+ "sources": [
+  {
+   "name": "Jardiner Malin",
+   "title": "Cabillaud au beurre blanc : Recette facile et raffinée",
+   "url": "https://www.jardiner-malin.fr/recettes/cabillaud-au-beurre-blanc-facile.html",
+   "rating": 4.9,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rouxbe",
+   "title": "Cod w/ Classic Beurre Blanc Sauce",
+   "url": "https://rouxbe.com/recipes/2248-cod-w-classic-beurre-blanc-sauce",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "TheYumYumClub",
+   "title": "Pan Fried Cod with Classic Beurre Blanc",
+   "url": "https://theyumyumclub.com/2018/11/23/pan-fried-cod-with-classic-beurre-blanc/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

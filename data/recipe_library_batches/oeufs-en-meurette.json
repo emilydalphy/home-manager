@@ -1,0 +1,142 @@
+{
+ "dish_name": "Oeufs en Meurette",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 24,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Thick-cut bacon",
+   "qty": "6 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "French baguette",
+   "qty": "1",
+   "category": "other"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the 6 bacon slices into 1-inch pieces. Dice the onion, mince 2 of the garlic cloves and slice the mushrooms thick. Cut 8 slices of baguette about 1 inch thick, and cut the last garlic clove in half.",
+  "Put a large deep skillet over medium-high heat and add the bacon. Cook for 4 minutes, stirring now and then, until crisp. Transfer the bacon to a plate.",
+  "Pour off all but about 2 tbsp of the bacon fat into a small bowl and keep it for the toast.",
+  "Add the onion and minced garlic to the skillet and cook for 2 minutes, until the onion is soft. Add the mushrooms and cook for 3 minutes, until they've released their liquid.",
+  "Sprinkle the flour over the top and stir for 1 minute, until it's golden.",
+  "Add the bay leaf, thyme, sugar, 1/2 tsp of the salt and the pepper. Pour in the wine and broth and scrape up the browned bits from the bottom. Return the bacon to the pan.",
+  "Bring it to a boil, then turn the heat to medium-low and simmer, uncovered, for 12 minutes, stirring now and then, until the sauce is thick enough to coat a spoon.",
+  "Meanwhile, heat a second skillet over medium-high heat with the reserved bacon fat. Toast the baguette slices for 2 minutes per side, until golden. Rub the cut side of the halved garlic clove over each toast.",
+  "Fill a wide pot with about 2 inches of water, add the 3 tbsp vinegar and bring it to a gentle simmer. Don't let it boil hard.",
+  "Crack 4 of the eggs, one at a time, into a small cup. Stir the water to make a slow whirlpool and slide each egg into the middle. Poach for 3 minutes, until the whites are set and the yolks still jiggle. Lift them out with a slotted spoon onto a plate lined with paper towels. Poach the other 4 eggs the same way.",
+  "Take the bay leaf out of the sauce. Taste it. If it's flat, add a pinch of the remaining 1/4 tsp salt.",
+  "Put 2 toasts on each plate and spoon the sauce over them. Top each with 2 poached eggs and scatter on the chopped parsley."
+ ],
+ "method_notes": "Curious Cuisiniere (the lead) fries bacon, cooks onion, garlic and mushrooms in the fat, stirs in flour, then builds a red wine and beef broth sauce with bay, thyme and a little sugar, with garlic toast and eggs poached in vinegar water. Custrd simmers its sauce 12 minutes and Taste France reduces the wine by two thirds with veal stock; Djalali Cooks simmers about 50 minutes. No version has 20 ratings. This follows the lead with less wine and broth and a 12 minute simmer so it fits half an hour, 2 eggs a person for a main, and no pearl onions.",
+ "sources": [
+  {
+   "name": "Curious Cuisiniere",
+   "title": "Oeufs en Meurette",
+   "url": "https://www.curiouscuisiniere.com/oeufs-en-meurette/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Custrd",
+   "title": "Oeufs en Meurette Recipe",
+   "url": "https://custrd.com/recipes/cs-oeufs-en-meurette",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Djalali Cooks",
+   "title": "Poached Eggs in Red Wine (Oeufs en Meurette)",
+   "url": "https://djalalicooks.com/poached-eggs-in-red-wine-oeufs-en-meurette/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}
