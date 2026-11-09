@@ -2,7 +2,7 @@
 How long one meal's cooking may take, in minutes — or None for no cap.
 
 Emily, 2026-09-23: "Short on time" means dinner on the table in 30
-minutes or less, prep included, never more; and every Monday-to-Friday
+minutes or less, prep included, never more (35 since 2026-11-09); and every Monday-to-Friday
 lunch cooked that day is 20 minutes or less. Her words on the second:
 "if the meal is on a prep day, it doesn't need to be a 20min meal… if Im
 prepping chili for lunches, that's a great meal to just reheat, but if
@@ -53,7 +53,10 @@ import datetime
 # weeknight where the household's own weeknight_max_minutes is lower, that
 # lower number is the cap. Re-exported by week_intake, where callers have
 # always read it.
-RUSH_MAX_MINUTES = 30
+# Emily, 2026-11-09 (1,000-recipe spot check, call 11): 35 minutes counts
+# as quick — "Make sure to make this change in the app itself too". 77 of
+# the library's 300 quick dinners honestly take 31 to 38 minutes.
+RUSH_MAX_MINUTES = 35
 
 # The DEFAULT for every Monday-Friday lunch that is cooked that day
 # (Emily, 2026-09-23). A lunch that reheats an earlier cook, the batch cook

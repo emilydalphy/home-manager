@@ -35,7 +35,7 @@ def test_a_pick_longer_than_a_rush_nights_cap_is_not_offered(week):
     ask = _asker(_opt("Slow Beef Braise", 90, "Beef chuck"), _opt("Fish Tacos"),
                  _opt("Veg Curry", 20, "Chickpeas"))
     out = tools.swap_options(week, _entry_id(week, DAY1), asker=ask)
-    assert ask.contexts[0]["max_minutes"] == 30
+    assert ask.contexts[0]["max_minutes"] == 35
     assert _names(out) == ["Fish Tacos", "Veg Curry"]
 
 

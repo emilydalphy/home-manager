@@ -221,7 +221,7 @@ def _quick(name="Ten-Minute Wraps"):
 
 
 def _long(name=NEW):
-    return dict(_pick(name), prep_time_minutes=10, cook_time_minutes=25)
+    return dict(_pick(name), prep_time_minutes=10, cook_time_minutes=30)
 
 
 def _rush():
@@ -237,7 +237,7 @@ def test_a_rush_friday_holds_the_picks_to_the_rush_cap(home):
     assert context["max_minutes"] == _rush(), "the lowest cap of the days — an unrushed day doesn't lift a rush one"
     assert context["night_tags"] == ["rush"], "'no cap tonight' is only said when it's true of every day"
     assert context["dates"] == [D1, D2]
-    assert [o["meal"] for o in opened["options"]] == ["Ten-Minute Wraps"], "a 35-minute pick isn't offered"
+    assert [o["meal"] for o in opened["options"]] == ["Ten-Minute Wraps"], "a 40-minute pick isn't offered"
 
 
 def test_a_one_day_swap_on_the_unrushed_day_keeps_its_own_cap(home):
@@ -265,12 +265,12 @@ def test_a_pick_over_fridays_cap_goes_on_and_says_so(home):
     entry_id = _id(home, D1, "dinner")
     tools.swap_options(home, entry_id, asker=_asker(_long()), whole_dish=True)
     # The second day became a rush night after the sheet opened: the
-    # 35-minute pick is still on offer.
+    # 40-minute pick is still on offer.
     tools.save_week_intake(START, night_tags={D2: ["rush"]})
     out = tools.choose_swap_option(home, entry_id, 0, whole_dish=True)
     weekday = datetime.date.fromisoformat(D2).strftime("%A")
     assert out["status"] == "swapped"
-    assert out["said"].endswith(f"It runs about 35 minutes, a bit over {weekday}’s {_rush()}.")
+    assert out["said"].endswith(f"It runs about 40 minutes, a bit over {weekday}’s {_rush()}.")
     assert _meals(home, "dinner") == {PAST: SHRIMP, D1: NEW, D2: NEW}
 
 
