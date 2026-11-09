@@ -1,0 +1,106 @@
+{
+ "dish_name": "Msabaha",
+ "cuisine": "Lebanese",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  }
+ ],
+ "instructions": [
+  "Pour both cans of chickpeas into a medium saucepan, liquid and all. Set it over medium heat and warm the chickpeas for 5 minutes, until they're hot.",
+  "Meanwhile, mince the 2 garlic cloves. Put them in a medium bowl with 1/4 tsp of the salt and press and scrape them with the flat of the knife until they turn into a paste.",
+  "Juice the lemon. That should be about 3 tbsp. Add it to the bowl with the 5 tbsp tahini, the 1/2 tsp cumin and 3 tbsp of the olive oil, and whisk. It will look thick and clumpy for now.",
+  "Ladle 1/4 cup of the hot chickpea liquid into a cup and set it aside. Turn off the heat and drain the chickpeas in a sieve.",
+  "Add the drained chickpeas to the bowl along with the 1/4 cup liquid and the other 1/4 tsp salt. Press about half the chickpeas against the side of the bowl with a fork so they break, and leave the rest whole. Stir until the tahini turns creamy and coats everything.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Slice the cucumber and tomatoes, and chop 1/4 cup of the parsley.",
+  "Transfer the chickpeas to a wide shallow bowl and spread them out. Drizzle the remaining 3 tbsp olive oil over the top and scatter on the parsley.",
+  "Serve with the sliced cucumber and tomatoes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 5,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Zaatar and Zaytoun is the lead: canned chickpeas warmed in their own liquid, then crushed lightly into a tahini, lemon and garlic sauce with cumin, finished with olive oil, so it's ready in minutes. Curious Cuisiniere and Beach House Kitchen make it with dried chickpeas and add chilli or a longer cook, and Beach House Kitchen serves it with a chopped salad; all three agree the chickpeas stay mostly whole in a loose tahini sauce. The lead serves it with flatbread, which is left out here to keep it gluten-free, so the vegetables and parsley do the serving. No version had 20 or more ratings (the lead shows 5 from 1 vote) and RecipeTin Eats has no msabaha, so Zaatar and Zaytoun leads as the closest quick Lebanese version.",
+ "sources": [
+  {
+   "name": "Zaatar and Zaytoun",
+   "title": "Musabaha",
+   "url": "https://zaatarandzaytoun.com/musabaha/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Curious Cuisiniere",
+   "title": "Hummus Msabbaha",
+   "url": "https://www.curiouscuisiniere.com/hummus-msabbaha/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Beach House Kitchen",
+   "title": "Msabaha: Lebanese Chickpeas",
+   "url": "https://beachhousekitchen.com/2017/07/13/msabaha-lebanese-chickpeas-a-new-twist-on-hummus/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

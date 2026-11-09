@@ -1,0 +1,96 @@
+{
+ "dish_name": "Sultan Ibrahim",
+ "cuisine": "Lebanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Skin-on fish fillets (red mullet, snapper or sea bream)",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Coarse salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "4"
+  }
+ ],
+ "instructions": [
+  "Pat the fillets dry with paper towels and cut them into 4 even pieces. Sprinkle the 1 tsp salt and 1/2 tsp pepper over both sides.",
+  "Spread the 3 tbsp flour on a plate. Dust each piece lightly on both sides and shake off the extra.",
+  "Slice the 5 garlic cloves as thinly as you can. Juice 1 of the lemons. That should be about 3 tbsp. Cut the other lemon into 4 wedges. Chop 1/2 cup of the parsley.",
+  "Heat the oil in a large heavy skillet over medium-high heat for about 2 minutes, until it shimmers but doesn't smoke.",
+  "Add the fish skin side down, in batches so the pan isn't crowded. Cook for 3 to 4 minutes without moving it, until the skin is deep golden and crisp.",
+  "Flip the fish and cook the other side for 2 to 3 minutes, until the flesh is opaque and flakes. Transfer it to a platter and cover it loosely with foil while you cook the rest.",
+  "When all the fish is out, turn the heat to medium. Add the garlic to the oil in the pan and cook for 30 to 45 seconds, until golden but not brown.",
+  "Take the pan off the heat. Stand back and add the lemon juice a little at a time. It will spit. Swirl the pan.",
+  "Pour the garlic and lemon oil over the fish and scatter on the parsley.",
+  "Serve with the lemon wedges and warm pita."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Sofra Beirut is the lead: small red mullet floured lightly, fried in olive oil until the skin is copper, then a quick garlic and lemon oil poured over with parsley. Taste & Flavors' Sultan Ibrahim also flours and shallow-fries the fish but serves it on tabbouleh with tahini sauce, which is more than a quick dinner. The sources use whole small red mullet, which is hard to find, so skin-on fillets of snapper or sea bream stand in with shorter frying. The list says rice, but both versions read serve it with bread, so pita is used. No version showed a rating, so it leads as a fallback and RecipeTin Eats has no Lebanese fish.",
+ "sources": [
+  {
+   "name": "Sofra Beirut",
+   "title": "Sultan Ibrahim Recipe: Crisp Fried Red Mullet",
+   "url": "https://sofrabeirut.com/recipes/sultan-ibrahim",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste & Flavors",
+   "title": "Sultan Ibrahim",
+   "url": "https://www.tasteandflavors.com/sultan-ibrahim/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

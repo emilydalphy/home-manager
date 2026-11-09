@@ -1,0 +1,103 @@
+{
+ "dish_name": "Fattet Batinjan",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Eggplant",
+   "qty": "2 medium (about 1 1/2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "2 loaves"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with one rack in the upper third and one in the lower third.",
+  "Peel the eggplants in stripes, leaving about half the skin on, and cut them into 3/4 inch cubes. Transfer them to a large baking sheet, add 2 tbsp of the olive oil and 1 tsp of the salt and toss. Spread them in one layer and roast on the upper rack for 22 to 25 minutes, stirring halfway, until they're browned at the edges and soft inside.",
+  "Meanwhile, cut the 2 pitas into 1 inch squares. Toss them on a second baking sheet with the remaining 1 tbsp olive oil and spread them out.",
+  "When the eggplant has about 7 minutes left, slide the pita onto the lower rack. Bake for 6 to 7 minutes, stirring halfway, until golden and crisp.",
+  "While those bake, mince the 3 garlic cloves. In a bowl, whisk them with the 1 1/2 cups yogurt, the last 3/4 tsp salt and 4 tbsp warm water until it's smooth and pourable.",
+  "Put the pine nuts in a small dry skillet over medium heat. Shake the pan for 3 to 4 minutes, until they're golden and smell toasty. Transfer them to a small bowl right away. They burn fast.",
+  "Drain the chickpeas in a sieve and rinse them. Chop 3 tbsp of the parsley.",
+  "Spread the chickpeas in a wide shallow dish. Layer the crisp pita over them, then the eggplant. Spoon the garlic yogurt over the top.",
+  "Scatter the pine nuts and parsley over the yogurt and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Salt and Sweet Kitchen leads: chickpeas at the bottom, crisp pita and browned eggplant over them, a garlic yogurt spooned on, then pine nuts and parsley, served at once so the pita stays crisp. The Matbakh adds tahini to the yogurt and fries everything, and Simply Lebanese adds tahini and a seared beef layer; those differences are left out. The lead uses an air fryer, so the eggplant and pita are roasted in a hot oven here, which is why the honest time is 35 minutes rather than the 30 the source gives. The lead is written for 2 to 3, so the amounts are scaled up for 4.",
+ "sources": [
+  {
+   "name": "The Salt and Sweet Kitchen",
+   "title": "Vegetarian Eggplant Fatteh (Fattet Batenjan)",
+   "url": "https://thesaltandsweet.com/vegetarian-eggplant-chickpea-fatteh/",
+   "rating": 5.0,
+   "rating_count": 63,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Lebanese",
+   "title": "Eggplant Fatteh (Fatet Batenjan)",
+   "url": "https://www.simplyleb.com/recipe/eggplant-fatteh/",
+   "rating": 4.67,
+   "rating_count": 15,
+   "read": true
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Eggplant Fatteh (Fattet Batinjan)",
+   "url": "https://thematbakh.com/eggplant-fatteh/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

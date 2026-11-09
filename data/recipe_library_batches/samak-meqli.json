@@ -1,0 +1,90 @@
+{
+ "dish_name": "Samak Meqli",
+ "cuisine": "Lebanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Firm white fish fillets (hake, whiting or snapper)",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the fish into 4 even pieces and pat them dry with paper towels. Sprinkle 1/2 tsp of the salt over both sides.",
+  "In a shallow dish, stir together the 3/4 cup flour, 1/2 tsp cumin, 1/2 tsp coriander and the remaining 1/2 tsp salt. Cut the lemons into wedges.",
+  "Pour the 1 cup oil into a large heavy skillet so it's about 1/2 inch deep. Heat it over medium-high heat for about 3 minutes, until a pinch of flour sizzles right away.",
+  "Press 2 pieces of fish into the flour, coat both sides and shake off the extra. Lower them into the oil, laying them away from you.",
+  "Fry for 3 minutes, until the underside is deep golden. Flip and cook the other side for 2 to 3 minutes, until crisp and the fish flakes.",
+  "Transfer the fish to a plate lined with paper towels. Flour and fry the other 2 pieces the same way.",
+  "Serve right away with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Ghina Bazzi's samak mikli is the lead: small firm fish dredged in flour seasoned with cumin and coriander, fried until crisp and golden and served with lemon. Arab America and Homemade Recipes also flour and fry the fish, with a lemon-spice rub or a salt cure first, and serve it hot with lemon and a tahini sauce. The sources deep-fry whole fish, so this shallow-fries fillets in 1/2 inch of oil and skips the long marinade. No version showed a rating, so it leads as a fallback and RecipeTin Eats has no Lebanese fish.",
+ "sources": [
+  {
+   "name": "Ghina Bazzi",
+   "title": "Samak Mikli (Fried Fish)",
+   "url": "https://ghinabazzi.substack.com/p/samak-mikli-fried-fish",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Arab America",
+   "title": "Samak Maqli - Fried Fish",
+   "url": "https://www.arabamerica.com/recipe/samak-maqli-fried-fish/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Homemade Recipes",
+   "title": "Fried Fish (Samak Maqli)",
+   "url": "https://homemade-recipes.blogspot.com/2007/04/fried-fish-samak-maqli.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

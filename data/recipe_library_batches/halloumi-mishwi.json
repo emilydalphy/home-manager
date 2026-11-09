@@ -1,0 +1,87 @@
+{
+ "dish_name": "Halloumi Mishwi",
+ "cuisine": "Lebanese",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Halloumi",
+   "qty": "2 packages (7 oz each)",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Cut each block of halloumi lengthwise into 1/2 inch slices and pat them dry with paper towels. Slice the tomatoes 1/2 inch thick.",
+  "In a shallow bowl, stir the 2 tbsp cornstarch together with the 1/2 tsp black pepper.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat. Add the tomato slices in one layer and sprinkle on the 1/4 tsp salt. Cook for 1 minute on each side, until they have brown spots. Transfer them to a platter.",
+  "Turn the heat to medium. Press half the halloumi slices into the cornstarch to coat both sides and shake off the extra.",
+  "Add 1 1/2 tbsp of the remaining oil to the skillet, then the coated halloumi. Cook for 1 to 2 minutes on each side, until golden. Transfer it to the platter next to the tomatoes.",
+  "Coat the rest of the halloumi and cook it the same way in the last 1 1/2 tbsp oil.",
+  "Halve the lemon and squeeze it over the halloumi. Put the red pepper flakes in a small bowl for anyone who wants heat.",
+  "Serve right away with the tomatoes. Halloumi turns chewy as it cools."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Joudie Kalla's halloumi meshwi, via Tara's Multicultural Table, is the lead: slices dredged in a seasoned dusting, pan-fried 1 to 2 minutes a side until golden and finished with lemon, served at once. Her dusting is flour with red pepper flakes, so cornstarch stands in for the flour to keep it gluten-free and the pepper flakes move to the table. The seared tomato comes from a Gulf News grilled halloumi with tomato. The list's cucumber isn't in any version read, so it's left out. No version had a rating, so the lead is a fallback and RecipeTin Eats has no halloumi dish.",
+ "sources": [
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Halloumi Meshwi (Pan-Grilled Halloumi with Lemon)",
+   "url": "https://tarasmulticulturaltable.com/palestine-on-a-plate-cookbook-review-and-halloumi-meshwi-pan-grilled-halloumi-with-lemon/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gulf News",
+   "title": "Grilled halloumi with tomato",
+   "url": "https://gulfnews.com/going-out/recipe-grilled-halloumi-with-tomato-1.1409918",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
