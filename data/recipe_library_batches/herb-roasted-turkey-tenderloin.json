@@ -1,0 +1,84 @@
+{
+ "dish_name": "Herb Roasted Turkey Tenderloin",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Turkey tenderloins",
+   "qty": "2 (about 1 1/2 lb total)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh sage",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Chop 1 tbsp each of thyme, sage and rosemary and mix them in a small bowl with the salt and pepper.",
+  "Pat the turkey dry with paper towels and rub the herb mixture all over it.",
+  "Heat the olive oil in a large oven-safe skillet over medium-high heat. Add the turkey and cook for 2 to 3 minutes per side, including the edges, until golden.",
+  "Transfer the skillet to the oven and bake for 20 to 23 minutes. You're cooking it to 160°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when there's no pink left.",
+  "Transfer the turkey to a cutting board and let it rest for 10 minutes. It will climb to about 165°F as it rests.",
+  "Meanwhile, put the skillet on the stove over medium-high heat. The handle will be hot, so use an oven mitt. Pour in the broth and scrape up the browned bits. Boil for about 5 minutes, until it has reduced by half. That should be about 1/2 cup.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Slice the turkey 1/2 inch thick, and spoon the pan sauce over it."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 37,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Xoxobella is the lead (herb rub of thyme, sage and rosemary, a sear on each side, then an oven finish to 160°F and a rest), but it has only 2 ratings, so this is a fallback lead; no herb-roasted version with 20 or more ratings could be read. This Is How I Cook (1 rating) adds the idea of deglazing the pan with broth, which is used here instead of its butter to keep the dish dairy-free. The broth is listed as gluten-free, so check the label.",
+ "sources": [
+  {
+   "name": "Xoxobella",
+   "title": "Oven Roasted Turkey Tenderloin",
+   "url": "https://xoxobella.com/turkey-tenderloin/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "This Is How I Cook",
+   "title": "Roasted Turkey Tenderloin",
+   "url": "https://thisishowicook.com/roasted-turkey-tenderloin-recipe/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

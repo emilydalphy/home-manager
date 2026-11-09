@@ -1,0 +1,99 @@
+{
+ "dish_name": "Zucchini Lasagna",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "3 large",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ricotta cheese",
+   "qty": "1 tub (15 oz)",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "3/4 cup grated"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "10 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small pack",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Line two baking sheets with parchment.",
+  "Slice the zucchini lengthwise into slices about 1/8 inch thick. Lay them on the baking sheets and sprinkle with 3/4 tsp of the salt. Leave them for 10 minutes.",
+  "Press the zucchini dry with paper towels and wipe off the extra salt.",
+  "Bake the zucchini for 8 to 10 minutes, until it has softened a little. Pat it dry again and leave the oven on.",
+  "Meanwhile, stir the ricotta well and spoon off any liquid on top. Grate the garlic and chop 5 tbsp of the basil.",
+  "In a medium bowl, mix the ricotta, 1/4 cup of the Parmesan, the garlic, the egg, 3 tbsp of the basil, the pepper and a pinch of salt.",
+  "Spread 1/2 cup of the tomato sauce over the bottom of an 11 x 7 inch baking dish. Lay down a layer of zucchini, then spread on half the ricotta mixture. Sprinkle over a third of the mozzarella and 2 tbsp Parmesan.",
+  "Spoon on another 1/2 cup of sauce. Add a second layer of zucchini, the rest of the ricotta mixture, a third of the mozzarella and 2 tbsp Parmesan.",
+  "Top with the last of the zucchini, the remaining sauce, the rest of the mozzarella and the last 4 tbsp of Parmesan.",
+  "Bake uncovered for 40 to 45 minutes, until it's bubbling at the edges. Turn the oven to broil on high and cook for 1 to 2 minutes, until the top is browned.",
+  "Let it stand for 10 minutes. Sprinkle with the remaining 2 tbsp basil and cut into 4 large squares."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 55,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "A Simple Palate is the lead (salted and pre-baked zucchini slices, a ricotta, egg and basil layer, marinara, mozzarella, a broil at the end). Williams-Sonoma's version also pre-bakes the zucchini but has only 8 ratings. The pre-bake and the salting keep the dish from turning watery. The source makes a 13 x 9 pan; this is about two thirds of it in a smaller dish. It is gluten-free as written, but it honestly takes well over an hour.",
+ "sources": [
+  {
+   "name": "A Simple Palate",
+   "title": "Zucchini Lasagna",
+   "url": "https://asimplepalate.com/blog/easy-zucchini-lasagna/",
+   "rating": 4.8,
+   "rating_count": 59,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Williams-Sonoma",
+   "title": "No-Noodle Zucchini Lasagna",
+   "url": "https://www.williams-sonoma.com/m/recipe/no-noodle-zucchini-lasagna.html",
+   "rating": 4.6,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

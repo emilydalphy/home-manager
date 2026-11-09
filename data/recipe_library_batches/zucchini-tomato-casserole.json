@@ -1,0 +1,106 @@
+{
+ "dish_name": "Zucchini Tomato Casserole",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "3 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 1/2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "3 tbsp grated"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "4 oz",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small pack",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F.",
+  "Finely chop half the onion. Heat 1 tbsp olive oil in a small skillet over medium heat, add the onion with a pinch of the salt, and cook for 5 minutes, until soft. Transfer it to a small bowl.",
+  "Slice the tomatoes 1/4 inch thick and lay them on paper towels for 2 to 3 minutes to drain.",
+  "Slice the zucchini 1/2 inch thick. Toss it in a large bowl with 1 tbsp olive oil, the minced garlic, the Italian seasoning, the remaining salt and the pepper.",
+  "Stand the zucchini and tomato slices on their sides in alternating rows in an 8 x 8 inch baking dish. Cover with foil and bake for 25 minutes.",
+  "Meanwhile, melt the butter and stir it into the onion along with the Parmesan and mozzarella.",
+  "Take off the foil and spread the cheese mixture over the top. Bake uncovered for 20 minutes, until the zucchini is tender when you poke it and the top is golden.",
+  "Sprinkle with 2 tbsp chopped basil."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies is the lead (zucchini and Roma tomato slices standing in rows, baked covered, then topped and baked uncovered). Piper Cooks layers the same vegetables flat with mozzarella but has only 10 ratings. Adapted: the lead's bread crumbs are left out to keep the dish gluten-free, so the topping is onion, butter and cheese. The lead serves 8; this is about three quarters of it, and it honestly takes over an hour.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Zucchini Casserole",
+   "url": "https://www.spendwithpennies.com/zucchini-casserole/",
+   "rating": 4.96,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Piper Cooks",
+   "title": "Zucchini, Tomato + Mozzarella Bake",
+   "url": "https://www.pipercooks.com/zucchini-tomato-mozzarella-bake",
+   "rating": 4.91,
+   "rating_count": 10,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

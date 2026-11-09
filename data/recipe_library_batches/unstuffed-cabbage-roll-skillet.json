@@ -1,0 +1,128 @@
+{
+ "dish_name": "Unstuffed Cabbage Roll Skillet",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Long grain white rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Golden raisins",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Dice the onion and mince the garlic. Chop about 6 cups of the cabbage, which is most of a small head.",
+  "Heat the olive oil in a large deep skillet over medium-high heat. Add the onion and turkey with 1 tsp of the salt and 1/2 tsp of the pepper. Cook for 7 to 8 minutes, breaking up the turkey, until there's no pink left.",
+  "Stir in the rice, oregano, paprika, the remaining 1/2 tsp salt and the remaining 1/4 tsp pepper. Cook for 1 minute, then add the garlic and cook for 30 seconds.",
+  "Add the diced tomatoes, tomato sauce, broth, 3 tbsp Worcestershire sauce and the raisins. Stir, then fold in the cabbage. It will look like too much and it shrinks as it cooks.",
+  "Bring to a simmer, then cover, turn the heat to medium-low, and cook for 15 minutes, stirring once or twice, until the rice and cabbage are tender.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 28,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "I Wash You Dry is the lead for the dish (ground meat, rice and chopped cabbage simmered in diced tomatoes, tomato sauce and Worcestershire for about 15 minutes covered). It is written with beef; turkey replaces it here, and the broth and Worcestershire are listed as gluten-free, so check the labels. Reciperunner and Killing Thyme are turkey versions with 17 and 7 ratings: they confirm the order of cooking but use tomato juice or maple and vinegar for the sauce.",
+ "sources": [
+  {
+   "name": "I Wash You Dry",
+   "title": "Unstuffed Cabbage Rolls",
+   "url": "https://iwashyoudry.com/unstuffed-cabbage-rolls/",
+   "rating": 4.94,
+   "rating_count": 90,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Reciperunner",
+   "title": "Unstuffed Cabbage Rolls Skillet",
+   "url": "https://reciperunner.com/unstuffed-cabbage-rolls-skillet/",
+   "rating": 4.59,
+   "rating_count": 17,
+   "read": true
+  },
+  {
+   "name": "Killing Thyme",
+   "title": "Unstuffed Cabbage Rolls with Ground Turkey and Rice",
+   "url": "https://www.killingthyme.net/unstuffed-cabbage-rolls-with-ground-turkey-and-rice/",
+   "rating": 4.72,
+   "rating_count": 7,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

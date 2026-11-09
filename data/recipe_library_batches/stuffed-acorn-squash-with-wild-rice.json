@@ -1,0 +1,113 @@
+{
+ "dish_name": "Stuffed Acorn Squash with Wild Rice",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Acorn squash",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Wild rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Kale",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red apple",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Pepitas",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Dried cranberries",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the middle. Line a baking sheet with parchment.",
+  "Cut each squash in half through the stem and scoop out the seeds. Brush the cut sides with 1 tbsp of the olive oil and sprinkle with 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Set the squash cut side down on the baking sheet and roast for 40 to 45 minutes, until a knife slides easily into the thickest part.",
+  "While the oven heats, put the rice and the broth in a medium saucepan and bring to a boil over high heat. Cover, turn the heat to low, and simmer for 40 to 45 minutes, until the rice is tender and most of the liquid is gone. Drain off any liquid that's left.",
+  "Meanwhile, finely chop the shallots, mince the garlic, chop the mushrooms, chop 2 cups of kale with the stems left out, and dice the apple.",
+  "When the rice has about 10 minutes to go, heat 2 tbsp olive oil in a large skillet over medium heat. Add the shallots and cook for 3 minutes, until soft.",
+  "Add the garlic and cook for 1 minute, stirring. Add the mushrooms and cook for 5 minutes, until they've shrunk and started to brown.",
+  "Add the kale, apple, 1 tsp salt and the remaining 1/4 tsp pepper. Turn the heat to low and cook for 2 to 3 minutes, until the kale has wilted.",
+  "Take the skillet off the heat. Stir in the cooked rice, 1/4 cup pepitas and 2 tbsp cranberries. Taste it. If it's flat, add a pinch more salt.",
+  "Flip the squash halves cut side up and spoon the filling into each one. Serve warm, one half for each person."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Short Girl Tall Order is the lead (roasted squash halves filled with wild rice, shallots, mushrooms, kale, apple, pepitas and cranberries). Hostess at Heart and Love and Lemons, the other well-known versions, either block the reader or use feta, so they are not used. Wild rice needs 40 to 45 minutes of simmering and the squash roasts for as long, so both run side by side and the dish honestly takes about an hour. Vegetable broth is listed as gluten-free.",
+ "sources": [
+  {
+   "name": "Short Girl Tall Order",
+   "title": "Vegan Stuffed Acorn Squash",
+   "url": "https://shortgirltallorder.com/vegan-stuffed-acorn-squash",
+   "rating": 4.79,
+   "rating_count": 37,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Stuffed Acorn Squash",
+   "url": "https://www.loveandlemons.com/stuffed-acorn-squash/",
+   "rating": 4.95,
+   "rating_count": 18,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

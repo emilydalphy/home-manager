@@ -1,0 +1,89 @@
+{
+ "dish_name": "Baked Spaghetti Squash with Mozzarella",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Spaghetti squash",
+   "qty": "2 medium (about 2 1/2 lb each)",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry",
+   "cook_qty": "1 3/4 cups"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 small pack",
+   "category": "produce"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "6 oz",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "3 tbsp grated"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the middle. Line a baking sheet with heavy-duty foil.",
+  "Trim a thin slice off the stem end of each squash so it stands up, then cut it in half lengthwise. Scoop out the seeds.",
+  "Set the halves cut side up on the baking sheet. Rub with the olive oil and sprinkle with 1 tsp of the salt and 1/2 tsp of the pepper. Flip them cut side down.",
+  "Roast for 40 to 50 minutes, until the bottoms are golden and a fork slides in easily.",
+  "Flip the halves cut side up and leave them until you can handle them, about 10 minutes. Turn the oven up to 425°F.",
+  "Scrape the squash into strands with a fork and transfer them to a large bowl.",
+  "Add the marinara, the remaining 3/4 tsp salt, the remaining 1/4 tsp pepper and 2 tsp chopped thyme. Toss. Taste it. If it's flat, add a pinch more salt.",
+  "Spread it in an ungreased 9 x 13 inch baking dish. Top with the mozzarella, then the Parmesan.",
+  "Bake for 25 to 30 minutes, until the top is golden and the edges bubble.",
+  "Let it cool for a few minutes and sprinkle with a little more thyme."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 65,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Once Upon a Chef is the lead (roast the squash cut side down, scrape, toss with marinara and thyme, top with mozzarella and Parmesan, bake at 425°F). Food Network's simpler version, which has no ratings, agrees on the shape of the dish. Adapted: the lead's butter and panko topping is left out to keep the dish gluten-free, and the marinara is listed as gluten-free, so check the label. Roasting whole squash is slow, so the dish honestly takes about 80 minutes.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Cheesy Baked Spaghetti Squash with Marinara Sauce",
+   "url": "https://www.onceuponachef.com/recipes/cheesy-baked-spaghetti-squash-marinara-sauce.html",
+   "rating": 4.98,
+   "rating_count": 47,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network",
+   "title": "Spaghetti Squash Bake",
+   "url": "https://www.foodnetwork.com/recipes/spaghetti-squash-bake-recipe-1957777",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

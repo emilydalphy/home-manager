@@ -1,0 +1,119 @@
+{
+ "dish_name": "BBQ Jackfruit Sandwiches",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Young green jackfruit in water",
+   "qty": "2 cans (20 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegan BBQ sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Coleslaw mix",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Vegan buns",
+   "qty": "4",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain the jackfruit and rinse it well. Pat it dry with a clean towel, then cut off the tough core pieces and discard them.",
+  "In a large bowl, off the heat, stir together 2 tbsp brown sugar, 1 tsp paprika, 1 tsp garlic powder, 1/2 tsp chili powder, 1/2 tsp salt and 1/2 tsp pepper. Add the jackfruit and toss until every piece is coated.",
+  "Heat 1 tbsp olive oil in a large skillet over medium heat. Add the jackfruit and cook for 2 to 3 minutes, until it starts to take on color.",
+  "Pour in 3/4 cup of the BBQ sauce and 1/4 cup water. Stir, turn the heat down to low, cover, and cook for 20 minutes. Stir it once or twice.",
+  "Meanwhile, make the slaw dressing. In a medium bowl, mash half the avocado with 1 tbsp maple syrup, the juice of the lemon, and a pinch each of salt and pepper. Stir in water 1 tbsp at a time until it's a thick dressing you can pour.",
+  "Toss 2 cups of the coleslaw mix with the dressing and set it in the fridge.",
+  "Uncover the skillet and turn the heat up to medium-high. Cook for 2 to 3 minutes, stirring, until the sauce is thick and clings to the jackfruit. Pull apart any big pieces with two forks.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Pile the jackfruit onto the buns and top with the slaw and the last 1/4 cup of BBQ sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Minimalist Baker is the lead (young green jackfruit in water, a spice rub, BBQ sauce, simmered covered for about 20 minutes, then a hot finish for color). Delish Knowledge agrees on the method but sautes onion first and mashes the jackfruit; it has only 3 ratings, so it was read for comparison only. Adapted: the lead's roasted cashews are left out to keep the dish nut-free, and the buns and BBQ sauce are listed as vegan, so check labels.",
+ "sources": [
+  {
+   "name": "Minimalist Baker",
+   "title": "BBQ Jackfruit Sandwiches with Avocado Slaw",
+   "url": "https://minimalistbaker.com/bbq-jackfruit-sandwiches-with-avocado-slaw/",
+   "rating": 4.86,
+   "rating_count": 194,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Delish Knowledge",
+   "title": "BBQ Jackfruit Sandwiches",
+   "url": "https://www.delishknowledge.com/bbq-jackfruit-sandwiches/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,99 @@
+{
+ "dish_name": "Roasted Cauliflower Steaks with Chimichurri",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "2 medium heads",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 large bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Put a rimmed baking sheet on the middle rack.",
+  "Make the chimichurri first. Finely chop 2 packed cups of parsley leaves and tender stems, mince the shallot and the garlic, and put them in a bowl. Stir in 1/2 cup olive oil, 1/4 cup red wine vinegar, the oregano and 1/2 tsp salt.",
+  "Take the outer leaves off each cauliflower and trim the stem flat. Cut each head in half from top to stem, then cut a slab about 1 1/2 inches thick from the middle of each half. Keep some stem on each one so it holds together. Save the leftover cauliflower for another meal.",
+  "Heat 2 tbsp olive oil in a large skillet over medium heat. Add 2 of the cauliflower slabs and cook for 5 minutes, until deep golden underneath.",
+  "Flip them and sprinkle with a little of the remaining salt. Cook for 3 to 5 minutes, then transfer them to the hot baking sheet.",
+  "Wipe the skillet if it's dark, heat the other 2 tbsp olive oil, and cook the last 2 slabs the same way.",
+  "Put all 4 slabs on the baking sheet and roast for 8 to 10 minutes, until the stems are tender when you poke them with a fork.",
+  "Taste the chimichurri. If it's flat, add a pinch more salt.",
+  "Spoon the chimichurri over the cauliflower. Pass the red pepper flakes at the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 28,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Inspired Taste is the lead (steaks about 1 1/2 inches thick seared in a skillet, finished in a 400°F oven, with a parsley and red wine vinegar chimichurri), but it has only 14 ratings, so this is a fallback lead; no version with 20 or more ratings could be read. Delish Knowledge roasts the steaks with no sear and adds mint; Cadry's Kitchen blends a cilantro sauce. The red pepper flakes from the lead's chimichurri go on the side. The lead makes 2 steaks, so this uses two heads for 4.",
+ "sources": [
+  {
+   "name": "Inspired Taste",
+   "title": "Chimichurri Cauliflower Steaks",
+   "url": "https://inspiredtaste.net/48013/chimichurri-cauliflower-steaks",
+   "rating": 4.9,
+   "rating_count": 14,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Delish Knowledge",
+   "title": "Roasted Cauliflower Steaks with Chimichurri Sauce",
+   "url": "https://www.delishknowledge.com/roasted-cauliflower-steaks/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Cadry's Kitchen",
+   "title": "Roasted Cauliflower Steaks",
+   "url": "https://cadryskitchen.com/roasted-cauliflower-steaks/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
