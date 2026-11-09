@@ -1,0 +1,94 @@
+{
+ "dish_name": "Ven Pongal",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Split yellow moong dal",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "1/4 cup + 1 tsp"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 inch"
+  },
+  {
+   "item": "Fresh curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida (gluten-free)",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Melt 1 tsp of the ghee in a 3-quart pot over medium-low heat. Add the moong dal and stir for 5 minutes, until it smells toasty and turns pale gold. Don't let it brown.",
+  "Transfer the dal to a bowl, add the rice, and rinse both in cold water, changing the water until it runs clear. Drain well.",
+  "Return the rice and dal to the pot. Add 5 cups water and the salt and bring to a boil over high heat. Turn the heat to low and set the lid on slightly open.",
+  "Cook for 25 minutes, stirring from the bottom every 5 minutes, until the rice and dal are very soft and falling apart. If it gets thick before that, stir in 1/2 cup hot water.",
+  "Meanwhile, peel and finely chop the ginger. Crush the peppercorns coarsely with a mortar and pestle or under the bottom of a pan.",
+  "Melt the remaining 1/4 cup ghee in a small skillet over medium heat. Add the cumin and the crushed pepper. After about 20 seconds they will sizzle and smell toasty.",
+  "Turn the heat to low and add the ginger. Cook for 30 seconds, then add the curry leaves and cook until they are crisp, about 30 seconds. Stand back a little. They will spatter.",
+  "Add the asafoetida and take the skillet off the heat.",
+  "Pour the ghee mixture into the pongal and stir well. Cover and leave it for 2 minutes. The pongal should be soft and loose. Stir in a splash of hot water if it is stiff.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot with coconut chutney or sambar."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 36,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (5 from 485) is the lead for the proportions: equal rice and moong dal, about 7 parts water, a pepper, cumin, ginger and curry leaf tempering in ghee. It cooks in a pressure cooker, so the pot method here follows Swasthi's Recipes (4.99 from 296): dry-roast the dal, simmer until mushy, loosen with hot water. The lead uses 1/2 cup ghee for 3 servings, far more than Swasthi's 2 to 3 tablespoons, so this uses 1/4 cup for 4. Cashews (in both sources) and green chilies are left out to keep it nut-free and mild.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Ven Pongal (Khara Pongal / Ghee Pongal)",
+   "url": "https://hebbarskitchen.com/ven-pongal-recipe-khara-pongal/",
+   "rating": 5.0,
+   "rating_count": 485,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Ven Pongal Recipe (Khara Pongal)",
+   "url": "https://www.indianhealthyrecipes.com/pongal-recipe-venn-pongal/",
+   "rating": 4.99,
+   "rating_count": 296,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

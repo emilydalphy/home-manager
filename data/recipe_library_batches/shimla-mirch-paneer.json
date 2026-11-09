@@ -1,0 +1,142 @@
+{
+ "dish_name": "Shimla Mirch Paneer",
+ "cuisine": "Indian",
+ "main_protein": "paneer",
+ "ingredients": [
+  {
+   "item": "Paneer",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Tomato puree",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp + 2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi (dried fenugreek leaves)",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a bowl of cold water, changing the water until it runs clear, then drain it. Put the rice in a medium pot with 2 1/4 cups water and 1/2 tsp salt and bring it to a boil over high heat. Cover, turn the heat to low, and cook for 15 minutes. Take the pot off the heat and leave the lid on until the curry is ready.",
+  "Cut the paneer into 1-inch cubes, keeping one walnut-sized piece whole to crumble later. Transfer the cubes to a bowl and add the kasuri methi crushed between your palms, 1/4 tsp of the chili powder, 1/4 tsp of the turmeric, 1/2 tsp salt and 2 tsp of the oil. Toss gently and leave it for 10 minutes while you chop.",
+  "Cut the bell pepper into 1-inch pieces and chop the onion finely. Grate 1 tbsp ginger, mince the garlic, and chop 2 tbsp of the cilantro.",
+  "Heat a large nonstick or cast-iron skillet over medium-high heat for 1 minute. Add the marinated paneer in a single layer and cook for 2 minutes per side, until golden in spots. Transfer it to a plate.",
+  "Turn the heat to medium and add 3 tbsp oil to the same skillet. Add the cumin seeds. After about 20 seconds they will sizzle and smell toasty.",
+  "Add the onion and cook for 5 to 6 minutes, stirring often, until it is golden brown. Don't rush the onion. That's where the flavor starts.",
+  "Add the ginger and garlic and stir for 30 seconds. Turn the heat to low and stir in the remaining 1/2 tsp turmeric, 1/2 tsp chili powder, the coriander and the ground cumin. Cook for 30 seconds, until fragrant.",
+  "Add the tomato puree and 1 tsp salt. Turn the heat to medium and cook for 5 minutes, stirring now and then, until it thickens and oil shows at the edges.",
+  "Stir in the bell pepper, cover, and cook for 4 minutes, until it softens but still has some bite.",
+  "Turn the heat to low and whisk the yogurt until smooth. Stir it in a spoonful at a time and cook for 1 minute. Pour in 3/4 cup water.",
+  "Add the browned paneer and crumble in the saved piece. Cover and simmer on low for 4 minutes.",
+  "Take the pan off the heat and stir in the garam masala and the chopped cilantro. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 28,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (4.95 from 291) is the lead: marinated paneer browned first, then an onion and tomato masala with a little yogurt, capsicum cooked until just soft, and crumbled paneer to thicken the gravy. The lead marinates for 30 minutes; here it is 10, while you chop, to keep this inside 45 minutes. The other source (Fittr, 4.53, no count shown) is a lighter dry version with ghee and no yogurt, which confirms the method but not the gravy. Roti is swapped for rice to keep it gluten-free, and the heat is held to a small amount of Kashmiri chili. This sits close to Paneer Jalfrezi in the library but is a different dish: a thicker yogurt-tomato gravy built around green capsicum, with no tangy jalfrezi sauce.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Shimla Mirch Paneer (Paneer Capsicum Masala Sabji)",
+   "url": "https://hebbarskitchen.com/shimla-mirch-paneer-recipe/",
+   "rating": 4.95,
+   "rating_count": 291,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Fittr",
+   "title": "Shimla Mirch Paneer",
+   "url": "https://www.fittr.com/recipe/shimla-mirch-paneer-1607409/",
+   "rating": 4.53,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
