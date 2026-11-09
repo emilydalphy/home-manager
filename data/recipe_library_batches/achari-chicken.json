@@ -1,0 +1,154 @@
+{
+ "dish_name": "Achari Chicken",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Nigella seeds (kalonji)",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground fennel",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground mustard",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground fenugreek",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Amchur (dried mango powder)",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of the basmati rice in a fine strainer under cold water until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt. Bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, cut the chicken into 1 inch pieces. In a small bowl, mix the coriander, cumin, fennel, mustard, fenugreek, chili powder and turmeric. This is your achari masala.",
+  "Toss the chicken with 1 tbsp of the masala, 1/2 tsp of the amchur and 1/2 tsp of the salt. Set it aside.",
+  "Finely chop the onion. Grate the ginger and mince the garlic. Grate the tomatoes on the large holes of a box grater, down to the skin, and throw the skins away. Chop 1 tbsp of the cilantro. Slice the green chili thin and set it in a small bowl for the table.",
+  "Heat the oil in a large deep skillet over medium heat. Add the nigella seeds. After about 20 seconds they will sizzle and smell toasty.",
+  "Add the onion and 1/4 tsp of the salt and cook for 7 minutes, stirring now and then, until golden brown.",
+  "Add the ginger and garlic and stir for 1 minute, until fragrant.",
+  "Turn the heat to low. Add the rest of the masala and stir for 1 minute.",
+  "Add the grated tomato and the remaining 1/2 tsp salt. Turn the heat to medium and cook for 6 minutes, stirring often, until it's thick and the oil shows at the edges.",
+  "Add the chicken and turn the heat to medium high. Stir for 4 minutes, until the chicken is no longer pink on the outside.",
+  "Add 1/2 cup hot water and scrape up anything stuck to the bottom. Cover, turn the heat to medium low and cook for 10 minutes. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the biggest piece. It's done when there's no pink left and the juices run clear.",
+  "Take off the lid and simmer for 2 minutes, until the sauce clings to the chicken.",
+  "Take the skillet off the heat. Stir in the remaining 1/2 tsp amchur and the chopped cilantro. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the sliced green chili on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 32,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes is the lead: a ground achari masala of coriander, cumin, fennel, mustard and fenugreek, nigella seeds in oil, onions browned, tomato puree cooked until the oil separates, and amchur at the start and end. Her version adds yogurt after the tomato; it's left out here to keep the dish dairy-free, and the tang comes from the amchur, with the tomato cooked until the oil shows as she does for the yogurt. Tea for Turmeric uses the same masala and yogurt; Two Cloves in a Pot has a 30 minute version with store-bought masala. Ground spices replace the lead's toasted whole seeds, the optional stuffed chilies and mango pickle are left out, and the green chili is sliced at the table. The honest time is about 47 minutes, over the 30 minute target.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Achari Chicken",
+   "url": "https://www.indianhealthyrecipes.com/achari-chicken/",
+   "rating": 4.99,
+   "rating_count": 82,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tea for Turmeric",
+   "title": "Easy Achari Chicken",
+   "url": "https://www.teaforturmeric.com/achari-chicken/",
+   "rating": 4.98,
+   "rating_count": 35,
+   "read": true
+  },
+  {
+   "name": "Two Cloves In A Pot",
+   "title": "30-Minute Stovetop Achari Chicken",
+   "url": "https://twoclovesinapot.com/30-minute-stovetop-achari-chicken/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

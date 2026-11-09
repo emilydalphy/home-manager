@@ -1,0 +1,137 @@
+{
+ "dish_name": "Palak Rice",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Fresh spinach",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (2 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Potato",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen sweet corn",
+   "qty": "1/2 cup",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1/2 cup",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse 2 cups of the basmati rice in a bowl with cold water, pouring off the cloudy water, until it runs mostly clear. Cover the rice with fresh water and let it soak for 20 minutes.",
+  "Meanwhile, bring a medium saucepan of water to a boil. Wash the spinach well, add it to the boiling water and cook for 2 minutes. Transfer it to a bowl of ice water, then squeeze out as much water as you can.",
+  "Peel the garlic and ginger. Blend the spinach with the garlic and ginger until it's a smooth paste. If the blender sticks, add 1 tbsp water.",
+  "Thinly slice the onion. Cut the carrot, potato and bell pepper into 1/2 inch dice. Slice the green chilies thin and set them in a small bowl for the table.",
+  "Heat the oil in a large heavy pot over medium heat. Add the cumin seeds. After about 20 seconds they will sizzle and smell toasty.",
+  "Add the onion and cook for 3 minutes, stirring now and then, until soft.",
+  "Add the carrot, potato, bell pepper, corn and peas. Stir for 5 minutes, until the vegetables are just starting to soften.",
+  "Add the spinach paste and cook for 3 minutes, stirring, until the raw smell is gone.",
+  "Add 4 cups water, the salt and the garam masala. Bring it to a rolling boil over high heat.",
+  "Drain the rice, add it to the pot and stir gently once. Squeeze in the juice of the lemon. Turn the heat to its lowest setting, cover and cook for 15 minutes, until the rice is tender and the water is absorbed. If the rice is still firm, sprinkle over a few tbsp hot water, cover and cook for 3 minutes.",
+  "Take the pot off the heat and leave the lid on for 5 minutes. Fluff the rice gently with a fork. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the sliced green chilies on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 34,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen is the lead (5 from 187): spinach blanched, chilled and blended with garlic and ginger, vegetables stir-fried in the fat, the paste cooked in, then water, soaked rice and lemon in the same pot. It uses oil instead of ghee to keep it vegan, doubles the lead for four, and leaves the chilies out of the paste and on the side to keep it mild. Swasthi's Recipes (4.99 from 87) cooks the rice separately and stirs it into a spinach masala, which takes about 25 minutes at two servings, and is the quicker version if time matters more than the one pot. The honest time here is about 49 minutes, well over 30.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Palak Pulao Recipe",
+   "url": "https://hebbarskitchen.com/palak-pulao-recipe-spinach-pulao-recipe-spinach-rice-recipe/",
+   "rating": 5.0,
+   "rating_count": 187,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Palak Rice (Spinach Rice)",
+   "url": "https://www.indianhealthyrecipes.com/palak-rice-palak-pulao-recipe/",
+   "rating": 4.99,
+   "rating_count": 87,
+   "read": true
+  },
+  {
+   "name": "Indian Veggie Delight",
+   "title": "Spinach Rice (Palak Rice), Instant Pot",
+   "url": "https://www.indianveggiedelight.com/instant-pot-spinach-rice/",
+   "rating": 4.84,
+   "rating_count": 12,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
