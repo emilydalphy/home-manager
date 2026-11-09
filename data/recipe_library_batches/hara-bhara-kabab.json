@@ -1,0 +1,117 @@
+{
+ "dish_name": "Hara Bhara Kabab",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "5 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "3/4 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chickpea flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Poha (thick rice flakes)",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chutney",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1-inch chunks. Put them in a pot, cover with cold water, bring to a boil, then simmer for about 12 minutes, until a fork slides in easily. Drain and leave them in the pot to steam dry.",
+  "Meanwhile, rinse the spinach and drain it well. Seed and finely chop the chili, mince the ginger, and roughly chop the cilantro, leaves and tender stems. That should be about 1/2 cup.",
+  "Heat a dry skillet over medium-low. Add the chickpea flour and stir for about 2 minutes, until it smells nutty. Transfer it to a plate.",
+  "Pulse the poha in a blender for about 20 seconds, until it's a fine powder. Add it to the plate with the chickpea flour.",
+  "Heat 1 tsp of the oil in the large skillet over medium. Add the ginger and chili and stir for 30 seconds.",
+  "Add the peas and cook for 4 to 5 minutes, stirring now and then, until they're soft.",
+  "Add the spinach and stir for about 2 minutes, until it wilts. Spread everything on a plate and let it cool for 10 minutes.",
+  "Mash the potatoes in a large bowl until smooth with no lumps.",
+  "Blend the cooled peas and spinach with the cilantro until you have a smooth green paste, without adding water. Scrape down the sides as you go.",
+  "Add the paste, the chickpea flour and poha, the salt, garam masala and chaat masala to the potatoes. Mix to a firm dough that doesn't stick to your hands. If it feels sticky, let it sit for 5 minutes and mix again.",
+  "Taste a little of the mixture. If it's flat, add a pinch more salt.",
+  "Divide the dough into 10 portions and flatten each into a patty about 1/2 inch thick.",
+  "Heat 3/4 tbsp of the remaining oil in the large skillet over medium. Add 5 patties and cook for about 3 minutes per side, until golden and crisp. Flip each one once and gently. Transfer to a plate.",
+  "Add the last 3/4 tbsp oil and cook the other 5 patties the same way.",
+  "Serve with the green chutney."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Indian Healthy Recipes (the lead) boils the potatoes, wilts spinach with peas, grinds that into a paste, and folds it into the mashed potato with roasted gram flour, breadcrumbs and a few spices before pan frying. Hebbar's Kitchen adds beans, capsicum and paneer, uses a cashew in each tikki and deep fries. This version follows the lead's pan fry and swaps the breadcrumbs for powdered poha so it stays gluten-free.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Hara Bhara Kabab Recipe (Veg Kabab)",
+   "url": "https://www.indianhealthyrecipes.com/hara-bhara-kabab-recipe/",
+   "rating": 4.98,
+   "rating_count": 208,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Hara Bhara Kabab Recipe | Green Veg Kabab",
+   "url": "https://hebbarskitchen.com/veg-hara-bhara-kabab-recipe-veg-kabab/",
+   "rating": 5.0,
+   "rating_count": 48,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": false,
+ "origin": "seed"
+}

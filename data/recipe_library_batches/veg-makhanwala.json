@@ -1,0 +1,156 @@
+{
+ "dish_name": "Veg Makhanwala",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Cauliflower",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "1/2 cup florets"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1/4 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 pepper"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Beefsteak tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups basmati rice until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and 1/4 tsp of the salt, bring to a boil, then cover and cook on the lowest heat for 15 minutes. Leave it covered off the heat until you serve.",
+  "Meanwhile, cut the carrot into 1-inch sticks, cut the green beans into 1/2-inch pieces and cut the cauliflower into small florets. You need about 1/2 cup of florets. Cube half the pepper. Roughly chop the garlic, ginger and tomatoes.",
+  "Heat the oil in a large deep skillet over medium. Add the garlic and ginger and stir for about 30 seconds.",
+  "Add the tomatoes and cook for 8 to 9 minutes, stirring now and then, until they're very soft and most of the liquid is gone.",
+  "Stir in the cashews and cook for 1 minute. Transfer everything to a blender, let it cool for 5 minutes, then blend until smooth without adding water.",
+  "Wipe out the pan and heat 1 tsp of the butter over medium-high. Add the carrot, green beans, cauliflower and 1/2 tsp of the salt and cook for about 4 minutes, stirring now and then.",
+  "Add the pepper, cover, and cook for 2 minutes. The vegetables should still be slightly firm. Transfer them to a bowl.",
+  "Turn the heat to medium and add the other 2 tsp butter to the same pan. Add the bay leaf and cumin seeds and stir for about 20 seconds, until they sizzle and smell toasty.",
+  "Add the tomato paste from the blender and cook for about 5 minutes, stirring often, until it thickens and oil shows at the edges.",
+  "Turn the heat to low and stir in the turmeric, chili powder, sugar and the remaining 1/2 tsp salt. Stir for 1 minute.",
+  "Add 1 1/2 cups water and bring it to a boil. Stir in the peas and the vegetables, cover, and simmer on low for 10 minutes.",
+  "Take the pan off the heat. Stir in the cream and the garam masala, crush the kasuri methi between your palms over the pan, and stir in 1 tbsp chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the basmati rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only Hebbar's Kitchen could be read here (Veg Recipes of India blocked the reader), so there is no side-by-side. It fries the vegetables briefly and sets them aside, cooks tomato, ginger, garlic and cashews into a blended paste, thickens the paste in butter with bay leaf and cumin, then simmers the vegetables in it and finishes with cream, garam masala and kasuri methi. Served with rice instead of naan or roti to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "veg makhanwala recipe | vegetable makhanwala | veg makhani recipe",
+   "url": "https://hebbarskitchen.com/veg-makhanwala-recipe-veg-makhani-recipe/",
+   "rating": 4.99,
+   "rating_count": 93,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": false,
+ "origin": "seed"
+}

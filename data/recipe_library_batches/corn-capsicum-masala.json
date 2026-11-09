@@ -1,0 +1,148 @@
+{
+ "dish_name": "Corn Capsicum Masala",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Frozen sweet corn",
+   "qty": "3/4 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1/2 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Paneer",
+   "qty": "4 oz",
+   "category": "dairy",
+   "cook_qty": "2 tbsp grated"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups basmati rice until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and 1/4 tsp of the salt, bring to a boil, then cover and cook on the lowest heat for 15 minutes. Leave it covered off the heat until you serve.",
+  "Meanwhile, finely chop the onion, mince the garlic and ginger, and cut the pepper into 3/4-inch cubes. Grate the paneer on the small holes of a box grater. That should be about 2 tbsp.",
+  "Blend the tomatoes until smooth. If you don't have a blender, grate them on the large holes of a box grater and throw away the skins. That should be about 1 1/2 cups.",
+  "Heat 1 tbsp of the butter in a large deep skillet over medium-high. Add the 3/4 cup corn and the pepper and cook for about 3 minutes, stirring now and then, until the pepper is a little softer and the corn has a few brown spots. Transfer to a bowl.",
+  "Turn the heat to medium and add the oil and the other 1 tbsp butter to the same pan. Add the bay leaf, cinnamon, cardamom pods and cumin seeds. After about 20 seconds they'll sizzle and smell toasty. That's your cue for the onion.",
+  "Add the onion and cook for 6 to 7 minutes, stirring now and then, until it's golden brown. Don't rush the onion. That's where the flavor starts.",
+  "Stir in the garlic and ginger and cook for about 1 minute, until they smell fragrant.",
+  "Turn the heat to low and stir in the turmeric, chili powder, coriander, ground cumin and 1 tsp of the salt. Stir for about 30 seconds.",
+  "Add the tomatoes and cook for 5 to 6 minutes, stirring often, until the sauce thickens and oil shows at the edges.",
+  "Stir in 1 cup water and bring it to a gentle simmer.",
+  "Return the corn and pepper to the pan, cover, and simmer on low for 10 minutes. The pepper should still have a little bite.",
+  "Take the pan off the heat. Stir in the paneer and the garam masala, then crush the kasuri methi between your palms over the pan and stir it in.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the basmati rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only Hebbar's Kitchen could be read here (Spice Up the Curry blocked the reader), so there is no side-by-side. It builds the gravy from whole spices, golden onion, ground spices and blended tomato, then simmers sauteed corn and capsicum in it and finishes with grated paneer, garam masala and kasuri methi. Hebbar's adds a cashew paste to the gravy; it is left out here to keep the dish nut-free, so the gravy is thinner and relies on the paneer and a third tomato. Served with rice instead of naan or roti to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "corn capsicum masala recipe | corn capsicum sabzi | corn capsicum gravy",
+   "url": "https://hebbarskitchen.com/corn-capsicum-masala-recipe/",
+   "rating": 4.99,
+   "rating_count": 252,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": false,
+ "origin": "seed"
+}

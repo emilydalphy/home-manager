@@ -1,0 +1,111 @@
+{
+ "dish_name": "Chicken Cafreal",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead: roughly chop 1 of the onions. Put it in a blender with the cilantro (leaves and stems), garlic, ginger, 1 of the limes juiced (about 2 tbsp), the seeded green chilies, the coriander, cumin, garam masala, black pepper and 1 tsp of the salt. Blend to a smooth green paste, adding a splash of water only if the blender stalls.",
+  "At least 1 hour ahead: pat the chicken dry and cut it into 1-inch pieces. Mix it with the green paste in a bowl, cover, and refrigerate for at least 1 hour. Overnight is fine.",
+  "Rinse the 1 1/2 cups basmati rice until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and the remaining 1/4 tsp salt, bring to a boil, then cover and cook on the lowest heat for 15 minutes. Leave it covered off the heat until you serve.",
+  "Meanwhile, dice the other onion and cut the second lime into wedges.",
+  "Heat the oil in a large deep skillet over medium. Add the diced onion and cook for about 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the chicken in a single layer, scraping in all the paste left in the bowl. Cook for about 5 minutes, turning the pieces now and then, until the outside is no longer pink.",
+  "Add 3/4 cup water, turn the heat to low, cover, and cook for 12 to 15 minutes. You're cooking it to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a piece: it's done when there's no pink left and the juices run clear.",
+  "Uncover and simmer for 2 to 3 minutes if the sauce is thin, until it clings to the chicken.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Serve with the basmati rice and the lime wedges."
+ ],
+ "advance_prep_notes": "marinate at least 1 hour ahead, or overnight",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Only one version could be read: Masala Herb's, which has just 3 ratings, and none of the trusted cooks for Indian cooking has a cafreal page, so it leads as a fallback. It blends onion, ginger, garlic, green chili, cilantro, coriander, cumin, garam masala, lime and pepper into a green paste, marinates the chicken for an hour, then cooks it with sauteed onion and a little water. This version doubles it for 4, uses boneless thighs cut small, halves the green chili and keeps the pan covered for a short gravy.",
+ "sources": [
+  {
+   "name": "Masala Herb",
+   "title": "Chicken Cafreal",
+   "url": "https://www.masalaherb.com/chicken-cafreal",
+   "rating": 4.67,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}
