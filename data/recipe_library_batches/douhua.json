@@ -1,0 +1,66 @@
+{
+ "dish_name": "Douhua",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Silken tofu",
+   "qty": "2 packages (about 12 oz each)",
+   "category": "dairy"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "a 1-inch piece"
+  }
+ ],
+ "instructions": [
+  "Peel the ginger and cut it into 6 thin slices. Put the slices in a small saucepan with the 1/2 cup brown sugar and 3/4 cup water.",
+  "Set the pan over medium heat and stir until the sugar dissolves. Turn the heat down so it simmers gently and cook for 5 minutes, until it's a little thicker. Take it off the heat and leave the ginger in it.",
+  "Meanwhile, fill a medium pot about halfway with water and bring it to a simmer. Slide the tofu out of its packages into the water and leave it for 3 minutes, until it's warm. Turn off the heat.",
+  "Lift the tofu out with a wide spoon in thin scoops, leaving the water behind. Divide it between 4 bowls.",
+  "Pour the ginger syrup over the tofu, leaving the ginger slices in the pan. Serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No douhua page had ratings to rank: the readable ones (Mori-Nu, Cooking With a Wallflower, UCLA Health, Food Network Kitchen) show none, so this leads with Mori-Nu's, which names the dish. Mori-Nu and the Wallflower both pour a brown sugar and ginger syrup over silken tofu, and the Wallflower warms the tofu in simmering water first, which this version does. Food Network's sets fresh soy milk with gypsum in a steamer and takes an hour, and Delightful Plate sets it with gelatin, which isn't vegan, so neither is the base. Amounts are doubled from the Mori-Nu page to serve 4.",
+ "sources": [
+  {
+   "name": "Mori-Nu",
+   "title": "Tofu Pudding (Douhua / Douha / Tofu Fa)",
+   "url": "https://www.morinu.com/desserts-baked/tofu-pudding",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking With a Wallflower",
+   "title": "Silken Tofu Pudding with Ginger Syrup",
+   "url": "https://cookingwithawallflower.com/2020/05/27/silken-tofu-pudding-with-ginger-syrup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Food Network Kitchen",
+   "title": "Douhua",
+   "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/douhua-12501458",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

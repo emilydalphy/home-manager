@@ -1,0 +1,89 @@
+{
+ "dish_name": "Mantou",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Parchment paper",
+   "qty": "1 roll",
+   "category": "other",
+   "cook_qty": "8 squares"
+  }
+ ],
+ "instructions": [
+  "Up to a month ahead, make the dough: stir the 1 1/2 tsp yeast and the 1 tbsp sugar into 3/4 cup warm water, about 105°F. It should feel warm to the touch but not hot. Leave it for 5 minutes, until it's foamy on top.",
+  "Put the 2 1/2 cups flour in a large bowl and pour in the yeast water. Stir with chopsticks or a fork until it's shaggy, then bring it together into a ball with your hands.",
+  "Turn it out and knead for about 8 minutes, until the dough is smooth. If it's too dry to come together, wet your hands and keep kneading.",
+  "Put the dough in a clean bowl, cover it with a damp towel and leave it somewhere warm for about 1 hour, until it has doubled.",
+  "Cut 8 squares of parchment, about 3 inches across. Press the dough down to push out the air and knead it for 1 minute.",
+  "Cut the dough into 8 equal pieces and roll each into a smooth ball. Set each ball on a parchment square.",
+  "Cover them loosely with the towel and leave them for about 30 minutes, until they look puffy.",
+  "Bring water to a boil in a pot under a steamer. Set the dough balls in the steamer on their parchment, about 2 inches apart. Cover and steam on medium high for 15 minutes. You may need two batches.",
+  "Turn off the heat and leave the lid on for 5 minutes before you open it. Cool them completely on a rack.",
+  "Keep them in a sealed container in the fridge for up to 5 days. To freeze, set them in a single layer on a tray until hard, then pack them into a freezer bag. They keep for up to 1 month.",
+  "In the morning, steam 2 per person, still frozen, on their parchment for about 10 minutes, until they're hot all the way through. From the fridge it takes about 5 minutes. Serve warm."
+ ],
+ "advance_prep_notes": "Make and steam a batch up to a month ahead (about 2 hours, mostly rising time) and freeze them. In the morning they steam in about 10 minutes.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "No plain mantou page had 20 ratings: Mary's Test Kitchen has 5 from 1 rating, Cooking in Chinglish 4.75 from 4. This follows Mary's Test Kitchen because it is the plain version, just flour, water, sugar and yeast, so it stays vegan and dairy-free. Cooking in Chinglish and CiCi Li use milk and oil, and add baking powder, which this version leaves out. All of them steam for 15 to 18 minutes and freeze the buns after steaming. Reheating from frozen is 8 to 10 minutes of steaming in the sources, and the flour is scaled up from the lead's 1 cup to make 8 buns for a family.",
+ "sources": [
+  {
+   "name": "Mary's Test Kitchen",
+   "title": "Chinese Steamed Buns (Mantou)",
+   "url": "https://www.marystestkitchen.com/make-chinese-steamed-buns-mantou/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking in Chinglish",
+   "title": "The Ultimate Guide to Making Perfect Mantou",
+   "url": "https://cookinginchinglish.com/mantou-chinese-steamed-buns/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "CiCi Li",
+   "title": "Chinese Steamed Buns (Mantou)",
+   "url": "https://cicili.tv/chinese-steamed-buns/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

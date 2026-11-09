@@ -1,0 +1,81 @@
+{
+ "dish_name": "Hong Kong French Toast",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Milk bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 thick slices"
+  },
+  {
+   "item": "Strawberry jam",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sweetened condensed milk",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Lay out 4 slices of bread. Spread 2 tbsp of the jam on each, a little thicker in the middle than at the edges. Top with the other 4 slices and press the edges down.",
+  "Whisk the 4 eggs and the 1/3 cup milk in a shallow dish that's a little wider than a sandwich.",
+  "Heat a large skillet over medium heat for 1 minute, then add 2 tbsp of the oil.",
+  "Dip a sandwich in the egg for about 15 seconds on each side, until the egg soaks in. Don't leave it any longer or it will fall apart. Lay it straight into the pan and do the same with a second sandwich.",
+  "Cook for 2 to 3 minutes, until the underside is deep golden. Flip them and cook the other side for 2 to 3 minutes. Hold each one on its edges with tongs for 20 seconds to brown them. Transfer them to a plate.",
+  "Wipe the pan, add the last 2 tbsp oil and cook the other 2 sandwiches the same way.",
+  "Cut each sandwich in half. Put 1/2 tbsp butter on top of each sandwich and drizzle 1 tbsp of the condensed milk over it. Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the readable Hong Kong French toast pages had 20 ratings: ET Food Voyage had 5 from 11, Takes Two Eggs 5 from 3, so this leads with the 11. All three dip a jam or spread filled sandwich of thick bread in beaten egg, pan fry it until golden and finish with butter and sweetened condensed milk. Most versions fill it with peanut butter; this one uses the lead's strawberry jam so it stays nut-free. The lead fries in deep oil, while Takes Two Eggs uses butter over medium low heat with a lid on the first side; this one shallow fries on medium heat.",
+ "sources": [
+  {
+   "name": "ET Food Voyage",
+   "title": "Hong Kong Style French Toast",
+   "url": "https://www.etfoodvoyage.com/hong-kong-style-french-toast-recipe/",
+   "rating": 5,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Hong Kong French Toast",
+   "url": "https://takestwoeggs.com/hong-kong-french-toast/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}
