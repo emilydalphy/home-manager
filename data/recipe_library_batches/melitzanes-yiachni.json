@@ -1,0 +1,125 @@
+{
+ "dish_name": "Melitzanes Yiachni",
+ "cuisine": "Greek",
+ "main_protein": "vegan",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Eggplants",
+   "qty": "2 large (about 2 lbs)",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted red peppers",
+   "qty": "1 jar (12 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cayenne pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Put it in a small pot with 2 1/4 cups water and 1/2 tsp of the salt. Bring it to a boil, then turn the heat to low, cover, and cook for 15 minutes. Leave it covered, off the heat, until the stew is done.",
+  "Trim the eggplants and cut them into 1-inch pieces. Cut the tomatoes in half and grate them on the large holes of a box grater into a bowl, then throw away the skins. That should be about 3 cups.",
+  "Heat 3 tbsp of the olive oil in a large wide pot over medium-high heat. Add half the eggplant and 1/2 tsp of the salt. Cook for 5 minutes, turning now and then, until deep golden on most sides. Transfer it to a plate and brown the rest the same way with 3 tbsp of the oil and 1/2 tsp of the salt. The eggplant soaks up oil fast, so add a splash more if the pot looks dry.",
+  "Turn the heat to medium. Chop the onion and cut the garlic into chunky pieces. Add the remaining 2 tbsp oil to the pot, then the onion, and cook for 3 minutes, until soft. Add the garlic and cook for 1 minute.",
+  "Add the cumin, allspice and paprika and stir for 20 seconds, until you can smell them. Add the tomato paste, the sugar and the grated tomato. Cook for 4 minutes, stirring now and then, until it thickens.",
+  "Return the eggplant to the pot. Add about 1 cup hot water, just enough to come three-quarters of the way up the eggplant, and stir in 1/2 tsp of the salt and the black pepper. Cover most of the way and simmer over medium-low heat for 20 minutes, until the eggplant is very soft and the sauce is thick.",
+  "Meanwhile, drain and dice the roasted red peppers and chop 2 tbsp of the parsley. In the last 5 minutes of simmering, stir in the peppers and the parsley.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the stew over the rice, with a pinch of cayenne at the table for anyone who wants heat."
+ ],
+ "method_notes": "Only Real Greek Recipes (4.25 from 12) has this dish by name, so the lead is a fallback; RecipeTin Eats has no version. It browns the eggplant first, then simmers it in grated tomato with cumin, allspice and paprika, and finishes with roasted red pepper and parsley, which is followed here. To Vima's stewed eggplant (potatoes, bay leaf) confirms the browned-then-simmered method but adds potatoes, which are left out. The lead is written for 2, so every amount is doubled, and allspice berries become ground allspice.",
+ "sources": [
+  {
+   "name": "Real Greek Recipes",
+   "title": "Stewed Eggplant In Tomato Sauce",
+   "url": "https://realgreekrecipes.com/stewed-eggplant-in-tomato-sauce/",
+   "rating": 4.25,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "To Vima",
+   "title": "Stewed Potatoes with Eggplant",
+   "url": "https://www.tovima.com/food/stewed-potatoes-with-eggplant/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

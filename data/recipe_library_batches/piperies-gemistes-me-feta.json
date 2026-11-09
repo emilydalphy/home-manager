@@ -1,0 +1,88 @@
+{
+ "dish_name": "Piperies Gemistes me Feta",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Roasted red peppers",
+   "qty": "2 jars (12 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Drain the roasted peppers well and lay them out on paper towels. Choose 8 whole pieces that are big enough to hold a filling.",
+  "Off the heat, in a bowl, press the feta with a fork until it's crumbled and mushy. Mince the garlic. Stir in 2 tbsp of the olive oil, 1 tsp of the oregano and the garlic.",
+  "Open each pepper and spoon in the feta mixture, dividing it evenly. Set the peppers in a baking dish that holds them in one layer.",
+  "Slice the onion very thinly and scatter it over the peppers. Add the black pepper, then drizzle with the remaining 2 tbsp olive oil and sprinkle with the remaining 1 tsp oregano.",
+  "Bake for 15 minutes, until the feta is soft and the onion is starting to brown at the edges.",
+  "Chop 2 tbsp of the parsley and scatter it over the peppers. Taste a bit of the filling. If it's flat, add a pinch more pepper.",
+  "Serve warm with the oil and juices from the dish spooned over, and the red pepper flakes at the table."
+ ],
+ "method_notes": "Lead is Real Greek Recipes (4.71 from 27): jarred roasted red peppers filled with feta pressed with olive oil, oregano and garlic, topped with thin onion and baked about 15 minutes. Dimitra's Dishes fills fresh peppers with feta and Gruyere and roasts them at 475°F for 15 to 30 minutes, so the filling and the time differ, and the Gruyere is left out. The lead makes 4 peppers as a meze, so the amounts are doubled to make a dinner. It is a light dinner and no source names a side.",
+ "sources": [
+  {
+   "name": "Real Greek Recipes",
+   "title": "Greek Oven-Baked Feta Stuffed Peppers",
+   "url": "https://realgreekrecipes.com/feta-stuffed-peppers/",
+   "rating": 4.71,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Roasted Peppers Stuffed with Feta and Gruyere",
+   "url": "https://www.dimitrasdishes.com/roasted-peppers-stuffed-with-feta/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

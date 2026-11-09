@@ -1,0 +1,128 @@
+{
+ "dish_name": "Paneer Tikka",
+ "cuisine": "Indian",
+ "main_protein": "paneer",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Paneer",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Red onions",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried fenugreek leaves",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, and up to 4: in a large bowl, whisk the yogurt until smooth. Mince the garlic and ginger and add them with the oil, coriander, 1 tsp of the chaat masala, paprika, garam masala, the fenugreek leaves crushed between your fingers, and the salt. Juice 1 lemon and add 2 tbsp of the juice. Chop 2 tbsp each of the cilantro and mint and stir them in.",
+  "Cut 1 onion and both bell peppers into 1-inch pieces. Cut the paneer into 1-inch cubes. Add all of it to the bowl and mix until everything is coated. Cover and refrigerate for at least 2 hours.",
+  "Heat the oven to 450°F and line a large rimmed baking sheet with parchment. Give it a full 15 minutes to heat.",
+  "Spread the paneer and vegetables on the sheet in a single layer, with space between the pieces. Spoon any marinade left in the bowl over the top.",
+  "Bake for 10 minutes, until the paneer is golden at the edges.",
+  "Switch the oven to broil and cook for 2 to 3 minutes, until the paneer is lightly charred. Watch it closely. Paneer turns hard and chewy if it goes too long.",
+  "Meanwhile, cut the second onion into thin slices and the second lemon into wedges.",
+  "Transfer the paneer and vegetables to a platter. Sprinkle the remaining 1/2 tsp chaat masala over the top and squeeze over 1 lemon wedge. Taste a piece. If it's flat, add a pinch more salt.",
+  "Serve with the sliced onion, the lemon wedges and the rest of the cilantro and mint."
+ ],
+ "method_notes": "Lead is Cook with Manali (4.95 from 50): a yogurt marinade with coriander, chaat masala, garam masala, fenugreek leaves and mint, and red onion and bell pepper cubes, baked at 450°F then broiled. Dwell by Michelle (5 from 3) does a simpler oven version at 450°F for 8 to 12 minutes with ginger and garlic, which is where the fresh ginger and garlic come from. Both agree on a hot oven, a 2 hour marinade and not overcooking the paneer. Mustard oil is swapped for vegetable oil, and the Kashmiri chili is replaced by paprika to keep the base mild. Skewers are skipped and everything goes on the sheet pan.",
+ "sources": [
+  {
+   "name": "Cook with Manali",
+   "title": "Paneer Tikka",
+   "url": "https://www.cookwithmanali.com/paneer-tikka/",
+   "rating": 4.95,
+   "rating_count": 50,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dwell by Michelle",
+   "title": "Oven Baked Paneer Tikka",
+   "url": "https://dwellbymichelle.com/oven-baked-paneer-tikka/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "marinate at least 2 hours ahead, up to 4",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "default_servings": 4,
+ "origin": "seed"
+}

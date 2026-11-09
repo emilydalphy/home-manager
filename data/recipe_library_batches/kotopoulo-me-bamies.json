@@ -1,0 +1,124 @@
+{
+ "dish_name": "Kotopoulo me Bamies",
+ "cuisine": "Greek",
+ "main_protein": "chicken",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Frozen baby okra",
+   "qty": "1 lb 6 oz",
+   "category": "frozen"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the okra in a colander and rinse it under cool water until the ice is gone. Leave it to drain.",
+  "Cut each chicken thigh in half. Pat the pieces dry and sprinkle 1 tsp of the salt, the allspice, the coriander and the pepper over them.",
+  "Heat the olive oil in a large wide pot over medium-high heat until it shimmers. Add half the chicken in a single layer and brown it for 3 to 4 minutes per side, until deep golden. Transfer it to a plate and brown the rest the same way.",
+  "Turn the heat to medium. Slice the onion and add it to the pot with the remaining 1/2 tsp salt. Cook for 5 minutes, stirring often, until soft. Scrape up the browned bits as you go.",
+  "Mince the garlic and add it. Cook for 1 minute, until you can smell it.",
+  "Pour in the wine and let it bubble for 1 minute. Stir in the tomato paste, then the crushed tomatoes and the pinch of sugar. Bring it to a boil.",
+  "Return the chicken and its juices to the pot. Turn the heat to low, cover, and simmer for 20 minutes. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a piece: the juices should run clear.",
+  "Juice the lemon and add 3 tbsp of the juice. Add the okra and bring it back to a boil, then turn the heat to low, cover, and simmer for 15 minutes, until the okra is tender. Don't stir. Shake the pot gently instead, so the okra stays whole.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve in shallow bowls with the sauce spooned over."
+ ],
+ "method_notes": "No source for this dish has 20 ratings, and RecipeTin Eats has no version, so the lead is The Hungry Bites (5 from 4), a stovetop okra stew built on browned chicken, grated tomato, allspice and white wine. Kalofagas and Kopiaste bake it instead, and Kopiaste adds feta, which is left out here. All agree on onion, tomato, olive oil and okra cooked until the sauce clings. Boneless thighs cut in half replace the lead's 6 whole legs so the chicken is tender in 20 minutes instead of 45, and frozen okra goes in 15 minutes before the end. Sumac is swapped for coriander, which the lead lists as an alternative.",
+ "sources": [
+  {
+   "name": "The Hungry Bites",
+   "title": "Bamya Recipe: Mediterranean Okra Stew with Chicken",
+   "url": "https://www.thehungrybites.com/greek-chicken-stew-with-potatoes-and-okra/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kalofagas",
+   "title": "Kotopoulo me Bamies (Chicken with Okra)",
+   "url": "https://www.kalofagas.ca/2010/09/15/kotopoulo-me-bamies/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Kopiaste",
+   "title": "Kotopoulo me Mpamies (Chicken and Okra Stew with Feta)",
+   "url": "https://www.kopiaste.org/2008/08/kotopoulo-me-mpamies-chicken-and-okra-stew-with-feta/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
