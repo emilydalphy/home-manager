@@ -1,0 +1,95 @@
+{
+ "dish_name": "Arroz a la Cubana",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Long-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Bananas",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1 leaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Mince the garlic. Heat 1 tbsp of the olive oil in a medium saucepan over medium heat. Add the garlic and stir for 30 seconds, until it smells toasty.",
+  "Add the rice, the bay leaf, 1 tsp of the salt and 4 cups of water. Bring it to a boil over high heat, cover, and turn the heat to low. Cook for 15 minutes, until the water is absorbed. Leave the lid on and take it off the heat until you serve.",
+  "Meanwhile, heat 1 tbsp of oil in a small saucepan over medium heat. Add the tomato sauce, sugar, the last 1/4 tsp salt and the pepper. Simmer for 5 minutes, stirring now and then. Turn the heat to its lowest setting to keep it warm.",
+  "Peel the bananas and cut each in half lengthwise. Heat 2 tbsp of oil in a large nonstick skillet over medium heat. Add the bananas cut side down and cook for 2 minutes, until golden brown. Flip them and cook for 1 minute. Transfer them to a plate.",
+  "Add the last 2 tbsp oil to the same skillet and turn the heat to medium-high. Crack in the eggs and cook for 2 to 3 minutes, until the whites are set and the edges are crisp. The yolks stay runny.",
+  "Take the bay leaf out of the rice and fluff it with a fork.",
+  "Taste the tomato sauce. If it's flat, add a pinch more salt.",
+  "Serve the rice with the tomato sauce over it, a fried egg on top, and 2 banana halves on the side for each person."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Spanish versions agree on white rice, a simple tomato sauce, a fried egg and fried banana, with no meat. Spain on a Fork bakes the banana and makes a one-person amount; Fascinating Spain fries the banana in the egg pan and uses 1:2 rice to water, which is followed here for speed. Spain on a Fork's sugar in the sauce is kept, and canned tomato sauce stands in for homemade fried tomato. The Filipino version with ground beef is a different dish and was not used.",
+ "sources": [
+  {
+   "name": "Fascinating Spain",
+   "title": "Arroz a la cubana recipe, a combined dish with Caribbean roots",
+   "url": "https://www.fascinatingspain.com/articulo/spanish-cuisine-recipes/arroz-a-la-cubana-recipe/20210302154559070871.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "Cuban Style Rice – Arroz a la Cubana",
+   "url": "https://spainonafork.com/?p=658",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

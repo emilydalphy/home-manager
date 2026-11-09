@@ -1,0 +1,85 @@
+{
+ "dish_name": "Gambas a la Plancha",
+ "cuisine": "Spanish",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, shell on",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sea salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pat the shrimp dry with paper towels. Transfer them to a bowl and toss with the olive oil and 3/4 tsp of the salt.",
+  "Mince the garlic and chop 2 tbsp of parsley leaves. Cut the lemon into wedges.",
+  "Heat a large cast iron or heavy skillet over high heat for about 3 minutes. It's ready when a drop of water vanishes the moment it lands.",
+  "Add half the shrimp in a single layer. Leave them alone for 2 minutes, until the shells are browned in spots. Stand back a little. They'll spatter.",
+  "Turn them and cook for 2 minutes. They're done when the meat is opaque and pink all the way through, with no gray, glassy spots.",
+  "Scatter half the garlic over the shrimp and cook for 30 seconds. Transfer them to a platter.",
+  "Cook the second half the same way, then add them to the platter.",
+  "Sprinkle the parsley and the last 1/4 tsp salt over the shrimp.",
+  "Taste one. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version cooks shell-on shrimp fast in a very hot dry or lightly oiled pan, salted, and finishes with lemon. Williams-Sonoma is the one followed here: oil and salt first, then garlic and parsley at the very end. Benidorm Seriously dips the shrimp in oil, lemon and salt and sears them in a dry pan, and Spain on a Fork cooks about 5 minutes total. The sources give 4 to 10 minutes of cooking; this one uses two batches of 4 minutes so the pan stays hot.",
+ "sources": [
+  {
+   "name": "Williams-Sonoma",
+   "title": "Gambas a la Plancha",
+   "url": "https://www.williams-sonoma.com/m/recipe/gambas-a-la-plancha.amp.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Benidorm Seriously",
+   "title": "Grilled Shrimp, Gambas a la Plancha",
+   "url": "https://www.benidormseriously.com/grilled-shrimp-gambas-a-la-plancha",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Peel and Eat Shrimp a la Plancha",
+   "url": "https://spainonafork.com/spanish-peel-and-eat-shrimp-a-la-plancha",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

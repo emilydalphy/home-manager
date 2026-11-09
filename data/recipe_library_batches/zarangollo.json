@@ -1,0 +1,80 @@
+{
+ "dish_name": "Zarangollo",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Crack the eggs into a bowl. Add 1/2 tsp of the salt and the pepper. Whisk for about 10 seconds, so you still see streaks of white.",
+  "Slice the onion thinly. Peel the zucchini and cut it into rounds about 1/8 inch thick. Chop 2 tbsp of chives.",
+  "Heat the olive oil in a large nonstick skillet over medium-high heat. Add the onion and stir. After 2 minutes, add the zucchini and the last 1/4 tsp salt.",
+  "Cook for 6 minutes, stirring, until the zucchini looks translucent and lightly golden and the onion is caramelized.",
+  "Take the pan off the heat for 2 minutes. Pour in the eggs and put the pan back on medium-low heat.",
+  "Stir every 30 seconds for 3 to 4 minutes, until the eggs are set in large soft chunks.",
+  "Take the pan off the heat. Taste it. If it's flat, add a pinch more salt.",
+  "Transfer to a serving dish and top with the chives."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on zucchini and onion cooked slowly in olive oil until soft, with the egg stirred in at the end. Spain on a Fork cooks the vegetables 6 to 8 minutes and scrambles the eggs in large soft chunks, which is followed here. Food.com stews the vegetables for 30 minutes with garlic and oregano and makes the eggs optional, so it is a much slower version. Potato is a common addition that purists skip, and it is left out here.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Scrambled Eggs with Zucchini | Zarangollo Murciano Recipe",
+   "url": "https://spainonafork.com/spanish-scrambled-eggs-with-zucchini-zarangollo-murciano-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Zarangollo Murciano (Stewed Zucchini With Onion)",
+   "url": "https://www.food.com/recipe/zarangollo-murciano-stewed-zucchini-with-onion-367503",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

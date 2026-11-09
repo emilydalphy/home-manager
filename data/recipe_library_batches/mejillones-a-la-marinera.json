@@ -1,0 +1,102 @@
+{
+ "dish_name": "Mejillones a la Marinera",
+ "cuisine": "Spanish",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Mussels",
+   "qty": "4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2 leaves",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4 sprigs"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a big bowl or the sink with cold water and scrub the mussels. Pull off any beards. Throw away any that are cracked, or that stay open when you tap them.",
+  "Meanwhile, finely chop the onion, mince the garlic, and chop the leaves from 4 sprigs of parsley.",
+  "Heat the olive oil in a wide pot over medium-high heat. Add the onion, bay leaves and 1/4 tsp of the salt. Cook for 5 minutes, stirring, until the onion is soft and just turning golden.",
+  "Add the garlic and smoked paprika. Stir for 30 seconds, until it smells toasty. Don't let the garlic brown.",
+  "Pour in the wine and the tomatoes with their juice. Bring it to a bubble, lower the heat to medium, and simmer for 8 minutes, stirring now and then. That should be about 2 cups of sauce.",
+  "Turn the heat to high and add the mussels. Cover and cook for 5 minutes, shaking the pot once halfway. They're done when the shells have opened.",
+  "Take the pot off the heat. Throw away any mussels that stayed shut. Stir in the parsley and the pepper.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve in wide bowls with the sauce spooned over, and an empty bowl on the table for the shells."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources cook the mussels in a paprika and tomato sauce built on onion and garlic, and both finish with the mussels steamed open in the pot. The Spanish Chef thickens the sauce with flour and fish stock and spends about 25 minutes on the sauce; Spanish Fiestas uses canned tomatoes, wine and no thickener, which is the one followed here for speed and so the dish stays gluten-free. The cayenne in The Spanish Chef's version is left out so the pot stays mild, and the bread is left off the serving line to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Spanish Fiestas",
+   "title": "Mussels in Tomato Sauce Recipe",
+   "url": "https://www.spanish-fiestas.com/recipes/mussels-in-tomato-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Spanish Chef",
+   "title": "Mejillones a la marinera | Mussels “fishermen” style",
+   "url": "https://thespanishchef.com/recipes/fisherman-mussels",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
