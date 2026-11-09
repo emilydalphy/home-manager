@@ -1,0 +1,128 @@
+{
+ "dish_name": "Carne en su Jugo",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Bacon",
+   "qty": "6 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Flank steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tomatillos",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño peppers",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Pinto beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano peppers",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the flank steak against the grain into strips about 1/4 inch thick and 2 inches long. Toss the strips with 1 tsp black pepper, 1/2 tsp cumin and 1/2 tsp of the salt.",
+  "Remove the husks from the tomatillos and rinse off the sticky film. Quarter them and add them to a blender. Seed and roughly chop the jalapeño and add it too.",
+  "Cut the onion in half through the root. Add a quarter of the onion to the blender with the garlic, half of the cilantro bunch and 1 cup of the broth. Blend until smooth. Dice the rest of the onion and set it aside for serving.",
+  "Chop the remaining cilantro, slice the radishes and cut the limes into wedges. Thinly slice the serrano and put it in a small bowl for the table.",
+  "Cut the bacon into 1-inch pieces. Cook them in a large heavy pot over medium heat for 6 to 8 minutes, stirring now and then, until crisp. Transfer the bacon to a paper-towel-lined plate and pour off all but 1 tbsp of the fat.",
+  "Turn the heat to medium-high. Add the steak in two batches and cook each for 2 minutes without stirring, until it's browned. Transfer the first batch to a plate while the second cooks, then return it all to the pot.",
+  "Pour in the blended tomatillo mixture, the remaining 1 cup of broth and the remaining 1/2 tsp salt. Scrape up the browned bits from the bottom. Bring it to a boil, then turn the heat to low, cover and simmer for 12 minutes, until the beef is tender.",
+  "Drain and rinse the pinto beans. Stir them in and simmer, uncovered, for 5 minutes.",
+  "Off the heat, stir in half of the crumbled bacon.",
+  "Ladle into bowls. Top with the diced onion, cilantro, radishes, the rest of the bacon and a squeeze of lime. Put the sliced serrano on the table for the adults. Serve with the warm corn tortillas.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The two readable versions (Jamil Ghar and Barefeet in the Kitchen) agree on bacon, a blended tomatillo and chile sauce, thin beef and pinto beans, and differ in how long the beef simmers (30 to 60 minutes in one, about 20 in the other). This follows Jamil Ghar's thin strips so it fits in under an hour. Broth replaces bouillon granules so the pot stays gluten-free, and the chile heat is cut to one jalapeño with sliced serrano at the table. Neither source has 20 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Jamil Ghar",
+   "title": "Carne en su Jugo",
+   "url": "https://jamilghar.com/carne-en-su-jugo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Barefeet in the Kitchen",
+   "title": "Carne en su Jugo",
+   "url": "https://barefeetinthekitchen.com/carne-en-su-jugo/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

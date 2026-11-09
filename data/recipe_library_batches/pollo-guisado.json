@@ -1,0 +1,124 @@
+{
+ "dish_name": "Pollo Guisado",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Adobo seasoning",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sazón seasoning",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Sofrito",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "3/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Green olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the chicken thighs into 2-inch pieces and pat them dry. Toss them with the adobo and sazón until coated.",
+  "Dice the onion and the bell pepper, mince the garlic, and cut the potatoes into 3/4-inch pieces.",
+  "Heat the oil in a Dutch oven or large pot over medium-high heat. Add the chicken in two batches and cook each for 4 minutes, turning once, until browned. Transfer each batch to a plate.",
+  "Add the onion and bell pepper to the pot and cook for 4 minutes, stirring, until soft. Add the garlic and sofrito and cook for 30 seconds.",
+  "Add the tomato sauce, broth, potatoes, olives and bay leaves. Scrape up the browned bits from the bottom, then return the chicken and its juices to the pot.",
+  "Bring to a boil, then turn the heat to low, cover and simmer for 20 minutes, until the potatoes are tender and the chicken is cooked through.",
+  "You're cooking the thighs to 175°F in the middle, so if you have a thermometer, check a piece. No thermometer? Cut one open: it's done when there's no pink and the juices run clear.",
+  "Remove the bay leaves. Chop 2 tbsp of parsley and stir it in off the heat.",
+  "Serve in bowls with the red pepper flakes at the table.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum's pollo guisado (5.0 from 139 ratings) is the lead: chicken seasoned with adobo and sazón, browned, then stewed with sofrito, tomato sauce, olives and potatoes. Well Plated's Spanish chicken stew (4.9 from 28) is the same idea with smoked paprika and sherry vinegar. This uses boneless thighs in smaller pieces and diced potatoes so the stew finishes in 20 minutes. Check that the adobo, sazón and sofrito are labeled gluten-free.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Pollo Guisado Recipe (Chicken Stew)",
+   "url": "https://cupofyum.com/recipes/pollo-guisado-recipe-chicken-stew",
+   "rating": 5.0,
+   "rating_count": 139,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Spanish Chicken Stew",
+   "url": "https://www.wellplated.com/spanish-chicken-stew/",
+   "rating": 4.9,
+   "rating_count": 28,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

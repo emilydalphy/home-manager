@@ -1,0 +1,80 @@
+{
+ "dish_name": "Espinacas a la Catalana",
+ "cuisine": "Spanish",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (15 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Raisins",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the raisins in a small bowl of warm water and leave them for 5 minutes. Mince the garlic.",
+  "Toast the pine nuts in a large dry pan over medium heat for 4 to 5 minutes, stirring, until they're golden and smell toasty. Transfer them to a bowl.",
+  "Drain the raisins and shake off the extra water.",
+  "Add the olive oil and garlic to the same pan over medium heat. Cook for 20 to 30 seconds, until you can smell the garlic.",
+  "Add the spinach a big handful at a time, stirring each one until it wilts before adding the next. When all of it is in, cook for 2 minutes.",
+  "Off the heat, stir in the pine nuts, raisins, salt and pepper.",
+  "Transfer to a serving dish. Serve warm or at room temperature.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spain on a Fork and Wine & Spirits agree on spinach wilted in olive oil with garlic, raisins and pine nuts; Wine & Spirits adds garbanzo beans and a splash of sherry vinegar, which others call a different Andalusian dish, so they are left out. This follows Spain on a Fork, soaking the raisins first. It is really a side dish, so it is best planned alongside something else. Spain on a Fork has one rating, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Classic Catalan-Style Spinach",
+   "url": "https://spainonafork.com/classic-catalan-style-spinach-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wine & Spirits Magazine",
+   "title": "Espinacas a la Catalana (Catalan Spinach)",
+   "url": "https://www.wineandspiritsmagazine.com/recipes/espinacas-a-la-catalana-catalan-spinach",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

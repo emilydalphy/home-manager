@@ -1,0 +1,96 @@
+{
+ "dish_name": "Escalivada",
+ "cuisine": "Spanish",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 32,
+ "ingredients": [
+  {
+   "item": "Eggplant",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F (220°C) with a rack in the top third and one in the bottom third. Line two sheet pans with parchment.",
+  "Cut the eggplant into 1/4-inch rounds. Cut the peppers into 1-inch strips, discarding the stems and seeds. Cut the onion into 1/2-inch rings. Cut each tomato into 6 wedges.",
+  "Divide the eggplant, peppers and onion between the pans in a single layer. Drizzle with 3 tbsp of the olive oil, then sprinkle with the thyme, salt and pepper and toss with your hands.",
+  "Roast for 15 minutes. Remove the pans, add the tomato wedges and the garlic cloves, still in their skins, and swap the pans' positions.",
+  "Roast for 15 minutes, until the edges are browned and the vegetables are soft.",
+  "Squeeze the garlic out of the skins into a small bowl. Mash it with the remaining 2 tbsp olive oil and the sherry vinegar.",
+  "Arrange the vegetables on a platter and drizzle with the garlic oil. Serve warm or at room temperature.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Good Cheap Eats roasts sliced vegetables on a sheet pan at 400°F, which is the version that fits a weeknight; Caroline's Cooking roasts them whole for an hour, then peels and dresses them in garlic oil. This keeps the quick sliced roast and borrows the roasted garlic and vinegar oil from the whole-roast version. The zucchini in the Good Cheap Eats version is left out because classic escalivada has none. Neither page has 20 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Good Cheap Eats",
+   "title": "Escalivada",
+   "url": "https://goodcheapeats.com/escalivada/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Caroline's Cooking",
+   "title": "Escalivada (Catalan Roasted Vegetables)",
+   "url": "https://www.carolinescooking.com/escalivada-catalan-roasted-vegetables/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

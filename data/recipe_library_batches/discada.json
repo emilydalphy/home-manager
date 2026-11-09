@@ -1,0 +1,124 @@
+{
+ "dish_name": "Discada",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 28,
+ "ingredients": [
+  {
+   "item": "Bacon",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mexican chorizo",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pork tenderloin",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Beef sirloin",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Anaheim peppers",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Plum tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chipotles in adobo",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 chile"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the pork and the beef into bite-size pieces. Toss them in a bowl with 3/4 tsp salt, 1/4 tsp black pepper and the cumin.",
+  "Cut the bacon into 1/2-inch pieces and remove the casings from the chorizo. Dice the potatoes into 1/2-inch pieces. Chop the onion, seed and dice the Anaheim peppers, mince the garlic, and seed and dice the tomatoes. Seed and mince one chipotle and put it in a small bowl for the table.",
+  "Heat a large heavy pan over medium-high heat. Add the bacon and cook for 4 minutes, until it browns and the fat renders.",
+  "Add the chorizo and cook for 3 minutes, breaking it up with a spoon.",
+  "Add the potatoes with 1/2 tsp salt and 1/4 tsp pepper. Cook for 8 minutes, stirring now and then, until the edges are golden.",
+  "While the potatoes cook, heat a second large skillet over high heat. Add the oil, then half of the pork and beef in a single layer. Cook for 3 minutes, turning once, until browned on the outside. Transfer to a plate and repeat with the rest.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check a larger piece. No thermometer? Cut one open: it should be white or faintly blush, with clear juices.",
+  "Add the onion to the potatoes and cook for 3 minutes. Add the Anaheim peppers and cook for 3 minutes. Add the garlic and cook for 1 minute. Add the tomatoes and cook for 3 minutes, until they start to break down.",
+  "Return all the meat and its juices to the pan and toss for 2 minutes, until everything is hot.",
+  "Warm the tortillas in a dry pan or wrapped in a damp towel in the microwave. Serve the discada with the warm corn tortillas for making tacos, and the minced chipotle at the table for the adults.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Pati Jinich's Chihuahua-style discada is the lead: bacon and chorizo first, then potatoes and vegetables, with the pork and beef browned separately and tossed back in. Mexico in My Kitchen's version is a beer and Clamato braise with ham and hot dogs, which is not gluten-free, so it is credited only as the other style. This is scaled to 4, uses sirloin in place of beef tenderloin, and moves the chipotle to the table. Pati's page has 6 ratings, so this is a fallback lead. Check the chorizo label for gluten.",
+ "sources": [
+  {
+   "name": "Pati Jinich",
+   "title": "Chihuahua-Style Mixed Meat Grill (Discada)",
+   "url": "https://patijinich.com/chihuahua-style-mixed-meat-grill/",
+   "rating": 4.67,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mexico in My Kitchen",
+   "title": "Discada Norteña Recipe",
+   "url": "https://www.mexicoinmykitchen.com/2016/08/discada-nortena-recipe.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

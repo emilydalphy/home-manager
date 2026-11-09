@@ -1,0 +1,107 @@
+{
+ "dish_name": "Puerco con Nopales",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 33,
+ "ingredients": [
+  {
+   "item": "Boneless pork loin",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried guajillo chiles",
+   "qty": "5",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried ancho chile",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Nopales",
+   "qty": "1 jar (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Boil a kettle of water. Remove the stems and seeds from the guajillo and ancho chiles and tear them into pieces. Put them in a heatproof bowl, cover with the boiling water and leave them for 10 minutes.",
+  "Meanwhile, cut the pork into 1-inch pieces and pat them dry. Toss them with 1 tsp salt, the black pepper and 1/2 tsp of the cumin.",
+  "Cut the onion in half. Add a quarter of the onion to a blender with the garlic. Dice the rest of the onion.",
+  "Heat the oil in a large wide pot over medium-high heat. Add the pork in two batches and cook each for 3 minutes, turning once, until browned. Transfer the first batch to a plate while the second cooks, then return all of it to the pot.",
+  "Drain the soaked chiles and add them to the blender with 1 cup of the broth, the remaining 1/2 tsp cumin and 1/2 tsp salt. Blend for 1 minute, until smooth.",
+  "Add the diced onion to the pork and cook for 1 minute. Pour in the chile sauce and the remaining 1 cup of broth. Bring to a simmer, then turn the heat to medium-low and cook for 15 minutes, stirring now and then.",
+  "Drain and rinse the nopales. Stir them in and cook for 5 minutes, until the sauce is thick enough to coat a spoon.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check a piece. No thermometer? Cut one open: it should be white or faintly blush, with clear juices.",
+  "Serve with the warm corn tortillas.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is In Mama Maggie's Kitchen's red chile (guajillo and ancho blended with broth, pork browned first, nopales added at the end), cross-checked against Maricruz Avalos, who uses jarred nopales and a lighter chile sauce. Both simmer pork in the sauce for a long time; this uses boneless pork loin in 1-inch pieces so it is tender in 15 minutes, and jarred nopales so there is no boiling step. Broth is gluten-free. In Mama Maggie's has only 11 ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "In Mama Maggie's Kitchen",
+   "title": "Pork Chile Colorado with Nopales",
+   "url": "https://inmamamaggieskitchen.com/pork-chile-colorado-with-nopales/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Carne de Puerco con Nopales",
+   "url": "https://www.maricruzavalos.com/nopales-recipe-with-pork/",
+   "rating": 4.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

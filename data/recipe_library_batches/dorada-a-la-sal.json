@@ -1,0 +1,67 @@
+{
+ "dish_name": "Dorada a la Sal",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Whole sea bream",
+   "qty": "2 (about 1 1/4 lb each), scaled and gutted",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Coarse sea salt",
+   "qty": "3 lbs",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F (200°C) with a rack in the middle.",
+  "Rinse the sea bream inside and out and pat them very dry. Put 3 or 4 parsley sprigs inside each belly.",
+  "In a large bowl, stir the salt with 1/4 cup of water until it feels like damp sand.",
+  "Spread a 1/2-inch layer of the salt on a large rimmed baking sheet, in two beds the size of the fish.",
+  "Lay the bream on the salt. Cover them completely with the rest of the salt and press it down so there are no gaps.",
+  "Bake for 25 minutes. Let the fish rest in the crust for 5 minutes.",
+  "Crack the crust with the back of a spoon and lift off the salt in pieces. Peel off the skin, lift the fillets off the bone and transfer them to plates. Brush off any salt that clings to the fish.",
+  "Check that the fish is cooked: the flesh should be opaque and flake easily with a fork.",
+  "Drizzle each portion with olive oil. Serve with the rest of the olive oil on the table.",
+  "Taste a bite. If it's flat, add a little more olive oil."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Recipething's version (a whole bream under a layer of salt, 200°C for 20 minutes) is the lead; Spain-Recipes and Cookidoo bake larger fish for an hour or use more salt. This uses two smaller fish for four, a damp salt crust, 25 minutes, and parsley in the belly. Beko's version adds butter, which is left out to stay dairy-free. Neither page shows a rating, so this is a fallback lead. Sea bream is also sold as dorada or gilt-head bream.",
+ "sources": [
+  {
+   "name": "Recipething",
+   "title": "Dorada a la sal",
+   "url": "https://recipething.com/recipes/show/1043-dorada-a-la-sal",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain Recipes",
+   "title": "Dorada a la sal",
+   "url": "https://spain-recipes.com/dorada-a-la-sal.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
