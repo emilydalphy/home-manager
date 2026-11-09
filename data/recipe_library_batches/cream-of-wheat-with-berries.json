@@ -1,0 +1,68 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "dish_name": "Cream of Wheat with Berries",
+ "cuisine": "American",
+ "main_protein": "dairy",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Whole milk",
+   "qty": "4 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Cream of Wheat",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Strawberries",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 pint",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pour the milk into a medium saucepan, add the salt and bring it to a simmer over medium heat, about 4 minutes. You'll see small bubbles at the edges. Keep an eye on it so it doesn't boil over.",
+  "Meanwhile, rinse the berries. Hull and slice the strawberries.",
+  "Turn the heat to low. Pour in the Cream of Wheat in a slow stream while you whisk.",
+  "Switch to a spoon and stir for 2 to 3 minutes, until it's thick and bubbling gently.",
+  "Take the pan off the heat and let it sit for 1 minute. It thickens a little more as it sits.",
+  "Spoon the cereal into 4 bowls. Serve topped with the strawberries and blueberries."
+ ],
+ "method_notes": "Emily Laurae's stovetop method (simmer the liquid, whisk in the cereal, stir 2 to 3 minutes) is the lead, with the Cream of Wheat site's berries-and-milk bowl as the match for the topping. Neither page has a rating bar high enough. The cereal is 2/3 cup to 4 cups milk, the lead's ratio. No sugar is added; the berries sweeten it.",
+ "sources": [
+  {
+   "name": "Emily Laurae",
+   "title": "How to Make Cream of Wheat",
+   "url": "https://emilylaurae.com/how-to-make-cream-of-wheat/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cream of Wheat",
+   "title": "Berries and Cream Breakfast Bowl",
+   "url": "https://creamofwheat.com/?p=8182",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true
+}

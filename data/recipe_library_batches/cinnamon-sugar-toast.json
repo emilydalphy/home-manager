@@ -1,0 +1,66 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "dish_name": "Cinnamon Sugar Toast",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {
+   "item": "Bread",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Move an oven rack to the top position and turn the broiler to high.",
+  "Lay the 8 slices of bread on a large baking sheet. Use two sheets if they don't fit in one layer.",
+  "Stir the sugar and cinnamon together in a small bowl.",
+  "Slice the butter as thin as you can and lay it over one side of each slice, right out to the edges. Softened butter works too if you spread it.",
+  "Sprinkle about 1 1/2 tsp of the cinnamon sugar over each slice.",
+  "Broil for 2 to 3 minutes, until the sugar bubbles and turns golden. Stay by the oven. It goes from golden to burnt fast.",
+  "Let the toast cool for 1 minute, then serve."
+ ],
+ "method_notes": "Girl Versus Dough's broiler method is the lead (5.0 from 2 ratings, so below the 20 rating bar). Joy of Baking and Baking Mischief agree on butter, cinnamon sugar and a short broil. Cinnamon is raised to 2 tsp for 8 slices to match the usual 1/4 cup sugar to 2 1/4 tsp ratio. The list's 'two ingredients' is really four: bread, butter, sugar and cinnamon.",
+ "sources": [
+  {
+   "name": "Girl Versus Dough",
+   "title": "Cinnamon Toast",
+   "url": "https://www.girlversusdough.com/cinnamon-toast-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Joy of Baking",
+   "title": "Cinnamon Toast",
+   "url": "https://www.joyofbaking.com/CinnamonToast.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true
+}

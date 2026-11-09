@@ -1,0 +1,113 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "dish_name": "Cranberry Orange Muffins",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Unsalted butter",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Dried cranberries",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Oranges",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Muffin liners",
+   "qty": "1 pack",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Line a 12-cup muffin tin with paper liners.",
+  "Zest both oranges, taking only the orange part of the peel.",
+  "Beat the softened butter and sugar together in a large bowl for about 2 minutes, until it's creamy.",
+  "Beat in the eggs one at a time. Scrape down the bowl after each one.",
+  "Mix in the baking powder, salt and vanilla.",
+  "Add the flour in 3 parts, alternating with the milk in 2 parts, stirring gently after each. Stop as soon as there are no dry streaks. Any longer and the muffins come out tough.",
+  "Fold in the cranberries and orange zest.",
+  "Scoop the batter into the cups, filling each nearly to the top.",
+  "Bake for 28 to 30 minutes, until the tops are light golden and a toothpick in the center of a muffin comes out clean.",
+  "Loosen the edges, leave the muffins in the tin for 5 minutes, then move them to a rack to cool.",
+  "Keep the cooled muffins in an airtight container for up to 3 days. To freeze, wrap them well and freeze for up to 3 months. Microwave a frozen muffin on high for about 30 seconds."
+ ],
+ "method_notes": "The Redhead Baker's cranberry orange muffins are the lead (butter, sugar, dried cranberries, zest of 2 oranges, 375°F). It has no ratings, and Add a Pinch, the best known version, blocked fetching. Food Network and Kristine's Kitchen agree on the zest, milk and about 12 muffins; cranberries are 1 1/2 cups rather than the lead's 2 cups. Storage notes come from Kristine's Kitchen and the lead.",
+ "sources": [
+  {
+   "name": "The Redhead Baker",
+   "title": "Cranberry Orange Muffins",
+   "url": "https://www.theredheadbaker.com/cranberry-orange-muffins/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network Kitchen",
+   "title": "Cranberry Orange Muffins",
+   "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/cranberry-orange-muffins-recipe-2011353",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kristine's Kitchen",
+   "title": "Cranberry Orange Muffins",
+   "url": "https://kristineskitchenblog.com/cranberry-orange-muffins/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true
+}

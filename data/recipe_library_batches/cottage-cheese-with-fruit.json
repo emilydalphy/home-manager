@@ -1,0 +1,73 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "dish_name": "Cottage Cheese with Fruit",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "prep_time_minutes": 7,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Cottage cheese",
+   "qty": "24 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Strawberries",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Kiwi",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Raspberries",
+   "qty": "1 container (6 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 container (6 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the strawberries, raspberries and blueberries. Hull the strawberries and slice them thin.",
+  "Peel the kiwis and slice them into thin rounds.",
+  "Spoon 3/4 cup of the cottage cheese into each of 4 bowls.",
+  "Top each bowl with the strawberries, kiwi, 1/4 cup of the raspberries and 2 tbsp of the blueberries.",
+  "Drizzle the honey over the bowls. Serve right away."
+ ],
+ "method_notes": "Picky Eater's cottage cheese with fruit (5.0 from 7 ratings, below the 20 bar) is the lead; the fruit amounts are doubled for 4 bowls and the portion is 3/4 cup of cottage cheese per bowl. The Dizzy Cook agrees on cottage cheese, fruit and a little honey. Mint and chia seeds from the lead are left out to keep it plain for kids.",
+ "sources": [
+  {
+   "name": "Picky Eater",
+   "title": "Cottage Cheese With Fruit",
+   "url": "https://pickyeaterblog.com/cottage-cheese-with-fruit/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Dizzy Cook",
+   "title": "Cottage Cheese with Fruit",
+   "url": "https://thedizzycook.com/cottage-cheese-with-fruit/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true
+}

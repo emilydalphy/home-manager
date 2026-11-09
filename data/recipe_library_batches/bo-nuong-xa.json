@@ -1,0 +1,131 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "dish_name": "Bo Nuong Xa",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Rice vermicelli",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Red leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bamboo skewers",
+   "qty": "1 pack",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Put 16 bamboo skewers in a shallow dish of water and leave them to soak for at least 30 minutes.",
+  "Put the beef in the freezer for 15 minutes. It slices thin much more easily when it's firm.",
+  "Meanwhile, peel off the tough outer layers of the lemongrass and mince the pale lower half very fine. Mince 4 of the garlic cloves.",
+  "In a large bowl, stir together the lemongrass, the minced garlic, 3 tbsp of the fish sauce, 1 tbsp of the sugar, the black pepper and 2 tbsp of the oil.",
+  "Slice the beef across the grain into strips about 1/4 inch thick, 1 inch wide and 2 to 3 inches long. Toss the strips in the marinade and leave them at room temperature for 20 minutes.",
+  "Meanwhile, make the dipping sauce. Mince the 2 remaining garlic cloves and juice both limes. That should be about 1/4 cup of juice. Stir the garlic and juice together with the remaining 3 tbsp fish sauce, the remaining 3 tbsp sugar and 1/2 cup water until the sugar dissolves.",
+  "Wash and dry the lettuce and tear it into pieces. Slice the cucumber into thin half-moons. Pick the leaves from half the mint and half the cilantro. Arrange them on a platter.",
+  "Bring a large pot of water to a boil. Cook the vermicelli for the time on the package, usually 3 to 5 minutes, then drain and rinse under cold water. Drain well and set aside.",
+  "Heat a grill pan over medium-high heat for 3 minutes, then brush it with the remaining 1 tbsp oil. You can also set a rack 4 inches from the broiler, heat the broiler for 5 minutes and cook the skewers on a foil-lined baking sheet.",
+  "Drain the skewers and thread 1 or 2 strips of beef onto each one.",
+  "Cook the skewers in two batches, 2 to 3 minutes on the first side. Turn them and cook the other side for 2 to 3 minutes, until the beef is browned and a little charred at the edges.",
+  "Taste the dipping sauce. If it's flat, add a splash more fish sauce or a pinch more sugar.",
+  "Divide the noodles between 4 bowls. Serve the skewers over the noodles with the lettuce, cucumber and herbs and the dipping sauce."
+ ],
+ "method_notes": "None of the versions found had enough ratings, so this follows Sunset's bo nuong xa toi (fish sauce, garlic, lemongrass, pepper marinade) with Andrea Nguyen's thin 1/4 inch strips and short skewer cooking. Sources marinate 1 to 2 hours; this uses a 20 minute marinade while the sauce and noodles come together, which is why the strips are cut thin. The sources use soy or hoisin in places and peanuts as a garnish; both are left out so it stays gluten-free and nut-free. The dipping sauce is a standard nuoc cham (fish sauce, lime, sugar, garlic) as the list's description pairs the skewers with rice noodles.",
+ "sources": [
+  {
+   "name": "Sunset",
+   "title": "Grilled Beef with Lemon Grass and Garlic (Bo Nuong Xa Toi)",
+   "url": "https://sunset.com/recipe/grilled-beef-with-lemon-grass-garlic-bo-nuong-xa-toi",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sporting Road",
+   "title": "Grilled Lemongrass Beef Skewers (Thit Bo Nuong Xa)",
+   "url": "https://sportingroad.com/other-than-french-recipes/asian-and-island-recipes/grilled-lemongrass-beef-skewers/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Lemongrass Beef Skewers",
+   "url": "https://cupofyum.com/recipes/lemongrass-beef-skewers",
+   "rating": 4.6,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true
+}

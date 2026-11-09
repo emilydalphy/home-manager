@@ -1,0 +1,58 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "dish_name": "Bacon and Eggs",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Bacon",
+   "qty": "8 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Lay the bacon in a large skillet with little overlap, then turn the heat to medium.",
+  "Cook the bacon for 10 to 12 minutes, turning every 2 to 3 minutes, until it's browned and crisp.",
+  "Move the bacon to a plate lined with paper towels. Leave the drippings in the pan and keep the heat on medium.",
+  "Crack 4 of the eggs into the hot drippings, spaced apart. Cook for 1 to 2 minutes, until the edges of the whites start to set.",
+  "Flip the eggs and cook the other side for 30 seconds for a runny yolk, or 1 to 2 minutes for a set yolk. Move them to plates and cook the other 4 eggs the same way.",
+  "Grind the pepper over the eggs. Serve the eggs with the bacon."
+ ],
+ "method_notes": "The Pork Checkoff's classic bacon and eggs is the lead (bacon first, eggs in the drippings, flip once). It has no ratings. Just A Pinch and Meal Garden agree on frying the eggs in the bacon fat. Honest time is about 25 minutes for 8 eggs because they go in two batches, which is over the list's 15 minutes. A second skillet for the eggs would bring it down a little.",
+ "sources": [
+  {
+   "name": "National Pork Board",
+   "title": "Classic Bacon & Eggs Breakfast",
+   "url": "https://www.pork.org/recipes/classic-bacon-eggs-breakfast/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Meal Garden",
+   "title": "Classic Bacon and Eggs",
+   "url": "https://www.mealgarden.com/recipe/classic-bacon-and-eggs",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true
+}

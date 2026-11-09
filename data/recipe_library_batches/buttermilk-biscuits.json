@@ -1,0 +1,78 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "dish_name": "Buttermilk Biscuits",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "10 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Buttermilk",
+   "qty": "1 cup",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack in the middle. Line a large baking sheet with parchment.",
+  "In a large bowl, whisk together 2 cups of the flour, the cornstarch, baking powder, baking soda, sugar and salt.",
+  "Cut the cold butter into 1/2 inch chunks. Add them to the bowl and rub them into the flour with your fingertips, until it looks like coarse sand with some pea-sized pieces of butter left.",
+  "Pour in 3/4 cup of the buttermilk and stir until a shaggy dough forms. If it looks dry, add the rest of the buttermilk a tablespoon at a time. Stop as soon as there are no dry patches.",
+  "Dust the counter with a little of the remaining flour. Turn the dough out and pat it into a rectangle about 3/4 inch thick.",
+  "Cut the rectangle into thirds, stack the pieces and pat it out to 3/4 inch thick again. Do this once more.",
+  "Dust a sharp knife with flour and cut the dough into 12 squares. Press straight down and don't twist.",
+  "Set the squares on the baking sheet and bake for 13 to 15 minutes, until golden on top and deep golden on the bottom.",
+  "Serve warm.",
+  "To keep a batch for later, freeze the cut squares on the baking sheet until solid, then move them to a freezer bag, where they keep for 3 months. Bake them straight from frozen at 425°F, adding a few minutes. Baked and cooled biscuits freeze the same way. Reheat them from frozen in a 350°F oven until warm."
+ ],
+ "method_notes": "Once Upon a Chef's flaky buttermilk biscuits (4.93 from 223 ratings) is the lead, including the cornstarch and the two fold-and-pat turns. The freezer notes come from the same page and agree with the freezer-biscuit pages found in search. The list's jam is not on the ingredient list.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Flaky Buttermilk Biscuits",
+   "url": "https://www.onceuponachef.com/recipes/southern-style-buttermilk-biscuits.html",
+   "rating": 4.93,
+   "rating_count": 223,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false
+}
