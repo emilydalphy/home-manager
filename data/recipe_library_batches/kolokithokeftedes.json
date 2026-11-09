@@ -1,0 +1,96 @@
+{
+ "dish_name": "Kolokithokeftedes",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Feta",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tzatziki",
+   "qty": "1 tub (8 oz)",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Grate the 3 zucchini on the large holes of a box grater into a colander. Toss with 1/2 tsp of the salt and set the colander over a bowl for 15 minutes.",
+  "Meanwhile, thinly slice the scallions, chop 3 tbsp of the mint and crumble the feta into a large bowl.",
+  "Squeeze the zucchini by the handful over the sink, as hard as you can, then transfer it into the bowl with the feta. Squeeze out as much water as you can, or the fritters will fall apart in the pan.",
+  "Add the scallions, mint and 1/4 tsp pepper and stir. Add the 2 eggs, 1 cup of the breadcrumbs and the remaining 1/4 tsp salt and mix until the mixture holds together when you press it.",
+  "Spread the remaining 1/4 cup breadcrumbs on a plate. Scoop up about 2 tablespoons of the mixture, flatten it into a patty about 2 inches wide, and press both sides into the breadcrumbs. Repeat until you have about 16 patties.",
+  "Heat a large skillet over medium-high heat and add half of the oil. When it shimmers, add half of the patties in a single layer and cook for 3 to 4 minutes, until the underside is deep golden. Flip them and cook the other side for 3 to 4 minutes. Transfer them onto a plate lined with paper towels.",
+  "Taste the first fritter. If it's flat, sprinkle a pinch of salt over the next batch as it comes out of the pan.",
+  "Add the remaining oil, let it heat for 30 seconds and fry the rest of the patties the same way.",
+  "Serve with the tzatziki."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Dimitras Dishes is the lead (no rating shown); it salts and drains the zucchini, binds with eggs, feta and breadcrumbs, and fries in a pan. Ririsgreekeats (5 from 2 votes) adds flour, onion and three herbs; both serve with tzatziki. This is the lead scaled down to 3 zucchini with mint only, and the draining cut to 15 minutes and the patties flattened to keep it near 30 minutes, though it still runs a few minutes over. Red pepper flakes from the lead were left out to keep the base mild.",
+ "sources": [
+  {
+   "name": "Dimitras Dishes",
+   "title": "Zucchini Fritters: Greek Kolokithokeftedes",
+   "url": "https://www.dimitrasdishes.com/zucchini-meatballs-greek-kolokithokeftedes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Riri's Greek Eats",
+   "title": "Kolokithokeftedes Recipe (Greek Zucchini Fritters With Feta)",
+   "url": "https://ririsgreekeats.com/kolokithokeftedes-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

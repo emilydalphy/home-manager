@@ -1,0 +1,102 @@
+{
+ "dish_name": "Pitaroudia",
+ "cuisine": "Greek",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Canned chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "7 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Drain the chickpeas, rinse them and spread them on a clean towel to dry. Finely chop the onion and mince 3 of the garlic cloves. Chop 3 tbsp of the mint.",
+  "Make the sauce. In a small bowl, whisk together the tahini, 1 grated garlic clove, 1 tbsp olive oil, the juice of the lemon and 1/4 tsp of the salt. Whisk in 2 tbsp water, then more water 1 tbsp at a time, until it's thick but pourable.",
+  "Transfer the chickpeas into a large bowl and mash them with a potato masher or a fork until they're broken up but still a little chunky.",
+  "Add the onion, the 3 minced garlic cloves, the mint, the cumin, the remaining 1 tsp salt, the pepper and 1/2 cup of the flour. Stir until it holds together when you press a spoonful in your hand.",
+  "Spread the remaining 1/4 cup flour on a plate. Shape about 2 tablespoons of the mixture into a flat patty about 2 inches wide, dredge it lightly in the flour and set it aside. Repeat to make about 12 patties.",
+  "Heat 3 tbsp of the olive oil in a large skillet over medium heat. Add half of the patties and cook for 3 to 4 minutes per side, until deep golden and crisp. Transfer them onto a plate lined with paper towels.",
+  "Taste the first patty. If it's flat, sprinkle a pinch of salt over the next batch as it comes out of the pan.",
+  "Add 3 tbsp olive oil, heat it for 30 seconds, and fry the remaining patties the same way.",
+  "Serve with the tahini sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Let's Veg (no rating shown) is the lead: canned chickpeas mashed with onion, garlic, spices and a little flour, then pan fried in olive oil, about 30 minutes in all. Diane Kochilas's Rhodes version starts from dried chickpeas (soaked, then 1 1/2 hours of simmering), adds grated tomato and mint, dredges the patties in flour, and serves them with tahini sauce. This takes the canned method, the mint, the flour dredge and the tahini sauce (scaled down by two thirds) from Kochilas, and keeps cumin as the one spice both use. The list suggested yogurt, but that would not be vegan, so tahini sauce is used.",
+ "sources": [
+  {
+   "name": "Let's Veg",
+   "title": "Chickpea Fritters (Pitaroudia)",
+   "url": "https://www.letsveg.com/recipe/chickpea-fritters-pitaroudia/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Diane Kochilas",
+   "title": "Pitaroudia - Chickpea Fritters with Tahini Sauce",
+   "url": "https://www.dianekochilas.com/pitaroudia-chickpea-fritters-with-tahini-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

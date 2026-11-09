@@ -1,0 +1,103 @@
+{
+ "dish_name": "Fasolia Salata",
+ "cuisine": "Greek",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Canned white beans",
+   "qty": "3 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Juice the 2 lemons into a large bowl. That should be about 6 tbsp. Add the olive oil, the salt and the pepper and whisk.",
+  "Drain the beans in a colander and rinse them under cold water until the water runs clear. Shake off as much water as you can.",
+  "Finely chop the red onion and the bell pepper, and halve the cherry tomatoes.",
+  "Add the beans, onion, pepper and tomatoes to the bowl and toss gently so the beans don't break.",
+  "Chop 1/4 cup of the parsley. Stir it in with the oregano and let the salad sit for 10 minutes.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve right away or chilled."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Greek Boston is the lead (no rating shown): canned white beans tossed with red onion, bell pepper, cherry tomatoes, lemon juice, olive oil, parsley and oregano, with no cooking. Life of Loi and Poupadou start from dried beans (40 to 50 minutes plus an overnight soak) and use red wine vinegar or scallions and dill, which this leaves out. The amounts are the lead's scaled from 2 cans to 3 for a main dish, with dried oregano in place of fresh Greek oregano. The list's 'no cooking' line holds because the beans are canned.",
+ "sources": [
+  {
+   "name": "Greek Boston",
+   "title": "Recipe for Greek Style Bean Salad",
+   "url": "https://www.greekboston.com/food/bean-salad-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Life of Loi",
+   "title": "Fasoulosalata - Greek Bean Salad",
+   "url": "https://www.thelifeofloi.com/recipes/fasoulosalata-greek-bean-salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Poupadou",
+   "title": "Fasolia salata or white beans greek salad",
+   "url": "https://www.poupadou.com/blog/en/recipe-fasolia-salata-white-beans-greek-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

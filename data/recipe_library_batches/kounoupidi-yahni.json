@@ -1,0 +1,97 @@
+{
+ "dish_name": "Kounoupidi Yahni",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Canned crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the cauliflower into florets about 1 inch wide and trim out the hard core. Rinse the florets and pat them dry. Finely chop the onion and mince the garlic.",
+  "Heat 3 tbsp of the olive oil in a large, wide pot over medium-high heat. Add the florets and cook for 5 minutes, turning them now and then, until they have golden spots. Transfer them into a bowl.",
+  "Add 2 tbsp of the olive oil and the onion to the same pot. Cook over medium heat for 3 minutes, until soft. Add the garlic and cook for 30 seconds.",
+  "Add the tomato paste and stir for 1 minute, until it darkens.",
+  "Return the cauliflower to the pot. Add the crushed tomatoes, 1 cup water, the cinnamon stick, the bay leaf, the salt and the pepper, and bring it to a simmer.",
+  "Turn the heat to low, cover, and cook for 15 minutes, until a knife slides into a floret easily. Swirl the pot by its handles instead of stirring so the cauliflower stays whole.",
+  "Uncover, turn the heat to medium-high, and cook for 2 to 3 minutes, until the sauce is thick enough to coat the cauliflower. Remove the cinnamon stick and the bay leaf.",
+  "Serve in shallow bowls with the remaining 1 tbsp olive oil drizzled over.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 28,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mamazilla's Kounoupidi Kapama (no rating shown) is the lead because it fits a weeknight: browned cauliflower, onion, garlic and tomato paste, then crushed tomato, water, cinnamon and bay, simmered 15 to 20 minutes. Kapama and yahni are the same braise (Mia Kouppa and Real Greek Recipes use the names for it interchangeably). Real Greek Recipes' Kounoupidi Yiahni (5 from 1 vote) adds potatoes, oregano and thyme and takes an hour plus a 30 minute rest; it was left out for time. The lead's vinegar soak and 10 minute rest were skipped, and the crushed tomato raised from 1/2 cup to a can so there is a real sauce. It runs about 38 minutes.",
+ "sources": [
+  {
+   "name": "Mamazilla",
+   "title": "Greek Braised Cauliflower In Tomato Sauce - Kounoupidi Kapama",
+   "url": "https://www.mamazillafood.com/greek-braised-cauliflower/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Real Greek Recipes",
+   "title": "Greek Cauliflower Stew with Potatoes (Kounoupidi Yiahni)",
+   "url": "https://realgreekrecipes.com/cauliflower-stew/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
