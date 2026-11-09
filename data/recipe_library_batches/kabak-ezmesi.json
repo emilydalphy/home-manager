@@ -1,0 +1,98 @@
+{
+ "dish_name": "Kabak Ezmesi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 small tub",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Labneh",
+   "qty": "1 small tub",
+   "category": "dairy",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dill",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 sprigs"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Trim the zucchini and cut them into 1/2 inch dice.",
+  "Heat the olive oil in a large skillet over medium-high heat for 1 minute. Add the zucchini and the salt.",
+  "Cook for 6 to 8 minutes, stirring often, until the zucchini is soft and the water has cooked off.",
+  "Transfer the zucchini to a bowl and let it cool for 10 minutes. If it goes in the yogurt hot, the dip turns thin.",
+  "Put the cooled zucchini in a blender or food processor with the yogurt, labneh, garlic, the leaves from the dill sprigs and the pepper. Blend until smooth. That should be about 2 cups.",
+  "In a small pan over medium heat, melt the butter with the paprika. Stir for 20 seconds, until it sizzles and smells sweet, then take it off the heat.",
+  "Taste the dip. If it's flat, add a pinch more salt.",
+  "Spoon the dip into a bowl and drizzle the paprika butter over the top. Serve with bread or cut vegetables. It keeps in a covered container in the fridge for 3 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only Yemek.com's Kabak Ezme (5 out of 5 from 2 votes, so below the 20 ratings needed) is published under this name. It sautés diced zucchini, blends it with a little strained yogurt, labneh, garlic and dill, and tops it with paprika butter and walnuts. Yemek.com's Yoğurtlu Kabak Mezesi, a chunkier version with parsley and mint, backs up the sauté-then-cool step. The walnuts are left out to keep it nut-free, and the source's 2 minutes of cooking is stretched to 6 to 8 so the zucchini actually softens.",
+ "sources": [
+  {
+   "name": "Yemek.com",
+   "title": "Kabak Ezme Tarifi",
+   "url": "https://yemek.com/tarif/kabak-ezme/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Yoğurtlu Kabak Mezesi",
+   "url": "https://yemek.com/tarif/yogurtlu-kabak-mezesi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

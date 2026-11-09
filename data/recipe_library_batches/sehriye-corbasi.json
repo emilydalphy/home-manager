@@ -1,0 +1,113 @@
+{
+ "dish_name": "Sehriye Corbasi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vermicelli",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Melt the butter in a medium pot over medium heat. Add the finely chopped onion and cook for 4 minutes, stirring, until soft.",
+  "Stir in the tomato paste and cook for 1 minute, until it darkens a shade.",
+  "Add the minced garlic and mint. Stir for 30 seconds, until it smells fragrant.",
+  "Add the crushed tomatoes, broth, sugar, salt and pepper. Turn the heat to high and bring it to a boil, then turn it down to medium-low and simmer for 8 minutes.",
+  "Break the vermicelli into short pieces and add it. Cook for 5 minutes, stirring once or twice, until tender. If the soup gets too thick, stir in a splash of water.",
+  "Take the pot off the heat. Stir in the chopped parsley and a squeeze of lemon.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rest of the lemon cut in wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cooking Gorgeous (5 out of 5 from 1 vote, so below the 20 ratings needed) builds the soup on butter, tomato paste, mint and stock, with lemon and parsley at the end. It uses orzo; this uses thin vermicelli, which cooks in about 5 minutes. Turkish Food and Recipes' tomato soup with vermicelli adds crushed tomato and a little sugar, which give it a fuller tomato body, so those are borrowed. The red pepper paste and chili are left out so it stays mild for kids.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Şehriye Çorbası (Turkish Orzo Soup)",
+   "url": "https://cookingorgeous.com/blog/sehriye-corbasi-turkish-orzo-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkish Food and Recipes",
+   "title": "Tomato Soup with Vermicelli (Sehriyeli)",
+   "url": "https://www.turkishfoodandrecipes.com/2008/12/tomato-soup-with-vermicelli-sehriyeli.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

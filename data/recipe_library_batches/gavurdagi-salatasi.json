@@ -1,0 +1,119 @@
+{
+ "dish_name": "Gavurdagi Salatasi",
+ "cuisine": "Turkish",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "half the leaves"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Walnuts",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the tomatoes in half and scoop out the seeds and juice with a spoon. Chop the flesh into pieces about 1/4 inch wide and put them in a large bowl.",
+  "Finely chop the pepper, the red onion and the green onions. Add them to the bowl with the leaves from half the bunch of parsley, chopped.",
+  "In a small bowl, grate in the garlic. Add the pomegranate molasses, olive oil, the juice of the lemon, sumac, mint and salt, and whisk.",
+  "Pour the dressing over the salad and toss.",
+  "Chop the walnuts. Crush half of them to a grainy rubble and break the rest into larger pieces.",
+  "Stir the grainy walnuts into the salad and scatter the larger pieces over the top.",
+  "Put the red pepper flakes in a small bowl for the table.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve right away, with the red pepper flakes on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Turkeys for Life (5 out of 5 from 1 vote, so below the 20 ratings needed) has the fuller Gaziantep version: finely chopped tomato, pepper, onion and parsley, a pomegranate molasses and lemon dressing with sumac and mint, and plenty of walnuts. Cup of Yum (5 out of 5 from 6 votes) keeps it simpler, with cucumber and only a few walnuts to garnish. This follows Turkeys for Life, adds the salt Cup of Yum has, and moves the chili flakes to the table. It's best eaten fresh, since the tomatoes release juice as it sits.",
+ "sources": [
+  {
+   "name": "Turkeys for Life",
+   "title": "Gavurdağı Salad Recipe",
+   "url": "https://www.turkeysforlife.com/2020/08/gavurdagi-salad-recipe-turkish.html",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Gavurdagi Salatasi (Turkish Tomato Walnut Salad)",
+   "url": "https://cupofyum.com/recipes/gavurdagi-salatasi-turkish-tomato-walnut-salad",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

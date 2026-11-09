@@ -1,0 +1,93 @@
+{
+ "dish_name": "Islak Burger",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Hamburger buns",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato passata",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Mash the garlic with 1/2 tsp of the salt on a cutting board with the side of a knife until it's a paste.",
+  "In a bowl, stir the garlic paste into the passata with the tomato paste and 1/4 tsp of the pepper. Set it aside.",
+  "Divide the beef into 4 portions and pat each into a patty about 1/2 inch thick. Sprinkle the patties with the remaining 1/2 tsp salt and 1/4 tsp pepper.",
+  "Spread the butter on the cut sides of the buns.",
+  "Heat the olive oil in a large skillet with a lid over medium-high heat for 2 minutes, until it shimmers. Add the patties and cook for 1 minute per side, until browned.",
+  "Pour the sauce over the patties. Turn the heat to low and simmer for 5 minutes.",
+  "You're cooking the beef to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into the center of one patty: it's done when there's no pink left.",
+  "Push the patties to one side. Set the bun halves cut side down in the sauce. Cover and cook on low for 10 minutes, until the buns are soaked through and soft.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Sandwich each patty between 2 bun halves and spoon the rest of the sauce over the top. Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the Islak Burger pages carries a rating. Istanbul Cult Recipes (via Taras Multicultural Table) is the lead: garlic and tomato sauce, quick-seared patties, and buns steamed in the sauce until soaked. Lezzet adds tomato paste, ketchup and breadcrumbs to a sauce made for 2 burgers, so this takes its tomato paste and uses more passata, to cover the buns for 4. Cooked to 160°F, with the sear and simmer times from the lead.",
+ "sources": [
+  {
+   "name": "Taras Multicultural Table",
+   "title": "Islak Burger",
+   "url": "https://tarasmulticulturaltable.com/islak-burger/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lezzet",
+   "title": "Istanbul-Style Wet Burger",
+   "url": "https://www.lezzet.com.tr/en/recipe/istanbul-style-wet-burger",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

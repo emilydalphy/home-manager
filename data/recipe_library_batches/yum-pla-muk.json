@@ -1,0 +1,114 @@
+{
+ "dish_name": "Yum Pla Muk",
+ "cuisine": "Thai",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Squid",
+   "qty": "14 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "half"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Roma tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Fill a medium pot with water and bring it to a boil over high heat. Set a large bowl of ice water next to the stove.",
+  "Meanwhile, cut the squid bodies into rings about 1/2 inch wide and cut any tentacles in half.",
+  "Finely mince the garlic and transfer it to a large bowl. Add the sugar and mash the two together with the back of a spoon until it looks like wet sand.",
+  "Squeeze in the juice of the lime and add the fish sauce. Stir until the sugar dissolves.",
+  "In a second bowl, combine 2 thinly sliced celery stalks, half the red onion sliced thin, the green onions sliced, the carrot cut into thin matchsticks, the tomato cut into thin wedges and the cilantro, chopped.",
+  "Slice the chilies and put them in a small bowl for the table.",
+  "Add the squid to the boiling water and cook for 1 minute, until the rings turn opaque and curl. Don't leave it longer or it turns rubbery.",
+  "Use a slotted spoon to transfer the squid to the ice water for 1 minute, then drain it well.",
+  "Add the squid to the dressing and toss. Add the vegetables and herbs and toss again.",
+  "Taste it. If it's flat, add a pinch more sugar or a splash of fish sauce.",
+  "Serve right away, with the sliced chilies on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hungry in Thailand and Cup of Yum give the same dish: squid blanched for about 30 seconds, then tossed in a dressing of crushed garlic and chilies, lime juice, fish sauce and sugar, with celery, onion, tomato, carrot and cilantro. Hungry in Thailand (5 out of 5 from 1 vote, so below the 20 ratings needed) uses more sugar, Cup of Yum less; this lands in between, doubled for 4. The chilies move to the table so the base stays mild.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Squid Salad Recipe (Yum Pla Muk)",
+   "url": "https://hungryinthailand.com/yum-pla-muk-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Yum Pla Muk Recipe (Authentic Thai Squid Salad)",
+   "url": "https://cupofyum.com/recipes/yum-pla-muk-recipe-authentic-thai-squid-salad",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
