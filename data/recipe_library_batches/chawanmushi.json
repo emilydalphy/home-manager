@@ -1,0 +1,96 @@
+{
+ "dish_name": "Chawanmushi",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "1 dozen",
+   "category": "dairy",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Small shrimp, peeled and deveined",
+   "qty": "4 oz",
+   "category": "meat/seafood",
+   "cook_qty": "8"
+  },
+  {
+   "item": "Boneless skinless chicken breast",
+   "qty": "1 small",
+   "category": "meat/seafood",
+   "cook_qty": "3 oz"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 small"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "1 small package",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 small bag",
+   "category": "produce",
+   "cook_qty": "4 leaves"
+  }
+ ],
+ "instructions": [
+  "Stir the dashi granules into 1 2/3 cups of hot water until dissolved, then let it cool until warm. Add the soy sauce, mirin and salt, and stir.",
+  "Cut the chicken into 12 small cubes. Cut 8 thin slices from the carrot. Remove the shiitake stems and quarter the caps.",
+  "Divide the shrimp, chicken, carrot and shiitake evenly among 4 heatproof cups or small bowls, about 3/4 cup each.",
+  "Beat the eggs gently with a fork, trying not to make bubbles. Stir the eggs into the warm dashi mixture.",
+  "Pour the egg mixture through a fine sieve into a measuring cup, then pour it slowly into the cups. If there are bubbles on top, pop them with a spoon.",
+  "Set the cups in a wide pot with about 1 inch of simmering water. Cover each cup with foil. Put a folded kitchen towel under the pot lid and cover the pot.",
+  "Steam over low heat for 18 to 20 minutes, until the custard is set. It should wobble in the middle but not look liquid. If you press the center with a toothpick, the juices should run clear.",
+  "Lay a baby spinach leaf on top of each custard and let it wilt for 1 minute. Serve right away with a spoon."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats Japan (the lead, 5 out of 5 from 7 ratings, so a fallback) uses about 1 part egg to 2.7 parts dashi, light soy, mirin and salt, strained, then steamed on low with the lid ajar. Chikuwa and mitsuba are left out because they're hard to find, and baby spinach stands in for the garnish, as her notes suggest. It takes about 35 minutes, so it's a little over a 30 minute lunch, and it is best eaten right away rather than packed.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats Japan",
+   "title": "Chawanmushi (Savory Steamed Egg Custard)",
+   "url": "https://japan.recipetineats.com/chawanmushi-savoury-egg-custard/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

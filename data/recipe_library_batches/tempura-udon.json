@@ -1,0 +1,84 @@
+{
+ "dish_name": "Tempura Udon",
+ "cuisine": "Japanese",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Frozen shrimp tempura",
+   "qty": "8 pieces (1 box)",
+   "category": "frozen"
+  },
+  {
+   "item": "Udon noodles, fresh or frozen",
+   "qty": "4 packs (about 7 oz each)",
+   "category": "frozen"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "for the table"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 320°F. Put the frozen shrimp tempura on a rack set over a baking sheet, and bake for 10 minutes, or as the package says. Leave them in the oven with the heat off until the bowls are ready.",
+  "Meanwhile, thinly slice the green onions.",
+  "In a large pot, bring 5 cups of water, the dashi granules, the soy sauce and the mirin to a boil. Turn the heat to low and keep it hot.",
+  "Bring a second large pot of water to a boil. Add the udon and cook for the time on the package, usually 2 to 3 minutes. Stir for the first 15 seconds so the strands separate.",
+  "Drain the noodles and rinse them under running water. Shake off the extra water and divide them among 4 deep bowls.",
+  "Taste the broth. If it's flat, add a pinch more soy sauce. Ladle the hot broth over the noodles.",
+  "Top each bowl with 2 pieces of shrimp tempura and a handful of green onions. Serve with the shichimi togarashi at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats Japan (the lead, a trusted cook but no rating shown, so a fallback) builds the bowl from dashi, light soy sauce and mirin broth, boiled udon and reheated frozen shrimp tempura. Food Faith Fitness fries the tempura from scratch, which adds oil, batter and about 20 more minutes. Frozen tempura keeps this under 30 minutes. Shichimi is left for the table.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats Japan",
+   "title": "Tempura Udon",
+   "url": "https://japan.recipetineats.com/tempura-udon/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Faith Fitness",
+   "title": "Tempura Udon",
+   "url": "https://www.foodfaithfitness.com/tempura-udon-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

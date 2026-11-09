@@ -1,0 +1,109 @@
+{
+ "dish_name": "Insalata di Pollo",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "2 large (about 1 1/4 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Arugula",
+   "qty": "1 bag (5 oz)",
+   "category": "produce",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Kalamata olives, pitted",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Slice each chicken breast in half horizontally so you have 4 thin cutlets. Pat them dry and sprinkle them all over with 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Heat 2 tbsp of the olive oil in a large skillet over medium-high heat until it shimmers. Add the chicken and leave it alone until the underside is golden and lets go of the pan, about 4 minutes.",
+  "Flip the cutlets and cook the other side for 3 to 4 minutes. You're cooking it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece. It's done when there's no pink left.",
+  "Transfer the chicken to a cutting board and let it rest for 5 minutes.",
+  "Meanwhile, grate the zest of the lemon into a small bowl, then squeeze in 3 tbsp of juice. Whisk in 1/4 cup of the olive oil, the Dijon, the honey, the remaining 1/2 tsp salt and the remaining 1/4 tsp pepper.",
+  "Halve the cherry tomatoes and thinly slice the red onion.",
+  "Shred the chicken with two forks. Put it in a large bowl with the arugula, tomatoes, onion and olives.",
+  "Pour the dressing over the salad and toss gently until everything is lightly coated.",
+  "To pack it for lunch, keep the dressing in a small jar and pour it over just before eating. The undressed salad keeps in the fridge for up to 2 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hilltop Recipes (the lead, 5 out of 5 from 1 rating, so a fallback) is a quick skillet chicken salad on arugula with a lemon, olive oil, Dijon and honey dressing. The Parmigiano and balsamic glaze are left out so it stays dairy-free, and the chicken is sliced into cutlets so it cooks evenly. The traditional Mantuan chicken alla Gonzaga (Recipes from Italy) agrees on olive oil, lemon and shredded chicken, but takes over 3 hours.",
+ "sources": [
+  {
+   "name": "Hilltop Recipes",
+   "title": "Italian Chicken Salad",
+   "url": "https://hilltoprecipes.com/italian-chicken-salad/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipes from Italy",
+   "title": "Chicken Salad alla Gonzaga",
+   "url": "https://www.recipesfromitaly.com/chicken-salad-alla-gonzaga-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

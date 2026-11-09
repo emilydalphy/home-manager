@@ -1,0 +1,76 @@
+{
+ "dish_name": "Spinach Gomae",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Fresh flat-leaf spinach",
+   "qty": "2 bunches (about 12 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "White sesame seeds",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil. Fill a large bowl with cold water. Wash the spinach well, and trim off the root ends.",
+  "Toast 5 tbsp of the sesame seeds in a dry skillet over medium-low heat, shaking the pan, until golden and fragrant, about 3 minutes. Transfer them to a bowl right away so they don't burn.",
+  "Grind the toasted seeds in a mortar or spice grinder until they look like damp sand. Stir in the sugar and the soy sauce until it's a crumbly paste. Stir in 1 tbsp of water to loosen it.",
+  "Add the spinach to the boiling water and cook for 30 seconds, until it turns bright green. Transfer it to the bowl of cold water.",
+  "When it's cool, grab handfuls and squeeze out as much water as you can. Cut the spinach into 1 1/2 inch lengths.",
+  "Toss the spinach with the sesame paste. Sprinkle the last 1 tbsp of sesame seeds over the top.",
+  "To pack it, keep the sesame paste in a small jar and toss it with the spinach just before eating. Both keep in the fridge for up to 2 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 7,
+ "cook_time_minutes": 8,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Norecipes (the lead, 4.8 out of 5 from 5 ratings, so a fallback) keeps it to spinach, ground sesame, sugar and soy sauce, and the same method appears in Pickled Plum and Cooks Without Borders. Those two add dashi to the sesame paste. Dashi is made with fish, so here it's left out and a spoonful of water loosens the paste instead, which keeps it vegan.",
+ "sources": [
+  {
+   "name": "Norecipes",
+   "title": "Spinach Goma-ae",
+   "url": "https://norecipes.com/spinach-goma-ae/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Gomae (Japanese Spinach and Sesame Salad)",
+   "url": "https://pickledplum.com/gomae/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooks Without Borders",
+   "title": "Spinach with Sesame Dressing",
+   "url": "https://www.cookswithoutborders.com/spinach-with-sesame-dressing",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

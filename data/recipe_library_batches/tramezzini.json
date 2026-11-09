@@ -1,0 +1,94 @@
+{
+ "dish_name": "Tramezzini",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "1 dozen",
+   "category": "dairy",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Tuna in olive oil",
+   "qty": "2 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soft white sandwich bread (dairy-free)",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Watercress",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1 cup loosely packed"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Put the eggs in a saucepan, cover them with cold water, and bring it to a boil over high heat. As soon as it boils, take the pan off the heat, cover it, and leave the eggs for 10 minutes.",
+  "Meanwhile, drain the tuna and transfer it to a bowl. Flake it with a fork. Chop the capers and add them with the mayonnaise and the pepper. Stir until it holds together.",
+  "Transfer the eggs to a bowl of cold water and leave them for 5 minutes. Peel them and slice each egg into thin rounds.",
+  "Lay out the 8 slices of bread and cut the crusts off with a bread knife. Pick the watercress leaves from the thick stems.",
+  "Spread the tuna mixture over 4 of the slices, right to the edges. Lay the sliced egg on top, then a few watercress leaves.",
+  "Close each sandwich with a second slice and press the edges down gently. Cut each sandwich diagonally into 2 triangles.",
+  "To pack them, wrap the sandwiches tightly in plastic wrap and keep them in the fridge for up to 2 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Local Palate (the lead, no ratings shown) is the one version by this name with both tuna and egg: crustless soft white bread, canned Italian tuna, sliced egg and watercress. It uses butter and an anchovy aioli, so here the butter is left out and the tuna is bound with plain mayonnaise and capers, as Spice and Life's tuna and capers tramezzini does. The egg is boiled hard instead of jammy so the sandwiches slice cleanly and pack. Luca's Italy confirms the thin mayonnaise and sliced egg build.",
+ "sources": [
+  {
+   "name": "The Local Palate",
+   "title": "Tuna Tramezzini al Tonno e Uovo",
+   "url": "https://thelocalpalate.com/recipes/tuna-tramezzini-al-tonno-e-uovo",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spice and Life",
+   "title": "Italian Tramezzini Recipes",
+   "url": "https://www.spiceandlife.com/tramezzini/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Luca's Italy",
+   "title": "Tramezzini Veneziani",
+   "url": "https://lucasitaly.com/2015/12/15/tramezzini-veneziani-street-food-from-venice-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
