@@ -1,0 +1,123 @@
+{
+ "dish_name": "Beef and Barley Soup",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Button mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Beef stew meat",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Celery",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Parsnips",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Pearl barley",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Kale",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat a Dutch oven or heavy soup pot over medium-high heat with 1 tsp of the oil. Slice the mushrooms, add them with 1/4 tsp of the salt and cook, stirring now and then, until they're browned and the liquid has cooked off, about 8 minutes. Transfer them to a bowl.",
+  "Cut the beef into 1/2-inch pieces and pat them dry. Season with 3/4 tsp of the salt and 1/4 tsp of the pepper.",
+  "Heat another 1 tsp of the oil in the pot until it shimmers. Brown the beef for about 5 minutes, stirring now and then. It doesn't need to be cooked through. Transfer it to the bowl with the mushrooms.",
+  "Add the remaining 1 tsp oil to the pot, then the diced celery, onion, parsnips and carrots and the remaining 1/2 tsp salt. Cook, stirring, until they're slightly softened, about 5 minutes.",
+  "Add the garlic, oregano, basil and bay leaf and stir for 1 minute, until fragrant.",
+  "Return the beef and mushrooms to the pot with the tomatoes and their juice and the broth. Bring it to a boil.",
+  "Stir in the barley, turn the heat down to a simmer, cover and cook for 20 minutes.",
+  "Strip the kale from its stems and chop about 3 cups of the leaves. Stir the kale into the soup and simmer uncovered for 15 minutes, until the barley is tender.",
+  "Take out the bay leaf. Taste it. If it's flat, add a pinch more salt and the remaining 1/4 tsp pepper.",
+  "Ladle the soup into bowls. Leftovers keep in the fridge for 4 days, and the soup freezes for up to 3 months. The barley keeps soaking up broth, so add a splash of broth or water when you reheat it."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 55,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Garlic and Zest (4.2 from 21): mushrooms and beef browned separately, then the vegetables, tomatoes and broth, with pearl barley added and kale at the end. Scaled from 8 servings down to 4. Pearl barley is used, not quick-cooking, so the beef has time to get tender. The browning sauce is left out. It's a batch soup, over an hour from start to finish.",
+ "sources": [
+  {
+   "name": "Garlic and Zest",
+   "title": "Beef and Barley Soup",
+   "url": "https://www.garlicandzest.com/healthy-vegetable-beef-soup/",
+   "rating": 4.2,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

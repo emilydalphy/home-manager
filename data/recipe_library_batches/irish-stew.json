@@ -1,0 +1,103 @@
+{
+ "dish_name": "Irish Stew",
+ "cuisine": "American",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Lamb shoulder chops",
+   "qty": "3 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 300°F with a rack in the lower middle.",
+  "Cut the meat off the lamb bones and keep the bones. Trim off any big pieces of fat and cut the meat into 1 1/2-inch pieces. Season it with 1/2 tsp of the salt and the pepper.",
+  "Heat 1 tbsp of the oil in a large Dutch oven over medium-high heat. Brown the lamb in two batches, about 5 minutes a batch, and transfer it to a bowl.",
+  "Turn the heat down to medium and add the remaining 1 tbsp oil, the sliced onions and a pinch of salt. Cook, stirring and scraping up the browned bits, until the onions are soft and browned at the edges, about 10 minutes.",
+  "Sprinkle the flour over the onions and stir for 1 minute.",
+  "Pour in 2 cups of water a little at a time, stirring so there are no lumps. Add 2 tsp minced fresh thyme and 1 tsp of the salt and bring it to a simmer.",
+  "Add the lamb bones, then the lamb and any juices from the bowl. Cover and bake for 1 hour.",
+  "Meanwhile, peel the potatoes and cut them into 1-inch cubes.",
+  "Take the pot out of the oven and lay the potatoes on top of the meat. Cover and bake for 1 hour, until the lamb is tender and a knife slides easily into a potato.",
+  "Skim the fat off the top with a spoon and take out the bones. Stir in 3 tbsp chopped parsley.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the stew into bowls. Leftovers keep in the fridge for 3 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 150,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is America's Test Kitchen (4.5 from 32): lamb shoulder with its bones, onions browned in the pot, a little flour for body, water for the liquid, and the potatoes laid on top to steam. Delicious magazine and Ballymaloe add carrots and a stock, and Kerrygold bakes sliced potatoes with butter; none of those are in this version, which stays the plain lamb, onion and potato stew. The ATK page gives no total time; with browning and two hours in the oven this is about 2 hours 20 minutes, so it's a weekend or make-ahead stew rather than a weeknight one.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Irish Stew",
+   "url": "https://www.americastestkitchen.com/cooksillustrated/recipes/4121-irish-stew",
+   "rating": 4.5,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Where Is My Spoon",
+   "title": "Lamb and Potato Stew",
+   "url": "https://whereismyspoon.co/wprm_print/lamb-and-potato-stew",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Ballymaloe (Irish Examiner)",
+   "title": "Ballymaloe Irish Stew",
+   "url": "https://www.irishexaminer.com/recipe-content/recipe-9886.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

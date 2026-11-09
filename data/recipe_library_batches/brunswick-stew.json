@@ -1,0 +1,138 @@
+{
+ "dish_name": "Brunswick Stew",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Boneless pork shoulder",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free barbecue sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Gluten-free Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Russet potato",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "3/4 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Frozen lima beans",
+   "qty": "3/4 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the pork and chicken into 1-inch pieces and pat them dry. Season them with 1 tsp of the salt and the pepper.",
+  "Heat the oil in a large Dutch oven over medium-high heat. Brown the pork in a single layer, about 5 minutes, and transfer it to a bowl. Brown the chicken the same way and add it to the bowl.",
+  "Add the diced onion to the pot with a splash of the broth, scraping up the browned bits, and cook over medium heat until the onion is soft, about 4 minutes.",
+  "Return the meat to the pot and add the rest of the broth, the crushed tomatoes, barbecue sauce, Worcestershire, smoked paprika and brown sugar. Bring it to a boil, then turn the heat down and simmer partly covered for 40 minutes.",
+  "Meanwhile, peel the potato and cut it into 1/2-inch cubes.",
+  "Add the potato, corn and lima beans to the pot. Simmer uncovered for 25 minutes, until the potato is tender and the stew has thickened.",
+  "Break up the meat with two forks right in the pot. Taste it. If it's flat, add the remaining 1/2 tsp salt.",
+  "Ladle the stew into bowls and put the hot sauce on the table for anyone who wants heat.",
+  "Leftovers keep in the fridge for 4 days, and the stew freezes for up to 3 months. Reheat it over low heat with a splash of broth or water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 85,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version found with 20 or more ratings, and the trusted cook list for American cooking (RecipeTin Eats) has no Brunswick stew, so the lead is the best-rated readable one: Insanely Good Recipes (4.7 from 15). It is a chicken and pulled pork stew with tomatoes, barbecue sauce, Worcestershire, lima beans and corn. Spend With Pennies (5 from 2) and Lemons for Lulu (4.7 from 3) agree on the base. Their already-cooked meat is replaced here by raw chicken and pork shoulder cooked in the pot, and potatoes go in late. Butter is swapped for oil for dairy free, the stew uses labelled gluten-free sauces, and hot sauce moves to the table.",
+ "sources": [
+  {
+   "name": "Insanely Good Recipes",
+   "title": "Brunswick Stew (Traditional Recipe)",
+   "url": "https://insanelygoodrecipes.com/brunswick-stew/",
+   "rating": 4.7,
+   "rating_count": 15,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Brunswick Stew",
+   "url": "https://www.spendwithpennies.com/brunswick-stew/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Lemons for Lulu",
+   "title": "Brunswick Stew",
+   "url": "https://www.lemonsforlulu.com/brunswick-stew/",
+   "rating": 4.7,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,159 @@
+{
+ "dish_name": "Cincinnati Chili",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened cocoa powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red kidney beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring 6 cups of water and 1/2 tsp of the salt to a boil in a large heavy pot. Add the beef and stir to break it into strands.",
+  "As soon as foam rises, after about 30 seconds, drain the beef in a colander before the water boils again.",
+  "Rinse and dry the pot. Heat the vegetable oil over medium heat, add the yellow onion and cook, stirring, until it's soft and browned at the edges, about 8 minutes.",
+  "Add the garlic and cook for 1 minute.",
+  "Add the chili powder, oregano, cocoa, cinnamon, allspice, pepper and the remaining 1 tsp salt. Stir for 30 seconds, until it smells toasty.",
+  "Pour in the broth, 1 1/2 cups of water, the vinegar, brown sugar and tomato sauce, scraping up the browned bits from the bottom of the pot.",
+  "Add the drained beef and turn the heat to high. When it boils, turn it down to medium-low and simmer uncovered for 1 hour, stirring now and then, until it's deep red and slightly thickened.",
+  "About 15 minutes before the chili is ready, cook the spaghetti in well-salted boiling water until it's tender, then drain it and toss it with the olive oil.",
+  "Warm the kidney beans in a small pot or the microwave, and finely chop the white onion.",
+  "Taste the chili. If it's flat, add a pinch more salt.",
+  "Divide the spaghetti among bowls and top with the chili, the beans and the chopped onion. Put the hot sauce on the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 85,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is America's Test Kitchen (4.5 from 117): the beef is stirred into boiling water for a moment, then simmered in the sauce, which keeps the chili fine-textured rather than crumbly. Jo Cooks (4.6 from 15) browns the beef and Foodie Crush (5 from 13) simmers it in broth; all three use the same sweet spice set of chili powder, cinnamon, allspice and cocoa. Made dairy free: the cheddar is left off and the spaghetti is tossed with olive oil, not butter. Cayenne is left out of the pot and hot sauce goes on the table. Keeps in the fridge for up to 3 days.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Cincinnati Chili",
+   "url": "https://www.americastestkitchen.com/recipes/1816-cincinnati-chili",
+   "rating": 4.5,
+   "rating_count": 117,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Cincinnati Chili",
+   "url": "https://www.jocooks.com/recipes/cincinnati-chili/",
+   "rating": 4.6,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Foodie Crush",
+   "title": "Authentic Cincinnati Chili",
+   "url": "https://www.foodiecrush.com/cincinnati-chili/",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

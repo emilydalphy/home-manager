@@ -1,0 +1,138 @@
+{
+ "dish_name": "Lasagna Soup",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mild Italian sausage",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried parsley",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lasagna noodles",
+   "qty": "6 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Ricotta cheese",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Grated Parmesan",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the olive oil in a large soup pot over medium heat. Add the sausage and beef with 1/2 tsp of the salt and cook, breaking the meat up with a spoon, until it's browned, about 6 minutes.",
+  "Add the diced onion and cook, stirring, until it's soft, about 4 minutes.",
+  "Add the garlic and the tomato paste and stir for 1 minute, until the paste darkens.",
+  "Stir in the marinara, broth, oregano, basil, dried parsley, pepper and the remaining 1/2 tsp salt. Bring it to a boil, then turn the heat to low, cover and simmer for 20 minutes.",
+  "Meanwhile, put the lasagna noodles in a large bowl of hot tap water and stir them now and then for 4 minutes. Drain them and break them into bite-size pieces.",
+  "In a bowl, stir together the ricotta, mozzarella, Parmesan and 1 tbsp of chopped fresh parsley.",
+  "Take the lid off the soup, add the noodles and simmer for 8 minutes, stirring now and then, until they're tender.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the soup into bowls and top each with a spoonful of the cheese mixture and a little of the remaining 1 tbsp chopped parsley.",
+  "Leftover soup keeps in the fridge for 3 days. The noodles keep soaking up broth, so add a splash of water when you reheat it."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Amanda's Cookin' (4.95 from 20): browned beef and sausage, jarred marinara with broth, noodles soaked first, and a ricotta mixture spooned on top. Well Plated (5 from 7 ratings) adds butternut squash, kale and cream, and the soup is finished with ricotta balls; those were left out. Halved from the lead's 8 servings, with the onion softened first instead of going in raw.",
+ "sources": [
+  {
+   "name": "Amanda's Cookin'",
+   "title": "Lasagna Soup",
+   "url": "https://amandascookin.com/lasagna-soup/",
+   "rating": 4.95,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Lasagna Soup",
+   "url": "https://www.wellplated.com/lasagna-soup/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
