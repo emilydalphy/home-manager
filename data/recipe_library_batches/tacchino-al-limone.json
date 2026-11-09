@@ -1,0 +1,85 @@
+{
+ "dish_name": "Tacchino al Limone",
+ "cuisine": "Italian",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Turkey breast cutlets",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White rice flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Juice the lemons. That should be about 1/4 cup. Set it beside the stove.",
+  "In a shallow dish, mix the rice flour, 1/2 tsp salt, the paprika and the pepper.",
+  "Pat the turkey cutlets dry with paper towels and sprinkle them with the remaining 1/2 tsp salt. Press each cutlet into the flour mix on both sides, then shake off the extra.",
+  "Heat the olive oil in a large skillet over medium-high heat for about 1 minute, until it shimmers.",
+  "Lay half the cutlets in the skillet without crowding. Cook for 1 to 2 minutes per side, until golden and no pink is left in the center. Transfer them to a plate and cook the rest.",
+  "Pour the white wine and lemon juice into the skillet. Scrape up the browned bits with a wooden spoon.",
+  "Bring it to a boil and cook for about 5 minutes, until the liquid has reduced by half.",
+  "Return the cutlets and any juices on the plate to the pan. Turn them in the sauce for 1 minute, until they're hot.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a squeeze of lemon. Serve with the pan sauce spooned over."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Taste of Home's Turkey Cutlets in Lemon Wine Sauce is the lead because it is the one page for this dish that is flour, quick sear, then wine and lemon boiled down in the same pan; it has only 4 ratings, so this is a fallback lead. Other results with 'lemon turkey cutlets' in the title (Daily Meal and Joanne Weir) are breaded and fried, which is a different dish, so they are only noted. For gluten-free, the flour is white rice flour. The source has a 2 1/2 oz cutlet per person, which is small, so this uses 5 oz per person, and 2 tbsp oil instead of 1 so the pan browns. No butter, to stay dairy-free.",
+ "sources": [
+  {
+   "name": "Taste of Home",
+   "title": "Turkey Cutlets in Lemon Wine Sauce",
+   "url": "https://www.tasteofhome.com/recipes/turkey-cutlets-in-lemon-wine-sauce/",
+   "rating": null,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Daily Meal",
+   "title": "Lemon Turkey Cutlets",
+   "url": "https://www.thedailymeal.com/best-recipes/lemon-turkey-cutlets",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,117 @@
+{
+ "dish_name": "Zuppa di Farro",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh sage",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned borlotti beans",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Semi-pearled farro",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion, carrots and celery. Drain and rinse both cans of beans, then mash one can in a bowl with a fork until mostly smooth.",
+  "Heat 3 tbsp of the olive oil in a large pot over medium heat. Add the onion, carrots and celery with 1/2 tsp salt. Cook for 6 to 8 minutes, stirring now and then, until soft and lightly golden.",
+  "Meanwhile, strip the leaves from 1 sprig of rosemary and chop them finely. Chop 4 sage leaves. Mince the garlic.",
+  "Add the rosemary, sage, garlic and tomato paste to the pot. Stir for 1 minute, until the paste turns a shade darker.",
+  "Add the broth, the mashed beans, the whole beans, the farro and 1 tsp salt. Stir well and bring it to a boil.",
+  "Turn the heat down to medium-low and simmer, partly covered, for 25 minutes, stirring every few minutes. It's ready when the farro is tender but still a little chewy and the soup is thick. If it gets too thick, stir in a splash of water.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle into bowls. Drizzle each bowl with some of the remaining 2 tbsp olive oil and add a grind of pepper."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No page for this dish by name has 20 ratings, so this is a fallback. The soup's core is farro cooked in a bean base, soffritto of onion, carrot and celery, rosemary and sage. Italy Magazine purees the beans and adds tomato concentrate; Just a Pinch uses canned borlotti beans and semi-pearled farro at 1 cup to about 3 cups of liquid, which this follows, with extra broth for a dinner-sized soup. SBS and Italy Magazine include pancetta or dried soaked beans taking over an hour; this drops the pancetta (vegan) and uses canned beans to fit the time. Mashing one can of beans is the quick stand-in for the purée.",
+ "sources": [
+  {
+   "name": "Just a Pinch",
+   "title": "Tuscan Farro and Bean Soup (Zuppa di Farro)",
+   "url": "https://justapinch.com/recipes/tuscan-farro-and-bean-soup-zuppa-di.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Italy Magazine",
+   "title": "Zuppa di Farro: Tuscan Farro Soup",
+   "url": "http://www.italymagazine.com/recipe/zuppa-di-farro-tuscan-farro-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Farro Soup with Beans (Zuppa di Farro)",
+   "url": "https://www.sbs.com.au/food/recipe/farro-soup-with-beans-zuppa-di-farro/q49omyd6h",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

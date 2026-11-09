@@ -1,0 +1,81 @@
+{
+ "dish_name": "Uova e Piselli",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 lb",
+   "category": "frozen"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "3 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion. Heat the olive oil in a large nonstick skillet over medium-low heat. Add the onion and 1/4 tsp salt and cook for 8 minutes, stirring now and then, until very soft and see-through. Don't let it brown. If it starts to color, add a spoonful of water.",
+  "Add the frozen peas and 1/4 cup water. Cover and simmer over medium-low heat for 6 minutes, until the peas are tender.",
+  "Meanwhile, grate the Parmesan. That should be about 3/4 cup. Chop 2 tbsp of parsley. In a bowl, whisk the eggs with 1/2 cup of the Parmesan, the parsley, 1/2 tsp salt and 1/4 tsp pepper.",
+  "Turn the heat up to medium. Pour the eggs over the peas and stir gently and constantly for 1 to 2 minutes, until soft, creamy curds form. Take the pan off the heat while the eggs still look a little glossy.",
+  "Taste it. If it's flat, add a pinch more salt. Serve with the remaining 1/4 cup Parmesan and a grind of pepper."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Memorie di Angelina's Peas and Eggs (piselli cacio e uova) is the lead, since it is the one named version that matches the description: onion stewed soft, peas simmered, eggs stirred in at the end. It has no ratings yet, so this is a fallback. Ciao Italia's version bakes the eggs whole over the peas with pancetta, which is different, so it is only noted. Frozen peas replace the canned peas in the lead. None of the pages ties the dish to Naples, so the list's 'Neapolitan' may be wrong.",
+ "sources": [
+  {
+   "name": "Memorie di Angelina",
+   "title": "Peas and Eggs (Piselli cacio e uova)",
+   "url": "https://memoriediangelina.com/2015/10/09/peas-and-eggs/",
+   "rating": null,
+   "rating_count": 0,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ciao Italia",
+   "title": "Peas and Eggs / Piselli e Uove",
+   "url": "https://www.ciaoitalia.com/recipes/peas-and-eggs-piselli-e-uove",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,70 @@
+{
+ "dish_name": "Agnello Scottadito",
+ "cuisine": "Italian",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Lamb rib chops",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Extra-virgin olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: Finely chop the garlic. Chop 2 tbsp of rosemary leaves. In a shallow dish, stir the garlic and rosemary with the olive oil, 1 tsp salt and 1/2 tsp pepper.",
+  "Add the lamb chops to the dish and turn them to coat both sides. Cover and refrigerate for at least 2 hours.",
+  "Take the dish out of the fridge 20 minutes before you cook, so the chops aren't ice cold going into the pan.",
+  "Set a large cast-iron skillet or grill pan over high heat for 3 minutes, until it's very hot. Meanwhile, lift half the chops out of the dish and let the extra marinade drip back in.",
+  "Lay those chops in the hot pan in a single layer. Cook for 3 to 4 minutes, until the underside is deep brown and lets go of the pan. Flip them and cook the other side for 3 to 4 minutes.",
+  "You're cooking the lamb to 130°F in the middle for medium rare, so if you have a thermometer, check it there. No thermometer? Cut into the thickest chop. It should be warm and pink in the center.",
+  "Transfer the chops to a warm platter. Cook the second half the same way, then add them to the platter.",
+  "Pour the leftover marinade into the empty skillet over medium heat. Let it bubble for 2 minutes, until the garlic is pale gold and the rosemary smells toasty.",
+  "Spoon the hot oil over the chops. Let them rest for 3 minutes, then serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "marinate at least 2 hours ahead",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "The Italian Chef's recipe was the one page for the dish by name that opened (4.8 from only 5 ratings, so this is a fallback lead). It is garlic, rosemary and olive oil with a marinade of at least 2 hours, then very high heat for about 5 minutes a side. The search results for Food52 and Williams-Sonoma add lemon zest and heat the marinade before it goes on the chops, but both pages blocked the reader, so only the idea of heating the leftover marinade is borrowed here and they are not credited. Chops are cooked in a hot skillet instead of on a grill.",
+ "sources": [
+  {
+   "name": "The Italian Chef",
+   "title": "Lamb Chops Scottadito",
+   "url": "https://italianchef.com/lamb-chops-scottadito/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

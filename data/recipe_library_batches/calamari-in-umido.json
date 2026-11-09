@@ -1,0 +1,94 @@
+{
+ "dish_name": "Calamari in Umido",
+ "cuisine": "Italian",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Cleaned squid",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the squid bodies into 1/2-inch rings and leave the tentacles whole. Rinse them, drain well, and pat dry with paper towels. Sprinkle with 1/2 tsp salt. Finely chop the onion and mince the garlic.",
+  "Heat the olive oil in a large, deep skillet over medium-low heat. Add the onion and 1/2 tsp salt and cook for 5 minutes, until soft. Add the garlic and stir for 30 seconds, until you can smell it.",
+  "Turn the heat to high and add the squid. Cook for 2 minutes, stirring, until it turns white and curls.",
+  "Pour in the wine and let it bubble for 1 minute, scraping up the browned bits.",
+  "Turn the heat to medium-low. Add the crushed tomatoes, the remaining 1/2 tsp salt and the pepper. Simmer uncovered for 25 minutes, stirring every few minutes. It's ready when a ring is tender and gives easily when you bite it.",
+  "Meanwhile, chop 1/4 cup of parsley leaves.",
+  "Take the pan off the heat and stir in the parsley. Taste it. If it's flat, add a pinch more salt.",
+  "Serve in shallow bowls. Put the red pepper flakes on the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Our Italian Table's Calamari in Umido is the lead (no ratings on the page, so this is a fallback): squid browned briefly with onion and garlic, white wine, then canned tomatoes simmered about 30 minutes. Recipes from Italy cooks the same stew for about 20 minutes. This simmers for 25 minutes and uses 1 1/2 lb of squid for 28 oz of tomatoes. The sources serve it with toasted bread; left out so it stays gluten-free. Heat goes on the table.",
+ "sources": [
+  {
+   "name": "Our Italian Table",
+   "title": "Calamari in Umido (Stewed Squid in Tomatoes)",
+   "url": "https://ouritaliantable.com/calamari-in-umido/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipes from Italy",
+   "title": "Calamari Stew in Tomato Sauce with Garlic Bruschetta",
+   "url": "https://www.recipesfromitaly.com/calamari-stew-with-tomatoes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
