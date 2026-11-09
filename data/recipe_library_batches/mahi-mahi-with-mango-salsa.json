@@ -1,0 +1,136 @@
+{
+ "dish_name": "Mahi Mahi with Mango Salsa",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Mahi mahi fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Mango",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Avocado oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice, 2 cups of water and 1/4 tsp of the salt in a pot over high heat. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on.",
+  "Meanwhile, make the mango mix. Dice the mango and the tomato, chop 1/4 cup of the red onion and chop 3 tbsp cilantro. Transfer them to a bowl, squeeze in the juice of the lime and stir in 1/2 tsp salt and 1/4 tsp pepper. Set it aside.",
+  "Dice the jalapeño and put half in a small bowl for the table. The mango mix stays mild.",
+  "Pat the fillets dry with paper towels.",
+  "In a shallow dish, mix the chili powder, garlic powder, oregano, smoked paprika, cumin, the last 3/4 tsp salt and 3/4 tsp pepper. Press both sides of each fillet into the mix.",
+  "Heat the oil in a large cast iron or heavy skillet over medium-high heat until it shimmers. Add the fillets, working in two batches if they crowd the pan.",
+  "Cook for 3 to 4 minutes, until the underside is dark and the fish lets go of the pan. Flip and cook for 3 to 4 minutes, until it flakes easily with a fork.",
+  "Taste a spoonful of the mango mix. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve the fish over the rice with the mango mix spooned on top and the jalapeño on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one version of this dish came up with a rating that could be read: Peanut Butter and Fitness (blackened, 4.59 from 17), so it leads as a fallback and has fewer than 20 ratings. Other versions read (eMeals, Hook'd Seafood, Joyful Healthy Eats, Paleo Grubs) had no usable ratings; they agree on a simple mango salsa with lime and cilantro and fish seared 3 to 4 minutes a side. The blackening spices are kept mild and the jalapeño is moved to the table. The mango salsa ratings were taken from the visible star line. Rice is added so the timeline includes it.",
+ "sources": [
+  {
+   "name": "Peanut Butter and Fitness",
+   "title": "Blackened Mahi Mahi with Mango Salsa",
+   "url": "https://www.peanutbutterandfitness.com/blackened-mahi-mahi-with-mango-salsa/",
+   "rating": 4.59,
+   "rating_count": 17,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hook'd Seafood",
+   "title": "Pan-Seared Mahi Mahi with Mango Salsa",
+   "url": "https://hookdupseafood.com/mahi-mahi-with-mango-salsa/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Joyful Healthy Eats",
+   "title": "Cajun Mahi Mahi with Mango Pineapple Salsa",
+   "url": "https://www.joyfulhealthyeats.com/cajun-mahi-mahi-with-mango-pineapple-salsa/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,90 @@
+{
+ "dish_name": "Cucumber and Egg Stir-Fry",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "English cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the cucumbers fully. Halve them lengthwise, scoop out the seeds with a spoon and slice them thin on an angle.",
+  "Toss the slices with 1 1/2 tsp of the salt in a bowl and leave them for 20 minutes.",
+  "Meanwhile, put the rice and 2 1/4 cups of water in a pot over high heat. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on.",
+  "Beat the eggs with 1/4 tsp salt in a bowl and set them aside. Mince the garlic.",
+  "Rinse the cucumber slices under cold water, drain them and pat them dry with paper towels.",
+  "Heat the oil in a large skillet or wok over medium heat. Add the garlic and stir for a few seconds, until it smells fragrant.",
+  "Add the cucumbers and cook for 1 to 2 minutes, until they're hot all the way through and no longer raw tasting.",
+  "Push the cucumbers to one side. Pour the eggs onto the empty side and leave them for 20 seconds, until the bottom sets.",
+  "Stir the eggs into big soft curds and toss them with the cucumbers. Take the pan off the heat while the eggs still look a little wet.",
+  "Taste it. If it's flat, add a pinch more salt, then crack the pepper over the top.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Delightful Plate (4.58 from 19, so just under the 20 rating mark and a fallback). It salts and rinses the cucumber, then stir-fries it for 1 to 2 minutes with garlic and folds in the eggs last. Cooking with Lei cooks the eggs first and braises the cucumber with a cornstarch sauce; Omnivore's Cookbook adds soy and sesame. The soy and sesame oil are left out to keep it gluten-free. Amounts are doubled from the source's 2 servings. Rice is added so the timeline includes it.",
+ "sources": [
+  {
+   "name": "Delightful Plate",
+   "title": "Stir-Fried Cucumber with Egg",
+   "url": "https://delightfulplate.com/stir-fried-cucumber-with-egg/",
+   "rating": 4.58,
+   "rating_count": 19,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking with Lei",
+   "title": "Stir Fry Cucumber with Egg and Mushroom",
+   "url": "https://cookingwithlei.com/stir-fry-cucumber-with-egg-mushroom/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Cucumber and Egg Stir Fry",
+   "url": "https://omnivorescookbook.com/cucumber",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

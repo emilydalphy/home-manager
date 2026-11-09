@@ -1,0 +1,90 @@
+{
+ "dish_name": "White Cut Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Bone-in skin-on chicken thighs",
+   "qty": "4 large (about 2 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (about 4 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ice",
+   "qty": "1 bag",
+   "category": "frozen"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice and 2 1/4 cups of water in a pot over high heat. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on.",
+  "Fill a large pot with about 8 cups of water, enough to cover the thighs by 1 inch. Add 1 whole scallion and 5 slices of ginger and bring it to a boil over high heat.",
+  "Meanwhile, finely mince the white and light green parts of the other 5 scallions and 1/4 cup of the ginger. Transfer them to a heatproof bowl with 1/2 tsp of the salt.",
+  "Lower the thighs into the boiling water. When it comes back to a boil, turn the heat to the lowest setting and cover.",
+  "Poach for 20 to 25 minutes, with the water barely moving. You're cooking the chicken to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Poke the thickest part with a chopstick: the juices should run clear and there should be no pink at the bone.",
+  "While it poaches, fill a large bowl with cold water and a few big handfuls of ice.",
+  "Heat the oil in a small pot over high heat for about 2 minutes, until it shimmers. Stand back a little. Pour it over the scallion and ginger in the bowl. It will sizzle. Stir it.",
+  "Taste the sauce. If it's flat, add the last 1/2 tsp salt.",
+  "Transfer the thighs into the ice bath and leave them for 5 minutes, turning them once.",
+  "Cut the meat off the bones and slice it, skin on, into 1/2-inch pieces.",
+  "Serve the chicken with the ginger scallion oil spooned over and the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is The Woks of Life (4.83 from 57), a whole chicken poached gently, chilled in an ice bath and served with a ginger scallion oil. Made With Lau and Whattocooktoday agree on the poach, ice bath and the oil poured hot over minced aromatics; Whattocooktoday uses drumsticks and a 40 minute poach. A whole bird takes about 70 minutes, which breaks the 45 minute target, so this uses bone-in thighs, poached about 20 to 25 minutes, and a larger batch of the oil. The soy sauce is left out to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Cantonese Poached Chicken with Ginger Scallion Oil (Bai Qie Ji)",
+   "url": "https://thewoksoflife.com/cantonese-poached-chicken-w-ginger-scallion-oil-bai-qie-ji/",
+   "rating": 4.83,
+   "rating_count": 57,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Made With Lau",
+   "title": "White Cut Chicken",
+   "url": "https://www.madewithlau.com/recipes/white-cut-chicken",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "What to Cook Today",
+   "title": "Bai Qie Ji",
+   "url": "https://whattocooktoday.com/bai-qie-ji.html",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

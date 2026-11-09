@@ -1,0 +1,120 @@
+{
+ "dish_name": "Grilled Pork Chops with Peach Salsa",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Bone-in pork loin chops",
+   "qty": "4 (about 1/2 inch thick)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Peaches",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocado oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Make the peach mix first. Pit and dice the peaches. Chop 1/4 cup cilantro. Transfer them to a bowl, grate in the zest of the lime and squeeze in its juice, then stir in the olive oil, 1/2 tsp salt and 1/4 tsp pepper. Set it aside.",
+  "Dice the jalapeño and put half in a small bowl for the table. The peach mix stays mild.",
+  "In a small bowl, mix the smoked paprika, cumin, garlic powder, cinnamon, the last 1 tsp salt and 1/2 tsp pepper.",
+  "Pat the chops dry and rub the spice mix over both sides.",
+  "Heat a grill to medium-high. No grill? Heat the avocado oil in a large heavy skillet over medium-high heat and cook the chops in two batches.",
+  "Cook the chops for 4 to 5 minutes, until they lift off easily and have dark marks. Flip and cook for 4 to 5 minutes. You're cooking them to 145°F in the middle, so if you have a thermometer, check them there. No thermometer? Cut next to the bone: the juices should run clear and the meat should be just barely pink.",
+  "Transfer the chops to a cutting board and leave them for 5 minutes.",
+  "Taste a spoonful of the peach mix. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve the chops with the peaches spooned over and the jalapeño on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is So Fresh N So Green (5.0 from 2, a fallback): a smoky paprika, cumin and cinnamon rub, grilled to 145°F, with a peach, lime and cilantro salsa. Sandra Lee and Slender Kitchen have no usable ratings but agree on a chili powder rub, medium-high heat and a 5 minute rest. The pistachios in the lead salsa are left out to keep it nut-free, the chipotle powder is dropped, and the jalapeño goes on the table so the base stays mild. The pan option is for cooks without a grill.",
+ "sources": [
+  {
+   "name": "So Fresh N So Green",
+   "title": "Smoky Grilled Pork Chops + Peach Salsa",
+   "url": "https://sofreshnsogreen.com/recipes/pork-chops-peach-salsa/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network",
+   "title": "Grilled Pork Chops with Peach Salsa",
+   "url": "https://www.foodnetwork.com/recipes/sandra-lee/grilled-pork-chops-with-peach-salsa-recipe-1921074.amp",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Slender Kitchen",
+   "title": "Grilled Pork Chops with Peach Salsa",
+   "url": "https://www.slenderkitchen.com/recipe/grilled-pork-chops-with-peach-salsa",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

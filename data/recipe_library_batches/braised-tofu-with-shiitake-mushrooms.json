@@ -1,0 +1,131 @@
+{
+ "dish_name": "Braised Tofu with Shiitake Mushrooms",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Firm tofu",
+   "qty": "1 lb",
+   "category": "dairy"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice and 2 1/4 cups of water in a pot over high heat. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on.",
+  "Drain the tofu and pat it dry with paper towels. Cut it into 1/2-inch slices.",
+  "Slice the mushrooms and the carrot thin. Cut the bell pepper into strips, trim the snow peas and mince the garlic.",
+  "In a small bowl, stir the cornstarch with 1 tbsp of water.",
+  "In a medium bowl, stir together the broth, soy sauce, dark soy sauce, Shaoxing wine, sugar, salt and sesame oil.",
+  "Heat the oil in a large skillet or wok over high heat. Lay the tofu in a single layer and cook for 2 to 3 minutes per side, until golden. Add the garlic for the last 30 seconds.",
+  "Add the broth mix and the mushrooms. Bring it to a boil, then turn the heat to medium, cover and cook for 5 minutes.",
+  "Uncover and turn the heat to high. Add the carrot, snow peas and bell pepper and toss gently for 2 to 3 minutes, until they're crisp-tender.",
+  "Stir the cornstarch mix again and add it a little at a time, stirring gently. Cook for 1 minute, until the sauce coats the tofu.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Cup of Yum (5.0 from 34): tofu seared, then braised in a soy, Shaoxing and stock sauce with shiitake, finished with vegetables and a cornstarch slurry. The Plant Based Wok and Red House Spice versions braise tofu with chili bean paste for a Sichuan version. The optional oyster sauce is left out and the stock is vegetable, so it stays vegan. Tofu is browned a little longer than the source for a golden edge. Rice is added so the timeline includes it.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Quick and Easy Braised Tofu (Hongshao Dofu)",
+   "url": "https://cupofyum.com/recipes/quick-and-easy-braised-tofu-hongshao-dofu",
+   "rating": 5.0,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Red House Spice",
+   "title": "Braised Tofu Sichuan Style",
+   "url": "https://redhousespice.com/braised-tofu-sichuan-style/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

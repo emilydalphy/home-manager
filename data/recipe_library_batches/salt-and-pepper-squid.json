@@ -1,0 +1,111 @@
+{
+ "dish_name": "Salt and Pepper Squid",
+ "cuisine": "Chinese",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Cleaned squid",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Red chile",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice, 2 1/4 cups of water and 1/4 tsp of the salt in a pot over high heat. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on.",
+  "Pat the squid dry with paper towels. Slice the tubes into 1/2-inch rings and cut any big tentacles in half.",
+  "Separate the egg and keep the white. Toss the squid in a bowl with the egg white, 3/4 tsp of the salt, 1/2 tsp of the pepper and 1/4 cup of the cornstarch, until it looks thick and sticky.",
+  "Whisk the other 3/4 cup cornstarch with the baking powder in a wide bowl. Drop in the squid a few pieces at a time and turn them to coat. Shake off the extra and set them on a plate.",
+  "Mince the garlic, thinly slice 3 scallions and mince the chile. Put the chile in a small bowl for the table.",
+  "Pour the oil into a large heavy pot and heat it to 350°F. No thermometer? Dip in a wooden chopstick: it's ready when steady bubbles form around it. Set a wire rack or a plate lined with paper towels nearby.",
+  "Fry the squid in 3 batches for 2 to 3 minutes each, until golden and crisp. Don't crowd the pot. Transfer each batch to the rack and let the oil come back to temperature before the next.",
+  "Heat a wok or large skillet over medium heat. Carefully spoon in 1 tbsp of the hot frying oil. Add the garlic and stir for 10 seconds.",
+  "Add the squid, the last 1/2 tsp salt and the last 1/2 tsp pepper. Toss for a few seconds, until the squid is coated, then take it off the heat and top with the scallions.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice and the chile on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Khin's Kitchen (5.0 from 11, a fallback with fewer than 20 ratings): squid in a starch and flour dredge, deep fried, then tossed with garlic, pepper and salt. Ian Kewks (4.0 from 3) and Recipes by Nora (5.0 from 1) agree on the 350 to 375°F oil and short fry; Nora soaks the squid in milk. The flour is replaced with more cornstarch, and the Shaoxing wine is left out, to keep it gluten-free. The chile is moved to the table so the base stays mild. Rice is added so the timeline includes it. The oil is not reused unless it is strained and cooled.",
+ "sources": [
+  {
+   "name": "Khin's Kitchen",
+   "title": "Salt and Pepper Squids",
+   "url": "https://khinskitchen.com/salt-and-pepper-squids/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ian Kewks",
+   "title": "Salt and Pepper Squid (Chinese-style)",
+   "url": "https://www.iankewks.com/salt-and-pepper-squid/",
+   "rating": 4.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Recipes by Nora",
+   "title": "Crispy Salt and Pepper Squid",
+   "url": "https://www.recipesbynora.com/salt-and-pepper-squid-recipe",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

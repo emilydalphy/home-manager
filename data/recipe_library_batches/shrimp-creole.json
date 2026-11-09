@@ -1,0 +1,146 @@
+{
+ "dish_name": "Shrimp Creole",
+ "cuisine": "American",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Creole seasoning",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cayenne pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Louisiana hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice, 3 cups of water and 1/2 tsp of the salt in a medium pot over high heat. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on until the shrimp are done.",
+  "Meanwhile, finely chop the onion and the bell pepper. Slice 3 celery stalks thin and mince the garlic.",
+  "Pat the shrimp dry. Toss them in a bowl with 1/4 tsp of the salt and the pepper and put them in the fridge.",
+  "Heat the oil in a large deep skillet over medium-high heat. Add the onion, bell pepper, celery and the last 1/4 tsp salt. Turn the heat down to medium and cook for 10 to 12 minutes, stirring now and then, until the vegetables are very soft.",
+  "Add the garlic, Creole seasoning, thyme, cayenne and bay leaf. Stir for 30 seconds, until it smells toasty.",
+  "Add the tomato sauce, 1 cup of water and the Worcestershire. Bring it to a boil, then turn the heat to low and simmer, uncovered, for 8 to 10 minutes, until the sauce thickens.",
+  "Add the shrimp and stir them into the sauce. Cook for 2 to 3 minutes, until they're pink and curled into a loose C.",
+  "Take the pan off the heat. Fish out the bay leaf and stir in 2 tbsp chopped parsley. Cut the lemon into wedges.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve over the rice with the lemon wedges and the hot sauce on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is From a Chef's Kitchen (4.57 from 221), a no-roux Creole built on onion, pepper and celery, Creole seasoning and a tomato sauce simmer, with the shrimp added last. Pinch and Swirl, Simply Stacie and Foodiecrush agree on the vegetable base and the quick finish; they use canned diced tomatoes and some add flour or cornstarch. Butter is replaced with more oil to keep it dairy-free, the Worcestershire is gluten-free, and the cayenne is cut to 1/4 tsp with hot sauce left for the table. Rice is added so the timeline includes it. Check the Creole seasoning label for gluten.",
+ "sources": [
+  {
+   "name": "From a Chef's Kitchen",
+   "title": "The Best Shrimp Creole Recipe",
+   "url": "https://www.fromachefskitchen.com/best-shrimp-creole/",
+   "rating": 4.57,
+   "rating_count": 221,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pinch and Swirl",
+   "title": "Easy Shrimp Creole Recipe (30-Minute New Orleans Classic)",
+   "url": "https://pinchandswirl.com/shrimp-creole/",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true
+  },
+  {
+   "name": "Foodiecrush",
+   "title": "Fast & Easy Shrimp Creole Recipe",
+   "url": "https://www.foodiecrush.com/shrimp-creole/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,105 @@
+{
+ "dish_name": "Hoppin' John",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Canned black-eyed peas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked ham",
+   "qty": "8 oz",
+   "category": "meat/seafood",
+   "cook_qty": "1 cup diced"
+  },
+  {
+   "item": "Converted long-grain rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes with green chiles",
+   "qty": "1 can (10 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 rib"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice, 2 cups of water and 1/2 tsp of the salt in a pot over high heat. Bring it to a boil, then cover, turn the heat to low and cook for 20 minutes. Take it off the heat and leave the lid on.",
+  "Meanwhile, dice half the onion, dice 1 celery rib and the ham, and mince the garlic. Drain the black-eyed peas in a colander and rinse them under cold water.",
+  "Heat the oil in a large pot or Dutch oven over medium-high heat. Add the onion, celery and the ham. Cook for 5 minutes, stirring now and then, until the onion is soft and the ham has a few browned edges.",
+  "Add the garlic and stir for 1 minute, until it smells fragrant.",
+  "Add the broth and the tomatoes with their juice. Scrape up any browned bits from the bottom of the pot, then bring it to a boil.",
+  "Stir in the peas, turn the heat to medium-low and cover. Simmer for 15 minutes.",
+  "Taste it. If it's flat, add a pinch more salt. The ham is salty, so go easy.",
+  "Serve the peas over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Southern Bite (5.0 from 9, a fallback with fewer than 20 ratings): onion and celery softened in oil, then broth, smoked ham and tomatoes with green chiles, and black-eyed peas simmered, served over converted rice. Other versions agree on the pork and peas and differ on cut (bacon, kielbasa, ham hock) and cook time. The source uses a bag of frozen peas simmered 30 to 35 minutes; canned peas, drained and rinsed, only need 15, which keeps the dinner within 45 minutes. Ham, not a hock, so it works on a weeknight. Check the ham and broth labels for gluten.",
+ "sources": [
+  {
+   "name": "Southern Bite",
+   "title": "Southern Hoppin' John",
+   "url": "https://southernbite.com/southern-hoppin-john/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Smarty Pants Kitchen",
+   "title": "Southern Hoppin' John (Black-Eyed Peas and Rice)",
+   "url": "https://smartypantskitchen.com/hoppin-john/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true
+  },
+  {
+   "name": "Palatable Pastime",
+   "title": "Quick Hoppin' John",
+   "url": "https://palatablepastime.com/2014/12/31/quick-hoppin-john/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
