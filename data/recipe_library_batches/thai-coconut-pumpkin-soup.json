@@ -1,0 +1,111 @@
+{
+ "dish_name": "Thai Coconut Pumpkin Soup",
+ "cuisine": "Thai",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Pumpkin puree",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegan gluten-free Thai red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "2 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion. Chop the garlic and ginger roughly, about 2 tbsp of each. Chop the scallions and tear the basil leaves off the stems. Cut the lime in half.",
+  "Heat the oil in a large pot over medium-high heat. Add the onion, garlic, ginger and the salt. Cook for 5 minutes, stirring now and then, until the edges start to brown.",
+  "Add the pumpkin and cook for 5 minutes, stirring often, until it darkens a little.",
+  "Add the 2 tbsp curry paste and stir for 1 minute, until fragrant.",
+  "Pour in the coconut milk and the broth and stir well. Bring it to a simmer, turn the heat down to medium and cook for 5 minutes.",
+  "Take the pot off the heat. Stir in the scallions, basil, 1 tsp brown sugar and the juice of half the lime.",
+  "Blend the soup until smooth with an immersion blender. No immersion blender? Blend it in two batches in a regular blender, with the lid vented and a towel over the top.",
+  "Taste it, and add a pinch more salt if it's flat. Serve in bowls with the other half of the lime cut into wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (Chowhound, 5.0 from 23) uses canned pumpkin, red curry paste, coconut milk and broth, and blends it at the end with the scallions and basil stirred in off the heat. RecipeTin Eats (4.94 from 98) agrees on frying the paste before the liquid and uses fresh pumpkin and fish sauce, which takes longer. The paste is added to the pot for a minute before the liquid, which the lead does not do, and the recipe is scaled from 8 servings to 4. Buy a paste labeled vegan, since many contain shrimp paste.",
+ "sources": [
+  {
+   "name": "Chowhound",
+   "title": "Thai-Inspired Coconut And Pumpkin Soup",
+   "url": "https://www.chowhound.com/1495453/thai-inspired-coconut-and-pumpkin-soup-recipe/",
+   "rating": 5.0,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Coconut Pumpkin Soup",
+   "url": "https://www.recipetineats.com/thai-coconut-pumpkin-soup/",
+   "rating": 4.94,
+   "rating_count": 98,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

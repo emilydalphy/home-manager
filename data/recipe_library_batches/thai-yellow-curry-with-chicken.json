@@ -1,0 +1,122 @@
+{
+ "dish_name": "Thai Yellow Curry with Chicken",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken thighs, boneless and skinless",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Gluten-free yellow curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, cut the chicken into 1 inch pieces, pat them dry and sprinkle them with the salt. Cut the potatoes into 1/2 inch cubes and slice the carrot into thin coins. Pick the basil leaves off the stems and slice the chili.",
+  "Heat 1 tbsp of the oil in a large heavy pot over medium-high heat. Add the chicken in a single layer and leave it alone for 2 minutes, until the underside is browned.",
+  "Stir the chicken and cook for 1 minute. It won't be cooked through yet. Transfer it to a plate.",
+  "Turn the heat down to medium. Add the remaining 1 tbsp oil and the 3 tbsp curry paste. Stir for 2 minutes, until the paste darkens a little and smells fragrant.",
+  "Pour in the broth and scrape up anything stuck to the bottom of the pot. Stir in 4 tsp fish sauce, 2 tsp sugar and the coconut milk, then add the potatoes and carrot.",
+  "Bring it to a boil, then turn the heat down so it bubbles gently. Cook for 9 minutes, until a knife slides easily into a potato.",
+  "Add the chicken and any juices from the plate. Cook for 5 minutes. You're cooking the thighs to 175°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut a piece open: it's done when there's no pink left and the juices run clear.",
+  "Take the pot off the heat. Taste it, and add a splash more fish sauce if it's flat.",
+  "Serve over the rice with the basil torn over the top and the sliced chili on the side for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (RecipeTin Eats) makes its curry paste from scratch with prawns and takes an hour, and its notes say to use boneless thighs for chicken, added with the potato. Here that is changed to a gluten-free store-bought paste, smaller potato pieces and a browned chicken so it fits 30 minutes. The other sources (Rachel Cooks Thai, Vikalinka) agree on yellow paste, coconut milk and potatoes simmered together; the lead's tamarind and bamboo shoots are left out. Check the paste label for wheat, and the chicken broth too.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Yellow Curry (from scratch!)",
+   "url": "https://www.recipetineats.com/thai-yellow-curry/",
+   "rating": 4.95,
+   "rating_count": 59,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rachel Cooks Thai",
+   "title": "Yellow Curry with Chicken and Potato",
+   "url": "https://rachelcooksthai.com/yellow-curry-with-chicken-and-potato/",
+   "rating": 4.78,
+   "rating_count": 9,
+   "read": true
+  },
+  {
+   "name": "Vikalinka",
+   "title": "Yellow Chicken Curry with Potatoes",
+   "url": "https://vikalinka.com/yellow-chicken-curry-with-potatoes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

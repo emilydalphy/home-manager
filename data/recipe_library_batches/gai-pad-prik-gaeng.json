@@ -1,0 +1,88 @@
+{
+ "dish_name": "Gai Pad Prik Gaeng",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken breasts, boneless and skinless",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green beans",
+   "qty": "3/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free Thai red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, slice the chicken into thin bite-sized strips. Trim the green beans and cut them into 1 inch pieces. Cut the lime leaves into very thin strips.",
+  "Put the oil in a wok or large skillet over medium-low heat. Add the 3 tbsp curry paste and stir for 30 seconds, until fragrant. Keep stirring, since the paste burns easily.",
+  "Turn the heat to high. Add the chicken and stir constantly for 1 minute, until it's coated in the paste.",
+  "Add 2 tsp fish sauce, 1 tsp sugar and 2 tbsp water. Stir-fry for 2 minutes, until the chicken is no longer pink on the outside.",
+  "Add the green beans and 2 tbsp water. Stir-fry for 3 minutes, until the beans are bright green and tender-crisp.",
+  "You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check a piece there. No thermometer? Cut a piece open: it's done when there's no pink left.",
+  "Take the pan off the heat and stir in the lime leaves. Taste it, and add a splash more fish sauce if it's flat.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (Eating Thai Food, 4.8 from 8) has too few ratings, so this is a fallback lead. It fries the paste in a little oil on low heat, stir-fries the chicken on high with fish sauce and sugar, and adds the beans last. Thai Foodie (a 5.0 from 1) agrees and adds a longer marinade in oyster sauce, which is left out because oyster sauce can contain wheat. Green beans are used instead of long beans and cook a little longer, and the amounts are scaled up from 1 to 2 servings to 4. Red curry paste is the dish, so choose a mild brand for children.",
+ "sources": [
+  {
+   "name": "Eating Thai Food",
+   "title": "Gai Pad Prik Gaeng",
+   "url": "https://www.eatingthaifood.com/thai-gai-pad-prik-gaeng-recipe",
+   "rating": 4.8,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Thai Foodie",
+   "title": "Thai Red Curry Chicken with Green Beans",
+   "url": "https://thai-foodie.com/thaifood/thai-red-curry-chicken-with-green-beans-recipe",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

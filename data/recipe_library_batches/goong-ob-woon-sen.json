@@ -1,0 +1,115 @@
+{
+ "dish_name": "Goong Ob Woon Sen",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried glass noodles (mung bean)",
+   "qty": "6 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Bacon",
+   "qty": "4 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "2 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Tamari (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Put the glass noodles in a large bowl and cover them with hot tap water. Leave them for 10 minutes, until they're soft but still a little firm. Drain them well and snip them a few times with scissors.",
+  "Meanwhile, cut the bacon into 1/2 inch pieces. Smash the garlic. Chop 2 tbsp of the cilantro stems and keep the leaves for the end. Cut the ginger into thin strips, slice the celery and the scallions, and pat the shrimp dry.",
+  "In a bowl, whisk 3/4 cup water, 2 tbsp oyster sauce, 3 tbsp tamari, 2 tbsp sesame oil, 1 1/2 tbsp sugar and 1 tsp pepper.",
+  "Put a wide pot with a lid over medium heat. Add the bacon and cook for 4 minutes, until the fat melts and the edges start to brown.",
+  "Add the garlic and the cilantro stems and stir for 30 seconds, until fragrant.",
+  "Add the noodles and pour the sauce over them. Toss with tongs until they're coated.",
+  "Scatter the ginger over the noodles. Lay the shrimp on top in a single layer, then add the celery and scallions.",
+  "Cover and cook over medium heat for 5 minutes, until the shrimp are pink and curled and the noodles have taken up most of the sauce.",
+  "Take the pot off the heat and toss everything together. Serve in bowls with the cilantro leaves on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (Hungry in Thailand, 5.0 from 2) has too few ratings, so this is a fallback lead. It layers soaked glass noodles, a sauce, ginger and prawns in a covered pot over bacon and garlic, and steams them for about 5 minutes. Kikkoman's version agrees on the layering but uses evaporated milk and a dipping sauce, which are left out. Wheat is removed: tamari takes the place of the dark soy and Golden Mountain sauce, cilantro stems replace coriander roots and celery replaces Chinese celery. Check the oyster sauce label for wheat.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Goong Ob Woon Sen (Thai Glass Noodle Prawn)",
+   "url": "https://hungryinthailand.com/goong-ob-woonsen",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kikkoman",
+   "title": "Goong Ob Woonsen (Baked Shrimp with Glass Noodles)",
+   "url": "https://kikkomanusa.com/foodservice/recipes/goong-ob-woonsen-baked-shrimp-with-glass-noodles/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

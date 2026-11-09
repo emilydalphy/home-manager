@@ -1,0 +1,129 @@
+{
+ "dish_name": "Thai Basil Eggplant",
+ "cuisine": "Thai",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Japanese or Chinese eggplants",
+   "qty": "1 1/4 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red Thai chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Vegetarian oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, whisk 4 tbsp soy sauce, 3 tbsp vegetarian oyster sauce, 1 tbsp rice vinegar and 1 tbsp maple syrup together in a small bowl. In another small bowl, stir the 2 tsp cornstarch into 1/4 cup cold water.",
+  "Halve the eggplants lengthwise and cut them into 3/4 inch pieces. Thinly slice the bell pepper and the onion. Mince the garlic, grate the ginger, tear the basil leaves off the stems and thinly slice the chili.",
+  "Heat 1 tbsp of the oil in a large skillet or wok over medium-high heat. Add the eggplant, toss to coat and spread it in a single layer. Sprinkle it with a little water, cover and cook for 3 minutes.",
+  "Flip the pieces, sprinkle with a little more water, cover and cook for 2 minutes. Uncover and stir-fry for 2 minutes, until the eggplant is golden and tender but still holds its shape. Transfer it to a plate.",
+  "Add the remaining 1 tbsp oil, the onion and the bell pepper to the same pan. Cook for 4 minutes, stirring often, until tender-crisp.",
+  "Add the garlic and ginger and stir for 1 minute, until fragrant.",
+  "Stir the cornstarch mixture again, since the starch settles, then pour it into the pan with the sauce. Bring it to a simmer.",
+  "Turn the heat down to medium and add the eggplant. Cook for 2 minutes, stirring often, until the sauce thickens a little.",
+  "Take the pan off the heat and stir in most of the basil. Serve over the rice with the rest of the basil on top and the sliced chili on the side for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 16,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (Running on Real Food) is the only readable version with a rating (5.0 from 11), so this is a fallback lead. It browns the eggplant in a covered pan with a splash of water instead of a lot of oil, then finishes in a cornstarch-thickened sauce. A second version (Feed Grump) uses fish sauce and chicken stock; those are replaced here with soy sauce and vegetarian oyster sauce to keep it vegan. The lead's second bell pepper is cut to one and the chili is moved to the side. Check the oyster sauce label: mushroom-based ones are vegan.",
+ "sources": [
+  {
+   "name": "Running on Real Food",
+   "title": "Thai Basil Eggplant",
+   "url": "https://runningonrealfood.com/thai-basil-eggplant/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Feed Grump",
+   "title": "Thai Basil Eggplant Stir-Fry",
+   "url": "https://feedgrump.com/thai-basil-eggplant-stir-fry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "The New Baguette",
+   "title": "Eggplant Stir Fry",
+   "url": "https://thenewbaguette.com/eggplant-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

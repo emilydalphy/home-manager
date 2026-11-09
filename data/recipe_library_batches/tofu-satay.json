@@ -1,0 +1,125 @@
+{
+ "dish_name": "Tofu Satay",
+ "cuisine": "Thai",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Crunchy peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fried shallots",
+   "qty": "1 small container",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Wooden skewers",
+   "qty": "1 pack",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 8 wooden skewers in a baking dish with enough water to cover them. They'll soak while you do the next steps.",
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, whisk 4 tbsp soy sauce, the juice of 1 lime (about 2 tbsp), 4 tbsp brown sugar and 2 minced garlic cloves together in a large bowl. Transfer half of it to a medium bowl.",
+  "Stir the peanut butter into the medium bowl until smooth. Add warm water 1 tbsp at a time until the sauce is thin enough to drizzle. That should be about 3 tbsp. Taste it, and add a little more brown sugar if you'd like it sweeter.",
+  "Pat the tofu dry and cut it into 1 inch cubes. Add them to the large bowl, toss gently and leave them for 10 minutes.",
+  "Meanwhile, set an oven rack about 6 inches from the broiler and turn the broiler to high. Line a rimmed baking sheet with foil and brush it with a little of the olive oil.",
+  "Drain the skewers and thread the tofu onto them. Lay them on the sheet about 1 inch apart. Stir the rest of the olive oil into the marinade left in the bowl.",
+  "Broil for 4 minutes, until the tofu is starting to brown. Turn the skewers, brush them with the oiled marinade and broil for 4 minutes, until lightly charred. Broilers run hot, so keep an eye on them.",
+  "Chop 1/4 cup of the cilantro and the peanuts. Cut the second lime into 4 wedges.",
+  "Serve the skewers over the rice with the peanut sauce, cilantro, peanuts, fried shallots and lime wedges. Put the Sriracha on the side for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (Chowhound, 5.0 from 24) grills the tofu after 30 minutes to 2 hours in a soy, lime and brown sugar marinade, and makes the peanut sauce from half the same marinade. Here the marinade is cut to 10 minutes and the tofu is broiled to fit 30 minutes, and its crushed chile is left out of the base so the heat comes from the Sriracha on the side. Other versions (Life Currents, Vegan on Board) marinate in coconut milk and curry paste and agree on a peanut dipping sauce; rice with the skewers comes from them.",
+ "sources": [
+  {
+   "name": "Chowhound",
+   "title": "Satay-Style Grilled Tofu Skewers",
+   "url": "https://www.chowhound.com/1623730/satay-style-grilled-tofu-skewers-recipe/",
+   "rating": 5.0,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Life Currents",
+   "title": "Tofu Satay with Peanut Sauce",
+   "url": "https://lifecurrentsblog.com/tofu-satay-with-peanut-sauce/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Vegan on Board",
+   "title": "Tofu Satay with Vegan Peanut Sauce",
+   "url": "https://veganonboard.com/tofu-satay-with-vegan-peanut-sauce/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

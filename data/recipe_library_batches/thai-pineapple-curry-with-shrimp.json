@@ -1,0 +1,106 @@
+{
+ "dish_name": "Thai Pineapple Curry with Shrimp",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Gluten-free Thai red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Pineapple chunks in juice",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, pat the shrimp dry. Drain the pineapple. Cut the lime leaves into very thin strips, juice the lime and slice the chilies.",
+  "Heat the oil in a wok or large deep skillet over medium-high heat. Add the 3 tbsp curry paste and stir for 1 minute, until fragrant.",
+  "Pour in the coconut milk and 1 cup of water and stir until the paste dissolves. Bring it to a boil, then turn the heat down to low. Simmer for 8 minutes, stirring now and then.",
+  "Turn the heat up to medium-high. Add the shrimp and the pineapple and stir for 2 minutes. The shrimp are done when they're pink and curled into a loose C. A tight O means they're overcooked.",
+  "Take the pan off the heat. Stir in 2 tsp fish sauce, 1 tsp of the lime juice, the lime leaves and 1 1/2 tbsp sugar. Taste it, and add a little more sugar or fish sauce if it's flat.",
+  "Serve over the rice with cilantro leaves on top and the sliced chilies on the side for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (Wok & Skillet) has no ratings yet, so this is a fallback lead; it is the only readable version with a method that fits 30 minutes. It fries red curry paste, simmers it in coconut milk and water, then adds the shrimp and pineapple at the end and seasons off the heat. The other version read (Sur La Table's kaeng khua saparot) agrees on the order but uses less coconut milk and no water, and adds Thai basil. Here the amounts are cut from 6 servings to 4, palm sugar becomes plain sugar and the chilies move to the side to keep it mild. Check the paste label for wheat.",
+ "sources": [
+  {
+   "name": "Wok & Skillet",
+   "title": "Thai Pineapple Shrimp Curry",
+   "url": "https://www.wokandskillet.com/thai-pineapple-shrimp-curry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sur La Table",
+   "title": "Pineapple and Shrimp Red Curry (Kaeng Khua Saparot)",
+   "url": "https://www.surlatable.com/pineapple-and-shrimp-red-curry-kaeng-khua-saparot/REC-322275.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
