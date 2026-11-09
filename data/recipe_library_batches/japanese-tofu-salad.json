@@ -1,0 +1,101 @@
+{
+ "dish_name": "Japanese Tofu Salad",
+ "cuisine": "Japanese",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Red leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Silken tofu (soft)",
+   "qty": "1 block (14 oz)",
+   "category": "other"
+  },
+  {
+   "item": "Dried wakame",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Corn kernels",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Ponzu (one made without bonito)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted white sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Put the wakame in a small bowl, cover it with cold water, and leave it for 10 minutes.",
+  "Meanwhile, in a small bowl, whisk together 6 tbsp ponzu, 2 tbsp soy sauce, 2 tbsp sesame oil, 1/4 tsp salt and 1 tbsp sesame seeds.",
+  "Drain the tofu. Cut it into 1/2 inch cubes, handling it gently so it keeps its shape.",
+  "Wash and dry the lettuce. Tear it into bite-size pieces and arrange it on a large platter.",
+  "Scatter the corn over the lettuce. Halve the cherry tomatoes and add them.",
+  "Squeeze the wakame dry and add it to the platter with the tofu.",
+  "Just before serving, drizzle about two thirds of the dressing over the salad. Serve with the rest of the dressing in a small cup on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook leads (4.69 from 22): torn lettuce with cubed silken tofu, wakame, corn and tomato, in a ponzu, soy sauce and sesame oil dressing with sesame seeds. Amounts are doubled from its 2 servings. Shiso and the yuzu kosho are left out. Cooking with Yoshiko makes a blended onion and carrot sesame dressing instead, and uses tamari to make it gluten-free. Ponzu usually has wheat soy sauce, and some brands have bonito, so the list asks for one without it to stay vegan.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Tofu Salad with Sesame Ponzu Dressing",
+   "url": "https://www.justonecookbook.com/tofu-salad-with-sesame-ponzu-dressing/",
+   "rating": 4.69,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking with Yoshiko",
+   "title": "Tofu and Wakame Salad with Japanese Sesame Dressing",
+   "url": "https://cookingwithyoshiko.com/tofu-and-wakame-salad-with-japanese-sesame-dressing/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

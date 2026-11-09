@@ -1,0 +1,132 @@
+{
+ "dish_name": "Japanese Macaroni Salad",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Elbow macaroni",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Sliced deli ham",
+   "qty": "7 oz (about 8 slices)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Japanese mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Unseasoned rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp plus 1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with 3 quarts of water, add 1 tbsp of the salt, and bring to a boil over high heat.",
+  "Meanwhile, put the eggs in a small pot and cover them with water. Bring to a boil over medium heat, then reduce to medium-low and cook for 12 minutes.",
+  "Add the macaroni to the large pot and cook it for 1 minute longer than the package says, so it stays soft once cold. Drain well.",
+  "Transfer the macaroni into a large bowl. While it's still hot, add the olive oil, rice vinegar and sugar and toss well. Leave it to cool completely, about 15 minutes, stirring now and then.",
+  "Transfer the eggs into a bowl of cold water for 5 minutes. Peel them and chop roughly.",
+  "Thinly slice the onion and the cucumbers into rounds. Cut the carrot into thin matchsticks. Transfer them into a bowl, sprinkle with 1 tsp salt, rub it in gently, and leave for 5 minutes.",
+  "Rinse the vegetables quickly under cold water, then squeeze out all the water with your hands.",
+  "Cut the ham into strips about 2 inches long.",
+  "When the macaroni is cool, add the ham, vegetables and eggs. Add the mayonnaise and pepper and mix until everything is coated.",
+  "Taste it, and add a pinch more salt or a spoonful more mayonnaise if it needs it. Cover and refrigerate for at least 1 hour.",
+  "Serve it cold. Store leftovers covered in the fridge for up to 2 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook leads (4.73 from 48): macaroni cooked a minute past the package time and dressed warm with rice vinegar, olive oil and sugar, salted cucumber and onion squeezed dry, ham, chopped egg and Japanese mayonnaise. Amounts are doubled so it fills four lunches. Carrot comes from Japanese Cooking 101 and Okonomi Kitchen, which also use it. The 1 hour chill is on top of the time listed.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Japanese Macaroni Salad",
+   "url": "https://www.justonecookbook.com/japanese-macaroni-salad/",
+   "rating": 4.73,
+   "rating_count": 48,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Okonomi Kitchen",
+   "title": "Japanese Macaroni Salad",
+   "url": "https://www.okonomikitchen.com/japanese-macaroni-salad/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Macaroni Salad Recipe",
+   "url": "https://japanesecooking101.com/macaroni-salad-recipe/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Japanese Macaroni Salad",
+   "url": "https://pickledplum.com/japanese-macaroni-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,120 @@
+{
+ "dish_name": "Chirashi Sushi",
+ "cuisine": "Japanese",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Japanese short-grain rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Unseasoned rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cooked peeled shrimp",
+   "qty": "8 oz (about 12 large)",
+   "category": "frozen"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "1 small bag (about 4 oz)",
+   "category": "produce",
+   "cook_qty": "12 snow peas"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a bowl and cover it with cold water. Swirl, drain, and repeat until the water runs mostly clear, about 4 times.",
+  "Transfer the rice into a medium pot with a tight lid. Add 2 cups of water and bring to a boil over high heat. Reduce to low, cover, and cook for 12 minutes. Don't lift the lid.",
+  "Take the pot off the heat and leave it covered for 10 minutes while you do the toppings.",
+  "Put the shrimp in a bowl of cold water to thaw, about 5 minutes. Drain and pat them dry.",
+  "In a small bowl, stir together 1/4 cup of the rice vinegar, 4 tsp of the sugar and 1 tsp of the salt. Microwave for 20 seconds, then stir until the sugar dissolves.",
+  "Beat the eggs in a bowl with the remaining 2 tsp sugar and a pinch of salt. Pour them through a sieve into a second bowl.",
+  "Heat a nonstick skillet over medium-low and rub it lightly with oil on a paper towel. Pour in a quarter of the egg and tilt the pan so it spreads thin. Cook for 1 minute, until the top is set and there's no brown. Slide it onto a plate. Repeat with the rest of the egg, oiling the pan lightly each time.",
+  "Roll up each egg sheet, slice it into thin strips, and loosen the strips with your fingers.",
+  "Slice the carrot into thin coins. Bring a small pot of water to a boil with the last 1/2 tsp salt. Cook the carrot for 2 minutes, add the snow peas, and cook for 30 seconds. Transfer both into a bowl of cold water, then drain. Slice the snow peas on a diagonal.",
+  "Spread the rice on a large platter. Pour the vinegar mixture over it and fold gently with a spatula, cutting through the rice without mashing it. Leave it for about 10 minutes, until it's at room temperature.",
+  "Divide the rice among 4 bowls and sprinkle with the sesame seeds. Scatter the egg strips over the top, then arrange the shrimp, carrot and snow peas.",
+  "Serve with the soy sauce, about 1 tbsp per bowl, for drizzling."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has 20 ratings. Caroline's Cooking (no rating shown) is the one that fits a lunch: sushi rice, thin egg omelette cut into strips, snow peas and cooked shrimp, with soy sauce at the table. Norecipes adds the carrot and sesame seeds and rests the rice covered. Just One Cookbook (4.91 from 10) is the full version with simmered shiitake, gobo and kanpyo and takes about 2 hours, so it isn't used. The raw fish and the sake in the egg are left out so every topping is cooked.",
+ "sources": [
+  {
+   "name": "Caroline's Cooking",
+   "title": "Chirashi sushi (scattered sushi)",
+   "url": "https://www.carolinescooking.com/chirashi-sushi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Norecipes",
+   "title": "Seafood Chirashi Sushi",
+   "url": "https://norecipes.com/seafood-chirashi-sushi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Chirashi Sushi (Five-Ingredient Scattered Sushi)",
+   "url": "https://www.justonecookbook.com/chirashi-sushi/",
+   "rating": 4.91,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

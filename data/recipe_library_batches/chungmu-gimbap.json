@@ -1,0 +1,134 @@
+{
+ "dish_name": "Chungmu Gimbap",
+ "cuisine": "Korean",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Daikon radish or Korean radish",
+   "qty": "1 small (about 10 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Cleaned squid tubes",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted gim (seaweed) sheets",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "4 sheets"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "2 cloves"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp plus 1/2 tsp"
+  },
+  {
+   "item": "Gochugaru (Korean chili flakes)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 1/2 tsp"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/8 tsp"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before: peel the radish and cut it into 1/2 inch cubes. In a bowl, stir 1 cup of water, 1/4 cup of the vinegar, 1/4 cup of the sugar and 1 tbsp of the salt until the sugar and salt dissolve. Add the radish and leave it for 45 minutes at room temperature, or cover and refrigerate overnight.",
+  "Rinse the rice until the water runs mostly clear. Transfer it into a small pot with 1 1/2 cups of water. Bring to a boil over high heat, then reduce to low, cover, and cook for 15 minutes. Leave it covered off the heat for 10 minutes.",
+  "Meanwhile, mince the garlic and slice the green onions. In a large bowl, stir together the gochugaru, soy sauce, fish sauce, the remaining 1/2 tbsp vinegar, 1 tbsp sugar, 1/2 tbsp of the sesame oil, the garlic, the pepper and 1 tbsp water.",
+  "Drain the radish without rinsing it and squeeze out the extra liquid. Transfer it into the sauce bowl.",
+  "Bring a small pot of water to a boil. Cut the squid into 1/2 inch strips. Add it to the water and cook for 30 to 60 seconds, until just opaque. Drain well. Transfer the squid into the sauce bowl, add the green onions and sesame seeds, and toss. Set the bowl aside.",
+  "Transfer the hot rice into a large bowl. Add 2 tsp sesame oil and 1/2 tsp salt and fold gently.",
+  "Stack the gim sheets and cut them in half to make 8 pieces. Lay one piece on a bamboo mat, or on a clean dry counter, shiny side down. Spread about 1/3 cup of rice over it, leaving a small gap at the far edge. Roll it up tightly and press gently to firm it. Repeat to make 8 thin rolls.",
+  "Cut each roll into 3 or 4 pieces.",
+  "Serve with the radish and squid bowl beside the rolls."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "Pickle the radish at least 1 hour ahead or the night before. After the brine, drained radish keeps in the fridge for 2 days.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "No version has any ratings shown, so Beyond Kimchee leads: plain seasoned rice rolled in gim, with a spicy squid salad and a spicy radish salad on the side. Aeri's Kitchen gives the amounts for the brine and the sauce. Beyond Kimchee blanches the squid for 30 to 60 seconds, while Aeri's boils it for 5 minutes, and this follows Beyond Kimchee so it stays tender. Gochugaru is cut to 2 tbsp from Aeri's 1/4 cup, so the sides are medium. The radish takes 45 minutes in brine, so it is the make-ahead step. The fish cake and plum extract are left out. With the radish done ahead, the rest takes about 45 minutes.",
+ "sources": [
+  {
+   "name": "Beyond Kimchee",
+   "title": "Chungmu Kimbap",
+   "url": "https://www.beyondkimchee.com/chungmu-kimbap/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Aeri's Kitchen",
+   "title": "ChungMu Kimbap",
+   "url": "http://www.aeriskitchen.com/2013/11/chungmu-kimbap/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

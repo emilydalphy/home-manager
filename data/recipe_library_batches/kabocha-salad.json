@@ -1,0 +1,89 @@
+{
+ "dish_name": "Kabocha Salad",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Kabocha squash",
+   "qty": "1 small (about 2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 1/2 tsp juice"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Wash the kabocha and cut it in half. Scoop out the seeds. If it's too hard to cut, microwave the whole squash for 2 minutes first.",
+  "Cut each half into 1 1/2 inch pieces and transfer them into a microwave-safe dish. Cover and microwave for 7 to 9 minutes, until a fork slides in with no resistance.",
+  "Meanwhile, slice the cucumbers into thin rounds and transfer them into a bowl. Add 1/4 tsp of the salt, toss, and leave for 5 minutes.",
+  "Squeeze the cucumber with your hands over the sink until no more water comes out.",
+  "Let the kabocha cool until you can handle it, then peel off the skin. It comes away easily.",
+  "Mash the kabocha in a large bowl with a fork. Leave some small chunks.",
+  "Squeeze 1 1/2 tsp of juice from the lemon. Add it to the kabocha along with the cucumber, 3 tbsp mayonnaise, the remaining 1/4 tsp salt and 1/4 tsp pepper. Stir gently until it holds together.",
+  "Taste it, and add a pinch more salt if it's flat.",
+  "Serve it at room temperature or chilled. Store leftovers covered in the fridge for up to 2 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 9,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has 20 ratings, so this follows Japanese Cooking 101 (5 from 1), the plainest one: microwaved kabocha, mashed, with salted cucumber, lemon and mayonnaise. Amounts are scaled up by half so it fills four lunches. The Cheap Lazy Vegan steams the squash and adds chickpeas, and Naoko's Nutritionist steams it for 30 to 40 minutes and adds sausage, raisins and almonds. Those extras are left out. Gluten-free, dairy-free and nut-free as written.",
+ "sources": [
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Kabocha Salad",
+   "url": "https://japanesecooking101.com/kabocha-salad/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Cheap Lazy Vegan",
+   "title": "Japanese Pumpkin Salad",
+   "url": "https://thecheaplazyvegan.com/japanese-pumpkin-salad/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Naoko's Nutritionist",
+   "title": "Depachika-Style Pumpkin Mayonnaise Salad",
+   "url": "https://naokoannutritionist.com/pumpkin-salad-that-brightens-up-the-dining-table/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

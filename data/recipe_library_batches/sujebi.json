@@ -1,0 +1,109 @@
+{
+ "dish_name": "Sujebi",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried large anchovies, gutted",
+   "qty": "1 oz (about 8)",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried kelp (dasima)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "2 pieces, 4 inches each"
+  },
+  {
+   "item": "Russet potato",
+   "qty": "1 large (about 12 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "2 cloves"
+  },
+  {
+   "item": "Soup soy sauce (guk ganjang)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Put the flour and 1 tsp of the salt in a large bowl. Add a scant 1 cup of water and stir until a shaggy dough forms. Knead it on the counter for 3 minutes, until smooth. If it's sticky, add a spoonful of flour. Cover the bowl and leave the dough to rest for 20 minutes.",
+  "Meanwhile, put 8 cups of water, the anchovies and the kelp in a large pot. Bring to a boil over high heat, then reduce to medium and simmer for 15 minutes. Take the kelp out at the 10 minute mark.",
+  "While the broth simmers, peel the potato, cut it in half lengthwise, and slice it 1/4 inch thick. Halve the zucchini lengthwise and slice it into 1/4 inch half-moons. Slice the onion 1/4 inch thick. Cut the green onions into 1 inch pieces. Mince the garlic.",
+  "Lift the anchovies out with a slotted spoon and throw them away. Keep the broth on the heat.",
+  "Add the soy sauce, the remaining 1 1/2 tsp salt, the potato, onion and garlic. Bring to a boil, then simmer on medium for 5 minutes.",
+  "Set a small bowl of water beside the dough. Wet your fingers, pinch off a piece the size of your thumb, and press and stretch it between your fingers until it's thin enough to see through. Drop it into the pot and repeat until all the dough is used. Keep the soup at a steady simmer while you do this.",
+  "Add the zucchini and green onions and simmer for 4 minutes, until the dough pieces turn translucent and the potato is tender. Keep the heat low so the broth stays clear.",
+  "Taste it, and add a pinch more salt if it's flat.",
+  "Ladle into bowls and serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has 20 ratings. Asian Supper (4.6 from 8) leads: an anchovy and kelp broth with soup soy sauce, potato, zucchini and green onion, with torn dough dropped in. The dough follows Kimchimari's flour, salt and water, which rests only 10 to 30 minutes, so it can rest while the broth simmers. Asian Supper adds an egg and potato starch to the dough, and Kimchimari and Korea Herald also add onion or mushroom. The hot pepper and spicy sauce are left out to keep the soup mild. The dough can be made a day ahead and kept in the fridge. Total is about 40 minutes.",
+ "sources": [
+  {
+   "name": "Asian Supper",
+   "title": "Sujebi (Flour Dough Flakes Soup)",
+   "url": "https://asiansupper.com/recipe/sujebi-flour-dough-flakes-soup/",
+   "rating": 4.6,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kimchimari",
+   "title": "Sujebi (Hand-pulled noodle soup)",
+   "url": "https://kimchimari.com/sujebi-hand-pulled-noodle-soup/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Korea Herald",
+   "title": "Sujebi, comforting Korean hand-pulled noodle soup in savory anchovy broth",
+   "url": "https://www.koreaherald.com/article/10447909",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
