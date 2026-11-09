@@ -1,0 +1,101 @@
+{
+ "dish_name": "Veloute de Champignons",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 small carton",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the mushrooms. Set aside a generous handful (about 4 oz) for topping the bowls. Dice the onion and mince the garlic. Strip 1 tsp of thyme leaves and keep 4 whole sprigs for the topping.",
+  "Melt 2 tbsp of the butter in a large pot over medium heat. Add the onion and cook for 3 minutes, until soft. Add the garlic and thyme leaves and cook for 30 seconds.",
+  "Add the larger share of the mushrooms and 1/2 tsp of the salt. Cover and cook for 7 minutes, stirring often, until they're soft and have given off their liquid.",
+  "Pour in the broth and bring it to a boil. Turn the heat down, cover and simmer for 10 minutes.",
+  "Meanwhile, melt the remaining 1 tbsp butter in a skillet over medium-high. Add the reserved mushrooms in one layer with the thyme sprigs and 1/4 tsp of the salt. Leave them for 2 minutes, then stir and cook for 3 minutes, until browned. Transfer them to a small bowl.",
+  "Take the pot off the heat and stir in the cream. Blend the soup smooth with an immersion blender. Or blend it in two batches in a regular blender, filling it no more than half full and holding a towel over the lid.",
+  "Stir in 1 tbsp lemon juice and the pepper. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the soup into bowls and top with the browned mushrooms. Slice the baguette. Serve with the baguette."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 24,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Staub recipe on the Zwilling site is the lead: onion, garlic and thyme, most of the mushrooms cooked until soft, broth, a 15 minute simmer, cream, blended smooth, then browned mushrooms on top. Its page shows no rating of its own (the 4.7 on the page belongs to the Dutch oven), so this is a fallback lead. Chicken broth became vegetable broth to keep it vegetarian. The red wine in the topping and the unspecified milk were left out, the lemon moved to the end, and the simmer shortened to 10 minutes to fit 30 minutes. Amour de Cuisine's version (leek, crème fraîche, no reviews) was read for comparison.",
+ "sources": [
+  {
+   "name": "Zwilling Staub",
+   "title": "Velouté de Champignons",
+   "url": "https://www.zwilling.com/us/magazine/inspiring-recipes/staub-recipes/recipe-culinary-world-staub-recipes-velouté-de-champignons.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Amour de Cuisine",
+   "title": "Easy Creamy Mushroom Soup",
+   "url": "https://www.amourdecuisine.fr/en/article-easy-creamy-mushroom-soup-recipe.html/print/125483",
+   "rating": null,
+   "rating_count": 0,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

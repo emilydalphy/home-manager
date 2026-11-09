@@ -1,0 +1,107 @@
+{
+ "dish_name": "Coquilles Saint-Jacques",
+ "cuisine": "French",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Sea scallops",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "White mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "7 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 small carton",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gruyere",
+   "qty": "3 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the broiler to high and set an oven rack about 6 inches below it. Set four 12 oz ramekins on a baking sheet. A 9 by 13 inch baking dish works too.",
+  "Melt 3 tbsp of the butter in the pot you'll use for the sauce, then pour it into a bowl. Grate the Gruyere and stir it into the bowl with the panko and 1/4 tsp of the salt. Set the crust aside.",
+  "Pat the scallops dry and pull off the small tough muscle on the side of each one. Cut any large scallops in half across the middle. Season them with 1/2 tsp of the salt and divide them among the ramekins in a single layer.",
+  "Finely dice the shallot and the mushrooms. Melt the remaining 4 tbsp butter in the pot over medium heat. Add the shallot and mushrooms and cook for 5 minutes, stirring, until soft and the liquid has cooked off.",
+  "Stir in the flour and cook for 30 seconds. It will look pasty.",
+  "Pour in the milk and cream a little at a time, whisking until smooth. Add the remaining 1/4 tsp salt, the pepper and the nutmeg. When it starts to bubble, cook for 1 minute, until it's thick enough to coat a spoon. It should be thinner than a classic béchamel.",
+  "Pour the hot sauce over the scallops, spreading it so it fills the gaps. Scatter the crust evenly over the top, right to the edges.",
+  "Broil for 5 to 6 minutes, until the top is golden and the sauce is bubbling at the edges. Cut the biggest scallop in half to check. It should be opaque all the way through. Let the ramekins sit for 2 minutes, since they'll be very hot.",
+  "Taste a bit of the sauce. If it's flat, add a pinch more salt. Serve in the ramekins."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 16,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats' Coquilles Saint-Jacques is the lead (5.0 from 21 votes): a quick mushroom béchamel poured hot over scallops, topped with a buttery Gruyere crust. The lead bakes 20 minutes, which puts the dish near 50 minutes in all. Here the scallops are halved and the ramekins go under the broiler instead (Craig Claiborne's Food Network version also broils), which fits about 30 minutes. The quantities are roughly doubled from the lead's 220 g of scallops so it works as a dinner for four. No shells needed, ramekins do the job.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Coquilles Saint-Jacques",
+   "url": "https://www.recipetineats.com/wprm_print/coquilles-saint-jacques",
+   "rating": 5.0,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network",
+   "title": "Coquilles St. Jacques (Scallops with Mushrooms in Cream Sauce)",
+   "url": "https://www.foodnetwork.com/recipes/coquilles-st-jacques-scallops-with-mushrooms-in-cream-sauce-recipe-1950784",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,115 @@
+{
+ "dish_name": "Soupe aux Lentilles",
+ "cuisine": "French",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Red lentils",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "4 large",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dried herbes de Provence",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion and the carrots into 1/2-inch pieces. Thinly slice 2 celery stalks and mince the garlic. Rinse the lentils in a sieve until the water runs mostly clear.",
+  "Heat the olive oil in a large pot over medium-high. Add the onion, carrots, celery and 1/2 tsp of the salt. Cook for 5 minutes, stirring often, until the onion is soft and the carrots start to brown at the edges.",
+  "Push the vegetables aside and add the garlic, tomato paste and herbes de Provence to the empty spot. Stir for 1 minute, until the paste darkens.",
+  "Add the lentils, broth, bay leaves, pepper and 1/2 tsp of the salt. Bring it to a boil, then turn the heat down to a steady simmer. Partly cover and cook for 12 minutes, until the lentils are soft and the carrots are tender.",
+  "Take out the bay leaves. Blend about half the soup: use an immersion blender for a few pulses, or blend 3 cups in a regular blender, filling it no more than half full and holding a towel over the lid. Return it to the pot if you used a blender.",
+  "Stir in the coconut milk and 1 tbsp lemon juice. Taste it. If it's flat, add a pinch more salt, up to the last 1/2 tsp. Serve in bowls."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Herbeevore's French Carrot Lentil Soup is the lead (4.96 from 22 votes): onion, carrot and celery with red lentils, bay and herbes de Provence in vegetable stock, blended, with a swirl of coconut milk. The lead roasts the carrots for 30 minutes and simmers 30, about 45 minutes in all. Here the carrots brown in the pot and the lentils simmer 12 minutes, which fits about 30. Garlic, tomato paste and the lemon finish come from Vanilla Bean Cuisine's French Lentil Soup (4.55 from 24), which uses green Puy lentils and a 25 minute simmer. Only half the soup is blended, so it stays hearty.",
+ "sources": [
+  {
+   "name": "The Herbeevore",
+   "title": "French Carrot Lentil Soup",
+   "url": "https://theherbeevore.com/french-carrot-lentil-soup-vegan-gluten-free-dairy-free/",
+   "rating": 4.96,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vanilla Bean Cuisine",
+   "title": "French Lentil Soup",
+   "url": "https://www.vanillabeancuisine.com/french-lentil-soup/",
+   "rating": 4.55,
+   "rating_count": 24,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

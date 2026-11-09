@@ -1,0 +1,100 @@
+{
+ "dish_name": "Courgettes a la Provencale",
+ "cuisine": "French",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Beefsteak tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried herbes de Provence",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve. Put it in a medium pot with 3 cups water and 1/2 tsp of the salt. Bring it to a boil, then cover and cook on the lowest heat for 15 minutes. Take it off the heat and leave the lid on for 5 minutes.",
+  "Meanwhile, slice the zucchini into 1/4-inch rounds. Dice the tomatoes into 1/2-inch pieces and mince the garlic. In a bowl, whisk the tomato paste into the broth.",
+  "Heat 2 tbsp of the olive oil in a large skillet over medium-high. Add half the zucchini in one layer with 1/4 tsp of the salt. Cook for 3 minutes without moving it, then flip and cook for 2 minutes, until golden in spots. Transfer it to a plate.",
+  "Add the last 1 tbsp oil and cook the rest of the zucchini the same way, with 1/4 tsp of the salt. Return all the zucchini to the pan.",
+  "Add the garlic and the herbes de Provence and stir for 45 seconds, until the garlic smells fragrant.",
+  "Add the tomatoes and the broth mixture. Bring it to a simmer over medium heat and cook for 6 minutes, stirring now and then, until the zucchini is tender and the sauce coats a spoon.",
+  "Take the pan off the heat. Tear in about 1/4 cup basil leaves and add the pepper. Taste it. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the zucchini and its sauce over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Family Friends Food courgette, garlic and tomato (4.2 from 10 ratings, so a fallback lead) is the lead: zucchini browned in olive oil, then garlic, tomatoes and a tomato paste and stock mix simmered into a sauce. The amounts are doubled for a main dish over rice. Herbes de Provence (from Love French Food's baked tian) and a finish of basil make it read Provencal. This is the stovetop dish rather than a baked tian, because the tian needs 40 minutes or more with onions softened first and its recipe uses Parmesan, which would break the vegan tag.",
+ "sources": [
+  {
+   "name": "Family Friends Food",
+   "title": "Courgettes with Garlic and Tomato",
+   "url": "https://family-friends-food.com/courgette-garlic-tomato/",
+   "rating": 4.2,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love French Food",
+   "title": "Vegetable Bake (Tian Provencal)",
+   "url": "https://www.lovefrenchfood.com/vegetable-bake/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

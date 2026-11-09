@@ -1,0 +1,90 @@
+{
+ "dish_name": "Omelette Savoyarde",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 small carton",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Gruyere",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the broiler to high and set an oven rack about 6 inches below it. Put a medium pot of salted water on to boil.",
+  "Peel the potatoes and cut them into 1/2-inch cubes. Once the water boils, add the potatoes and cook for 6 minutes, until a knife slides in easily. Drain them well.",
+  "Meanwhile, dice the onion. Heat the olive oil and 1 tbsp of the butter in a 12-inch oven-safe skillet over medium. Add the onion and cook for 6 minutes, stirring now and then, until it's soft and golden at the edges. Use a skillet without a plastic handle, since it goes under the broiler.",
+  "Add the drained potatoes and the remaining 1 tbsp butter. Turn the heat up to medium-high and cook for 5 minutes, stirring only now and then so the potatoes brown. Season with 1/2 tsp of the salt and the pepper.",
+  "While the potatoes brown, grate the Gruyere. That should be about 1 1/4 cups. In a bowl, whisk the 8 eggs with the 1/4 cup milk and 1/2 tsp of the salt, then stir in half of the cheese.",
+  "Turn the heat down to medium and spread the potatoes in an even layer. Pour the eggs over them. Cook for about 4 minutes, pulling the set edges toward the middle with a spatula so the runny egg flows underneath, until the bottom is set and the top is still a little wet.",
+  "Scatter the rest of the cheese over the top and slide the skillet under the broiler for about 2 minutes, until the top is puffed and golden. The handle will be hot, so use a mitt.",
+  "Let it sit for 2 minutes, then cut it into wedges. Taste a corner. If it's flat, add a pinch more salt. Serve in wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Helen Browning's Omelette Savoyard is the lead: pre-boiled diced potatoes fried with onion, then eggs whisked with a little milk and half the Gruyere poured over, finished under the grill with the rest of the cheese. It has no star rating, so this leans on the fallback rule. The lead also uses lardons; they are left out here to keep it vegetarian. Potatoes are cut small (1/2 inch, not 1 cm) and boiled 6 minutes instead of 10 so the whole thing fits in about 30 minutes. A Food.com potato and cheese omelette was read for comparison but is a plainer folded omelette.",
+ "sources": [
+  {
+   "name": "Helen Browning's Organic",
+   "title": "Omelette Savoyard",
+   "url": "https://helenbrowningsorganic.co.uk/recipe/omelette-savoyard/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Potato and Cheese Omelette",
+   "url": "https://www.food.com/recipe/potato-and-cheese-omelette-59134",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

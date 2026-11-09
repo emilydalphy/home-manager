@@ -1,0 +1,90 @@
+{
+ "dish_name": "Escalopes de Dinde a la Creme",
+ "cuisine": "French",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Turkey breast cutlets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the cutlets dry. If any are thicker than 1/2 inch, pound them between two sheets of plastic wrap. Season both sides with 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Zest the lemon and mince the garlic. Chop 2 tbsp of the parsley.",
+  "Heat the olive oil and 1 tbsp of the butter in a large skillet over medium-high. When the butter stops foaming, add half the cutlets in one layer. Cook for 3 to 4 minutes per side, until golden. You're cooking them to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest one: it's done when there's no pink left. Transfer them to a plate.",
+  "Add the remaining 1 tbsp butter and cook the rest of the cutlets the same way. Transfer them to the plate.",
+  "Pour off all but 1 tbsp of the fat from the pan and turn the heat down to medium. Add the garlic and lemon zest and stir for 30 seconds, until the garlic smells fragrant.",
+  "Pour in the cream and add 1/4 tsp of the salt and the remaining 1/4 tsp pepper. Scrape up the browned bits from the pan. Let it boil for 3 to 5 minutes, until it coats the back of a spoon.",
+  "Return the turkey and any juices from the plate to the pan and turn it over once in the sauce. Cook for 1 minute, until it's hot. Take the pan off the heat and squeeze in a little lemon juice.",
+  "Taste the sauce. If it's flat, add a pinch more salt. Sprinkle with the parsley. Serve with the sauce spooned over the turkey."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Dairy Farmers of Canada's Turkey Cutlets with Cream Sauce is the lead (5.0 from only 2 votes, so a fallback lead): cutlets browned in butter, then garlic, lemon peel and cream cooked down in the same pan and finished with parsley. The lead dusts the cutlets with flour; that is dropped here to keep it gluten-free, and the sauce still thickens from reducing the cream. A little olive oil is added so the butter doesn't scorch, and a squeeze of lemon juice goes in at the end (Everyday Healthy Recipes also finishes with lemon). The oven warming step is skipped and the cutlets are cooked in two batches.",
+ "sources": [
+  {
+   "name": "Dairy Farmers of Canada",
+   "title": "Turkey Cutlets with Cream Sauce",
+   "url": "https://dairyfarmersofcanada.ca/en/canadian-goodness/recipes/turkey-cutlets-cream-sauce",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Everyday Healthy Recipes",
+   "title": "Turkey Breast Cutlets in Creamy Sauce",
+   "url": "https://www.everydayhealthyrecipes.com/wprm_print/turkey-breast-cutlets-in-creamy-sauce",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

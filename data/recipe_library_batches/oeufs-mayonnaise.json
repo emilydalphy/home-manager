@@ -1,0 +1,79 @@
+{
+ "dish_name": "Oeufs Mayonnaise",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 8 eggs in a medium pot and cover them with cold water by 1 inch. Bring the water to a hard boil over high heat.",
+  "Turn the heat down to medium and boil for 7 minutes. Set a timer so the yolks stay just set and a little creamy in the middle.",
+  "Meanwhile, whisk the 3/4 cup mayonnaise with the Dijon, 1 tbsp lemon juice, the pepper and a pinch of salt until smooth. Taste it. If it's flat, add a little more lemon juice or a pinch of salt. Chop 2 tbsp chives.",
+  "Drain the eggs and run cold water over them for 2 minutes. Let them sit in a bowl of cold water for 5 minutes, then peel them.",
+  "Cut the eggs in half lengthwise and set them cut side down on plates, 4 halves each. Spoon the mayonnaise over them and scatter the chives on top. Serve cold."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Taste with the Eyes' Oeufs Mayonnaise is the lead: eggs boiled 7 minutes after a hard boil, chilled, halved and covered in a Dijon and lemon mayonnaise with chives. It has no rating, so this is a fallback lead. Of its two mayonnaise methods the commercial one is used (no raw egg, and quicker); the rice vinegar and the flowers are left out. Pariseater's version (9 minutes, homemade mayonnaise) was read for comparison. There's no baguette, to keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Taste with the Eyes",
+   "title": "Oeufs Mayonnaise",
+   "url": "https://www.tastewiththeeyes.com/2024/04/oeufs-mayonnaise/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Paris Eater",
+   "title": "French Egg Mayo (Oeuf Mayo)",
+   "url": "https://www.pariseater.com/recipes-food-tips/french-egg-mayo-oeuf-mayo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
