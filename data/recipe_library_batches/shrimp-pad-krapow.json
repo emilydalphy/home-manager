@@ -1,0 +1,120 @@
+{
+ "dish_name": "Shrimp Pad Krapow",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 large bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, pat the shrimp dry and sprinkle the salt over them. Mince the garlic. Thinly slice the onion and the bell pepper. Pick the basil leaves off the stems. That should be about 2 cups, loosely packed. Slice the chilies into a small bowl for the table and cut the lime into wedges.",
+  "In a small bowl, stir together 2 tbsp soy sauce, 1 tbsp oyster sauce, 1 tbsp fish sauce, 1 tsp brown sugar and 2 tbsp of water.",
+  "Heat the oil in a wok or large skillet over medium-high heat until it shimmers. Add the onion and bell pepper. Stir for 3 minutes, until they start to soften and brown at the edges.",
+  "Push the vegetables to the side. Add the shrimp in one layer and leave them alone for 1 minute, until the underside is pink. Flip them and cook for 1 minute. Transfer the shrimp and vegetables to a plate.",
+  "Turn the heat to medium. Add the garlic and stir for 20 seconds, until you can smell it. Don't let it brown.",
+  "Return the shrimp and vegetables to the wok and pour in the sauce. Toss for 2 minutes, until the sauce is thick and coats everything. The shrimp should be pink and curled, with no gray left.",
+  "Take the wok off the heat. Add the basil and stir until it just wilts.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve over the rice with the lime wedges. Pass the sliced chilies at the table for anyone who wants heat."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish had 20 or more ratings, so the lead is Carm's Kitchen Experiments' Pad Krapow Goong, which has no rating shown. It is a quick shrimp stir-fry with garlic, chilies, onion and bell pepper in a soy, oyster and fish sauce, finished with basil off the heat. The other shrimp version read (food.com's Pad Ka Prao Kung) is simpler, with no vegetables, and agrees on the sauce and on adding the basil last. Pomona keeps the chilies on the table to keep the pot mild. It uses Thai basil as the lead does; holy basil is more traditional if you can find it.",
+ "sources": [
+  {
+   "name": "Carm's Kitchen Experiments",
+   "title": "Spicy Basil Shrimp Stir-Fry (Pad Krapow Goong)",
+   "url": "https://carmskitchenexperiments.blogspot.com/2025/11/spicy-basil-shrimp-stir-fry-pad-krapow.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Pad Ka Prao Kung (Stir-Fried Shrimp with Holy Basil)",
+   "url": "https://www.food.com/recipe/pad-ka-prao-kung-stired-fried-shrimp-with-holy-basil-528202",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": true,
+ "origin": "seed"
+}
