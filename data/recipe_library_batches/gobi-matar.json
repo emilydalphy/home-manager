@@ -1,0 +1,156 @@
+{
+ "dish_name": "Gobi Matar",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "1 medium head",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "5",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the cauliflower into small florets, about 1 inch across. Dice the onion finely and chop the tomato. Mince the ginger and garlic. Chop the cilantro. Slice the green chili into a small bowl for the table.",
+  "Heat the 3 tbsp oil in a large, deep skillet with a lid over medium. Add the cinnamon stick, 3 cloves, 2 cardamom pods, bay leaf, 5 peppercorns and 1/2 tsp cumin seeds. Stir for 30 seconds, until they smell toasty.",
+  "Add the onion and cook for 4 minutes, stirring now and then, until light golden. Add the ginger and garlic and stir for 1 minute.",
+  "Add the tomato and 1/2 tsp of the salt. Cook for 4 minutes, mashing the tomato with your spoon, until it's soft and a little oil shows at the edges.",
+  "Stir in the 1/4 tsp turmeric, 1/4 tsp Kashmiri chili powder and 1 tsp coriander. Cook for 30 seconds.",
+  "Add the cauliflower and 1/4 cup water and stir to coat. Cover and cook over medium-low for 8 minutes, stirring once, until a fork goes in with a little resistance.",
+  "Add the 3/4 cup peas, the 1/4 tsp garam masala and the last 1/2 tsp salt. Cover and cook for 3 minutes. If the pan still looks wet, cook it uncovered for 1 to 2 minutes, until it's dry.",
+  "Take the pan off the heat. Fish out the cinnamon stick and bay leaf and stir in the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with basmati rice, with the sliced green chili on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 21,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum (the lead) tempers whole spices in oil, cooks onion, ginger, garlic and tomato, adds the powders, then steams the cauliflower covered with the peas added near the end. Archana's Kitchen is the same dry masala with coriander powder and chili, and most versions finish with garam masala and cilantro. The lead takes 75 minutes with a water-sealed lid, so this cuts the florets small, uses a splash of water under a lid, and skips the shah jeera, star anise and extra chili. The lead's 6 to 7 garlic cloves are cut to 4 and the green chilies move to the table.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Gobi Matar | Gobhi Matar ki Sabji",
+   "url": "https://cupofyum.com/recipes/gobi-matar-gobhi-matar-ki-sabji",
+   "rating": 4.9,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Gobi Matar ki Sabzi Recipe",
+   "url": "https://archanaskitchen.com/gobi-matar-ki-sabzi-recipe-easy-cauliflower-and-green-peas-curry",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Gobi Matar Masala",
+   "url": "https://www.cookwithmanali.com/gobi-matar-masala/",
+   "rating": 3.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

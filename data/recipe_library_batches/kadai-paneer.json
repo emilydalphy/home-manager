@@ -1,0 +1,143 @@
+{
+ "dish_name": "Kadai Paneer",
+ "cuisine": "Indian",
+ "main_protein": "paneer",
+ "ingredients": [
+  {
+   "item": "Paneer",
+   "qty": "12 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ghee",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the paneer into 3/4 inch cubes. Dice the onion and cut the bell pepper into 1 inch pieces. Roughly chop the 4 tomatoes. Peel the ginger, mince 1 tsp of it, and cut the rest into thin matchsticks. Mince the 3 garlic cloves and chop 2 tbsp of the cilantro. Slice the green chili into a small bowl for the table.",
+  "Put the 2 tbsp coriander seeds, 1 tsp fennel seeds, 2 dried red chilies, 3 cardamom pods and 2 cloves in a large dry skillet over medium. Stir for 1 to 2 minutes, until they smell toasty. Transfer them to a mortar and crush to a fine powder. This is your kadai masala.",
+  "Heat the 2 tbsp ghee in the same skillet over medium. Add the onion and 1/4 tsp of the salt and cook for 4 minutes, stirring now and then, until it's soft and golden at the edges.",
+  "Add the minced ginger and the garlic and stir for 30 seconds, until you can smell them.",
+  "Add the tomatoes, the kadai masala, the 1/2 tsp Kashmiri chili powder and another 1/4 tsp of the salt. Cook for 7 minutes, stirring often and mashing the tomatoes with your spoon, until they break down into a thick, jammy sauce and a little fat shines at the edges.",
+  "Pour in 3/4 cup water and the 3 tbsp cream. Stir and simmer for 2 minutes.",
+  "Add the paneer, bell pepper, 1/2 tsp garam masala and the last 1/4 tsp salt. Cover and cook over medium for 4 minutes, stirring once, until the pepper is slightly soft but still has a bite.",
+  "Take the pan off the heat. Crush the kasuri methi between your palms over the pan, then stir in the ginger matchsticks and the chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with basmati rice, with the sliced green chili on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions read grind a fresh kadai masala of coriander seed, fennel, dried red chili, cardamom and clove, cook it into onion and tomato, then finish with paneer, bell pepper, kasuri methi and ginger. Swasthi's Recipes (the lead) is a gravy: it blends the onion and tomato into a puree with cashews and sears the pepper and paneer separately. Cook with Manali keeps the tomato chopped and adds the paneer and pepper straight to the pan. To fit 30 minutes this follows Swasthi's spice mix but keeps the tomato chopped, uses the cream she lists as the cashew swap, and cooks the paneer and pepper in the sauce, so it has no blender step and no rest time. Close to the existing Paneer Jalfrezi, but this one leans on the ground kadai masala and a thicker tomato sauce.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Kadai Paneer Recipe (Dry & Gravy)",
+   "url": "https://www.indianhealthyrecipes.com/?p=20066",
+   "rating": 5.0,
+   "rating_count": 655,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Kadai Paneer",
+   "url": "https://www.cookwithmanali.com/kadai-paneer/",
+   "rating": 4.97,
+   "rating_count": 134,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

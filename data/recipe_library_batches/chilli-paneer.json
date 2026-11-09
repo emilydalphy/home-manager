@@ -1,0 +1,138 @@
+{
+ "dish_name": "Chilli Paneer",
+ "cuisine": "Indian",
+ "main_protein": "paneer",
+ "ingredients": [
+  {
+   "item": "Paneer",
+   "qty": "12 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/3 cup + 2 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "9 tbsp chopped"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Chili sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a pot, swirling it and draining it until the water runs mostly clear. Add 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 12 minutes. Leave it covered off the heat until the paneer is done.",
+  "Meanwhile, cut the paneer into 1 inch cubes. Slice the onion into petals and cut the bell pepper into 1 inch pieces. Chop the scallions and set 3 tbsp aside for the top. Mince 3 of the garlic cloves, and grate the last clove and the ginger. Slice the green chili into a small bowl for the table.",
+  "In a bowl, whisk 1/3 cup of the cornstarch, the 3 tbsp flour, the grated garlic and ginger, 1/2 tsp Kashmiri chili powder, 1/4 tsp black pepper, 1/2 tsp salt and 1/3 cup water into a smooth, thick batter.",
+  "In a small bowl, stir together the 2 1/2 tbsp soy sauce, 2 tbsp ketchup, 2 tbsp vinegar, 1 tsp chili sauce, 1/4 tsp Kashmiri chili powder, 1/4 tsp black pepper, 1/4 tsp salt, the last 2 tsp cornstarch and 1/4 cup water until there are no lumps.",
+  "Pour the 3/4 cup oil into a 12 inch skillet and heat it over medium-high for 2 minutes, until a drop of batter sizzles right away.",
+  "Toss the paneer in the batter. Lift out a few cubes at a time, let the extra drip off, and lay them in the oil in a single layer. Fry in two batches, 2 to 3 minutes per side, until golden and crisp. Transfer them to a plate.",
+  "Pour off all but 2 tbsp of the oil into a heatproof bowl and set the pan over high heat. Add the minced garlic and 6 tbsp of the scallions and stir for 30 seconds.",
+  "Add the onion and bell pepper and stir over high heat for 1 minute. They should stay crisp.",
+  "Stir the sauce again and pour it in. Cook for 1 to 2 minutes, stirring, until it's glossy and thick enough to coat a spoon.",
+  "Add the paneer and toss for 30 seconds to coat it.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the paneer over the rice, scattered with the 3 tbsp scallions, with the sliced green chili on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (the lead) coats the paneer in a cornflour and plain flour batter, fries it until crisp, then tosses it with onion, capsicum, garlic, spring onion and a soy, vinegar, chili and tomato sauce thickened with a cornflour slurry. The lead is written for 3, so everything is scaled to 4. The sauce gets 1/4 cup of water instead of the lead's 2 tbsp so it coats the paneer and rice, the green chili in the sauce moves to the table, and the paneer is shallow fried in a skillet. Only the lead was readable; the other well-rated versions block the reader.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Chilli Paneer Recipe (Paneer Chilli Dry)",
+   "url": "https://hebbarskitchen.com/chilli-paneer-recipe-paneer-chilli-dry/",
+   "rating": 4.98,
+   "rating_count": 292,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,142 @@
+{
+ "dish_name": "Shahi Paneer",
+ "cuisine": "Indian",
+ "main_protein": "paneer",
+ "ingredients": [
+  {
+   "item": "Paneer",
+   "qty": "12 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "12"
+  },
+  {
+   "item": "Almonds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "10"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ghee",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 12 cashews and 10 almonds in a bowl and cover them with hot water. Leave them while you do everything else.",
+  "Cut the paneer into 3/4 inch cubes. Roughly chop the 2 onions, slice the ginger and peel the 4 garlic cloves.",
+  "Heat 1 tbsp of the ghee in a large skillet over medium. Add the 3 cardamom pods, the onion, ginger, garlic and 1/4 tsp of the salt. Cook for 5 to 6 minutes, stirring now and then, until the onion is soft and pale. Don't let it brown.",
+  "Take the pan off the heat and let it cool for 3 minutes. Drain the nuts and transfer them to a blender with the onion mixture and 1/3 cup water. Hold the lid down with a towel and blend until it's completely smooth.",
+  "Heat the other 2 tbsp ghee in the same pan over medium. Add the 2 cloves, the cinnamon stick and 1/2 tsp cumin seeds and let them sizzle for 30 seconds.",
+  "Turn the heat to low and stir in the 1/2 tsp Kashmiri chili powder, 1/4 tsp turmeric and 3/4 tsp garam masala. After about 20 seconds, scrape in the blended paste and another 1/4 tsp of the salt. Cook for 3 minutes, stirring, until it thickens and a little fat shows at the edges.",
+  "In a bowl, whisk the 1/2 cup yogurt with 2 tbsp of the paste from the pan. Stir it into the pan in two batches, keeping the heat low, and cook for 2 minutes.",
+  "Pour in 1 cup water and bring it to a gentle boil. Cover and simmer for 8 minutes, stirring once or twice, until the sauce is thick and creamy.",
+  "Add the paneer, the 1/8 tsp black pepper and the last 1/4 tsp salt. Cook for 1 minute, then take the pan off the heat.",
+  "Stir in the 3 tbsp cream and fish out the cinnamon stick. Cover and let it sit for 3 minutes.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with basmati rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes (the lead) and Cook with Manali both boil or fry onion, ginger, garlic, cashews and almonds into a smooth paste, cook it with whole spices, then add yogurt, water, paneer and cream. Swasthi fries the nuts with the onion for a longer cook, and Manali boils the base in water for 15 to 20 minutes. This version follows Swasthi's ingredients and order but soaks the nuts in hot water while the onion cooks, and skips the optional saffron, rose water, bay leaf and green chili so the base stays mild for kids. Manali's version has only 14 ratings, so it is credited but not the lead.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Shahi Paneer Recipe (Restaurant Style)",
+   "url": "https://www.indianhealthyrecipes.com/?p=3502",
+   "rating": 5.0,
+   "rating_count": 295,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Shahi Paneer",
+   "url": "https://www.cookwithmanali.com/shahi-paneer/",
+   "rating": 5.0,
+   "rating_count": 14,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

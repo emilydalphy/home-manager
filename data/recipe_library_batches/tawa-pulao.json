@@ -1,0 +1,117 @@
+{
+ "dish_name": "Tawa Pulao",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pav bhaji masala",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a pot, swirling it and draining it until the water runs mostly clear. Add 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 10 minutes. Leave it covered off the heat until the vegetables are done.",
+  "Meanwhile, cut the potatoes and carrot into 1/4 inch cubes and the green beans into 1/4 inch pieces. Dice the onion and the tomatoes. Cut the bell pepper into 1/2 inch pieces. Mince the ginger and garlic. Chop the cilantro.",
+  "Melt the 3 tbsp butter in a large, wide skillet over medium. Add the 1 tsp cumin seeds and let them sizzle for 20 seconds.",
+  "Add the onion and cook for 3 to 4 minutes, until soft. Add the ginger and garlic and stir for 1 minute.",
+  "Add the tomatoes and the salt. Cook for 4 minutes, mashing them with your spoon, until they break down into a thick sauce.",
+  "Stir in the 2 tbsp pav bhaji masala and cook for 30 seconds.",
+  "Add the potatoes, carrot, green beans and 1/2 cup water. Cover and cook for 8 minutes, stirring once, until a fork slides easily into the potatoes.",
+  "Add the bell pepper and the 3/4 cup peas. Cook uncovered for 3 minutes, until the water has cooked off and the pepper is barely soft.",
+  "Fluff the rice with a fork. Turn the heat to low and fold the rice into the pan for 2 minutes, until every grain is coated in the masala and hot.",
+  "Take the pan off the heat and stir in the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 23,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes was the only version readable with enough ratings; it softens onion, ginger, garlic and tomato in butter with cumin, stirs in pav bhaji masala, adds the vegetables, and folds in cooled cooked rice. It cooks the vegetables in a separate steamer for 15 to 20 minutes, but notes they can go straight into the pan with extra water, which is what this does, with the potatoes cut small. The 30 minute rice soak is skipped. Pav bhaji masala is a blend, so check the label if gluten is a concern, as some brands add asafoetida cut with wheat flour.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Tawa Pulao Recipe",
+   "url": "https://www.indianhealthyrecipes.com/tawa-pulao/",
+   "rating": 4.98,
+   "rating_count": 48,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

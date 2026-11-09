@@ -1,0 +1,112 @@
+{
+ "dish_name": "Coconut Rice",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Grated coconut",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tsp minced"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a pot, swirling it and draining it until the water runs mostly clear. Add 2 1/2 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 12 minutes. Leave it covered off the heat for 5 minutes.",
+  "Meanwhile, mince the ginger. Remove the seeds from the green chili and mince it. Pat the curry leaves dry. If the coconut is frozen, break it up so it thaws.",
+  "Heat the 3 tbsp oil in a large skillet over medium. Add the cashews and stir for 1 to 2 minutes, until golden. Transfer them to a plate with a slotted spoon.",
+  "In the same oil, add the 3/4 tsp mustard seeds, 3/4 tsp cumin seeds, 1 1/2 tbsp chana dal and 2 tsp urad dal. Cook for 1 to 2 minutes, stirring, until the mustard seeds pop and the dals turn golden. Stand back a little, the seeds will jump.",
+  "Add the ginger, green chili and curry leaves. Stand back, they will spatter. Stir for 30 seconds, until the leaves turn crisp.",
+  "Add 3 tbsp water and cook for about 1 minute, until it has all gone.",
+  "Stir in the 1 1/2 cups coconut and the salt and cook for 1 minute. Take the pan off the heat.",
+  "Fluff the rice with a fork and spread it on a large plate for a few minutes. Fold it into the pan gently, along with the cashews.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with any curry."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes (the lead) and Vidhya's Home Cooking both fry mustard seeds, urad dal, curry leaves, green chili and nuts in oil, then stir in grated coconut and cooked rice. Swasthi adds cumin, chana dal, ginger and cashews and softens the dals with a splash of water. This follows Swasthi, with oil in place of the optional ghee so it stays vegan, and the pinch of asafoetida left out because some brands contain wheat flour. The rice is cooked fresh while the tempering is made and folded in warm, so it does not need a long cool.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Coconut Rice Recipe",
+   "url": "https://www.indianhealthyrecipes.com/coconut-rice-recipe",
+   "rating": 5.0,
+   "rating_count": 129,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vidhya's Home Cooking",
+   "title": "Coconut Rice",
+   "url": "https://www.vidhyashomecooking.com/coconut-rice/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

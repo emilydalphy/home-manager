@@ -1,0 +1,141 @@
+{
+ "dish_name": "Gobi 65",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "1 large head",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "20 leaves"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 6 cups water and 1/2 tsp of the salt on to boil. Meanwhile, cut the cauliflower into about 30 small florets, each about 1 inch across, and transfer them to a large heatproof bowl.",
+  "Pour the boiling water over the cauliflower and let it sit for 5 minutes. Drain it well and shake off as much water as you can.",
+  "While it sits, grate 2 of the garlic cloves and 1 tbsp of the ginger. Chop 10 of the curry leaves and 1/4 cup of the cilantro. Mince the other 3 garlic cloves and 1 tbsp of the ginger and keep them in a small bowl. Squeeze 2 tsp lemon juice into a cup and leave the rest of the lemon for later.",
+  "Transfer the drained cauliflower back into the large bowl. Add the grated garlic and ginger, the chopped curry leaves and cilantro, 1 tsp Kashmiri chili powder, 1/2 tsp turmeric, 1 tsp garam masala, 1 tsp coriander, the 2 tsp lemon juice, 1 tsp salt and 1/4 cup water. Toss until every floret is coated.",
+  "Add the 1/2 cup cornstarch and 1/2 cup rice flour. Toss until the florets are coated in a thick paste. If it looks dry in spots, sprinkle in water 1 tbsp at a time.",
+  "Heat the 3/4 cup oil in a 12 inch skillet over medium-high for 2 minutes, until a pinch of the coating sizzles right away.",
+  "Lay half the cauliflower in the oil in a single layer. Leave it alone for 2 minutes, then turn the florets and cook for 2 to 3 minutes, until golden and crisp. Transfer them to a plate lined with paper towels. Fry the second half the same way.",
+  "Pour off all but 2 tbsp of the oil and wipe out any burnt bits. Set the pan over medium heat. Add the 1 tsp cumin seeds, the dried red chili (broken in half) and the minced ginger and garlic. Stir for 30 seconds, until the cumin sizzles.",
+  "Add the remaining 10 curry leaves (stand back, they spatter), the 1/2 tsp Kashmiri chili powder and the last 1/2 tsp salt. Stir for 15 seconds.",
+  "Turn the heat to low and add the fried cauliflower. Toss for 1 minute to coat it.",
+  "Take the pan off the heat. Squeeze in 1 tsp of the lemon juice and scatter over the last 1/4 cup cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot, with the rest of the lemon cut into wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 17,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (the lead), Cooking From Heart and No Recipes all blanch the cauliflower, coat it in spiced flour (corn or rice flour, with plain or gram flour in two of them) and fry it until crisp. Hebbar then tosses it in a cumin, ginger, garlic, dried chili and curry leaf tempering. The lead uses yogurt in the marinade and the tempering, so it is swapped for water and lemon juice to keep this vegan, and the 30 minute marinade is dropped. Corn and rice flour only, so it stays gluten-free, and the oil is shallow fried rather than deep fried. It is a dry, snack-style dish; the sources serve it as a starter, so it may feel light as a dinner main.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Gobi 65 Recipe (Cauliflower 65)",
+   "url": "https://hebbarskitchen.com/gobi-65-recipe-cauliflower-65-recipe/",
+   "rating": 4.99,
+   "rating_count": 286,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking From Heart",
+   "title": "Gobi 65",
+   "url": "https://cookingfromheart.com/gobi-65/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Gobi 65 (Cauliflower 65)",
+   "url": "https://norecipes.com/gobi-65-cauliflower-65-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
