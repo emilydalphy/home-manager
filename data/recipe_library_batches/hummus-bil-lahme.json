@@ -1,0 +1,113 @@
+{
+ "dish_name": "Hummus bil Lahme",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lebanese seven spice",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "4",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain and rinse the chickpeas. Juice the lemons. That should be about 1/3 cup.",
+  "Put the chickpeas in a food processor with the tahini, garlic, lemon juice and 3/4 tsp of the salt. Blend for 2 minutes, scraping down the sides once.",
+  "With the processor running, add cold water 1 tbsp at a time, up to 4 tbsp, until it's smooth and creamy.",
+  "Spread the blended chickpeas in a shallow wide bowl, then press a shallow well into the center with the back of a spoon.",
+  "Finely dice the onion. Heat 1 tbsp of the oil in a large skillet over medium heat and cook the onion for 4 minutes, until soft and golden at the edges. Don't rush it.",
+  "Add the beef and the remaining 1/2 tsp salt. Leave it alone for 1 minute so it browns, then break it up and cook for 5 minutes, until the moisture has cooked off. You're cooking it to 160°F, so if you have a thermometer, check it there. No thermometer? It's done when there's no pink left.",
+  "Stir in the seven spice, paprika and pepper and cook for 1 minute, until fragrant. Take the pan off the heat.",
+  "Spoon the beef into the well in the chickpeas. Drizzle the remaining 2 tbsp oil over the chickpeas and scatter 1/4 cup chopped parsley over the top.",
+  "Warm the pitas in a dry skillet for 20 seconds per side. Serve with the warm pita."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version has chickpea hummus with lemon, tahini and garlic, topped with beef browned with Lebanese seven spice. Simply Lebanese (5 from 5 ratings) is the lead for the hummus ratios and the spice step; Cookin' With Mima adds the onion and paprika and the hummus-well plating. Both lists use pine nuts and both are left out to keep the dish nut-free. Lemon is 1/3 cup for two cans, between the two sources. Leftover hummus and beef keep separately in the fridge for 3 days; reheat the beef in a skillet.",
+ "sources": [
+  {
+   "name": "Simply Lebanese",
+   "title": "Hummus with Beef",
+   "url": "https://www.simplyleb.com/recipe/hummus-with-beef/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cookin' With Mima",
+   "title": "Lebanese Hummus with Spiced Meat",
+   "url": "https://www.cookinwithmima.com/?p=5784",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

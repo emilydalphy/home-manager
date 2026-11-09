@@ -1,0 +1,84 @@
+{
+ "dish_name": "Salatet Shamandar",
+ "cuisine": "Lebanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Beets",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Peel the beets and cut them into 3/4-inch cubes. Transfer them to a medium pot, cover with water, and bring to a boil over high heat. Cover, turn the heat to medium-low, and simmer for 20 to 25 minutes, until a fork slides in easily.",
+  "Meanwhile, finely chop the onion. Juice the lemons. That should be about 6 tbsp. Transfer the onion to a bowl with 2 tbsp of the lemon juice and 1/2 tsp of the salt and toss.",
+  "In a second bowl, whisk the tahini with the remaining 4 tbsp lemon juice and the remaining 1/2 tsp salt. It will thicken at first. Whisk in 3 to 4 tbsp water until it's smooth and pourable.",
+  "Drain the beets and let them cool for 10 minutes.",
+  "Add the onion and its juice to the tahini and stir. Pour it over the beets and toss until they're coated.",
+  "Chop 2 tbsp parsley and scatter it over the top. Serve warm or at room temperature, or pack it for lunch. It keeps in the fridge for 3 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this salad online has 20 ratings. Discover Lebanon's beetroot and tahini salad (no ratings) leads: boiled diced beets, tahini, lemon juice and onion marinated in lemon and salt. It also folds in yogurt, which is left out to keep this vegan, so the tahini is thinned with water. Food.com's version (adapted from Habeeb Salloum) dresses the beets with oil and vinegar instead, and The Elegant Economist makes it a roasted beet and tahini dip. Beets take 20 to 25 minutes to cook, so this is a make-ahead lunch rather than a 30-minute one.",
+ "sources": [
+  {
+   "name": "Discover Lebanon",
+   "title": "Beetroot and Tahinah Salad",
+   "url": "https://discoverlebanon.com/en/recipes/beetroot_tahinah_salad.php",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Beet Salad With Chives (Salatat Shamandar)",
+   "url": "http://www.food.com/recipe/beet-salad-with-chives-salatat-shamandar-257777",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Elegant Economist",
+   "title": "Mutabbal Shamandar (Beet & Tahini Dip)",
+   "url": "https://theeleganteconomist.com/?p=1321",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

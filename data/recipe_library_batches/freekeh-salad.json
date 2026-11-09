@@ -1,0 +1,110 @@
+{
+ "dish_name": "Freekeh Salad",
+ "cuisine": "Lebanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Cracked freekeh",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the freekeh in a fine strainer. Add it to a medium pot with the broth and bring to a boil over high heat. Cover, turn the heat to low, and simmer for 20 to 25 minutes, until tender with a little chew.",
+  "Drain off any broth left in the pot. Spread the freekeh on a plate and let it cool for 10 minutes.",
+  "Meanwhile, dice the cucumbers and red pepper. Halve the cherry tomatoes. Slice the scallions. Chop 1/2 cup parsley and 1/4 cup mint.",
+  "In a large bowl, juice the lemon. Mince the garlic and whisk it in with the olive oil, salt and pepper.",
+  "Add the cooled freekeh, the vegetables and the herbs to the bowl. Toss well.",
+  "Taste it, and add a pinch more salt or a squeeze of lemon if it's flat. Serve cool or at room temperature, or pack it for lunch. It keeps in the fridge for 4 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Supper in the Suburbs' lemon and herb freekeh salad (no rating shown) leads: freekeh simmered in vegetable stock, cooled, then tossed with cucumber, tomato, red pepper, parsley, mint, scallions and a lemon, garlic and olive oil dressing. Nadia Lim's (no rating) uses the same idea with corn and coriander, and also cools the grain first. The lead's pine nuts are left out to keep it nut-free. At 40 minutes it's a make-ahead lunch rather than a 30-minute one.",
+ "sources": [
+  {
+   "name": "Supper in the Suburbs",
+   "title": "Lemon and Herb Freekeh Salad",
+   "url": "https://supperinthesuburbs.com/2026/03/18/lemon-and-herb-freekeh-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nadia Lim",
+   "title": "Freekeh Salad",
+   "url": "https://nadialim.com/freekeh-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

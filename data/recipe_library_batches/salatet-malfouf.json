@@ -1,0 +1,59 @@
+{
+ "dish_name": "Salatet Malfouf",
+ "cuisine": "Lebanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the cabbage in half and thinly shred one half. That should be about 6 cups. Wrap the other half for another meal.",
+  "Transfer the cabbage to a large bowl, add the salt, and rub it in with your hands for about 1 minute, until the cabbage starts to soften.",
+  "Pick the mint leaves, stack them, and slice them thin. Add 1/4 cup to the cabbage.",
+  "Juice the lemon into a small bowl and whisk in the olive oil. Pour it over the cabbage and toss well.",
+  "Taste it, and add a pinch more salt if it's flat. Serve right away, or pack it for lunch. For packing, keep the dressing in a small jar and toss it in just before you eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Simply Lebanese (4.88 from 8 ratings) is the only readable version, so the ratios are its: about 6 cups of cabbage, 1/3 cup olive oil, 1 lemon, 1 tsp salt and fresh mint. Other pages in the search add garlic, scallions or za'atar and rub the salt in; the salt rub is here. The lead says the salad wilts and is best the same day, so the 'keeps all week' note is only true for undressed cabbage: shredded cabbage keeps in the fridge for 3 or 4 days, dressed cabbage is best within a day.",
+ "sources": [
+  {
+   "name": "Simply Lebanese",
+   "title": "Malfouf Salad (Lebanese Cabbage Salad)",
+   "url": "https://www.simplyleb.com/recipe/malfouf-salad-lebanese-cabbage-salad/",
+   "rating": 4.88,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

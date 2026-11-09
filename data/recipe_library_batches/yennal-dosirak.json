@@ -1,0 +1,96 @@
+{
+ "dish_name": "Yennal Dosirak",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Spam",
+   "qty": "1 can (12 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Kimchi",
+   "qty": "1 jar",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Seaweed flakes",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a fine strainer until the water runs mostly clear. Add it to a medium pot with 1 3/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low, and cook for 15 minutes. Turn off the heat and leave it covered for 5 minutes.",
+  "Meanwhile, cut the Spam into 12 slices. Beat 2 of the eggs in a shallow bowl. Thinly slice the onion and chop the kimchi until you have about 1 cup.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet over medium heat. Dip the Spam slices in the beaten egg and fry them in two batches, 2 minutes per side, until golden. Transfer them to a plate.",
+  "Add 1 tbsp of the oil to the same skillet and cook the onion for 3 minutes, until soft. Add the kimchi and cook for 3 to 4 minutes, until the liquid has cooked off and the edges start to brown. Transfer it to a bowl.",
+  "Wipe out the skillet and heat the last 1 tbsp oil over medium heat. Crack in the remaining 4 eggs and cook for 2 to 3 minutes, until the whites are set. Leave the yolks runny for eating right away. If the boxes are going to sit until lunch, flip the eggs and cook the yolks through.",
+  "Fluff the rice and divide it among 4 lunch boxes or bowls, pressing it down over about two thirds of each one. Add the Spam slices and the kimchi and onion next to the rice. Set a fried egg on top.",
+  "Scatter 2 tbsp of the seaweed flakes and 1/2 tsp of the sesame seeds over each box.",
+  "When you're ready to eat, break up the egg, close the lid, and shake the box hard for about 10 seconds. Open it and eat it right from the box."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "This is the old-style Korean lunchbox: rice with fried egg, egg-coated fried meat, sautéed kimchi and seaweed, shaken together in the box. Cup of Yum's version (rated 5 from only 6 reviews) uses Spam, so that leads; a Korean recipe site shows the same dish with Vienna-style sausage and Zion Market's has chopped kimchi and nori. Spam stands in for the sausage on the list's line. Zion Market adds anchovies and corn syrup, which are left out.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Easy 10-Minute Dosirak Korean Lunch Box",
+   "url": "https://cupofyum.com/recipes/easy-10-min-dosirak-korean-lunch-box",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Zion Market",
+   "title": "Old School Korean Lunch Box",
+   "url": "https://www.zionmarket.com/recipe-detail?reid=230",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "10000 Recipe",
+   "title": "A nickel-silver lunch box with old sausage",
+   "url": "https://www.10000recipe.com/en/6929789/A_nickel-silver_lunch_box_with_old_sausage",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

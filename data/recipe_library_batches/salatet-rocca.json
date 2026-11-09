@@ -1,0 +1,71 @@
+{
+ "dish_name": "Salatet Rocca",
+ "cuisine": "Lebanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Baby arugula",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the onion in half and thinly slice one half. Wrap the other half for another meal.",
+  "Juice the lemon into a large bowl. That should be about 3 tbsp. Whisk in the olive oil, sumac and salt.",
+  "Add the onion and toss. Add the arugula and toss gently until every leaf is coated.",
+  "Let it sit for 5 minutes, then taste it, and add a pinch more salt or sumac if it's flat. Serve right away. For packing, keep the dressing in a small jar and toss it in just before you eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Plant Based Folk (5 from 56 ratings) leads: arugula, thinly sliced white onion, olive oil, sumac and lemon, rested a little. Edible Mosaic's version (no rating shown) is the same with more arugula and a bit of dried mint, and gives the amounts used for 8 oz. The lead's walnuts and pomegranate are left out so the salad is nut-free, and the lead's 4 cups of leaves is doubled to a full box.",
+ "sources": [
+  {
+   "name": "Plant Based Folk",
+   "title": "Rocca Salad (Salatat Jarjeer)",
+   "url": "https://plantbasedfolk.com/rocca-salad-salatat-jarjeer/",
+   "rating": 5,
+   "rating_count": 56,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "An Edible Mosaic",
+   "title": "Tangy Arugula Salad with Sumac (Salatat Jarjeer)",
+   "url": "https://www.anediblemosaic.com/tangy-arugala-salad-with-sumac-salatat-jarjeer/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
