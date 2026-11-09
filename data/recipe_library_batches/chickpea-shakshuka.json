@@ -1,0 +1,132 @@
+{
+ "dish_name": "Chickpea Shakshuka",
+ "cuisine": "Lebanese",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cayenne pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of basmati rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, dice the onion and the bell pepper. Mince the garlic. Drain and rinse the chickpeas. Chop 1/4 cup of parsley and cut the lemon into wedges.",
+  "Heat the olive oil in a large deep skillet over medium heat. Add the onion, bell pepper and 1/4 tsp of the salt. Cook for 5 minutes, stirring now and then, until soft.",
+  "Add the garlic, paprika, cumin, chili powder, cinnamon and tomato paste. Stir for 1 minute, until the paste darkens a little and it smells toasty.",
+  "Pour in the crushed tomatoes. Add the sugar and the remaining 3/4 tsp salt. Bring to a simmer and cook for 3 minutes.",
+  "Add the chickpeas. Turn the heat to medium-low and simmer for 15 minutes, stirring now and then, until the sauce is thick enough that a spoon leaves a trail.",
+  "Take the skillet off the heat. Stir in the parsley.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lemon.",
+  "Serve over the rice with the lemon wedges. Pass the cayenne at the table for anyone who wants heat."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is a one-pot chickpea shakshuka with no eggs: onion and pepper softened, spices and tomato paste cooked in, then crushed tomatoes and chickpeas simmered until thick. Yumsome's version is the same idea with passata and tofu on top, and it is no faster. Pomona uses two full cans of chickpeas so it feeds four as a dinner, moves the cayenne to the table, and serves it over rice so it stays gluten-free. Everything in it is vegan.",
+ "sources": [
+  {
+   "name": "Minimalist Baker",
+   "title": "1-Pot Chickpea Shakshuka",
+   "url": "https://minimalistbaker.com/1-pot-chickpea-shakshuka/",
+   "rating": 4.81,
+   "rating_count": 252,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yumsome",
+   "title": "One-Pan Vegan Chickpea Shakshuka",
+   "url": "https://www.yumsome.com/one-pan-vegan-chickpea-shakshuka/",
+   "rating": 4.89,
+   "rating_count": 9,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,126 @@
+{
+ "dish_name": "Shrimp Tom Yum Fried Rice",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tom yum paste (gluten-free)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Kaffir lime leaves",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on for 10 minutes. Spread the rice on a baking sheet to cool, then refrigerate it.",
+  "Pat the shrimp dry. Sprinkle the salt and pepper over them.",
+  "Peel the outer layers off the lemongrass and slice the bottom 4 inches of each stalk very thinly. Thinly slice the onion. Tear the lime leaves into pieces. Cut the lime in half.",
+  "In a small bowl, stir together 3 tbsp tom yum paste, 1 tbsp fish sauce, 1 tsp sugar and 2 tbsp of water. Break up any clumps in the cold rice with your hands.",
+  "Heat 1 tbsp of the oil in a wok or large skillet over medium-high heat until it shimmers. Add the shrimp in one layer and cook for 1 minute per side, until pink. Transfer them to a plate.",
+  "Add the remaining 2 tbsp oil to the wok. Add the onion, lemongrass and lime leaves and stir for 2 minutes, until the onion softens and it smells fragrant.",
+  "Add the peas and stir for 1 minute.",
+  "Turn the heat to high. Add the rice and press it against the wok with the back of a spatula, then stir. Repeat for 3 minutes, until the rice is hot and the grains are loose.",
+  "Pour in the tom yum mixture and stir for 2 minutes, until every grain is coated.",
+  "Return the shrimp to the wok. Take it off the heat and squeeze in the juice of half the lime.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the other half of the lime, cut into wedges."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "cook and chill the rice the night before, or at least 4 hours ahead",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "The lead is a Thai fried rice with shrimp, lemongrass, lime leaves, peas, fish sauce and lime. It builds its chili paste from scratch, which is not a 30-minute job, so this uses jarred tom yum paste, as the lead's own store-bought option and two other sources do (The Not So Creative Cook, Wok & Kin). The sources agree on day-old rice and cooking the shrimp first. The tom yum paste brand needs to be gluten-free, so check the label. Total time is 30 minutes once the rice is cooked and chilled.",
+ "sources": [
+  {
+   "name": "Ketchup with Linda",
+   "title": "Tom Yum Fried Rice with Shrimp",
+   "url": "https://ketchupwithlinda.com/tom-yum-fried-rice/",
+   "rating": 5.0,
+   "rating_count": 71,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wok & Kin",
+   "title": "Tom Yum Fried Rice",
+   "url": "https://www.wokandkin.com/tom-yum-fried-rice/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "The Not So Creative Cook",
+   "title": "Tom Yum Fried Rice",
+   "url": "https://thenotsocreativecook.com/tom-yum-fried-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": false,
+ "origin": "seed"
+}

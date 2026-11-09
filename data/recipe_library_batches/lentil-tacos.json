@@ -1,0 +1,138 @@
+{
+ "dish_name": "Lentil Tacos",
+ "cuisine": "Mexican",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Canned brown lentils",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas (6-inch)",
+   "qty": "12",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "Drain and rinse the lentils in a colander. Finely dice the onion and mince the garlic. In a small bowl, stir together the chili powder, cumin, paprika, oregano, garlic powder, onion powder and pepper.",
+  "Heat the olive oil in a large skillet over medium-high heat. Add the onion and the salt. Cook for 4 minutes, stirring now and then, until the onion is soft and clear.",
+  "Add the garlic and the spice mix. Stir for 1 minute, until it smells toasty.",
+  "Add the lentils and the broth. Mash about half of them with a potato masher or fork until the filling looks like ground meat. Cook for 5 minutes, stirring, until most of the liquid is gone and the filling is still moist.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Meanwhile, shred half the head of lettuce. Halve, pit and slice the avocados.",
+  "Heat a dry skillet over medium-high heat. Warm the tortillas 3 or 4 at a time for 30 seconds per side, until soft and spotted brown. Stack them in a clean towel to keep warm.",
+  "Serve the lentils in the tortillas with the lettuce, avocado and salsa."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead cooks onion, garlic and a taco spice mix in oil, then adds lentils and a little broth and mashes them so they look like ground meat. It uses dry lentils cooked first, and its own note allows canned. Pomona uses canned to keep this at about 30 minutes. Cozy Peach Kitchen and I Heart Vegetables agree on the spices (chili powder, cumin, oregano) and corn tortillas. The pepper flakes in the lead's spice mix are left out to keep it mild.",
+ "sources": [
+  {
+   "name": "Delish Knowledge",
+   "title": "Vegan Lentil Tacos",
+   "url": "https://www.delishknowledge.com/lentil-tacos/",
+   "rating": 4.87,
+   "rating_count": 43,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "I Heart Vegetables",
+   "title": "Vegan Lentil Tacos",
+   "url": "https://iheartvegetables.com/vegan-lentil-tacos/",
+   "rating": 4.9,
+   "rating_count": 12,
+   "read": true
+  },
+  {
+   "name": "Cozy Peach Kitchen",
+   "title": "Vegan Lentil Tacos",
+   "url": "https://cozypeachkitchen.com/vegetarian-lentil-tacos",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": false,
+ "origin": "seed"
+}

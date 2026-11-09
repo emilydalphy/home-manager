@@ -1,0 +1,110 @@
+{
+ "dish_name": "Turkey Bulgogi Bowls",
+ "cuisine": "Korean",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1 tsp",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, mince the garlic. Slice 4 green onions thinly.",
+  "In a small bowl, stir together 1/4 cup soy sauce, 3 tbsp brown sugar, 2 tsp sesame oil, 1/4 tsp ground ginger and 1/4 cup of water until the sugar dissolves.",
+  "Heat the vegetable oil in a large skillet over medium-high heat for 1 minute. Add the turkey and sprinkle the salt over it. Press it into one layer and leave it alone for 2 minutes, until the underside is browned.",
+  "Break the turkey into small crumbles and cook for 4 minutes, until no pink is left. You're cooking it to 165°F in the middle, so if you have a thermometer, check it there. No thermometer? Break a large piece open: it's done when it's white all the way through.",
+  "Add the garlic and stir for 30 seconds, until you can smell it.",
+  "Pour in the sauce. Simmer for 3 minutes, stirring now and then, until it's thickened a little and some still pools in the pan.",
+  "Take the skillet off the heat. Stir in half of the green onions.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice with the sesame seeds and the rest of the green onions. Pass the red pepper flakes at the table for anyone who wants heat."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is a 15-minute ground turkey dish: brown the turkey with garlic, then simmer in a soy, brown sugar, sesame oil and ginger sauce. It is published as Korean Ground Turkey, not under the bowl name, and it is the same dish. Pomona browns the turkey in oil first, adds water to the sauce so there is something to spoon over the rice (an idea from The Rustic Foodie's Korean Turkey Bowls), and moves the pepper flakes to the table. Total time is 30 minutes.",
+ "sources": [
+  {
+   "name": "Nutrition to Fit",
+   "title": "Korean Ground Turkey",
+   "url": "https://nutritiontofit.com/korean-ground-turkey/",
+   "rating": 5.0,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Rustic Foodie",
+   "title": "Korean Turkey Bowls",
+   "url": "https://www.therusticfoodie.com/korean-ground-turkey-rice-bowls-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": false,
+ "origin": "seed"
+}
