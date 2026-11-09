@@ -1,0 +1,122 @@
+{
+ "dish_name": "Pla Pao",
+ "cuisine": "Thai",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Whole tilapia",
+   "qty": "2 (about 1 1/4 lbs each, scaled and gutted)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Kaffir lime leaves",
+   "qty": "1 pack",
+   "category": "produce",
+   "cook_qty": "6 leaves"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice, then put it in a pot with 2 1/4 cups water. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until the fish is done.",
+  "Set a rack about 6 inches below the broiler and turn the broiler to low. Set a wire rack over a foil-lined rimmed baking sheet.",
+  "Rinse the tilapia and pat it dry inside and out. Cut each lemongrass stalk in half and bruise the pieces with the back of a knife. Tear the lime leaves in half and pull out the center veins.",
+  "Stuff each fish with 2 lemongrass pieces and 3 lime leaves.",
+  "Separate the eggs and whisk the whites until frothy. Save the yolks for another day. Brush the whites over both sides of each fish.",
+  "Pack about 1 1/2 cups of the salt over each fish, head to tail, pressing it on lightly. Do both sides. Set the fish on the wire rack.",
+  "Broil for 12 to 15 minutes, until the crust is toasty and golden and the fish is releasing juices. Flip them gently with tongs and broil for 5 to 8 minutes. You're cooking it to 125°F at the thickest part behind the head, and it keeps cooking as it rests, so if you have a thermometer, check it there. No thermometer? Crack a little crust open: the flesh should be opaque and flake with a fork.",
+  "Meanwhile, make the dipping sauce. Squeeze the limes to make 1/4 cup juice, mince the garlic and slice the chilies thinly. Stir the lime juice, 2 tbsp water, the fish sauce and the sugar in a small bowl until the sugar dissolves. Stir in the garlic and half the chilies. Put the rest of the chilies in a small bowl for the table.",
+  "Taste the sauce. If it's flat, add a little more fish sauce.",
+  "Let the fish rest on the rack for 10 minutes.",
+  "Crack the salt crust with the tip of a sharp knife and lift the pieces off. Cut along the backbone from the tail to the gills, then down to the belly. Peel the skin back in one piece and lift the fillet off the bone. Do the same on the other side.",
+  "Serve with the jasmine rice and the dipping sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the Pla Pao pages read has 20 ratings (Hungry in Thailand 5 from 2, Rachel Cooks Thai 5 from 4, Eating Thai Food 5 from 5), so the lead is Andy Ricker's Pok Pok version on Food Network, which has no rating shown. It broils the fish under a salt and egg white crust, which takes 45 minutes in a home oven; the charcoal versions take up to an hour. The lemongrass and lime leaf stuffing is in every version. The dipping sauce is the lime, fish sauce, sugar, garlic and chili one from Eating Thai Food and Rachel Cooks Thai, with half the chilies kept in a bowl for the table.",
+ "sources": [
+  {
+   "name": "Food Network",
+   "title": "Salt-Crusted Whole Fish (Plaa Phao Kleua)",
+   "url": "https://www.foodnetwork.com/fnk/recipes/salt-crusted-whole-fish-plaa-phao-kleua-7151385",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rachel Cooks Thai",
+   "title": "Salt-Crusted Grilled Fish",
+   "url": "https://rachelcooksthai.com/salt-crusted-grilled-fish/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Eating Thai Food",
+   "title": "Thai Grilled Fish (Pla Pao)",
+   "url": "https://eatingthaifood.com/thai-grilled-fish-recipe-pla-pao",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Pla Pao",
+   "url": "https://hungryinthailand.com/pla-pao/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

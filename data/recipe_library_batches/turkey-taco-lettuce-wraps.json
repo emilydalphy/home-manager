@@ -1,0 +1,118 @@
+{
+ "dish_name": "Turkey Taco Lettuce Wraps",
+ "cuisine": "Mexican",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1.3 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Iceberg lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Separate 12 large leaves from the head of lettuce, rinse them and pat them dry. Stack them on a plate.",
+  "Mince half the onion and dice half the bell pepper into small pieces.",
+  "In a small bowl, stir together the garlic powder, cumin, chili powder, paprika, oregano and salt.",
+  "Heat the oil in a large deep skillet over medium-high heat. Add the turkey and break it up with a spoon. Cook for 6 minutes, until there's no pink left and some pieces are browned.",
+  "Add the onion and bell pepper and cook for 3 minutes, until they're soft.",
+  "Add the spice mix and stir for 30 seconds, until it smells fragrant.",
+  "Add the tomato sauce and 1/2 cup water and scrape up anything stuck to the pan. Bring it to a simmer, turn the heat to low, cover and cook for 12 minutes. If it still looks watery, uncover it for the last 3 minutes. You're cooking the turkey to 165°F, so if you have a thermometer, check it there. No thermometer? It's done when there's no pink anywhere.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the turkey into the lettuce leaves and serve with the salsa."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Skinnytaste (4.84 from 50 ratings) is the lead: brown lean turkey, add the spices, then simmer it with onion, bell pepper and tomato sauce. Its 20-minute covered simmer is cut to 12 here, with a tablespoon of oil to brown the turkey and the spices stirred in hot first. Cooking Classy (5 from 19 ratings) agrees on the method but uses canned tomatoes and a 5 minute simmer. Cheese and sour cream are left off to keep it dairy-free.",
+ "sources": [
+  {
+   "name": "Skinnytaste",
+   "title": "Ground Turkey Taco Lettuce Wraps",
+   "url": "https://www.skinnytaste.com/turkey-taco-lettuce-wraps/",
+   "rating": 4.84,
+   "rating_count": 50,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Turkey Taco Lettuce Wraps",
+   "url": "https://www.cookingclassy.com/turkey-taco-lettuce-wraps/",
+   "rating": 5.0,
+   "rating_count": 19,
+   "read": true
+  },
+  {
+   "name": "Slender Kitchen",
+   "title": "Turkey Taco Lettuce Wraps",
+   "url": "https://slenderkitchen.com/recipe/turkey-taco-lettuce-wraps",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

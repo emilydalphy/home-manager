@@ -1,0 +1,92 @@
+{
+ "dish_name": "Pollo a la Mexicana",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeños",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ripe tomatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut each chicken thigh in half and pat the pieces dry. Sprinkle 1/2 tsp of the salt over them.",
+  "Dice the onion. Cut the jalapeños in half, scrape out the seeds and dice them. Mince the garlic. Chop the tomatoes into 1/2-inch pieces. Chop 1/4 cup of the cilantro.",
+  "Heat the oil in a large deep skillet over medium-high heat until it shimmers. Add the chicken in a single layer and leave it alone for 4 minutes, until the underside is deep golden and lets go of the pan. Transfer it to a plate. It won't be cooked through yet.",
+  "Add the onion and jalapeños to the same skillet. Cook for 4 minutes, scraping up the browned bits, until they're soft and starting to brown.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Add the tomatoes and the remaining 1/2 tsp salt. Cook for 4 minutes, stirring now and then, until the tomatoes break down and the pan looks juicy.",
+  "Return the chicken and any juices to the skillet and nestle the pieces into the sauce. Bring it to a boil, turn the heat to low, cover and simmer for 12 minutes. You're cooking the thighs to 175°F in the thickest piece, so if you have a thermometer, check it there. No thermometer? Cut into a piece: it's done when the juices run clear and there's no pink left.",
+  "Meanwhile, wrap the tortillas in a damp kitchen towel and microwave them for 40 seconds.",
+  "Off the heat, stir in the cilantro. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the warm corn tortillas."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Food Network's Pollo a la Mexicana (tomato, jalapeño and onion, the colors of the flag) is the lead: sear the chicken, soften the onion and jalapeños, break down the tomatoes, then simmer the chicken in the sauce. The lead uses bone-in breasts and an hour; this one uses boneless thighs cut in half, which cook in 12 minutes (the Food.com version, 35 minutes, confirms the quick route). The jalapeños are seeded so the base stays mild, and the lead's rice and beans are left off.",
+ "sources": [
+  {
+   "name": "Food Network",
+   "title": "Pollo a la Mexicana (Chicken, Tomatoes, Jalapeños and Onion)",
+   "url": "https://www.foodnetwork.com/recipes/pollo-a-la-mexicana-chicken-tomatoes-jalapenos-and-onion-22901539",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Chicken a la Mexicana",
+   "url": "https://www.food.com/recipe/chicken-a-la-mexicana-247291",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

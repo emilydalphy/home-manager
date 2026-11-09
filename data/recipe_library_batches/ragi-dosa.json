@@ -1,0 +1,99 @@
+{
+ "dish_name": "Ragi Dosa",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Ragi flour",
+   "qty": "1 bag (1 cup)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 cup minced"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "10 leaves"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Crush the cumin seeds with the flat of a knife or a mortar. Mince the onion to make 1/4 cup, grate 2 tsp of the ginger, chop the curry leaves and chop 1/4 cup of the cilantro.",
+  "In a large bowl, whisk the ragi flour, rice flour, salt, cumin and pepper. Add 2 cups of water and whisk until it's smooth. Whisk in 2 more cups of water. The batter should be thin and pourable, like thin cream.",
+  "Stir in the onion, ginger, curry leaves and cilantro. Leave the batter for 15 minutes.",
+  "Heat a large nonstick or cast iron pan over medium-high heat until a few drops of water sizzle and disappear. If you have a second pan, heat it too so you can cook two at a time.",
+  "Stir the batter well, since the flour sinks to the bottom. Pour about 1/3 cup into the pan in a thin circle, starting at the edge and working in toward the center. Don't spread it. Fill any big gaps with a spoonful of batter.",
+  "Drizzle 1 tsp of the oil around the edge. Cook for 3 minutes, until the edges lift from the pan and the underside is golden and crisp.",
+  "Flip it and cook for 1 minute. Transfer to a plate.",
+  "Stir the batter and make sure the pan is hot again before each dosa. This makes about 12. Serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes (4.97 from 104 ratings) is the lead: a thin batter of ragi flour, rice flour and water with onion, ginger, curry leaves and cumin, rested for a few minutes and poured into a hot pan in a ring without spreading. My Food Story's version is the same idea with a 30 minute rest. Semolina is optional in both and is left out here to keep it gluten-free, and oil replaces the ghee to keep it dairy-free. A black pepper pinch stands in for the green chili.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Ragi Dosa (Finger Millet Dosa)",
+   "url": "https://www.indianhealthyrecipes.com/ragi-dosa-recipe/",
+   "rating": 4.97,
+   "rating_count": 104,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Food Story",
+   "title": "Instant Ragi Dosa",
+   "url": "https://myfoodstory.com/instant-ragi-dosa/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
