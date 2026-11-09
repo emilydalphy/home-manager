@@ -1,0 +1,145 @@
+{
+ "dish_name": "Nui Xao Bo",
+ "main_protein": "beef",
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Beef eye of round",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Elbow macaroni",
+   "qty": "10 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Chicken bouillon powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp + 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tbsp of the salt and bring it to a boil over high heat.",
+  "While the water heats, slice the beef against the grain into thin strips, about 1/4 inch thick. Transfer it to a bowl and toss with the cornstarch, the baking soda, the remaining 1/4 tsp salt, 1/4 tsp of the black pepper and 1 tbsp of the oil. Leave it for 10 minutes.",
+  "Add the macaroni to the boiling water and cook it for 1 to 2 minutes less than the package says, so it's just short of al dente. Scoop out 1/2 cup of the cooking water, then drain the macaroni and rinse it under cold water.",
+  "Meanwhile, halve the onion and cut it into strips. Cut the tomatoes into quarters, which gives you 12 wedges. Mince the garlic and pick the cilantro leaves off the stems.",
+  "Heat a large skillet or wok over medium-high heat until a drop of water sizzles. Add 1 tbsp of the oil, then the beef in a single layer. Cook for 1 to 2 minutes per side, until browned outside and still a little pink in the middle. Work in two batches if it crowds the pan. Transfer the beef to a plate.",
+  "Turn the heat down to medium and add the last 1 tbsp oil and the garlic. Stir for 20 seconds, until you can smell it.",
+  "Stir in the tomato paste and cook for 1 minute, scraping up the browned bits, until it darkens a shade.",
+  "Add 6 of the tomato wedges and cook for 1 minute, until they start to collapse. Pour in 1/4 cup of the reserved cooking water.",
+  "Add the macaroni and the beef with its juices. Stir in the soy sauce, oyster sauce, bouillon powder, sugar and the remaining 1/2 tsp black pepper. Toss for 1 to 2 minutes, until the macaroni is coated and hot. If it looks dry, add a splash of the reserved water.",
+  "Take the pan off the heat and stir in the onion and the remaining 6 tomato wedges.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Divide among bowls and top with the cilantro."
+ ],
+ "method_notes": "Feed The Pudge (4.5 from 28 ratings) leads: thin eye of round velveted with cornstarch and a little baking soda, seared hard, then tomato paste cooked in the same pan, macaroni tossed in with soy, oyster sauce and bouillon, and fresh tomato and onion stirred in off the heat. Helen's Recipes and MM Bon Appetit agree on the sear-then-toss order and on cooling the macaroni so it doesn't go mushy; Helen's adds a chili soy side, MM Bon Appetit adds carrot, bell pepper and greens. Scaled from 6 servings to 4. No butter (the other widely shared version, Cindy Lam's, uses it), so it stays dairy-free. Honest time is about 30 minutes, the boiling water being the slow part.",
+ "sources": [
+  {
+   "name": "Feed The Pudge",
+   "title": "Meal Prep: Nui Xao Bo / Stir-Fried Beef and Macaroni",
+   "url": "https://feedthepudge.com/meal-prep-nui-xao-bao-stir-fried-beef-and-macaroni/",
+   "rating": 4.5,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Helen's Recipes",
+   "title": "Nui Xao Bo (Vietnamese-Style Pasta)",
+   "url": "https://helenrecipes.com/recipe-nui-xao-bo-vietnamese-style-pasta/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "MM Bon Appetit",
+   "title": "Nui xao bo (Vietnamese Macaroni and Beef Stir Fry)",
+   "url": "https://mmbonappetit.com/nui-xao-bo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "cuisine": "Vietnamese",
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

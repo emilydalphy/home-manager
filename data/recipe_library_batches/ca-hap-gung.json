@@ -1,0 +1,108 @@
+{
+ "dish_name": "Ca Hap Gung",
+ "main_protein": "fish",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "White fish fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until the fish is ready.",
+  "Meanwhile, stir together the tamari, fish sauce, sesame oil, sugar, 3 tbsp water and 1/2 tsp of the black pepper in a small bowl until the sugar dissolves.",
+  "Cut the fish into pieces that fit on a heatproof plate in one layer. Pat them dry and season both sides with the salt and the remaining 1/4 tsp black pepper. Put them on the plate.",
+  "Peel the ginger and cut it into thin matchsticks. Trim the green onions, cut them into thirds, then slice each piece into thin strips. Scatter half the ginger and half the green onions over the fish.",
+  "Set a rack or a ring of crumpled foil in a wide pot with a lid and add an inch of water. Bring it to a boil over high heat.",
+  "Set the plate on the rack, cover the pot and steam for 8 to 10 minutes, until the fish is opaque and flakes easily when you press it with a fork.",
+  "While the fish steams, heat the vegetable oil in a small saucepan over medium-high heat for 2 to 3 minutes. It's ready when a strip of green onion sizzles the moment it touches the oil.",
+  "Wearing oven mitts, lift the plate out of the pot. Tilt it over the sink to pour off the liquid that has pooled.",
+  "Top the fish with the remaining ginger and green onions and spoon the sauce over it.",
+  "Stand back, then carefully pour the hot oil over the ginger and green onions. It will sizzle and spatter.",
+  "Taste a bit of the fish with the sauce. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "method_notes": "Feed The Pudge leads (5.0 from 2 ratings, so a fallback): fish fillets steamed 7 to 9 minutes with ginger and green onion, sauced, then finished with a pour of smoking hot oil. Wandering Chopsticks steams a whole fish for about 25 minutes and seasons with soy sauce, fish sauce and sesame oil, so a little fish sauce is added here for the Vietnamese edge. Gluten-free adaptation: tamari replaces soy sauce, and the Shaoxing wine and MSG in the lead are left out. Fillets keep the time short. The sauce and oil amounts are scaled up from 1 lb to 1 1/2 lbs of fish. Fish sauce brands vary, so check the label for gluten.",
+ "sources": [
+  {
+   "name": "Feed The Pudge",
+   "title": "Steamed Fish with Ginger and Scallion / Ca Hap Hanh Gung",
+   "url": "https://feedthepudge.com/steamed-fish-with-ginger-and-scallion-ca-hap-hanh-gung/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wandering Chopsticks",
+   "title": "Ca Hap Gung Hanh (Vietnamese Steamed Fish with Ginger and Scallions)",
+   "url": "http://wanderingchopsticks.blogspot.com/2009/08/ca-hap-gung-hanh-vietnamese-steamed.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "cuisine": "Vietnamese",
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

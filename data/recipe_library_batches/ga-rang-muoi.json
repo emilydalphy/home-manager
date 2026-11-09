@@ -1,0 +1,116 @@
+{
+ "dish_name": "Ga Rang Muoi",
+ "main_protein": "chicken",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Chinese five spice",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until the chicken is ready.",
+  "Pat the chicken dry and cut it into 3/4-inch pieces. Transfer it to a bowl and toss with 3/4 tsp of the salt, 1/2 tsp of the black pepper and 3/4 tsp of the five spice. Leave it for 10 minutes.",
+  "Meanwhile, cut the onion and bell pepper into 1/2-inch pieces, mince the garlic and slice the green onions. Slice the cucumber. In a small bowl, mix the remaining 3/4 tsp salt, the remaining 1/4 tsp black pepper, the remaining 1/2 tsp five spice and the sugar. Put the cornstarch on a plate.",
+  "Dredge the chicken in the cornstarch in batches, shaking off the extra.",
+  "Heat the oil in a large heavy skillet or wok over medium-high heat for about 3 minutes. It's ready when a pinch of cornstarch sizzles right away.",
+  "Fry half the chicken in a single layer for 3 to 4 minutes, turning once, until deep golden. Transfer it to a plate lined with paper towels. Repeat with the rest. You're cooking it to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut a piece open: it's done when there's no pink left.",
+  "Pour the oil into a heatproof bowl, leaving 1 tbsp in the pan. Let the bowl cool before you discard the oil.",
+  "Return the pan to medium-high heat. Add the onion and bell pepper and toss for 1 minute. Add the garlic and stir for 20 seconds.",
+  "Add the chicken and sprinkle in the seasoning mix. Toss for 1 minute, then take the pan off the heat and stir in the green onions.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice and the sliced cucumber."
+ ],
+ "method_notes": "No version read had a rating, so the lead is the best-read real version of the dish: The Koole Mom's boneless chicken thighs marinated in salt, pepper and five spice, dredged in cornstarch, fried, then tossed with onion, bell pepper, garlic and green onion and a salt, pepper and five spice finish. Vicky Pham's wing version (5.0 from 1 rating) agrees on frying then tossing with garlic, shallot and green onion in a seasoned salt, and adds the pinch of sugar in the salt and pepper mix. That is where the salty-sweet in the list's line comes from; the dish is mostly salty and peppery. The lead fries twice and deep fries in a cup of oil. Here the chicken is cut small and fried once to stay near 30 minutes. Shaoxing wine, MSG and chicken powder are left out to keep it gluten-free, and jalapeno is left off to keep the base mild.",
+ "sources": [
+  {
+   "name": "The Koole Mom",
+   "title": "Salt and Pepper Chicken (Thịt Gà Rang Muối)",
+   "url": "https://thekoolemom.com/recipes/salt-and-pepper-chicken-thit-ga-rang-muoi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Salt & Pepper Fried Chicken Wings (Ga Rang Muoi)",
+   "url": "https://vickypham.com/blog/vietnamese-salt-pepper-fried-chicken-ga-rang-muoi/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "cuisine": "Vietnamese",
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

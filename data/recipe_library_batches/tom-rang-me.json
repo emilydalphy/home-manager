@@ -1,0 +1,114 @@
+{
+ "dish_name": "Tom Rang Me",
+ "main_protein": "shrimp",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Large shell-on shrimp",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind paste block",
+   "qty": "1 block",
+   "category": "pantry",
+   "cook_qty": "3 oz"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chili",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until the shrimp is ready.",
+  "Boil a kettle of water. Break the tamarind into a bowl, pour in 1 cup boiling water and leave it for 5 minutes, mashing it with a spoon now and then. Press it through a sieve into another bowl. That should be about 3/4 cup. Stir in the fish sauce and sugar until the sugar dissolves.",
+  "Meanwhile, finely chop the shallots and mince the garlic. Lightly crush the peppercorns with the bottom of a pan. Slice the Thai chilies and pick the basil leaves off the stems. Pat the shrimp dry.",
+  "Heat the oil in a large wide skillet over medium heat. Add the shallots and cook for 2 minutes, until soft. Add the garlic and stir for 30 seconds.",
+  "Turn the heat to medium-high. Add the peppercorns and the shrimp and toss for 2 minutes.",
+  "Pour in the tamarind sauce and cook for 3 minutes, turning the shrimp once, until they're curled and pink. Stir in 2 tbsp of the basil and transfer the shrimp to a plate.",
+  "Turn the heat to high and boil the sauce for about 5 minutes, until it thickens to a syrup that coats the back of a spoon.",
+  "Return the shrimp to the pan and toss for 30 seconds to coat them.",
+  "Taste the sauce. If it's flat, add a splash more fish sauce.",
+  "Put the sliced Thai chilies in a small bowl on the table for the adults. Serve the shrimp over the rice, topped with the rest of the basil. The shells stay on, so everyone peels their own shrimp at the table."
+ ],
+ "method_notes": "Beyond Sweet and Savory leads (5.0 from 11 ratings, so under 20 and a fallback): shell-on shrimp tossed with shallot, garlic and crushed peppercorns, then cooked in a sauce of tamarind water, fish sauce and sugar, with basil and chili. Bowl of Sugar agrees on the sauce but only uses 10 minutes of cooking; La Vie Partagee fries the shrimp and adds annatto and sesame oil. Amounts are scaled from 1 lb to 1 1/2 lbs. The lead boils the leftover sauce for 10 minutes, which is cut here to about 5 by using a wide pan. Chili is served on the side so the base stays mild. Peeled shrimp work too, but shell-on is how the lead keeps it juicy.",
+ "sources": [
+  {
+   "name": "Beyond Sweet and Savory",
+   "title": "Vietnamese Tamarind Prawns Tôm Rang Me",
+   "url": "https://beyondsweetandsavory.com/vietnamese-tamarind-prawns/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "A Bowl of Sugar",
+   "title": "Vietnamese spicy shrimp in tamarind sauce",
+   "url": "https://www.abowlofsugar.com/post/vietnamese-spicy-shrimp-in-tamarind-sauce",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "La Vie Partagee",
+   "title": "Fried Prawns in a Tamarind Sauce / Tôm Rang Me",
+   "url": "https://laviepartagee.com/2016/08/08/fried-prawns-in-a-tamarind-sauce-tom-rang-me/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "cuisine": "Vietnamese",
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

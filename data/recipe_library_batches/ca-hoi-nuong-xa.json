@@ -1,0 +1,104 @@
+{
+ "dish_name": "Ca Hoi Nuong Xa",
+ "main_protein": "fish",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Salmon fillets",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Gluten-free oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until the salmon is ready.",
+  "Peel the outer layers off the lemongrass and finely mince the bottom 4 inches of each stalk. Mince the shallot and the garlic.",
+  "In a large bowl, stir together the lemongrass, shallot, garlic, fish sauce, oyster sauce, oil and honey. Add the salmon and turn each piece to coat it. Leave it at room temperature for 20 minutes.",
+  "While the salmon sits, slice the cucumber. Set the oven rack 6 inches below the broiler and line a rimmed baking sheet with foil.",
+  "Turn the broiler to high. Put the salmon on the sheet, skin side down, and spoon the marinade left in the bowl over the top.",
+  "Broil for 6 to 8 minutes, depending on thickness. You're cooking it to 125°F in the middle for medium, so if you have a thermometer, check it there. No thermometer? Press a fork into the thickest part: it's done when it flakes.",
+  "Let the salmon rest for 2 minutes.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve with the rice and the sliced cucumber."
+ ],
+ "method_notes": "Cooking Therapy leads (5.0 from 4 ratings, so a fallback): salmon marinated 20 minutes in lemongrass, shallot, garlic, fish sauce, oyster sauce, oil and honey, then broiled 5 to 7 minutes. The author's own notes say a longer marinade tastes better, and that very cold fillets need longer under the broiler. The other lemongrass salmon read (Olive You Whole) simmers it in coconut milk, which is a different dish, so it is not used. Marinade is doubled for 2 lbs; the lead's ratios are kept as they are, and the marinade is quite salty. Oyster sauce often contains wheat, so the list says gluten-free oyster sauce. Cucumber is the vegetable the lead leaves to the cook, and rice is added so the timeline covers it. The lead broils to medium-rare (110 to 125°F); this version aims for 125°F.",
+ "sources": [
+  {
+   "name": "Cooking Therapy",
+   "title": "25-Minute Vietnamese Lemongrass Salmon",
+   "url": "https://www.cooking-therapy.com/vietnamese-lemongrass-salmon/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Olive You Whole",
+   "title": "Paleo + Whole30 Lemongrass Salmon",
+   "url": "https://www.oliveyouwhole.com/diet/dairy-free-recipes/paleo-whole30-lemongrass-salmon-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "cuisine": "Vietnamese",
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

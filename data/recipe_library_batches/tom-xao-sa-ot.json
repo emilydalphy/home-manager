@@ -1,0 +1,126 @@
+{
+ "dish_name": "Tom Xao Sa Ot",
+ "main_protein": "shrimp",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red Fresno chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chili",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until the shrimp is ready.",
+  "Meanwhile, pat the shrimp dry and transfer it to a bowl. Toss with the salt and black pepper.",
+  "Juice the lime, which should be about 2 tbsp. In a small bowl, stir together the lime juice, fish sauce, sugar, cornstarch and 1/2 cup water until the sugar dissolves.",
+  "Peel the outer layers off the lemongrass and finely chop the bottom 4 inches of each stalk. Mince the garlic. Slice the scallions, keeping the whites and greens in separate piles. Seed and finely chop the Fresno chili. Chop 2 tbsp of the cilantro.",
+  "Heat a wok or large skillet over high heat until it's very hot. Add 2 tbsp of the oil, then half the shrimp in a single layer. Cook for 1 minute without stirring, until the underside is pink. Flip them and cook the other side for 1 minute, then transfer to a plate. Repeat with the rest of the shrimp.",
+  "Turn the heat to medium-high and add the last 1 tbsp oil, the lemongrass and the scallion whites. Stir for 40 seconds, until they smell fragrant. Add the garlic and Fresno chili and stir for 20 seconds.",
+  "Stir the sauce again, then pour it into the pan. Let it bubble for 30 to 45 seconds, until it thickens a little and turns glossy.",
+  "Return the shrimp and any juices to the pan. Toss for 1 minute, until the shrimp is curled, pink and cooked through.",
+  "Take the pan off the heat and stir in the scallion greens and the chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Slice the Thai chilies and put them in a small bowl on the table for the adults. Serve the shrimp over the rice."
+ ],
+ "method_notes": "Only two published versions of this exact dish could be read, and neither shows a rating, so the lead is the best-read one. Astray Recipes (an old online collection) gives the pan method: shrimp stir-fried until they change color, then lemongrass, scallion and chili for a minute over high heat, with fish sauce and a little cornflour-thickened liquid. Kingfoodmart (a Vietnamese grocer's recipe page) gives the sauce balance of fish sauce, sugar and lime juice, with garlic fried in with the lemongrass. Both are small-batch with loose amounts, so the quantities here are scaled up to 1 1/2 lbs by the sauce ratios. Shrimp is peeled for a family table. The base is mild: a seeded Fresno chili goes in the pan and Thai chili is served on the side. Fish sauce brands vary, so check the label for gluten.",
+ "sources": [
+  {
+   "name": "Astray Recipes",
+   "title": "King prawns with chilli and lemongrass (tom xao xa ot)",
+   "url": "https://www.astray.com/recipes/?show=King+prawns+with+chilli+and+lemongrass+%28tom+xao+xa+ot%29",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kingfoodmart",
+   "title": "Tôm xào sả ớt",
+   "url": "https://kingfoodmart.com/bai-viet/cong-thuc-nau-an/tom-xao-sa-ot",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "cuisine": "Vietnamese",
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}
