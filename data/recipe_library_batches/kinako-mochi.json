@@ -1,0 +1,58 @@
+{
+ "dish_name": "Kinako Mochi",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Kiri mochi",
+   "qty": "8 pieces",
+   "category": "pantry"
+  },
+  {
+   "item": "Kinako (roasted soybean flour)",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  }
+ ],
+ "instructions": [
+  "Stir the kinako and sugar together in a shallow bowl. Set it next to the stove, along with a bowl of hot water.",
+  "Line a large nonstick skillet with a sheet of parchment while the pan is still cold. Lay the mochi on it with room between each piece, since they puff. If they don't all fit, cook in two batches.",
+  "Cover the skillet and turn the heat to medium-low. Cook for 5 minutes.",
+  "Flip the mochi and cook uncovered for 5 to 6 minutes, until they're puffed, soft in the middle and lightly browned.",
+  "Dip each piece into the hot water for a second, then roll it in the kinako and sugar until it's coated all over.",
+  "Serve right away, while they're soft. They harden as they cool, so make only what you'll eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook (5 from 2 ratings) is the lead, so this is a fallback; Cup of Yum has the same three-ingredient recipe (5 from 2). Both offer a broiler, a pan or a quick simmer, and both call for 2 tbsp sugar to 4 tbsp kinako, the 1 to 2 ratio used here. The pan method is written out because it browns the mochi. Plain kiri mochi is just rice, so it's gluten-free and vegan, but check the label.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Kinako Mochi",
+   "url": "https://www.justonecookbook.com/kinako-mochi/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Kinako Mochi",
+   "url": "https://cupofyum.com/recipes/kinako-mochi",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

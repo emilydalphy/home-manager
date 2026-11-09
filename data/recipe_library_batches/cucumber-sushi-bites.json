@@ -1,0 +1,67 @@
+{
+ "dish_name": "Cucumber Sushi Bites",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Sushi rice",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Seasoned rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "English cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a bowl of cold water, swirling and draining it, until the water runs mostly clear.",
+  "Put the rice and 1 cup water in a small saucepan. Bring to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes.",
+  "Transfer the rice to a wide bowl. Fold in the rice vinegar and spread the rice out so it cools. It should be at room temperature before you fill the cucumbers, about 15 minutes.",
+  "Meanwhile, cut the cucumbers into 1/2-inch rounds. That should be about 24. Scoop a small hollow out of the top of each round with a small spoon, leaving the bottom intact.",
+  "Cut the avocado into small cubes.",
+  "Press about 1 tbsp of the cooled rice into each hollow. Top each with a cube of avocado and a pinch of sesame seeds.",
+  "Serve with the tamari for dipping."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has ratings, so this is a fallback. The lead is Wonky Box's cucumber and avocado sushi bites (unrated): hollowed cucumber rounds filled with vinegared sushi rice and topped with avocado and sesame seeds. Other pages (Not Quite Nigella, Feel Good Foodie) were skimmed for the rice and vinegar ratio. The lead's cream cheese and mayo are left out to keep it vegan, and the soy sauce is gluten-free tamari. Seasoned rice vinegar stands in for the vinegar, sugar and salt used elsewhere.",
+ "sources": [
+  {
+   "name": "Wonky Box",
+   "title": "Cucumber & Avocado Sushi Bites",
+   "url": "https://wonkybox.nz/recipes/cucumber-avocado-sushi-bites",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

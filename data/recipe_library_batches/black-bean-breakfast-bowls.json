@@ -1,0 +1,102 @@
+{
+ "dish_name": "Black Bean Breakfast Bowls",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black beans",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Avocado",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup leaves"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Up to 3 days ahead, cook the rice: put 1 cup rice, 2 cups water and 1/4 tsp salt in a saucepan and bring to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 5 minutes, then fluff it with a fork. Cool it, then refrigerate in a covered container.",
+  "Up to 3 days ahead, make the beans: heat the olive oil in a large skillet over medium heat. Add the minced garlic and cook for 30 seconds, until you can smell it. Add the cumin and stir for 30 seconds. Add both cans of beans with their liquid, 1/4 cup water and 1/2 tsp salt. Simmer for 7 minutes, mashing about a third of the beans with the back of a spoon so it thickens. Cool, then refrigerate in a covered container.",
+  "In the morning, put the beans back in the large skillet with 2 tbsp water. Cover and warm over medium heat for 3 minutes, until they're bubbling.",
+  "Meanwhile, put the rice in a bowl with 1 tbsp water, cover it and microwave for 2 minutes, until hot.",
+  "Press 4 wells into the beans with the back of a spoon and crack an egg into each. Sprinkle the eggs with the remaining 1/4 tsp salt. Cover the skillet, turn the heat to medium-low and cook for 5 minutes, until the whites are set and the yolks are still soft. For firmer yolks, cook 1 to 2 minutes longer.",
+  "While the eggs cook, slice the avocados, dice half the onion and chop the cilantro.",
+  "Divide the rice among 4 bowls. Spoon the beans and an egg over each, then top with the avocado, onion and cilantro. Serve with the hot sauce at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "Cook the rice and the beans up to 3 days ahead and keep them in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "No source has 20 ratings, so this is a fallback. Elizabeth Rider's black beans and eggs rice bowl (unrated) is the lead: garlic, cumin-bloomed beans mashed to thicken, eggs set right in the beans, over rice. The Cooking Guy's Mexican breakfast bowl (unrated) adds the avocado, raw onion, cilantro and hot sauce on top. The beans and rice are made ahead, so the morning is warm-up and eggs, about 17 minutes. The cooked beans keep 3 days in the fridge, and I left out the jalapeno to keep the base mild.",
+ "sources": [
+  {
+   "name": "Elizabeth Rider",
+   "title": "Black Beans and Eggs Rice Bowl",
+   "url": "https://www.elizabethrider.com/?p=31693",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Cooking Guy",
+   "title": "Mexican Breakfast Bowl",
+   "url": "https://www.thecookingguy.com/recipes/mexican-breakfast-bowl",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

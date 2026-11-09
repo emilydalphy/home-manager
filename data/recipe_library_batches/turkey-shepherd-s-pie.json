@@ -1,0 +1,125 @@
+{
+ "dish_name": "Turkey Shepherd's Pie",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Peel the potatoes and cut them into 2-inch chunks. Put them in a large pot with cold water to cover and 1 1/2 tsp of the salt. Bring to a boil, then simmer over medium heat for 12 to 15 minutes, until a knife slides in with no resistance.",
+  "Meanwhile, heat 1 tbsp of the oil in a Dutch oven or large deep skillet over high heat. Add the turkey, 1/2 tsp of the salt and 1/2 tsp of the pepper. Cook for 6 to 7 minutes, breaking it up as it browns, until there's no pink left and it's browned in spots. Transfer it to a bowl.",
+  "Turn the heat to medium and add the remaining 2 tbsp oil and the diced onion. Cook for 5 minutes, until soft. Add the minced garlic and cook for 30 seconds.",
+  "Add the tomato paste and thyme. Stir for 2 minutes, until the paste darkens.",
+  "Return the turkey to the pot and add the broth and Worcestershire. Bring to a boil, then lower to a simmer. Cook for 10 minutes, until it's saucy and no longer soupy.",
+  "Taste the filling. If it's flat, add a pinch more salt.",
+  "Drain the potatoes and return them to the hot pot for 2 minutes so they steam dry. Meanwhile, warm the milk with 2 tbsp of the butter in a small saucepan over low heat until the butter melts.",
+  "Mash the potatoes, then stir in the warm milk. Add the remaining 1/2 tsp salt and 1/4 tsp pepper.",
+  "Spread the filling in a 9x13 baking dish. Scatter the frozen peas and corn over it, straight from the freezer.",
+  "Spread the mashed potatoes over the top, all the way to the edges. Drag a fork across to make ridges, then dot with the remaining 1 tbsp butter.",
+  "Bake for 20 to 25 minutes, until the edges bubble and the top is golden. For more color, broil for 2 to 3 minutes, watching closely. Let it rest for 10 minutes before you scoop it.",
+  "To store, cool the leftovers completely. They keep in the fridge for 3 to 4 days and in the freezer for up to 3 months, covered tightly. Thaw frozen portions overnight in the fridge. Reheat covered with foil at 350°F for 15 to 20 minutes from the fridge, or 25 to 30 minutes from thawed."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No source has ratings, so this is a fallback. Sandra Valvassori's turkey shepherd's pie is the lead: turkey browned hard, tomato paste cooked down, broth and Worcestershire, peas and corn between filling and potato. Lively Table (unrated) adds carrots and celery to the base, which we left out to follow the lead. Gluten-free broth and Worcestershire are called for by name. The lead has no freezing note, so the freezer time follows the general 3 month guidance on the library's other freezer bakes. Honest total is 65 minutes; it's a batch dish that holds for the week.",
+ "sources": [
+  {
+   "name": "Sandra Valvassori",
+   "title": "Turkey Shepherd's Pie with Creamy Mashed Potatoes",
+   "url": "https://www.sandravalvassori.com/turkey-shepherds-pie-with-creamy-mashed-potatoes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lively Table",
+   "title": "Turkey Shepherd's Pie",
+   "url": "https://livelytable.com/turkey-shepherds-pie/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,117 @@
+{
+ "dish_name": "Turkey Bolognese Bake",
+ "cuisine": "Italian",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey (93% lean)",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted red peppers",
+   "qty": "1 jar (12 oz)",
+   "category": "pantry",
+   "cook_qty": "2 peppers"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Ziti or penne",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh mozzarella",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Salt",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Fill a large pot with water, add 1 tbsp of the salt and bring it to a boil.",
+  "Meanwhile, heat the oil in a large deep skillet or Dutch oven over medium-high heat. Add the diced onion and cook for 3 minutes. Add the turkey, 1/2 tsp of the salt and the pepper. Cook for 6 minutes, breaking it up as it browns, until there's no pink left.",
+  "Add the diced zucchini and sliced mushrooms. Cook for 5 minutes, until the mushrooms have let go of their water and started to brown.",
+  "Add the minced garlic, thyme and the diced roasted peppers. Stir for 1 minute.",
+  "Pour in the crushed tomatoes and bring to a simmer. Cook over medium-low heat for 10 minutes, stirring now and then, until it thickens. Stand back a little. It will spatter.",
+  "While the sauce simmers, cook the ziti in the boiling water for 7 to 8 minutes, until just al dente. It finishes cooking in the oven, so don't cook it all the way. Drain it, and don't rinse it.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Cut the mozzarella into small cubes. Off the heat, stir the pasta into the sauce along with the basil, half the mozzarella and half the Parmesan (1/4 cup).",
+  "Transfer it to a 9x13 baking dish. Scatter the rest of the mozzarella and the remaining 1/4 cup Parmesan on top.",
+  "Bake for 25 to 30 minutes, until the cheese is golden and bubbling. Let it rest for 5 minutes before serving.",
+  "To freeze a second bake, assemble it in a foil-lined dish up to the end of the previous step but don't bake it. Cool completely, wrap well in plastic wrap and foil, and freeze for up to 3 months. Thaw in the fridge for 24 hours, then bake as above for about 15 minutes longer. Baked leftovers keep in the fridge for 3 days. Reheat covered with foil at 350°F for 25 to 35 minutes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Slender Kitchen's baked ziti bolognese (unrated, so this is a fallback): lean turkey with vegetables, crushed tomatoes, al dente pasta, mozzarella and Parmesan, baked. Well Plated's turkey bolognese (4.67 from 56) is a sauce for tagliatelle, not a bake, so it's credited here only for browning the turkey in oil and the sauce freezing for 3 months. The marinara and red pepper flakes in the lead are left out to keep the base mild. Double the recipe and freeze one dish unbaked. Honest total is 65 minutes; it's a batch dish.",
+ "sources": [
+  {
+   "name": "Slender Kitchen",
+   "title": "Baked Ziti Bolognese",
+   "url": "https://slenderkitchen.com/recipe/baked-ziti-bolognese",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

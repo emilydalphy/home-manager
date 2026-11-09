@@ -1,0 +1,82 @@
+{
+ "dish_name": "Labneh Toast",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Rustic bread",
+   "qty": "1 loaf",
+   "category": "pantry",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Extra-virgin olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Labneh",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Za'atar",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "a handful of leaves"
+  },
+  {
+   "item": "Flaky sea salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the broiler on high with a rack in the middle.",
+  "Lay the 8 bread slices on a rimmed baking sheet and brush both sides with 2 tbsp of the olive oil.",
+  "Broil for 2 minutes, until the tops are golden. Flip the slices and broil the other side for 2 minutes. Watch them, since broilers run hot.",
+  "Meanwhile, slice the cucumbers thinly lengthwise.",
+  "Let the toast cool for a minute, then spread a generous layer of labneh over each slice, using the whole cup.",
+  "Sprinkle the za'atar over the labneh, then drizzle with the remaining 2 tbsp olive oil.",
+  "Lay the cucumber slices on top, then add a few mint leaves and a pinch of the flaky salt on each slice.",
+  "Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 6,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Most Lovely Things' labneh tartine (unrated, so this is a fallback): toasted rustic bread, labneh, za'atar, olive oil, thin cucumber and mint. Cup of Yum's labneh and za'atar plate (already in the library as Labneh with Zaatar) and Haden's shaved cucumber labneh toast agree on the same base. Scaled up from 2 slices to 8 and toasted under the broiler so all the slices are done at once.",
+ "sources": [
+  {
+   "name": "Most Lovely Things",
+   "title": "A tartine based on a dip with labneh and za'atar",
+   "url": "https://mostlovelythings.com/a-tartine-based-on-a-dip-with-labneh-and-zaatar/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Haden",
+   "title": "Shaved Cucumber, Lemon & Herb Labneh Toast",
+   "url": "https://haden.com/blogs/recipes/shaved-cucumber-lemon-herb-labneh-toast",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

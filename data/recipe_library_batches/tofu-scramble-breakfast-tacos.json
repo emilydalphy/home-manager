@@ -1,0 +1,108 @@
+{
+ "dish_name": "Tofu Scramble Breakfast Tacos",
+ "cuisine": "Mexican",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "1 pack of 8 small",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup leaves"
+  }
+ ],
+ "instructions": [
+  "Drain the tofu and press it dry between a few paper towels. Drain and rinse the black beans.",
+  "Put the beans in a small saucepan with 2 tbsp water and 1/4 tsp of the salt. Warm them over medium-low heat for 4 minutes, mashing a few with a spoon so they thicken a little. Keep them on the lowest heat.",
+  "Heat the oil in a large nonstick skillet over medium-high heat. Crumble in the tofu with your hands and cook for 3 minutes, stirring only now and then, until the edges start to turn golden.",
+  "Sprinkle over the turmeric, garlic powder, the remaining 1/2 tsp salt and the pepper. Stir for 1 minute, until it smells toasty and the tofu is evenly yellow.",
+  "Add 2 tbsp water and cook for 2 minutes, until the pan is dry. Transfer the scramble to a bowl.",
+  "Wipe out the skillet and heat it over medium-high. Warm the tortillas one at a time for 30 seconds on each side, until soft with a few brown spots. Stack them in a clean towel as you go.",
+  "Meanwhile, slice the avocado and chop the cilantro.",
+  "Fill each tortilla with a spoonful of beans and some of the scramble. Top with the avocado, salsa and cilantro."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No source has 20 ratings, so this is a fallback. Running on Real Food (5 from 1 vote) is the lead: crumbled tofu with turmeric, garlic powder and a little water, in tortillas with beans, avocado and salsa. Blissful Basil (5 from 3 votes, gluten-free and vegan) cooks the tofu in a spiced tomato base, and Glue and Glitter sautes it in oil first, which is why the tofu is browned in oil here. Corn tortillas keep it gluten-free; the Glue and Glitter soy sauce is left out.",
+ "sources": [
+  {
+   "name": "Running on Real Food",
+   "title": "Vegan Breakfast Tacos",
+   "url": "https://runningonrealfood.com/?p=16980",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Blissful Basil",
+   "title": "Vegan Spicy Scrambled Tofu Breakfast Tacos",
+   "url": "https://www.blissfulbasil.com/vegan-spicy-scrambled-tofu-breakfast-tacos/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Glue and Glitter",
+   "title": "Vegan Breakfast Tacos with Tofu",
+   "url": "https://www.glueandglitter.com/tofu-scramble-breakfast-tacos/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
