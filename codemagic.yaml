@@ -31,6 +31,8 @@ workflows:
         APP_DIR: ios-app
         XCODE_PROJECT: ios-app/ios/App/App.xcodeproj
         XCODE_SCHEME: App
+        # The app's number in App Store Connect (Apple ID), from Emily 2026-11-09.
+        APP_STORE_APPLE_ID: "6832414733"
     scripts:
       - name: Install the app's packages
         working_directory: ios-app
