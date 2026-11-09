@@ -1,0 +1,112 @@
+{
+ "dish_name": "Lentilles aux Legumes",
+ "cuisine": "French",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "French green lentils",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "White wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the lentils in a sieve and drain them. Chop the onion, carrots and celery into 1/4-inch pieces. Mince the 3 garlic cloves.",
+  "Heat the oil in a medium pot over medium heat. Add the onion, carrots, celery and 1/4 tsp of the salt and cook for 7 minutes, stirring now and then, until they're soft but not brown.",
+  "Add the garlic and stir for 30 seconds.",
+  "Add the lentils, the broth, the bay leaves, the thyme, the pepper and the remaining 1/4 tsp salt. Turn the heat to high and bring it to a boil.",
+  "Turn the heat to medium-low, cover the pot partway and simmer for 25 to 30 minutes, stirring now and then, until the lentils are tender with a little bite left. There should still be some broth around them. Add a splash of water if it gets dry.",
+  "Take out the bay leaves. Off the heat, stir in 1/4 cup chopped parsley and the vinegar (1 tsp).",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in shallow bowls with the broth."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Rustic French Style Green Lentils (The Bean Bites, 4.6 from 19 ratings, just under the 20 needed) is the lead: soften garlic, shallot, carrot and celery in oil, then simmer green lentils in broth with bay and herbs for about 30 minutes and finish with parsley. French Braised Lentils with Thyme (Peanut Palate) uses dried thyme and a splash of white wine vinegar, which is what this takes from it. This version uses an onion and thyme in place of the lead's shallot and herbes de Provence, and keeps more broth so it's stewed rather than dry.",
+ "sources": [
+  {
+   "name": "The Bean Bites",
+   "title": "Rustic French Style Green Lentils",
+   "url": "https://thebeanbites.com/french-style-lentils-recipe/",
+   "rating": 4.6,
+   "rating_count": 19,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Peanut Palate",
+   "title": "French Braised Lentils with Thyme",
+   "url": "https://www.peanutpalate.com/french-braised-lentils-with-thyme-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

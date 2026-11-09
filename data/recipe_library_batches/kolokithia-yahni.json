@@ -1,0 +1,99 @@
+{
+ "dish_name": "Kolokithia Yahni",
+ "cuisine": "Greek",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "3 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the zucchini into 1/2-inch half-rounds. Peel the potatoes and cut them into 1/2-inch cubes. Chop the onion and thinly slice the 3 garlic cloves.",
+  "Heat 4 tbsp of the olive oil in a wide, heavy pot over medium heat. Add the onion and 1/2 tsp of the salt and cook for 5 minutes, stirring, until it's soft.",
+  "Add the garlic and stir for 30 seconds. Add the tomato paste (1 tbsp) and cook for 1 minute, until it darkens.",
+  "Add the crushed tomatoes, the oregano, a pinch of sugar, the pepper and the remaining 1/2 tsp salt. Simmer for 3 minutes.",
+  "Add the potatoes and 1 cup of water and bring it to a simmer. Turn the heat to medium-low, cover and cook for 10 minutes.",
+  "Add the zucchini and stir. Cover and cook for 12 minutes, turning the zucchini once or twice, until the zucchini and potatoes are tender. If the sauce is thin, take the lid off for the last 5 minutes.",
+  "Off the heat, stir in 1/4 cup chopped parsley. Taste it. If it's flat, add a pinch more salt.",
+  "Drizzle the last 1 tbsp olive oil over the top and serve warm or at room temperature."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 36,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "My Prep Table's kolokithia yiahni (no ratings yet) is the lead: soften onion, darken tomato paste, simmer crushed tomatoes, then braise zucchini in the sauce and finish with parsley and olive oil. It lists potatoes as an option, cut into chunks and added with the zucchini. This version adds the potatoes first in small cubes so everything is tender in under 50 minutes, uses more water for them, and leaves out the feta and bread. The list's dill is not in any source read for this dish, so it is parsley.",
+ "sources": [
+  {
+   "name": "My Prep Table",
+   "title": "Kolokithia Yiahni: 5-Ingredient Greek Zucchini in Tomato Sauce",
+   "url": "https://www.mypreptable.com/kolokithia-yiahni-greek-zucchini-tomato-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

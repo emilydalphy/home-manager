@@ -1,0 +1,106 @@
+{
+ "dish_name": "Fosolia",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp minced"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Trim the green beans and cut them into 2-inch lengths. Peel the carrots and cut them into matchsticks. Chop the onion, mince 1 tbsp of the ginger and mince the 4 garlic cloves.",
+  "Heat the oil in a large skillet over medium heat. Add the onion and 1/4 tsp of the salt and cook for 8 minutes, stirring now and then, until it's soft and golden at the edges.",
+  "Add the ginger and garlic and stir for 1 minute, until it smells fragrant.",
+  "Add the tomato paste and cook for 1 minute, until it darkens. Add the diced tomatoes with their juice and the pepper and cook for 2 minutes.",
+  "Add the green beans, the carrots and 1 tbsp of water. Stir well, cover and cook for 12 minutes, stirring now and then, until the beans are almost tender. Add a splash of water if the pan looks dry.",
+  "Take the lid off and cook for 6 minutes, stirring, until the beans and carrots are tender and the sauce coats them.",
+  "Taste it. If it's flat, add the last 1/4 tsp of salt or a pinch more.",
+  "Serve warm or at room temperature."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 33,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Neither version read shows a rating, so this follows Together Women Rise, which cooks onion, ginger and garlic down first, adds tomato paste and tomatoes, then steams the beans and carrots with a little water and finishes uncovered. Green Heart Garden skips the paste, uses turmeric, cumin and cardamom, and finishes with lemon; Eleni's Kitchen keeps it to onion, garlic and ginger with an optional potato. The lead's ratios are scaled to 4 servings, with no heat added.",
+ "sources": [
+  {
+   "name": "Together Women Rise",
+   "title": "Fossolia (Green Bean and Carrot Medley)",
+   "url": "https://togetherwomenrise.org/recipes/fossolia-green-bean-and-carrot-medley/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Green Heart Garden",
+   "title": "Fossolia (Ethiopian Green Beans and Carrots)",
+   "url": "https://www.greenheartgarden.com/recipes/fossolia-ethiopian-green-beans-and-carrots",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Eleni's Kitchen",
+   "title": "Fossolia recipe, Ethiopian green beans and carrots",
+   "url": "https://www.eleniskitchen.com/blog/2020/7/31/fossolia-recipe-ethiopian-green-beans",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

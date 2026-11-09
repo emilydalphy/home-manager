@@ -1,0 +1,117 @@
+{
+ "dish_name": "Yetakelt Wat",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Peel the carrots and the potato and cut them into 1/2-inch pieces. Cut the snow peas into 1/2-inch pieces. Dice the tomato. Finely chop the onion and mince the 3 garlic cloves.",
+  "Heat the oil in a large pot over medium heat. Add the onion and the salt and cook for 4 minutes, stirring now and then, until it's soft.",
+  "Add the garlic and stir for 30 seconds. Add 2 tsp of the berbere, the paprika and the pepper and stir for 30 seconds, until it smells toasty. Keep the last 1 tsp of berbere for the table.",
+  "Add the carrots and potato and cook for 8 minutes, stirring now and then, so they pick up the spice.",
+  "Add the tomato, the tomato paste (1/4 cup) and the broth. Turn the heat to medium-high and bring it to a boil, stirring now and then.",
+  "Turn the heat to low, cover the pot partway and simmer for 10 minutes, until the potato is almost tender.",
+  "Add the snow peas and simmer for 5 minutes, until the potato and carrots are soft and the stew is thick.",
+  "Taste it. If it's flat, add a pinch more salt. Put the last 1 tsp of berbere in a small bowl for anyone who wants more heat.",
+  "Serve with injera."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 33,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions read build the stew on onion, garlic and berbere cooked in fat, then carrots, potato and a green vegetable simmered in tomato. The lead (Paul DeLancey's yetakelt w'et, no rating shown) cooks the spices in niter kibbeh and finishes with tomato paste and broth, and the other (Polka Dot Passport, an atakilt wat with cabbage) cooks everything in a little oil and berbere in a covered pan. This follows the lead with plain oil in place of niter kibbeh so it stays vegan and dairy-free, scales it from 6 servings down to 4, and keeps half the berbere for the table. Check that the berbere blend and the injera (it should be 100% teff) are gluten-free.",
+ "sources": [
+  {
+   "name": "Paul DeLancey",
+   "title": "Yetakelt W'et (Spicy Vegetable Stew)",
+   "url": "https://pauldelancey.com/2012/11/29/1401/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Polka Dot Passport",
+   "title": "Vegan Ethiopian Stew (Atakilt Wat)",
+   "url": "https://polkadotpassport.com/vegan-ethiopian-stew-atakilt-wat/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
