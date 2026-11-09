@@ -1,0 +1,95 @@
+{
+ "dish_name": "Tod Man Khao Pod",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Corn",
+   "qty": "2 ears",
+   "category": "produce"
+  },
+  {
+   "item": "Thai red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "1 pack",
+   "category": "produce",
+   "cook_qty": "4 leaves"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet chili sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the kernels off the cobs. That should be about 2 cups.",
+  "Cut the tough center rib out of the lime leaves. Roll the leaves up tightly and slice them as thin as you can.",
+  "In a big bowl, mix the egg and curry paste. Add the corn, lime leaves, rice flour and salt. Stir in 1/2 cup ice-cold water a splash at a time, until the batter is thick and scoopable, not runny.",
+  "Pour the oil into a deep medium skillet, about 3/4 inch (2 cm) deep, and heat it over medium-high. Drop in a little batter. It should sizzle right away.",
+  "Drop in heaped spoonfuls of batter, about 1 1/2 tbsp each, 4 or 5 at a time. Rinse the spoon between scoops. Fry for about 3 minutes, until the underside is golden and crisp, then flip and cook for about 2 minutes, until both sides are golden.",
+  "If they brown too fast, turn the heat down. Transfer them to a plate lined with paper towels and fry the rest the same way. You should get about 20.",
+  "Serve warm with the sweet chili sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": "",
+ "method_notes": "Cooking with Casey leads (4.72 from 255 votes): corn, red curry paste, makrut lime leaves, an egg and rice flour, loosened with ice water and fried. Khanoms and Caroline's Cooking agree on the lime leaves and curry paste, and both blend half the corn smooth for a better batter and use baking powder; the lead does neither. The lead's fish sauce is swapped for salt, which the page allows. Some curry pastes contain shrimp paste, so the list is not labeled vegetarian; check the jar.",
+ "sources": [
+  {
+   "name": "Cooking with Casey",
+   "title": "Easy Thai Corn Fritters (Tod Man Khao Pod)",
+   "url": "https://cookingwithcasey.com/recipes/thai-corn-fritters",
+   "rating": 4.72,
+   "rating_count": 255,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Khanoms",
+   "title": "Tod Man Khao Pod (Thai Corn Fritters)",
+   "url": "https://khanoms.com/recipes/tod-man-khao-pod-thai-corn-fritters",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Caroline's Cooking",
+   "title": "Thai Corn Fritters (Tod Man Khao Pod)",
+   "url": "https://www.carolinescooking.com/thai-corn-fritters/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,94 @@
+{
+ "dish_name": "Empanadillas",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Canned tuna",
+   "qty": "1 can (5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato passata",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sunflower oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Make the dough first. Stir the flour and 3/4 tsp of the salt together in a big bowl. Add 2 tbsp of the olive oil and 2/3 cup water, mix, then knead on a floured counter for 5 to 10 minutes, until smooth.",
+  "Cover the dough and let it rest for 10 minutes.",
+  "Meanwhile, put the eggs in a small pot, cover them with cold water and bring it to a boil. Turn the heat to low and simmer for 10 minutes, then transfer the eggs into a bowl of cold water.",
+  "While the eggs cook, heat the remaining 2 tbsp olive oil in a skillet over medium heat. Finely chop the onion and add it with a pinch of salt. Cook for about 5 minutes, until it's soft and see-through.",
+  "Add the passata and cook for about 10 minutes, stirring now and then, until most of the liquid is gone and it is thick. If it's runny, the empanadillas can burst when they fry.",
+  "Take the pan off the heat. Peel and finely chop the eggs and transfer them into a bowl. Drain the tuna and add it with the cooked passata and the pepper. Mix well, taste it, and add a pinch of salt if it's flat. Let the filling cool for 5 minutes.",
+  "Roll the dough out thin on a floured counter. Cut circles about 5 inches (12 cm) wide with a cutter or a small bowl. Gather the scraps, roll them out and cut more. You should get about 20.",
+  "Put a heaping tablespoon of filling in the middle of each circle. Wet the edge with a fingertip of water, fold the circle in half and press the edge shut. Press along the edge with a fork to seal it.",
+  "Pour the sunflower oil into a deep skillet, about 1 inch deep, and heat it over medium. You don't want it very hot. Fry 3 empanadillas at a time for about 1 minute per side, until golden.",
+  "Transfer them to a plate lined with paper towels. Serve warm, at room temperature or cold.",
+  "Leftovers keep in a closed container in the fridge for 1 to 2 days. Reheat them on a tray in a 350°F oven for about 8 minutes, or eat them cold."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": "",
+ "method_notes": "El Cocinero Casero leads (4.5 from 1,149 ratings, read as shown on the page): tuna, hard-boiled egg and a tomato and onion sofrito in a simple oil dough, fried in batches. Other Spanish pages agree on the tuna and tomato filling and say it must be thick so the pastries don't burst; they differ on dough (white wine or an egg in some) and on baking or air frying instead of frying. The list says tuna or beef; every source for this dish uses tuna, so main_protein is fish. No beef version was written.",
+ "sources": [
+  {
+   "name": "El Cocinero Casero",
+   "title": "Empanadillas de atún",
+   "url": "https://elcocinerocasero.com/receta/empanadillas-de-atun/",
+   "rating": 4.5,
+   "rating_count": 1149,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Guía Maximín",
+   "title": "Empanadillas de atún y tomate",
+   "url": "https://www.guiamaximin.com/empanadillas-de-atun-y-tomate-la-receta-de-merienda-de-toda-la-vida.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,105 @@
+{
+ "dish_name": "Khanom Chan",
+ "cuisine": "Thai",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Tapioca starch",
+   "qty": "1 1/4 cups (150 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1/3 cup (50 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Arrowroot starch",
+   "qty": "6 tbsp (50 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 1/4 cups (250 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "2 cans",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Pandan leaves",
+   "qty": "1 pack",
+   "category": "produce",
+   "cook_qty": "about 6 leaves (50 g)"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 5 hours ahead, or the day before: in a big bowl, stir the tapioca starch, rice flour, arrowroot, sugar and salt together. Slowly whisk in the coconut milk until there are no dry clumps.",
+  "Pour the batter through a sieve into another bowl, then divide it into two equal portions.",
+  "Cut the pandan leaves into short pieces and blend them with one portion of the batter until the leaves are fine. Pour it through a sieve lined with a cloth, squeezing out all the liquid, into a bowl. You now have one green batter and one white batter.",
+  "Fill a steamer pot with water and bring it to a boil. Wrap the lid in a clean kitchen towel. Oil an 8 inch (20 cm) square pan with the oil, set it in the steamer and heat it for 3 minutes.",
+  "Stir the green batter and pour in a thin layer, about 1/3 cup, tilting the pan to cover the bottom. Cover and steam for 5 minutes, until set.",
+  "Stir the white batter and pour a thin layer on top. Cover and steam for 5 minutes. Keep alternating green and white, stirring each batter before you pour and steaming each layer for 5 minutes. Aim for about 9 layers, ending with green.",
+  "Steam the last layer for 15 minutes. Carefully lift the pan out and let the cake cool completely, at least 4 hours.",
+  "Loosen the edges with an oiled knife and turn the cake out. Cut it into diamonds or squares with an oiled knife. Serve at room temperature.",
+  "Covered, it keeps at room temperature for 2 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 70,
+ "advance_prep_notes": "make it at least 5 hours ahead, since it has to cool completely before you cut it.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "No version has 20 ratings, so the lead is Hungry in Thailand (5 from 2 votes), whose flour, starch, sugar and coconut milk ratios match Dessertcat's almost exactly. The method (a thin layer at a time, about 5 minutes each, 9 layers, the lid wrapped in a cloth, a final longer steam) follows Dessertcat. Messy Vegan Cook steams each layer for 12 to 15 minutes and uses jasmine water; that is left out. It is a long cook, but it is a make-ahead cake.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Khanom Chan Recipe (Authentic Thai Layer Cake)",
+   "url": "https://hungryinthailand.com/khanom-chan-recipe/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dessertcat",
+   "title": "Khanom Chan",
+   "url": "https://dessertcat.com/khanom-chan/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Messy Vegan Cook",
+   "title": "Khanom Chan ขนมชั้น Thai Layered Dessert",
+   "url": "https://messyvegancook.com/khanom-chan-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

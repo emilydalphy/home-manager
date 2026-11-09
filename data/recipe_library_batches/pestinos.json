@@ -1,0 +1,100 @@
+{
+ "dish_name": "Pestinos",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "3 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet white wine",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Orange",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Star anise",
+   "qty": "2 pods",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "7 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sunflower oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: pour the olive oil into a small saucepan. Add the cinnamon stick, the star anise and the peel of the orange, peeled off in strips. Heat over medium until it starts to bubble, then turn the heat to low and simmer for about 5 minutes, until the peel starts to brown. Take it off the heat and let it cool completely, then lift out the cinnamon, star anise and peel.",
+  "Put the flour in a big bowl. Add the wine and the cooled oil and knead for about 5 minutes, until smooth and evenly mixed.",
+  "Cover the bowl and let the dough rest for 2 hours.",
+  "Roll the dough out on a lightly floured counter until it's very thin, about 1/8 inch (2 to 3 mm). Cut it into 4-inch (10 cm) squares. You should get about 25.",
+  "Brush a little water on the middle of a square. Fold one corner to the middle and press it down. Brush the folded corner with water, then fold the opposite corner over it to make a ribbon shape. Shape the rest the same way.",
+  "Pour the sunflower oil into a deep heavy skillet, about 1 1/2 inches deep, and heat it over medium. A scrap of dough dropped in should sizzle right away.",
+  "Fry 4 or 5 pestiños at a time, seam side down. When the edges are golden, flip them and fry until they're golden brown all over, about 2 minutes in all.",
+  "Transfer them to a plate lined with paper towels.",
+  "Stir the honey and 2 tbsp water together in a small bowl until the honey thins out. Drizzle it generously over the pestiños. Serve at room temperature.",
+  "Store them in an airtight container at room temperature for a few days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "make the dough at least 2 hours ahead, since it needs 2 hours to rest.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Chef's Pencil leads (4.91 from 43 ratings): an oil infused with cinnamon, star anise and citrus peel, a wine and flour dough rested 2 hours, folded into ribbons, fried and drizzled with honey. Tapas Online and Spain in a Pan agree on the shape, the sweet white wine and the honey finish; they use aniseed or anise liquor and add sesame, and Spain in a Pan dips them in honey instead of drizzling. The page says aniseed in its method and star anise in its list; the list is followed. No frying time is given, so about 2 minutes comes from Spain in a Pan.",
+ "sources": [
+  {
+   "name": "Chef's Pencil",
+   "title": "Pestiños",
+   "url": "https://www.chefspencil.com/pestinos/",
+   "rating": 4.91,
+   "rating_count": 43,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tapas Online",
+   "title": "Pestiños",
+   "url": "https://www.tapasonline.co.uk/recipes/pestinos/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spain in a Pan",
+   "title": "Honey Pestiños",
+   "url": "https://www.spaininapan.com/honey-pestinos-recipe.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

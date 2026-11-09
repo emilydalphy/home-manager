@@ -1,0 +1,82 @@
+{
+ "dish_name": "Banderillas",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Green olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "8 olives"
+  },
+  {
+   "item": "Anchovy fillets",
+   "qty": "1 tin",
+   "category": "pantry",
+   "cook_qty": "8 fillets"
+  },
+  {
+   "item": "Cornichons",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "8 cornichons"
+  },
+  {
+   "item": "Pickled pearl onions",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "8 onions"
+  },
+  {
+   "item": "Mild pickled peppers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "8 peppers"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cocktail skewers",
+   "qty": "1 pack",
+   "category": "other",
+   "cook_qty": "8 skewers"
+  }
+ ],
+ "instructions": [
+  "Drain the olives, cornichons, pearl onions, peppers and anchovies and pat them dry with a paper towel.",
+  "Wrap one anchovy fillet around an olive. Push a skewer through the middle of the olive so it holds both sides of the anchovy.",
+  "Thread on a pickled pepper, folded or cut in half, then a pearl onion, and finish with a cornichon.",
+  "Make 8 skewers the same way and arrange them on a platter. Drizzle the olive oil over them. Serve at room temperature."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": "",
+ "method_notes": "Neither page has ratings. The lead is Food Republic, which gives no amounts, so the count of 8 skewers (one anchovy each) comes from Inspired Cuisine and the usual one or two per person. Both agree on the build: an olive, an anchovy and pickles on a pick, drizzled with olive oil. The hot Spanish green chili is swapped for a mild pickled pepper to keep the base mild.",
+ "sources": [
+  {
+   "name": "Food Republic",
+   "title": "Tapas Talk: Banderillas With Pickles",
+   "url": "https://www.foodrepublic.com/recipes/tapas-talk-banderillas-pickles/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Inspired Cuisine",
+   "title": "Banderillas, Small Bites on Small Skewers",
+   "url": "https://inspiredcuisine.ca/recipe/banderillas-small-bites-on-small-skewers/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

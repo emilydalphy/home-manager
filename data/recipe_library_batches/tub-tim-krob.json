@@ -1,0 +1,87 @@
+{
+ "dish_name": "Tub Tim Krob",
+ "cuisine": "Thai",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Canned water chestnuts",
+   "qty": "1 can (8 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup, drained and cubed"
+  },
+  {
+   "item": "Red food coloring",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "20 drops"
+  },
+  {
+   "item": "Tapioca starch",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Ice",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "4 cups"
+  }
+ ],
+ "instructions": [
+  "Drain and rinse the water chestnuts and cut them into 1/4 inch cubes. That should be about 1 cup.",
+  "In a bowl, stir the food coloring into 2 tbsp water. Add the cubes and toss to coat. Let them sit for about 10 minutes, until they're red all the way around.",
+  "Meanwhile, heat 1/2 cup water and the sugar in a small saucepan over medium heat, stirring until the sugar dissolves. Take it off the heat and let it cool, then shake the can of coconut milk and stir in 1 cup. Chill it in the fridge.",
+  "Drain the red cubes and toss them in the tapioca starch until well coated. Shake them in a sieve to knock off the extra starch.",
+  "Bring a medium pot of water to a boil. Drop in half of the coated cubes and boil for about 1 minute, until they float. Use a slotted spoon to transfer them into a bowl of ice water. Cook the rest the same way. If white spots show, put them back in for 1 minute.",
+  "Drain the rubies and divide them among 4 bowls. Pour the chilled coconut milk over them and top with crushed ice. Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": "",
+ "method_notes": "No version has 20 ratings, so the lead is Rachel Cooks Thai (5 from 5 votes), with the fewest steps and the clearest amounts. Hungry in Thailand and others agree on the method: dye the water chestnut cubes red, coat with tapioca starch, boil until they float, chill, and serve in sweet coconut milk with ice; they add pandan leaves and salt to the coconut milk, which the lead leaves optional, so they are left out. Red food coloring is vegan, but check the label if it matters (some use cochineal). The coating softens, so it's best eaten the same day.",
+ "sources": [
+  {
+   "name": "Rachel Cooks Thai",
+   "title": "Red Rubies Dessert (Tub Tim Grob)",
+   "url": "https://rachelcooksthai.com/red-rubies-in-coconut-milk/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Tub Tim Krob (Thai Red Rubies Dessert Recipe)",
+   "url": "https://hungryinthailand.com/tub-tim-krob/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "V for Veganista",
+   "title": "Tub Tim Grob (Thai Red Rubies Dessert)",
+   "url": "https://www.vforveganista.com/recipes/tub-tim-grob-thai-red-rubies-dessert/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

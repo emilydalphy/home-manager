@@ -1,0 +1,71 @@
+{
+ "dish_name": "Flan",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 2/3 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 cup + 2 tbsp"
+  }
+ ],
+ "instructions": [
+  "The day before, or at least 4 hours ahead: heat the oven to 350°F. Put 4 ramekins (about 3/4 cup each) in a baking dish with sides, and boil a kettle of water.",
+  "Put 2 tbsp of the sugar and 1 tsp water in a small saucepan over high heat. Swirl the pan and don't stir. After a few minutes the sugar turns golden brown. Take it off the heat right away.",
+  "Pour the caramel into the ramekins and tilt each one to coat the bottom and a little up the sides. Be careful, the caramel is very hot.",
+  "In a big bowl, whisk the eggs gently on low speed. Don't beat them. Add the milk and the remaining 3/4 cup sugar and stir until the sugar dissolves.",
+  "Pour the custard through a sieve into a pitcher, then divide it among the ramekins.",
+  "Set the ramekins in the baking dish and pour boiling water into the dish until it comes halfway up the ramekins. Cover each ramekin with foil and bake for 35 minutes.",
+  "Slide a knife into the middle of one flan. It's done when the knife comes out clean. If custard clings to it, put them back in for 5 minutes.",
+  "Transfer the ramekins out of the water and let them cool on the counter for 10 minutes. Then refrigerate them for at least 3 hours or overnight. Covered, they keep in the fridge for up to 5 days.",
+  "To serve, run a knife around the edge of a ramekin. Set a small plate upside down on top, flip it over and lift the ramekin away so the caramel runs over the flan. Serve cold."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "make the flan the day before, or at least 4 hours ahead. It needs 3 hours in the fridge to set.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8
+ ],
+ "method_notes": "Quiero Postre leads (4.70 from 49 ratings): only eggs, milk and sugar, baked in covered ramekins in a water bath. Andrew Zimmern's loaf-pan version uses the same three things plus lemon peel; others add vanilla or condensed milk. Scaled from 6 ramekins to 4 (6 eggs to 4, with the milk and sugar to match); the caramel amount is the lead's.",
+ "sources": [
+  {
+   "name": "Quiero Postre",
+   "title": "Classic Spanish Flan Recipe",
+   "url": "https://quieropostre.com/en/spanish-flan-recipe",
+   "rating": 4.7,
+   "rating_count": 49,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Andrew Zimmern",
+   "title": "Classic Spanish Egg Flan",
+   "url": "https://andrewzimmern.com/recipes/classic-spanish-egg-flan/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
