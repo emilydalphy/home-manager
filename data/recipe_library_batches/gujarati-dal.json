@@ -1,0 +1,171 @@
+{
+ "dish_name": "Gujarati Dal",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Toor dal",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Kokum (dried)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "5 pieces"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Fenugreek seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry",
+   "cook_qty": "1 inch piece"
+  },
+  {
+   "item": "Dried red chili",
+   "qty": "1 small package",
+   "category": "pantry",
+   "cook_qty": "1"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "8 leaves"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 cup toor dal in a bowl, changing the water until it runs mostly clear. Cover it with fresh water and let it soak for 20 minutes while you prep.",
+  "Chop the tomato and grate 2 tsp of the ginger.",
+  "Drain the dal and put it in a large pot with 4 cups water, the tomato, kokum, turmeric, chili powder, coriander, cumin, garam masala, ginger, salt and jaggery.",
+  "Bring it to a boil over high heat and skim off any foam. Turn the heat to low, set the lid slightly ajar and simmer for 35 to 40 minutes, stirring now and then, until the dal is very soft and falling apart. If it looks dry, add 1/2 cup hot water.",
+  "Whisk the dal hard with a whisk or the back of a ladle until it's creamy. The kokum can stay in the pot.",
+  "Stir in 2 cups hot water and simmer for 5 minutes. That should be a thin, soupy dal.",
+  "Heat the 2 tbsp oil in a small pan over medium heat. Add the mustard seeds and wait for them to pop. Stand back a little, they'll spatter.",
+  "Add the cumin seeds, fenugreek seeds, cinnamon, dried chili and curry leaves and stir for 20 seconds, until they smell toasty.",
+  "Pour the sizzling mix over the dal and stir it in. Fish out the dried chili and set it aside for anyone who wants it.",
+  "Take the pot off the heat and stir in the cilantro. The dal thickens as it cools, so loosen it with a splash of hot water if you need to.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over steamed rice.",
+  "Let leftovers cool, then keep them in a covered container in the fridge for up to 4 days, or in the freezer for up to 3 months. Reheat on low with a splash of water."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen cooks toor dal with tomato, kokum, jaggery and ground spices, then adds a tempering of mustard, cumin, fenugreek, cinnamon and dried chili. Honey What's Cooking, Bites and Bokeh and Indian as Apple Pie do the same with a bit more jaggery, lemon or tamarind, and peanuts. None of these pages shows a rating, so the lead is the earliest trusted cook that was readable. Peanuts are left out for the nut-free tag, oil replaces the ghee, no asafoetida is used so it stays gluten-free, and the fresh green chili is left out so the pot stays mild. It is a thin, lightly sweet and tangy dal made on the stovetop instead of in a pressure cooker, in a size that keeps for days.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Gujarati Dal (Toor Dal)",
+   "url": "https://hebbarskitchen.com/gujarati-dal-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Honey, What's Cooking",
+   "title": "Gujarati Dal Recipe",
+   "url": "https://www.honeywhatscooking.com/gujarati-dal-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Bites and Bokeh",
+   "title": "Gujrati Dal",
+   "url": "https://bitesandbokeh.com/food/gujrati-dal",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,154 @@
+{
+ "dish_name": "Chana Dal",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Chana dal",
+   "qty": "1 cup (205 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 1/2 tbsp"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry",
+   "cook_qty": "2 inch piece"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 1/2 inch)",
+   "category": "produce",
+   "cook_qty": "1/2 tbsp minced plus a 1/2 inch piece in thin sticks"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Kasuri methi (dried fenugreek leaves)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "2 tbsp juice"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 cup chana dal three times in a bowl, then cover it with plenty of water and let it soak for 30 minutes.",
+  "While it soaks, finely chop the onion and the 2 tomatoes. Mince 1/2 tbsp of the ginger and cut the rest into thin sticks. Mince 4 of the garlic cloves and chop the other 2.",
+  "Drain the dal and put it in a large pot with 5 cups fresh water and the turmeric. Bring it to a boil over high heat and skim off any foam.",
+  "Turn the heat to low, set the lid slightly ajar and simmer for 40 to 45 minutes, until the dal mashes easily when you press a piece but still holds its shape. Add a splash of hot water if it gets dry.",
+  "About 20 minutes into the simmer, heat 2 tbsp of the oil in a large skillet over medium heat. Add the bay leaf, cinnamon and cardamom pods and stir for 30 seconds, until they smell fragrant.",
+  "Add the onion and cook for 7 to 8 minutes, stirring often, until it's light golden.",
+  "Add the minced ginger and the 4 minced garlic cloves and stir for 1 to 2 minutes.",
+  "Add the tomatoes and cook for 6 to 8 minutes, until they're mushy and oil shows at the edges.",
+  "Stir in the salt, chili powder, coriander, cumin and garam masala and cook for 1 minute.",
+  "Scrape the masala into the pot of dal, with the dal's liquid. Stir and simmer on low for 5 minutes. If it's too thick, add hot water, 1/4 cup at a time.",
+  "Crush the kasuri methi between your palms into the pot and stir in the lemon juice.",
+  "Heat the remaining 1 1/2 tbsp oil in a small pan over medium heat. Add the cumin seeds and wait about 20 seconds, until they sizzle. Add the chopped garlic and the ginger sticks and stir for 1 minute, until pale gold.",
+  "Pour the sizzling oil over the dal and stir in the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over steamed rice.",
+  "Let leftovers cool, then keep them in a covered container in the fridge for up to 4 days, or in the freezer for up to 3 months. Reheat on low with a splash of water."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes cooks chana dal with turmeric until it mashes but holds its shape, builds an onion, tomato and ground spice masala with whole spices, combines the two, and finishes with a cumin, garlic and ginger tadka. This follows that method and those ratios. The page uses a pressure cooker, so the dal is simmered in a pot here and soaked first. Black cardamom is left out, lemon juice stands in for the dried mango powder, and oil replaces the ghee so it stays vegan. The tadka's green chilies and asafoetida are left out to keep it mild and gluten-free. The dal keeps 4 days in the fridge.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes (Indian Healthy Recipes)",
+   "title": "Chana Dal Recipe",
+   "url": "https://www.indianhealthyrecipes.com/chana-dal-recipe/",
+   "rating": 5,
+   "rating_count": 246,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
