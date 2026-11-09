@@ -1,0 +1,625 @@
+[
+{
+"dish_name": "Croissants",
+"cuisine": "French",
+"main_protein": "vegetarian",
+"ingredients": [
+"Eggs",
+"Sugar",
+"All purpose flour",
+"Instant yeast",
+"Unsalted butter",
+"Salt"
+]
+},
+{
+"dish_name": "Crostata di Marmellata",
+"cuisine": "Italian",
+"main_protein": "vegetarian",
+"ingredients": [
+"All-purpose flour",
+"Sugar",
+"Unsalted butter",
+"Eggs",
+"Lemon",
+"Salt",
+"Apricot jam"
+]
+},
+{
+"dish_name": "Discada",
+"cuisine": "Mexican",
+"main_protein": "beef",
+"ingredients": [
+"Bacon",
+"Mexican chorizo",
+"Pork tenderloin",
+"Beef sirloin",
+"Yukon gold potatoes",
+"White onion",
+"Anaheim peppers",
+"Garlic",
+"Plum tomatoes",
+"Ground cumin",
+"Salt",
+"Black pepper",
+"Vegetable oil",
+"Chipotles in adobo",
+"Corn tortillas"
+]
+},
+{
+"dish_name": "Dorada a la Sal",
+"cuisine": "Spanish",
+"main_protein": "fish",
+"ingredients": [
+"Whole sea bream",
+"Coarse sea salt",
+"Parsley",
+"Olive oil"
+]
+},
+{
+"dish_name": "Douhua",
+"cuisine": "Chinese",
+"main_protein": "tofu",
+"ingredients": [
+"Silken tofu",
+"Brown sugar",
+"Ginger"
+]
+},
+{
+"dish_name": "Enchiladas Mineras",
+"cuisine": "Mexican",
+"main_protein": "cheese",
+"ingredients": [
+"Dried guajillo chiles",
+"Garlic",
+"Dried Mexican oregano",
+"Vegetable broth",
+"Vegetable oil",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Sugar",
+"White vinegar",
+"Corn tortillas",
+"Queso fresco",
+"White onion",
+"Red potatoes",
+"Carrots",
+"Radishes",
+"Romaine lettuce",
+"Pickled jalape\u00f1os"
+]
+},
+{
+"dish_name": "Escalivada",
+"cuisine": "Spanish",
+"main_protein": "vegan",
+"ingredients": [
+"Eggplant",
+"Red bell peppers",
+"Yellow onion",
+"Roma tomatoes",
+"Garlic",
+"Olive oil",
+"Dried thyme",
+"Sherry vinegar",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Espinacas a la Catalana",
+"cuisine": "Spanish",
+"main_protein": "vegan",
+"ingredients": [
+"Baby spinach",
+"Raisins",
+"Pine nuts",
+"Garlic",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Far Breton",
+"cuisine": "French",
+"main_protein": "vegetarian",
+"ingredients": [
+"Pitted prunes",
+"Black tea bag",
+"Unsalted butter",
+"All purpose flour",
+"Sugar",
+"Salt",
+"Eggs",
+"Whole milk",
+"Vanilla extract"
+]
+},
+{
+"dish_name": "Fatira",
+"cuisine": "Ethiopian",
+"main_protein": "eggs",
+"ingredients": [
+"All-purpose flour",
+"Salt",
+"Vegetable oil",
+"Eggs",
+"Honey"
+]
+},
+{
+"dish_name": "Fromage Blanc aux Fruits",
+"cuisine": "French",
+"main_protein": "dairy",
+"ingredients": [
+"Fromage blanc",
+"Heavy cream",
+"Honey",
+"Vanilla extract",
+"Lemon",
+"Strawberries"
+]
+},
+{
+"dish_name": "Ga Nuong Mat Ong",
+"cuisine": "Vietnamese",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Jasmine rice",
+"Lemongrass",
+"Garlic",
+"Fresh ginger",
+"Gluten-free tamari",
+"Fish sauce",
+"Limes",
+"Honey",
+"Vegetable oil",
+"Black pepper",
+"Cilantro"
+]
+},
+{
+"dish_name": "Galatopita",
+"cuisine": "Greek",
+"main_protein": "vegetarian",
+"ingredients": [
+"Whole milk",
+"Sugar",
+"Fine semolina",
+"Eggs",
+"Egg yolks",
+"Butter",
+"Orange",
+"Vanilla extract",
+"Ground cinnamon",
+"Honey"
+]
+},
+{
+"dish_name": "Hash Brown Casserole",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Frozen shredded hash browns",
+"Butter",
+"Yellow onion",
+"All-purpose flour",
+"Chicken broth",
+"Milk",
+"Salt",
+"Paprika",
+"Black pepper",
+"Sour cream",
+"Sharp cheddar",
+"Panko breadcrumbs"
+]
+},
+{
+"dish_name": "Home Fries",
+"cuisine": "American",
+"main_protein": "vegan",
+"ingredients": [
+"Russet potatoes",
+"Sweet onion",
+"Green bell pepper",
+"Vegetable oil",
+"Salt",
+"Black pepper",
+"Limes"
+]
+},
+{
+"dish_name": "Honey Lime Fruit Salad",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"Strawberries",
+"Kiwi",
+"Mango",
+"Blueberries",
+"Green grapes",
+"Canned pineapple chunks in juice",
+"Honey",
+"Limes"
+]
+},
+{
+"dish_name": "Hong Kong French Toast",
+"cuisine": "Chinese",
+"main_protein": "eggs",
+"ingredients": [
+"Milk bread",
+"Strawberry jam",
+"Eggs",
+"Milk",
+"Vegetable oil",
+"Butter",
+"Sweetened condensed milk"
+]
+},
+{
+"dish_name": "Huevos al Albanil",
+"cuisine": "Mexican",
+"main_protein": "eggs",
+"ingredients": [
+"Roma tomatoes",
+"Jalape\u00f1os",
+"White onion",
+"Garlic",
+"Eggs",
+"Vegetable oil",
+"Salt",
+"Black pepper",
+"Corn tortillas"
+]
+},
+{
+"dish_name": "Japanese Fruit Sando",
+"cuisine": "Japanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Soft white sandwich bread or shokupan",
+"Strawberries",
+"Kiwis",
+"Navel orange",
+"Heavy cream",
+"Sugar"
+]
+},
+{
+"dish_name": "Johnnycakes",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"Stone-ground cornmeal",
+"Sugar",
+"Salt",
+"Butter",
+"Vegetable oil",
+"Maple syrup"
+]
+},
+{
+"dish_name": "Kalitsounia",
+"cuisine": "Greek",
+"main_protein": "cheese",
+"ingredients": [
+"All-purpose flour",
+"Baking powder",
+"Sugar",
+"Olive oil",
+"Greek yogurt",
+"Eggs",
+"Orange",
+"Vanilla extract",
+"Ricotta",
+"Ground cinnamon",
+"Honey"
+]
+},
+{
+"dish_name": "Kinako Toast",
+"cuisine": "Japanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Bread",
+"Butter",
+"Kinako (roasted soybean flour)",
+"Powdered sugar"
+]
+},
+{
+"dish_name": "Kita",
+"cuisine": "Ethiopian",
+"main_protein": "vegan",
+"ingredients": [
+"All-purpose flour",
+"Salt",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Mamounieh",
+"cuisine": "Lebanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Coarse semolina",
+"Unsalted butter",
+"Sugar",
+"Orange blossom water",
+"Ground cinnamon"
+]
+},
+{
+"dish_name": "Mantou",
+"cuisine": "Chinese",
+"main_protein": "vegan",
+"ingredients": [
+"All-purpose flour",
+"Instant yeast",
+"Sugar",
+"Parchment paper"
+]
+},
+{
+"dish_name": "Masala Oats",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Rolled oats",
+"Vegetable oil",
+"Cumin seeds",
+"Yellow onion",
+"Fresh ginger",
+"Garlic",
+"Roma tomatoes",
+"Frozen mixed vegetables",
+"Ground turmeric",
+"Kashmiri chili powder",
+"Garam masala",
+"Salt",
+"Lemon",
+"Cilantro",
+"Green chili"
+]
+},
+{
+"dish_name": "Masala Toast",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Potatoes",
+"Sandwich bread",
+"Butter",
+"Cilantro",
+"Mint",
+"Roasted chana dal",
+"Green chili",
+"Ginger",
+"Garlic",
+"Lemon",
+"Ground cumin",
+"Chaat masala",
+"Sugar",
+"Salt",
+"Vegetable oil",
+"Mustard seeds",
+"Cumin seeds",
+"Asafoetida (hing)",
+"Curry leaves",
+"Ground turmeric",
+"Tomato",
+"Onion"
+]
+},
+{
+"dish_name": "Melopita",
+"cuisine": "Greek",
+"main_protein": "cheese",
+"ingredients": [
+"Ricotta",
+"Honey",
+"Eggs",
+"Cornstarch",
+"Vanilla extract",
+"Butter",
+"Ground cinnamon"
+]
+},
+{
+"dish_name": "Mit Kho",
+"cuisine": "Vietnamese",
+"main_protein": "vegan",
+"ingredients": [
+"Young green jackfruit in brine or water",
+"Jasmine rice",
+"Sugar",
+"Shallots",
+"Garlic",
+"Soy sauce",
+"Black pepper",
+"Green onions"
+]
+},
+{
+"dish_name": "Moong Dal Chilla",
+"cuisine": "Indian",
+"main_protein": "lentils",
+"ingredients": [
+"Split yellow moong dal",
+"Fresh ginger",
+"Cumin seeds",
+"Ground turmeric",
+"Salt",
+"Cilantro",
+"Vegetable oil",
+"Green chili"
+]
+},
+{
+"dish_name": "Mouhalabieh",
+"cuisine": "Lebanese",
+"main_protein": "dairy",
+"ingredients": [
+"Whole milk",
+"Cornstarch",
+"Sugar",
+"Rose water"
+]
+},
+{
+"dish_name": "Nam Kho Tieu",
+"cuisine": "Vietnamese",
+"main_protein": "vegan",
+"ingredients": [
+"Cremini mushrooms",
+"Jasmine rice",
+"Shallots",
+"Fresh ginger",
+"Black pepper",
+"Soy sauce",
+"Vegetable bouillon powder",
+"Sugar",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Neer Dosa",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Short-grain white rice",
+"Grated coconut",
+"Salt",
+"Vegetable oil",
+"Coconut chutney"
+]
+},
+{
+"dish_name": "Pain aux Raisins",
+"cuisine": "French",
+"main_protein": "vegetarian",
+"ingredients": [
+"Frozen puff pastry sheets",
+"Whole milk",
+"Sugar",
+"Cornstarch",
+"Eggs",
+"Vanilla extract",
+"Salt",
+"Unsalted butter",
+"Golden raisins",
+"Apricot preserves"
+]
+},
+{
+"dish_name": "Paniyaram",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Idli or dosa batter",
+"Onions",
+"Carrots",
+"Ginger",
+"Curry leaves",
+"Cilantro",
+"Mustard seeds",
+"Vegetable oil",
+"Salt",
+"Coconut chutney"
+]
+},
+{
+"dish_name": "Papadzules",
+"cuisine": "Mexican",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Hulled pumpkin seeds",
+"Vegetable broth",
+"Dried epazote",
+"Roma tomatoes",
+"White onion",
+"Vegetable oil",
+"Salt",
+"Corn tortillas",
+"Habanero chile"
+]
+},
+{
+"dish_name": "Papas con Huevo",
+"cuisine": "Mexican",
+"main_protein": "eggs",
+"ingredients": [
+"Yellow potatoes",
+"Eggs",
+"Yellow onion",
+"Garlic",
+"Jalape\u00f1o",
+"Vegetable oil",
+"Salt",
+"Black pepper",
+"Corn tortillas"
+]
+},
+{
+"dish_name": "Patatas en Salsa Verde",
+"cuisine": "Spanish",
+"main_protein": "vegan",
+"ingredients": [
+"Yukon gold potatoes",
+"Yellow onion",
+"Garlic",
+"Parsley",
+"Dry white wine",
+"Vegetable broth",
+"Frozen peas",
+"Olive oil",
+"Salt"
+]
+},
+{
+"dish_name": "Pescado a la Talla",
+"cuisine": "Mexican",
+"main_protein": "fish",
+"ingredients": [
+"Red snapper fillets, skin on",
+"Dried guajillo chiles",
+"White onion",
+"Garlic",
+"Dried thyme",
+"Dried Mexican oregano",
+"Bay leaf",
+"Whole cloves",
+"Achiote paste",
+"Vegetable oil",
+"Salt",
+"Limes"
+]
+},
+{
+"dish_name": "Pizza Toast",
+"cuisine": "Japanese",
+"main_protein": "cheese",
+"ingredients": [
+"Thick-cut shokupan or white bread",
+"Olive oil",
+"Garlic",
+"Ketchup",
+"Salt",
+"Black pepper",
+"Sweet onion",
+"Green bell pepper",
+"Cherry tomatoes",
+"Shredded mozzarella",
+"Crushed red pepper flakes"
+]
+}
+]

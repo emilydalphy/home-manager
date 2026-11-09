@@ -1,0 +1,640 @@
+[
+{
+"dish_name": "Acai Bowl",
+"cuisine": "American",
+"main_protein": "vegan",
+"ingredients": [
+"Frozen acai puree packets",
+"Bananas",
+"Frozen mixed berries",
+"Apple juice",
+"Strawberries",
+"Dairy-free granola"
+]
+},
+{
+"dish_name": "Adai",
+"cuisine": "Indian",
+"main_protein": "lentils",
+"ingredients": [
+"Parboiled rice (idli rice)",
+"Chana dal",
+"Toor dal",
+"Split moong dal",
+"Urad dal",
+"Dried red chilies",
+"Ginger",
+"Cumin seeds",
+"Gluten-free asafoetida (hing)",
+"Salt",
+"Onion",
+"Cilantro",
+"Vegetable oil",
+"Coconut chutney"
+]
+},
+{
+"dish_name": "Akki Roti",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Fine rice flour",
+"Carrots",
+"English cucumber",
+"Onions",
+"Dill",
+"Cilantro",
+"Ginger",
+"Curry leaves",
+"Cumin seeds",
+"Salt",
+"Vegetable oil",
+"Coconut chutney"
+]
+},
+{
+"dish_name": "Anko Butter Toast",
+"cuisine": "Japanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Thick-cut white bread or shokupan",
+"Salted butter",
+"Sweet red bean paste (anko)"
+]
+},
+{
+"dish_name": "Appam",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Long-grain white rice",
+"Cooked rice",
+"Coconut milk",
+"Active dry yeast",
+"Sugar",
+"Salt"
+]
+},
+{
+"dish_name": "Apple Cinnamon Muffins",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"All-purpose flour",
+"Baking powder",
+"Baking soda",
+"Salt",
+"Butter",
+"Sugar",
+"Brown sugar",
+"Eggs",
+"Milk",
+"Vanilla extract",
+"Apples",
+"Ground cinnamon"
+]
+},
+{
+"dish_name": "Apple Cinnamon Oatmeal",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"Rolled oats",
+"Milk",
+"Granny Smith apple",
+"Raisins",
+"Brown sugar",
+"Cinnamon",
+"Salt",
+"Butter"
+]
+},
+{
+"dish_name": "Apple Cinnamon Quinoa Breakfast Bowl",
+"cuisine": "American",
+"main_protein": "vegan",
+"ingredients": [
+"Quinoa",
+"Ground cinnamon",
+"Ground ginger",
+"Ground nutmeg",
+"Salt",
+"Maple syrup",
+"Unsweetened soy milk",
+"Apples",
+"Coconut oil"
+]
+},
+{
+"dish_name": "Arroz con Rajas y Queso",
+"cuisine": "Mexican",
+"main_protein": "cheese",
+"ingredients": [
+"Long-grain white rice",
+"Poblano peppers",
+"White onion",
+"Butter",
+"Mexican crema",
+"Monterey Jack cheese",
+"Salt"
+]
+},
+{
+"dish_name": "Atmit",
+"cuisine": "Ethiopian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Oat flour",
+"Milk",
+"Cinnamon sticks",
+"Honey",
+"Salt"
+]
+},
+{
+"dish_name": "Atta Dosa",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Whole wheat flour (atta)",
+"Rice flour",
+"Salt",
+"Cumin seeds",
+"Onion",
+"Carrot",
+"Cilantro",
+"Curry leaves",
+"Vegetable oil",
+"Coconut chutney"
+]
+},
+{
+"dish_name": "Bacon and Eggs",
+"cuisine": "American",
+"main_protein": "pork",
+"ingredients": [
+"Bacon",
+"Eggs",
+"Black pepper"
+]
+},
+{
+"dish_name": "Bagel with Lox and Cream Cheese",
+"cuisine": "American",
+"main_protein": "fish",
+"ingredients": [
+"Bagels",
+"Cream cheese",
+"Smoked salmon",
+"Red onion",
+"Capers"
+]
+},
+{
+"dish_name": "Beignets",
+"cuisine": "French",
+"main_protein": "eggs",
+"ingredients": [
+"Sugar",
+"Active dry yeast",
+"Egg",
+"Milk",
+"All purpose flour",
+"Salt",
+"Unsalted butter",
+"Vegetable oil",
+"Powdered sugar"
+]
+},
+{
+"dish_name": "Besan Toast",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Sandwich bread",
+"Gram flour (besan)",
+"Carom seeds (ajwain)",
+"Ground turmeric",
+"Kashmiri chili powder",
+"Asafoetida (hing)",
+"Salt",
+"Ginger",
+"Onion",
+"Tomato",
+"Cilantro",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Bo Nhung Dam",
+"cuisine": "Vietnamese",
+"main_protein": "beef",
+"ingredients": [
+"Thinly sliced beef for hot pot (eye of round or sirloin)",
+"Pineapple",
+"Lemongrass",
+"Yellow onion",
+"Coconut water",
+"White vinegar",
+"Salt",
+"Sugar",
+"Fish sauce",
+"Garlic",
+"Red Thai chili",
+"Cucumber",
+"Green leaf lettuce",
+"Mint",
+"Rice paper wrappers"
+]
+},
+{
+"dish_name": "Bo Nuong La Lot",
+"cuisine": "Vietnamese",
+"main_protein": "beef",
+"ingredients": [
+"Ground beef (80% lean)",
+"Wild betel leaves (la lot)",
+"Lemongrass",
+"Green onions",
+"Cornstarch",
+"Chinese five-spice powder",
+"Toasted sesame oil",
+"Black pepper",
+"Vegetable oil",
+"Fish sauce",
+"Sugar",
+"Lime",
+"Garlic",
+"Rice vermicelli",
+"Green leaf lettuce",
+"Mint"
+]
+},
+{
+"dish_name": "Bo Nuong Xa",
+"cuisine": "Vietnamese",
+"main_protein": "beef",
+"ingredients": [
+"Beef sirloin",
+"Lemongrass",
+"Garlic",
+"Fish sauce",
+"Sugar",
+"Black pepper",
+"Vegetable oil",
+"Limes",
+"Rice vermicelli",
+"Red leaf lettuce",
+"English cucumber",
+"Fresh mint",
+"Fresh cilantro",
+"Bamboo skewers"
+]
+},
+{
+"dish_name": "Bread Omelette",
+"cuisine": "Indian",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Whole wheat bread",
+"Onions",
+"Green bell pepper",
+"Cilantro",
+"Green chilies",
+"Vegetable oil",
+"Butter",
+"Turmeric",
+"Black pepper",
+"Chaat masala",
+"Salt",
+"Ketchup"
+]
+},
+{
+"dish_name": "Bread Upma",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Sandwich bread",
+"Vegetable oil",
+"Mustard seeds",
+"Curry leaves",
+"Onion",
+"Ginger",
+"Tomatoes",
+"Ground turmeric",
+"Kashmiri chili powder",
+"Sugar",
+"Salt",
+"Green bell pepper",
+"Cilantro",
+"Lemon"
+]
+},
+{
+"dish_name": "Breakfast Banana Split",
+"cuisine": "American",
+"main_protein": "dairy",
+"ingredients": [
+"Bananas",
+"Plain yogurt",
+"Blueberries",
+"Granola"
+]
+},
+{
+"dish_name": "Breakfast Sausage Patties",
+"cuisine": "American",
+"main_protein": "pork",
+"ingredients": [
+"Ground pork",
+"Maple syrup",
+"Onion powder",
+"Garlic powder",
+"Fresh sage",
+"Salt",
+"Black pepper",
+"Red pepper flakes",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Brioche",
+"cuisine": "French",
+"main_protein": "eggs",
+"ingredients": [
+"Unsalted butter",
+"Sugar",
+"Salt",
+"Instant yeast",
+"Eggs",
+"All purpose flour"
+]
+},
+{
+"dish_name": "Buttermilk Biscuits",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"All-purpose flour",
+"Cornstarch",
+"Baking powder",
+"Baking soda",
+"Sugar",
+"Salt",
+"Unsalted butter",
+"Buttermilk"
+]
+},
+{
+"dish_name": "Carne en su Jugo",
+"cuisine": "Mexican",
+"main_protein": "beef",
+"ingredients": [
+"Bacon",
+"Flank steak",
+"Tomatillos",
+"Jalape\u00f1o peppers",
+"White onion",
+"Garlic",
+"Cilantro",
+"Gluten-free chicken broth",
+"Pinto beans",
+"Ground cumin",
+"Black pepper",
+"Salt",
+"Radishes",
+"Limes",
+"Serrano peppers",
+"Corn tortillas"
+]
+},
+{
+"dish_name": "Castella",
+"cuisine": "Japanese",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Sugar",
+"Honey",
+"Vanilla extract",
+"Salt",
+"Cake flour"
+]
+},
+{
+"dish_name": "Champurrado",
+"cuisine": "Mexican",
+"main_protein": "dairy",
+"ingredients": [
+"Whole milk",
+"Piloncillo",
+"Cinnamon stick",
+"Mexican chocolate",
+"Masa harina"
+]
+},
+{
+"dish_name": "Cheese Danish",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Puff pastry",
+"Cream cheese",
+"Eggs",
+"Sugar",
+"Vanilla extract",
+"Strawberry jam"
+]
+},
+{
+"dish_name": "Cheese Grits",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Quick grits",
+"Butter",
+"Salt",
+"Black pepper",
+"Garlic powder",
+"Sharp cheddar"
+]
+},
+{
+"dish_name": "Chocolate Zucchini Muffins",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"Whole wheat flour",
+"Unsweetened cocoa powder",
+"Baking powder",
+"Baking soda",
+"Salt",
+"Eggs",
+"Sugar",
+"Milk",
+"Vegetable oil",
+"Vanilla extract",
+"Bananas",
+"Zucchini",
+"Chocolate chips"
+]
+},
+{
+"dish_name": "Chuletas de Puerco Adobadas",
+"cuisine": "Mexican",
+"main_protein": "pork",
+"ingredients": [
+"Pork chops",
+"Dried ancho chiles",
+"White vinegar",
+"Garlic",
+"Salt",
+"Dried oregano",
+"Ground cumin",
+"Dried thyme",
+"Vegetable oil",
+"Red onion",
+"Romaine lettuce",
+"Radishes"
+]
+},
+{
+"dish_name": "Cinnamon Sugar Toast",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"Bread",
+"Butter",
+"Sugar",
+"Ground cinnamon"
+]
+},
+{
+"dish_name": "Coffee Cake",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"All-purpose flour",
+"Sugar",
+"Brown sugar",
+"Ground cinnamon",
+"Butter",
+"Baking powder",
+"Salt",
+"Vanilla extract",
+"Eggs",
+"Sour cream",
+"Milk"
+]
+},
+{
+"dish_name": "Cop Sis",
+"cuisine": "Turkish",
+"main_protein": "lamb",
+"ingredients": [
+"Lamb shoulder",
+"Olive oil",
+"Fresh rosemary",
+"Fresh oregano",
+"Lemons",
+"Gluten-free flatbread",
+"Wooden skewers",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Cottage Cheese Toast",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Sourdough bread",
+"Cottage cheese",
+"Olive oil",
+"Cherry tomatoes",
+"Balsamic glaze",
+"Salt",
+"Black pepper",
+"Mixed berries",
+"Honey"
+]
+},
+{
+"dish_name": "Cottage Cheese with Fruit",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Cottage cheese",
+"Strawberries",
+"Kiwi",
+"Raspberries",
+"Blueberries",
+"Honey"
+]
+},
+{
+"dish_name": "Cranberry Orange Muffins",
+"cuisine": "American",
+"main_protein": "vegetarian",
+"ingredients": [
+"Unsalted butter",
+"Sugar",
+"Eggs",
+"Baking powder",
+"Salt",
+"Vanilla extract",
+"All-purpose flour",
+"Milk",
+"Dried cranberries",
+"Oranges",
+"Muffin liners"
+]
+},
+{
+"dish_name": "Cream of Wheat with Berries",
+"cuisine": "American",
+"main_protein": "dairy",
+"ingredients": [
+"Whole milk",
+"Cream of Wheat",
+"Salt",
+"Strawberries",
+"Blueberries"
+]
+},
+{
+"dish_name": "Crema de Poblano",
+"cuisine": "Mexican",
+"main_protein": "vegetarian",
+"ingredients": [
+"Poblano peppers",
+"Yellow onion",
+"Garlic",
+"Yellow potatoes",
+"Butter",
+"Vegetable broth",
+"Dried Mexican oregano",
+"Ground cumin",
+"Salt",
+"Black pepper",
+"Mexican crema",
+"Cilantro",
+"Lime",
+"Hot sauce"
+]
+},
+{
+"dish_name": "Croissant Jambon Fromage",
+"cuisine": "French",
+"main_protein": "pork",
+"ingredients": [
+"Croissants",
+"Cream cheese",
+"Dijon mustard",
+"Sliced ham",
+"Swiss cheese slices"
+]
+}
+]

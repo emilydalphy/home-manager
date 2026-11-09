@@ -1,0 +1,680 @@
+[
+{
+"dish_name": "Platanos Fritos con Crema",
+"cuisine": "Mexican",
+"main_protein": "vegetarian",
+"ingredients": [
+"Ripe plantains",
+"Mexican crema",
+"Vegetable oil",
+"Sugar"
+]
+},
+{
+"dish_name": "Polenta Dolce",
+"cuisine": "Italian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Milk",
+"Salt",
+"Butter",
+"Instant polenta",
+"Sugar",
+"Ground nutmeg"
+]
+},
+{
+"dish_name": "Pollo con Rajas",
+"cuisine": "Mexican",
+"main_protein": "chicken",
+"ingredients": [
+"Poblano chiles",
+"Boneless skinless chicken breasts",
+"Yellow onions",
+"Garlic",
+"Vegetable oil",
+"Mexican crema",
+"Cilantro",
+"Lime",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Pollo en Pipian Verde",
+"cuisine": "Mexican",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Olive oil",
+"Hulled pumpkin seeds",
+"Tomatillos",
+"Jalape\u00f1o",
+"White onion",
+"Chicken broth",
+"Cilantro",
+"Sugar",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Pollo Guisado",
+"cuisine": "Spanish",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Adobo seasoning",
+"Saz\u00f3n seasoning",
+"Olive oil",
+"Yellow onion",
+"Green bell pepper",
+"Garlic",
+"Sofrito",
+"Yukon gold potatoes",
+"Green olives",
+"Bay leaves",
+"Tomato sauce",
+"Gluten-free chicken broth",
+"Parsley",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Poori with Aloo Bhaji",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Whole wheat flour",
+"Fine semolina",
+"Sugar",
+"Salt",
+"Vegetable oil",
+"Potatoes",
+"Yellow onion",
+"Fresh ginger",
+"Mustard seeds",
+"Urad dal",
+"Chana dal",
+"Dried red chili",
+"Asafoetida",
+"Curry leaves",
+"Ground turmeric",
+"Lemon",
+"Cilantro",
+"Green chili"
+]
+},
+{
+"dish_name": "Puerco con Nopales",
+"cuisine": "Mexican",
+"main_protein": "pork",
+"ingredients": [
+"Boneless pork loin",
+"Dried guajillo chiles",
+"Dried ancho chile",
+"White onion",
+"Garlic",
+"Gluten-free chicken broth",
+"Nopales",
+"Ground cumin",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Corn tortillas"
+]
+},
+{
+"dish_name": "Puttu",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Puttu flour (steamed rice flour)",
+"Grated coconut",
+"Salt",
+"Bananas"
+]
+},
+{
+"dish_name": "Ragi Malt",
+"cuisine": "Indian",
+"main_protein": "dairy",
+"ingredients": [
+"Ragi flour",
+"Milk",
+"Sugar",
+"Ground cardamom"
+]
+},
+{
+"dish_name": "Savory Oatmeal with Egg",
+"cuisine": "American",
+"main_protein": "eggs",
+"ingredients": [
+"Old-fashioned rolled oats",
+"Butter",
+"Eggs",
+"Mild cheddar cheese",
+"Green onions",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Semiya Upma",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Vermicelli (semiya)",
+"Vegetable oil",
+"Mustard seeds",
+"Cumin seeds",
+"Chana dal",
+"Urad dal",
+"Asafoetida (hing)",
+"Ginger",
+"Curry leaves",
+"Onion",
+"Carrot",
+"Frozen peas",
+"Green bell pepper",
+"Salt",
+"Ground turmeric",
+"Lemon",
+"Cilantro"
+]
+},
+{
+"dish_name": "Shou Zhua Bing",
+"cuisine": "Chinese",
+"main_protein": "eggs",
+"ingredients": [
+"All-purpose flour",
+"Baking powder",
+"Salt",
+"Scallions",
+"Chinese five-spice powder",
+"Sugar",
+"Vegetable oil",
+"Parchment paper",
+"Eggs"
+]
+},
+{
+"dish_name": "Sooji Cheela",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Coarse semolina (sooji or rava)",
+"Plain yogurt",
+"Salt",
+"Onion",
+"Tomato",
+"Ginger",
+"Cilantro",
+"Vegetable oil",
+"Green chutney"
+]
+},
+{
+"dish_name": "Sopa de Calabacitas",
+"cuisine": "Mexican",
+"main_protein": "vegetarian",
+"ingredients": [
+"Olive oil",
+"White onion",
+"Garlic",
+"Tomatoes",
+"Zucchini",
+"Frozen corn",
+"Vegetable broth",
+"Cilantro",
+"Dried Mexican oregano",
+"Salt",
+"Whole milk",
+"Monterey Jack cheese",
+"Tortilla chips"
+]
+},
+{
+"dish_name": "Sopa de Hongos",
+"cuisine": "Mexican",
+"main_protein": "vegan",
+"ingredients": [
+"Cremini mushrooms",
+"White onion",
+"Garlic",
+"Dried guajillo chiles",
+"Vegetable oil",
+"Vegetable broth",
+"Dried epazote",
+"Cilantro",
+"Salt",
+"Black pepper",
+"Corn tortillas"
+]
+},
+{
+"dish_name": "Sopa Tarasca",
+"cuisine": "Mexican",
+"main_protein": "beans",
+"ingredients": [
+"Vegetable oil",
+"White onion",
+"Garlic",
+"Ancho chili powder",
+"Ground cumin",
+"Dried Mexican oregano",
+"Salt",
+"Whole peeled tomatoes",
+"Canned pinto beans",
+"Vegetable broth",
+"Corn tortillas",
+"Mexican crema",
+"Queso fresco",
+"Avocado"
+]
+},
+{
+"dish_name": "Suon Xao Chua Ngot",
+"cuisine": "Vietnamese",
+"main_protein": "pork",
+"ingredients": [
+"Pork spare ribs, cut into 1-inch pieces",
+"Jasmine rice",
+"Salt",
+"Black pepper",
+"Ketchup",
+"Sugar",
+"Gluten-free tamari",
+"Cornstarch",
+"Lime",
+"Vegetable oil",
+"Shallot",
+"Garlic",
+"Bell peppers",
+"Cremini mushrooms",
+"Green onions"
+]
+},
+{
+"dish_name": "Tamales de Rajas con Queso",
+"cuisine": "Mexican",
+"main_protein": "cheese",
+"ingredients": [
+"Corn husks",
+"Poblano peppers",
+"Oaxaca cheese or Monterey Jack",
+"Masa harina",
+"Vegetable shortening",
+"Salt",
+"Baking powder",
+"Salsa verde"
+]
+},
+{
+"dish_name": "Tartine au Beurre et Confiture",
+"cuisine": "French",
+"main_protein": "vegetarian",
+"ingredients": [
+"Baguette",
+"Unsalted butter",
+"Jam",
+"Milk"
+]
+},
+{
+"dish_name": "Tavuk Pirzola",
+"cuisine": "Turkish",
+"main_protein": "chicken",
+"ingredients": [
+"Bone-in chicken thighs",
+"Tomato paste",
+"Olive oil",
+"Garlic",
+"Paprika",
+"Dried thyme",
+"Salt",
+"Black pepper",
+"Long-grain white rice",
+"Fresh parsley"
+]
+},
+{
+"dish_name": "Tiganopsomo",
+"cuisine": "Greek",
+"main_protein": "cheese",
+"ingredients": [
+"All-purpose flour",
+"Salt",
+"Sugar",
+"Active dry yeast",
+"Olive oil",
+"Feta",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Tlacoyos",
+"cuisine": "Mexican",
+"main_protein": "beans",
+"ingredients": [
+"Masa harina",
+"Canned black beans",
+"White onion",
+"Garlic",
+"Vegetable oil",
+"Salt",
+"Romaine lettuce",
+"Queso fresco",
+"Salsa roja"
+]
+},
+{
+"dish_name": "Tsoureki",
+"cuisine": "Greek",
+"main_protein": "eggs",
+"ingredients": [
+"Active dry yeast",
+"Sugar",
+"Unsalted butter",
+"Whole milk",
+"Eggs",
+"Ground mastiha",
+"Ground mahlepi",
+"All purpose flour",
+"Orange",
+"Sesame seeds"
+]
+},
+{
+"dish_name": "Turkey Picadillo",
+"cuisine": "Mexican",
+"main_protein": "turkey",
+"ingredients": [
+"Ground turkey",
+"Yellow onion",
+"Red bell pepper",
+"Garlic",
+"Baby red potatoes",
+"Olive oil",
+"Ground cumin",
+"Dried oregano",
+"Smoked paprika",
+"Salt",
+"Black pepper",
+"Tomato sauce",
+"Sliced green olives",
+"Red wine vinegar",
+"Cilantro",
+"Long-grain white rice"
+]
+},
+{
+"dish_name": "Vegetable Dalia",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Dalia (broken wheat)",
+"Split yellow moong dal",
+"Tomatoes",
+"Carrots",
+"Frozen peas",
+"Ginger",
+"Vegetable oil",
+"Cumin seeds",
+"Asafoetida",
+"Turmeric",
+"Salt"
+]
+},
+{
+"dish_name": "Xian Dou Jiang",
+"cuisine": "Chinese",
+"main_protein": "tofu",
+"ingredients": [
+"Unsweetened soy milk",
+"Rice vinegar",
+"Soy sauce",
+"Pickled mustard (zha cai)",
+"Scallions",
+"Fried dough sticks (you tiao)",
+"Chili oil (nut-free)"
+]
+},
+{
+"dish_name": "Xiao Mi Zhou",
+"cuisine": "Chinese",
+"main_protein": "vegan",
+"ingredients": [
+"Millet",
+"Salt",
+"Sugar"
+]
+},
+{
+"dish_name": "Yangchun Noodles",
+"cuisine": "Chinese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Thin wheat noodles",
+"Vegetable broth",
+"Vegetable oil",
+"Light soy sauce",
+"Dark soy sauce",
+"Sugar",
+"Scallions",
+"Salt"
+]
+},
+{
+"dish_name": "Yemarina Yewotet Dabo",
+"cuisine": "Ethiopian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Active dry yeast",
+"Eggs",
+"Honey",
+"Ground coriander",
+"Salt",
+"Ground cinnamon",
+"Ground cloves",
+"Ground ginger",
+"Whole milk",
+"Unsalted butter",
+"All-purpose flour"
+]
+},
+{
+"dish_name": "Yesil Mercimek Yemegi",
+"cuisine": "Turkish",
+"main_protein": "lentils",
+"ingredients": [
+"Green lentils",
+"Vegetable broth",
+"Yellow onion",
+"Garlic",
+"Tomatoes",
+"Olive oil",
+"Ground cumin",
+"Salt"
+]
+},
+{
+"dish_name": "Yum Makheua Yao",
+"cuisine": "Thai",
+"main_protein": "vegetarian",
+"ingredients": [
+"Japanese eggplants",
+"Eggs",
+"Shallots",
+"Cilantro",
+"Limes",
+"Gluten-free soy sauce",
+"Sugar",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Yum Mamuang",
+"cuisine": "Thai",
+"main_protein": "shrimp",
+"ingredients": [
+"Medium shrimp",
+"Green mango",
+"Limes",
+"Fish sauce",
+"Sugar",
+"Shallots",
+"Roasted unsalted peanuts",
+"Cilantro",
+"Mint",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Yum Pla Muk",
+"cuisine": "Thai",
+"main_protein": "seafood",
+"ingredients": [
+"Squid",
+"Celery",
+"Red onion",
+"Green onions",
+"Cilantro",
+"Roma tomato",
+"Carrots",
+"Garlic",
+"Limes",
+"Fish sauce",
+"Sugar",
+"Thai chilies"
+]
+},
+{
+"dish_name": "Yum Som O",
+"cuisine": "Thai",
+"main_protein": "shrimp",
+"ingredients": [
+"Pomelo",
+"Medium shrimp",
+"Unsweetened coconut flakes",
+"Roasted unsalted peanuts",
+"Shallots",
+"Garlic",
+"Cilantro",
+"Limes",
+"Fish sauce",
+"Brown sugar",
+"Coconut milk",
+"Roasted chili paste (nam prik pao)",
+"Vegetable oil",
+"Salt",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Yum Tuna",
+"cuisine": "Thai",
+"main_protein": "fish",
+"ingredients": [
+"Canned tuna in water",
+"Shallots",
+"Lemongrass",
+"Green onions",
+"Cilantro",
+"Mint",
+"Limes",
+"Fish sauce",
+"Sugar",
+"Red pepper flakes",
+"Butter lettuce",
+"English cucumber"
+]
+},
+{
+"dish_name": "Zarangollo",
+"cuisine": "Spanish",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Zucchini",
+"Yellow onion",
+"Olive oil",
+"Chives",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Zeytinyagli Bakla",
+"cuisine": "Turkish",
+"main_protein": "beans",
+"ingredients": [
+"Frozen shelled fava beans",
+"Yellow onion",
+"Garlic",
+"Green onions",
+"Fresh dill",
+"Olive oil",
+"Lemons",
+"Sugar",
+"Salt"
+]
+},
+{
+"dish_name": "Zeytinyagli Enginar",
+"cuisine": "Turkish",
+"main_protein": "vegan",
+"ingredients": [
+"Frozen artichoke hearts",
+"Yellow onion",
+"Carrots",
+"Potatoes",
+"Frozen peas",
+"Olive oil",
+"Lemons",
+"Fresh dill",
+"Sugar",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Zeytinyagli Kereviz",
+"cuisine": "Turkish",
+"main_protein": "vegan",
+"ingredients": [
+"Celery root",
+"Yellow onion",
+"Carrots",
+"Potatoes",
+"Olive oil",
+"Orange juice",
+"Lemons",
+"Fresh parsley",
+"Fresh dill",
+"Paprika",
+"Sugar",
+"Salt"
+]
+},
+{
+"dish_name": "Zilzil Tibs",
+"cuisine": "Ethiopian",
+"main_protein": "beef",
+"ingredients": [
+"Beef sirloin",
+"Berbere",
+"Olive oil",
+"Red onion",
+"Garlic",
+"Fresh ginger",
+"Jalape\u00f1o",
+"Fresh rosemary",
+"Lemon",
+"Salt",
+"100% teff injera"
+]
+}
+]
