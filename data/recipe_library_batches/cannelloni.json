@@ -1,0 +1,140 @@
+{
+ "dish_name": "Cannelloni",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Cannelloni tubes (dried)",
+   "qty": "7 oz (about 22 tubes)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 rib",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken or vegetable stock",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Lean ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Frozen chopped spinach",
+   "qty": "8 oz",
+   "category": "frozen"
+  },
+  {
+   "item": "Beef bouillon cube",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Mozzarella, shredded",
+   "qty": "8 oz (2 cups)",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Thaw the spinach and squeeze it dry in a clean towel. Finely chop the onion, carrot and celery and mince the garlic. Half the onion and 2 of the garlic cloves go in the sauce along with the carrot and celery. The other half of the onion and the other 2 cloves go in the filling.",
+  "Heat 1 tbsp of the oil in a saucepan over medium heat. Add half the onion, 2 cloves of garlic, the carrot and the celery and cook for 3 minutes, until soft.",
+  "Add the tomatoes, stock, thyme, oregano, 1/2 tsp salt and 1/2 tsp pepper. Cover and simmer for 10 minutes. Remove the pan from the heat and blend the sauce smooth with an immersion blender, or let it cool a little and blend it in batches in a blender.",
+  "Heat the oven to 350°F.",
+  "Heat the last 1 tbsp of oil in a large skillet over medium heat. Add the other half of the onion and the other 2 cloves of garlic and cook for 3 minutes, until soft.",
+  "Add the beef and break it up with a spoon. Cook for 5 to 6 minutes, until there's no pink left.",
+  "Crumble in the bouillon cube and stir in the spinach, the Worcestershire, the remaining 1/2 tsp pepper and 1 cup of the sauce. Cook for 1 minute, then let the filling cool for 10 minutes.",
+  "Spoon the filling into a zip-top bag and snip off a corner. Pipe it into the dry tubes until each one is full.",
+  "Spread about 1 1/4 cups of the sauce over the bottom of a 9 by 13-inch baking dish. Lay the filled tubes side by side on top.",
+  "Pour the rest of the sauce over the tubes, making sure they're all covered. Scatter the mozzarella over the top and cover the dish with foil.",
+  "Bake for 25 minutes. Take off the foil and bake for 10 minutes, until the sauce is bubbling and the cheese is golden in spots. The tubes should be tender when you poke one with a knife.",
+  "Serve straight from the dish.",
+  "To make it ahead, stir an extra 1/2 cup of water into the sauce, assemble the dish without baking it, cover and freeze. Thaw in the fridge, then bake as above. Cooked leftovers keep in the fridge for up to 4 days and reheat covered in the microwave or oven."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats leads (4.99 from 67): a blended tomato sauce, a beef and spinach filling, and dry tubes baked straight in the sauce so there is no boiling. The same cook's spinach and ricotta version and the Pasta Project's béchamel version (5.0 from 7) show the other styles. The dry tubes soften in the sauce as they bake, so the sauce is made a little loose and gets extra water when the dish is frozen.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Spinach Beef Cannelloni",
+   "url": "https://www.recipetineats.com/spinach-beef-cannelloni-manicotti/",
+   "rating": 4.99,
+   "rating_count": 67,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Pasta Project",
+   "title": "Easy Italian Beef Cannelloni",
+   "url": "https://www.the-pasta-project.com/easy-italian-beef-cannelloni-recipe/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

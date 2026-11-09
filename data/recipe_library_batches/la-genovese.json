@@ -1,0 +1,134 @@
+{
+ "dish_name": "La Genovese",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Pancetta or salt pork",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Beef chuck",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 rib",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Paccheri or rigatoni",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Peel and thinly slice the onions. Finely dice the carrot and celery, mince the garlic and cut the pancetta into small dice. Pat the beef dry, cut it into 3-inch cubes and season it with 1 tsp of the salt and the pepper.",
+  "Cook the pancetta in a large heavy pot (6 quarts) over medium-high heat for 6 to 8 minutes, until the fat has run and the pieces are crisp. Transfer the pancetta to a plate and leave the fat in the pot.",
+  "Brown the beef in the pot in two batches, 3 to 4 minutes per side, until deep brown. Transfer it to the plate with the pancetta.",
+  "Turn the heat down to medium. Add one third of the onions, the carrot, the celery and the bay leaf and cook for 8 minutes, stirring now and then, until the onions are pale gold.",
+  "Add the garlic and cook for 1 minute. Stir in the tomato paste and cook for 1 minute.",
+  "Pour in the wine and scrape up the browned bits from the bottom of the pot. Let it bubble for 2 minutes.",
+  "Return the beef and pancetta to the pot. Pile the rest of the onions on top and add 1 tsp of the salt. Cover and cook over medium-high heat for 30 minutes, until the onions have given up their liquid.",
+  "Turn the heat to low so the sauce barely bubbles. Set the lid slightly ajar and cook for 3 hours, stirring every 30 minutes, until the beef falls apart when you press it with a spoon and the onions are jammy.",
+  "Remove the bay leaf. Break the beef into shreds with two forks, then cook the sauce uncovered for 10 to 15 minutes, until it's thick. Taste it and add a pinch more salt if it needs it.",
+  "Boil a large pot of water with the last 1 tbsp of salt. Cook the paccheri or rigatoni until it's al dente, reserving 1 cup of the cooking water, and drain it.",
+  "Toss the pasta with about half of the sauce over low heat for 1 to 2 minutes, adding splashes of the pasta water until the sauce clings to the pasta.",
+  "Sprinkle the parsley over the pasta and serve.",
+  "This makes a lot of sauce. Cool the rest and refrigerate it without pasta for up to 5 days, or freeze for up to 4 months. Reheat it in a pot over low heat with a splash of water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 255,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "2 Food Trippers leads (4.27 from 26): beef, salt pork and a mountain of onions, left to melt into a sauce with no tomato to speak of beyond a spoonful of paste. Its 5-hour simmer is shortened to 3 hours, which two other readable versions (2 Sisters, Mission Food) both use for similar cubes. Cheese is left off for the dairy-free tag; the lead and every other version serve it with grated cheese, which can go on the table for anyone who eats dairy. Storage times are from Coley Cooks' version.",
+ "sources": [
+  {
+   "name": "2 Food Trippers",
+   "title": "Pasta alla Genovese: A Neapolitan Classic",
+   "url": "https://www.2foodtrippers.com/pasta-alla-genovese/",
+   "rating": 4.27,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "2 Sisters Recipes",
+   "title": "Pasta with Genovese Sauce",
+   "url": "https://2sistersrecipes.com/pasta-with-genovese-sauce/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Coley Cooks",
+   "title": "Pasta alla Genovese",
+   "url": "https://coleycooks.com/pasta-genovese/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Mission Food",
+   "title": "Pasta alla Genovese",
+   "url": "https://mission-food.com/pasta-alla-genovese/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

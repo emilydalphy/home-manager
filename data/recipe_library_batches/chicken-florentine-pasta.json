@@ -1,0 +1,114 @@
+{
+ "dish_name": "Chicken Florentine Pasta",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Linguine",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "2 (about 1 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "White button mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "5 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan, freshly grated",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tbsp of the salt and bring it to a boil over high heat.",
+  "Meanwhile, pat the chicken dry. Season both sides with 1/2 tsp of the salt and a little of the pepper. Slice the mushrooms, chop the green onions (white and green parts) and mince the garlic.",
+  "Cook the linguine in the boiling water until it's al dente, about 10 minutes. Drain it and leave it in the colander.",
+  "Heat 2 tbsp of the oil in a large deep skillet over medium heat. Add the chicken and cook for 5 minutes, until the underside is golden.",
+  "Flip the chicken, cover the pan and cook for 5 to 6 minutes. You're cooking it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when there's no pink left.",
+  "Transfer the chicken to a cutting board and let it rest for 5 minutes, then slice it into strips.",
+  "Add the last 1 tbsp of oil to the same skillet over medium-high heat. Add the mushrooms and green onions and cook for 6 to 7 minutes, stirring now and then, until they're soft and golden. Transfer them to a bowl.",
+  "Turn the heat down to medium and melt the butter in the same skillet. Add the flour and garlic and stir for 1 minute.",
+  "Slowly whisk in the broth, then the milk, so there are no lumps. Simmer for 3 to 4 minutes, stirring, until the sauce is thick enough to coat the back of a spoon.",
+  "Stir in the spinach, the remaining 1/2 tsp salt and a pinch of pepper. Cook for about 1 minute, until the spinach has wilted.",
+  "Add the chicken, mushrooms and linguine and toss for 1 minute, until everything is coated and hot. Taste it and add a pinch more salt if it's flat.",
+  "Serve with the Parmesan sprinkled over each bowl."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Natasha's Kitchen leads (4.98 from 67): a flour and butter base thinned with broth and milk, so the sauce is light and creamy rather than a heavy cream sauce, with mushrooms and green onions cooked in the chicken pan. Other Florentine pages vary in the sauce (sun-dried tomato, pesto Alfredo), but the lead's version is the plainest and matches the list line. It kept to about 40 minutes at a real stove.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Chicken Florentine Pasta",
+   "url": "https://natashaskitchen.com/chicken-florentine-pasta/",
+   "rating": 4.98,
+   "rating_count": 67,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,129 @@
+{
+ "dish_name": "Brasato al Barolo",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Boneless beef chuck roast",
+   "qty": "1 kg (2.2 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Barolo or other dry red wine (Barbera, Nebbiolo)",
+   "qty": "750 ml (3 cups)",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "2 ribs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh sage",
+   "qty": "4 leaves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 12 hours ahead: cut the carrots, celery and onion into large chunks. Tie the bay leaves, sage and rosemary together with kitchen twine. Tie the cloves, peppercorns and cinnamon stick in a small piece of cheesecloth. Put the beef, vegetables, herbs, spice bundle and the whole unpeeled garlic clove in a large bowl, pour the wine over, cover and refrigerate for 12 to 24 hours.",
+  "Lift the beef out of the wine and pat it dry. Set the bowl with the wine and vegetables aside.",
+  "Heat 4 tbsp of the oil in a large Dutch oven or high-sided pot over high heat. Brown the beef for 3 to 4 minutes per side, until it's deep brown all over.",
+  "With a slotted spoon, lift the vegetables, herbs, spice bundle and garlic out of the wine and add them to the pot with the last 1 tbsp of oil. Turn the heat to low and cook for 10 minutes, stirring now and then.",
+  "Pour in the wine from the bowl and add 1 1/2 tsp salt. Bring it to a gentle simmer, then cover the pot.",
+  "Cook over low heat for 2 hours, turning the beef every 30 minutes. It's done when a fork slides in easily.",
+  "Transfer the beef to a platter and cover it with foil to keep it warm. Take out the herbs, spice bundle and garlic.",
+  "Blend the vegetables and cooking liquid with an immersion blender until smooth. If the sauce is thin, simmer it uncovered for 10 minutes. Taste it and add a pinch more salt if it needs it.",
+  "Slice the beef 1/2 inch thick against the grain. Spoon the sauce over the slices.",
+  "Serve with soft polenta or mashed potatoes.",
+  "Cool the leftovers, then keep them (whole beef in its sauce) in an airtight container in the fridge for 3 to 4 days, or freeze for up to 1 month. Thaw in the fridge overnight and reheat covered in a pot over low heat with a splash of water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 150,
+ "advance_prep_notes": "marinate the beef in the wine overnight, at least 12 hours",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Recipes from Italy is the lead (5.0 from 1 rating, so a fallback; no braised Barolo page has 20 ratings). It marinates the beef in the wine overnight, then browns it and cooks it in the same wine with the vegetables, which are blended into the sauce. Emeril and The International Kitchen add pancetta, stock and cognac, and cook the beef a bit longer; those are left out. The lead's knob of butter and optional potato are swapped for olive oil and left out, so the dish is dairy-free.",
+ "sources": [
+  {
+   "name": "Recipes from Italy",
+   "title": "Brasato al Barolo",
+   "url": "https://www.recipesfromitaly.com/brasato-al-barolo/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Emeril Lagasse",
+   "title": "Beef Braised in Barolo: Brasato al Barolo",
+   "url": "https://www.emerils.com/print/126894",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "The International Kitchen",
+   "title": "Manzo Brasato al Barolo",
+   "url": "https://www.theinternationalkitchen.com/recipes/manzo-brasato-al-barolo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

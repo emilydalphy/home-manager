@@ -1,0 +1,124 @@
+{
+ "dish_name": "Chicken Doria",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1/2",
+   "category": "produce"
+  },
+  {
+   "item": "Shimeji or button mushrooms",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mozzarella, shredded",
+   "qty": "3 oz (3/4 cup)",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice. Put it in a small pot with 1 1/4 cups water, bring it to a boil, then turn the heat to low and cover. Cook for 15 minutes, then take it off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, heat the oven to 400°F. Use 1 tbsp of the butter to grease a 2-quart baking dish. Cut the chicken into small bite-size pieces, slice the onion thin and trim and separate the mushrooms.",
+  "Heat the oil in a large skillet over medium-high heat. Add the chicken and cook for 4 to 5 minutes, stirring now and then, until it has lost its raw color. Add the onion and mushrooms and cook for 3 minutes, until soft. Try not to brown them, so the sauce stays white.",
+  "Add 2 tbsp of the butter and let it melt. Sprinkle in the flour and stir for 2 minutes.",
+  "Slowly pour in the milk, stirring the whole time. Simmer for 3 to 4 minutes, until the sauce is thick enough to coat the back of a spoon. Stir in 1 tsp salt and the pepper, then take the pan off the heat. Chicken thighs are best at 175°F in the middle; if you have a thermometer, check it there. No thermometer? Cut a piece open: it's done when there's no pink.",
+  "Stir the hot rice with the ketchup, 1/4 tsp salt and the last 1 tbsp butter until it's evenly orange-pink. Spread it in the baking dish.",
+  "Spoon the chicken and sauce over the rice. Scatter the mozzarella over the top.",
+  "Bake for 10 to 12 minutes, until the cheese has melted and the top is lightly browned.",
+  "Sprinkle the parsley over the top. Serve straight from the dish."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Japanese Cooking 101 leads (5.0 from 1 vote, so a fallback; no chicken doria page has 20 ratings): ketchup-seasoned rice, a quick chicken and mushroom white sauce, and cheese baked on top for 10 minutes. Hiroko Liston and Japanese Taste show the same layers; Hiroko bakes the white sauce poured over rice, chicken and mushrooms mixed together. The rice here is 1 cup dry (about 3 cups cooked) so the dish feeds four, and the lead's white pepper is plain black pepper.",
+ "sources": [
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Chicken and Mushroom Doria",
+   "url": "https://japanesecooking101.com/chicken-and-mushroom-doria/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hiroko Liston",
+   "title": "Chicken Doria",
+   "url": "https://www.hirokoliston.com/?p=4871",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Japanese Taste",
+   "title": "How to Make Chicken Doria",
+   "url": "https://japanesetaste.com/blogs/japanese-taste-recipes/how-to-make-chicken-doria-japanese-rice-gratin",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

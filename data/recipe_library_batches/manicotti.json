@@ -1,0 +1,120 @@
+{
+ "dish_name": "Manicotti",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Manicotti shells",
+   "qty": "1 box (8 oz, 14 shells)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Whole milk ricotta",
+   "qty": "32 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Mozzarella, shredded",
+   "qty": "9 oz (2 1/2 cups)",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan, grated",
+   "qty": "4 oz (1 cup)",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Brush a 9 by 13-inch baking dish with a little of the oil.",
+  "Bring a large pot of water to a boil and add 1 tbsp of the salt. Cook the shells for 6 to 7 minutes, until they're bendy but still firm. Drain them and toss them with 1 tbsp of the oil. Spread them out on a tray so they don't stick together.",
+  "Meanwhile, mince the garlic and chop the basil. In a large bowl, mix the ricotta, 2 cups of the mozzarella, 1/2 cup of the Parmesan, the garlic, 6 tbsp of the basil, 1/2 tsp salt, the pepper and the nutmeg.",
+  "In a small bowl, beat the eggs. Stir them into the filling.",
+  "Spread 1 1/2 cups of the marinara over the bottom of the baking dish.",
+  "Spoon the filling into a zip-top bag and snip off a corner. Pipe it into each shell, then lay the shells side by side in the dish.",
+  "Pour the remaining 1 1/2 cups marinara over the shells. Cover the dish with foil.",
+  "Bake for 20 minutes. Take off the foil and bake for 10 to 15 minutes, until the sauce is hot and bubbling.",
+  "Scatter the remaining 1/2 cup mozzarella and 1/2 cup Parmesan over the top. Bake for 5 minutes, until the cheese has melted.",
+  "Sprinkle the remaining 2 tbsp basil over the top. Let the dish stand for 5 minutes before serving.",
+  "To make it ahead, assemble the dish through the marinara and foil (before baking), then refrigerate it for up to 1 day and bake as above. To freeze it, wrap the assembled dish tightly and freeze for up to 3 months. Bake from frozen, covered, for 50 to 60 minutes, then uncovered for 10 to 15 minutes, then add the cheese and bake for 5 minutes. Cooked leftovers keep in the fridge for 3 to 4 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Savor the Best leads (4.91 from 22): three cheeses and basil in the filling, shells boiled only part way, and a layer of marinara under and over. Taste of Home bakes the shells uncooked in more sauce, and Foodal adds garlic butter and fresh mozzarella. The filling here makes 14 shells, which is generous for four, so leftovers are the next day's lunch.",
+ "sources": [
+  {
+   "name": "Savor the Best",
+   "title": "Classic Three Cheese Manicotti",
+   "url": "https://savorthebest.com/?p=7816",
+   "rating": 4.91,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Cheese Manicotti",
+   "url": "https://www.tasteofhome.com/recipes/cheese-manicotti/",
+   "rating": null,
+   "rating_count": 14,
+   "read": true
+  },
+  {
+   "name": "Foodal",
+   "title": "Baked Manicotti",
+   "url": "https://foodal.com/recipes/pasta/baked-manicotti/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,133 @@
+{
+  "dish_name": "Sunday Gravy",
+  "cuisine": "Italian",
+  "main_protein": "pork",
+  "ingredients": [
+    {
+      "item": "Olive oil",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "2 tbsp"
+    },
+    {
+      "item": "Bone-in pork country-style ribs or neck bones",
+      "qty": "2 lb",
+      "category": "meat/seafood"
+    },
+    {
+      "item": "Sweet Italian sausage",
+      "qty": "1 1/2 lb",
+      "category": "meat/seafood"
+    },
+    {
+      "item": "Fully cooked beef meatballs (dairy-free)",
+      "qty": "1 lb (about 16)",
+      "category": "meat/seafood"
+    },
+    {
+      "item": "Yellow onion",
+      "qty": "1 small",
+      "category": "produce"
+    },
+    {
+      "item": "Garlic",
+      "qty": "5 cloves",
+      "category": "produce"
+    },
+    {
+      "item": "Red pepper flakes",
+      "qty": "1 jar",
+      "category": "pantry",
+      "cook_qty": "a pinch"
+    },
+    {
+      "item": "Tomato paste",
+      "qty": "1 can (6 oz)",
+      "category": "pantry",
+      "cook_qty": "3 tbsp"
+    },
+    {
+      "item": "Whole peeled tomatoes",
+      "qty": "2 cans (28 oz each)",
+      "category": "pantry"
+    },
+    {
+      "item": "Bay leaves",
+      "qty": "2",
+      "category": "pantry"
+    },
+    {
+      "item": "Fresh parsley",
+      "qty": "1 small bunch",
+      "category": "produce",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Spaghetti or rigatoni",
+      "qty": "1 lb",
+      "category": "pantry"
+    },
+    {
+      "item": "Salt",
+      "qty": "1 box",
+      "category": "pantry",
+      "cook_qty": "1 tbsp + 2 tsp"
+    },
+    {
+      "item": "Black pepper",
+      "qty": "1 jar",
+      "category": "pantry",
+      "cook_qty": "1/2 tsp"
+    }
+  ],
+  "instructions": [
+    "Dice the onion, thinly slice the garlic and mince 1 tbsp of the parsley.",
+    "Pat the pork dry. Season it all over with 1 tsp of the salt and the pepper.",
+    "Heat the oil in a large heavy pot or Dutch oven over medium-high heat. Add the pork and sear it for 3 to 4 minutes per side, until deep brown. Do it in batches if the pot is crowded, then transfer the pork to a plate.",
+    "Turn the heat down to medium. Add the onion and cook for 5 minutes, scraping up the browned bits from the bottom of the pot, until it's soft.",
+    "Add the garlic and a pinch of red pepper flakes and cook for 2 minutes, until the garlic smells sweet.",
+    "Stir in the tomato paste and cook for 1 to 2 minutes, until it darkens a little.",
+    "Add the tomatoes with their juice, the bay leaves, the parsley and 1/2 tsp of the salt. Fill one empty tomato can about a third full of water, swirl it and add it to the pot. Crush the tomatoes with the back of a spoon.",
+    "Bring the sauce to a boil. Add the pork, the sausage links whole and the meatballs. Turn the heat to low and set the lid slightly ajar.",
+    "Simmer for 3 hours, stirring every 20 minutes so the bottom doesn't scorch. It's ready when the pork is falling apart.",
+    "Remove the bay leaves and any bones. Transfer the meats to a platter and pull the pork into big pieces. Taste the sauce and add up to 1/2 tsp more salt if it needs it.",
+    "Boil a large pot of water with the last 1 tbsp of salt. Cook the spaghetti or rigatoni until it's al dente, drain it and toss it with a few ladles of sauce.",
+    "Serve the pasta with the meats and extra sauce alongside.",
+    "This makes far more sauce than tonight needs. Cool the leftover sauce and meats together and refrigerate them in sealed containers for up to 5 days, or freeze for up to 6 months. Keep any leftover pasta in a separate container. Thaw in the fridge, then reheat in a pot over medium-low heat, stirring often, with a splash of water if it has thickened."
+  ],
+  "default_servings": 4,
+  "prep_time_minutes": 25,
+  "cook_time_minutes": 215,
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "Coley Cooks leads (4.97 from 83): sear the pork, soften the onion, bloom the garlic and tomato paste, then a long low simmer with sausage and meatballs. A Spicy Perspective and A Family Feast show quicker or larger versions with beef, bacon and wine. The lead's ricotta and pecorino for serving are left out to keep it dairy-free, and the meatballs are fully cooked ones (the lead allows store-bought), so check the label for dairy. Most of the meat here is pork and sausage with beef meatballs; it makes enough sauce for several dinners.",
+  "sources": [
+    {
+      "name": "Coley Cooks",
+      "title": "The Best Authentic Italian Sunday Gravy (Sugo)",
+      "url": "https://coleycooks.com/authentic-italian-sunday-gravy/",
+      "rating": 4.97,
+      "rating_count": 83,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "A Spicy Perspective",
+      "title": "Sunday Gravy Meat Sauce",
+      "url": "https://www.aspicyperspective.com/sunday-gravy-meat-sauce/",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    },
+    {
+      "name": "A Family Feast",
+      "title": "Sunday Gravy",
+      "url": "https://www.afamilyfeast.com/sunday-gravy",
+      "rating": 4.9,
+      "rating_count": 17,
+      "read": true
+    }
+  ],
+  "fallback_used": false,
+  "origin": "seed"
+}
