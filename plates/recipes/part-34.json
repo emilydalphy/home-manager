@@ -1,0 +1,729 @@
+[
+{
+"dish_name": "Black Bean Breakfast Bowls",
+"cuisine": "Mexican",
+"main_protein": "beans",
+"ingredients": [
+"Long-grain white rice",
+"Olive oil",
+"Garlic",
+"Ground cumin",
+"Black beans",
+"Salt",
+"Eggs",
+"Avocado",
+"Red onion",
+"Cilantro",
+"Hot sauce"
+]
+},
+{
+"dish_name": "Butter Shoyu Salmon",
+"cuisine": "Japanese",
+"main_protein": "fish",
+"ingredients": [
+"Salmon fillets, skin on",
+"Short-grain rice",
+"Soy sauce",
+"Mirin",
+"Butter",
+"Cornstarch",
+"Green onions",
+"Vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Chickpea Shakshuka",
+"cuisine": "Lebanese",
+"main_protein": "chickpeas",
+"ingredients": [
+"Chickpeas",
+"Crushed tomatoes",
+"Yellow onion",
+"Red bell pepper",
+"Garlic",
+"Tomato paste",
+"Smoked paprika",
+"Ground cumin",
+"Chili powder",
+"Ground cinnamon",
+"Cayenne pepper",
+"Sugar",
+"Olive oil",
+"Salt",
+"Parsley",
+"Lemon",
+"Basmati rice"
+]
+},
+{
+"dish_name": "Chickpea Shawarma Wraps",
+"cuisine": "Lebanese",
+"main_protein": "chickpeas",
+"ingredients": [
+"Canned chickpeas",
+"Pita bread",
+"Tahini",
+"Lemon",
+"Garlic",
+"Tomatoes",
+"Red onion",
+"Parsley",
+"Olive oil",
+"Ground cumin",
+"Garlic powder",
+"Paprika",
+"Ground coriander",
+"Ground cinnamon",
+"Dried dill",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Chickpea Tikka Masala",
+"cuisine": "Indian",
+"main_protein": "chickpeas",
+"ingredients": [
+"Canned chickpeas",
+"Tomato puree",
+"Full-fat coconut milk",
+"Basmati rice",
+"White onion",
+"Garlic",
+"Fresh ginger",
+"Cilantro",
+"Olive oil",
+"Garam masala",
+"Ground cumin",
+"Ground coriander",
+"Ground turmeric",
+"Smoked paprika",
+"Salt"
+]
+},
+{
+"dish_name": "Cucumber Sushi Bites",
+"cuisine": "Japanese",
+"main_protein": "vegan",
+"ingredients": [
+"Sushi rice",
+"Seasoned rice vinegar",
+"English cucumbers",
+"Avocado",
+"Sesame seeds",
+"Gluten-free tamari"
+]
+},
+{
+"dish_name": "Garlic Bok Choy with Chicken",
+"cuisine": "Chinese",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Baby bok choy",
+"Garlic",
+"Jasmine rice",
+"Chicken broth",
+"Cornstarch",
+"Soy sauce",
+"Rice vinegar",
+"Brown sugar",
+"Sesame oil",
+"Oyster sauce",
+"Vegetable oil",
+"Salt"
+]
+},
+{
+"dish_name": "Kinako Mochi",
+"cuisine": "Japanese",
+"main_protein": "vegan",
+"ingredients": [
+"Kiri mochi",
+"Kinako (roasted soybean flour)",
+"Sugar"
+]
+},
+{
+"dish_name": "Labneh Toast",
+"cuisine": "Lebanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Rustic bread",
+"Extra-virgin olive oil",
+"Labneh",
+"Za'atar",
+"Persian cucumbers",
+"Mint",
+"Flaky sea salt"
+]
+},
+{
+"dish_name": "Lentil Tacos",
+"cuisine": "Mexican",
+"main_protein": "lentils",
+"ingredients": [
+"Canned brown lentils",
+"Yellow onion",
+"Garlic",
+"Chili powder",
+"Ground cumin",
+"Smoked paprika",
+"Dried oregano",
+"Garlic powder",
+"Onion powder",
+"Black pepper",
+"Salt",
+"Olive oil",
+"Vegetable broth",
+"Corn tortillas (6-inch)",
+"Romaine lettuce",
+"Avocados",
+"Salsa"
+]
+},
+{
+"dish_name": "Pla Pao",
+"cuisine": "Thai",
+"main_protein": "fish",
+"ingredients": [
+"Whole tilapia",
+"Lemongrass",
+"Kaffir lime leaves",
+"Eggs",
+"Kosher salt",
+"Jasmine rice",
+"Limes",
+"Garlic",
+"Thai chilies",
+"Fish sauce",
+"Sugar"
+]
+},
+{
+"dish_name": "Pollo a la Mexicana",
+"cuisine": "Mexican",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Olive oil",
+"White onion",
+"Jalape\u00f1os",
+"Garlic",
+"Ripe tomatoes",
+"Salt",
+"Cilantro",
+"Corn tortillas"
+]
+},
+{
+"dish_name": "Ragi Dosa",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Ragi flour",
+"Rice flour",
+"Salt",
+"Cumin seeds",
+"Black pepper",
+"Yellow onion",
+"Ginger",
+"Curry leaves",
+"Cilantro",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Salatet Adas",
+"cuisine": "Lebanese",
+"main_protein": "lentils",
+"ingredients": [
+"Green lentils",
+"Olive oil",
+"Garlic",
+"Lemon",
+"Red onion",
+"Parsley",
+"Mint",
+"Ground cumin",
+"Ground allspice",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Salmon Shioyaki",
+"cuisine": "Japanese",
+"main_protein": "fish",
+"ingredients": [
+"Salmon fillets, skin-on",
+"Kosher salt (5% of the salmon's weight)",
+"Sake",
+"Daikon radish",
+"Short-grain white rice",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Sambousek",
+"cuisine": "Lebanese",
+"main_protein": "cheese",
+"ingredients": [
+"All-purpose flour",
+"Sugar",
+"Salt",
+"Instant yeast",
+"Whole milk",
+"Plain yogurt",
+"Vegetable oil",
+"Shredded mozzarella",
+"Feta cheese",
+"Fresh mint",
+"Sweet paprika",
+"Black pepper"
+]
+},
+{
+"dish_name": "Sayadieh",
+"cuisine": "Lebanese",
+"main_protein": "fish",
+"ingredients": [
+"Cod fillets",
+"Basmati rice",
+"Yellow onions",
+"Cornstarch",
+"Vegetable oil",
+"Turmeric",
+"Cumin",
+"Seven spice",
+"Salt",
+"Black pepper",
+"Slivered almonds"
+]
+},
+{
+"dish_name": "Senbei",
+"cuisine": "Japanese",
+"main_protein": "vegan",
+"ingredients": [
+"Mochiko (sweet rice flour)",
+"Cooked short-grain white rice",
+"Salt",
+"Neutral oil",
+"Soy sauce",
+"Mirin",
+"Black sesame seeds",
+"White sesame seeds"
+]
+},
+{
+"dish_name": "Senig Karia",
+"cuisine": "Ethiopian",
+"main_protein": "vegan",
+"ingredients": [
+"Anaheim peppers",
+"Yellow onions",
+"Plum tomatoes",
+"Vegetable oil",
+"White wine vinegar",
+"Lemon",
+"Salt",
+"Black pepper",
+"Mitmita"
+]
+},
+{
+"dish_name": "Sfouf",
+"cuisine": "Lebanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"All-purpose flour",
+"Fine semolina",
+"Coarse semolina",
+"Sugar",
+"Baking powder",
+"Ground turmeric",
+"Whole milk",
+"Vegetable oil",
+"Tahini"
+]
+},
+{
+"dish_name": "Shrimp Pad Krapow",
+"cuisine": "Thai",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp, peeled and deveined",
+"Garlic",
+"Red Thai chilies",
+"Yellow onion",
+"Red bell pepper",
+"Thai basil",
+"Lime",
+"Soy sauce",
+"Oyster sauce",
+"Fish sauce",
+"Brown sugar",
+"Vegetable oil",
+"Salt",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Shrimp Tom Yum Fried Rice",
+"cuisine": "Thai",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp, peeled and deveined",
+"Jasmine rice",
+"Tom yum paste (gluten-free)",
+"Fish sauce",
+"Sugar",
+"Lemongrass",
+"Kaffir lime leaves",
+"White onion",
+"Frozen peas",
+"Lime",
+"Vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Siu Mai",
+"cuisine": "Chinese",
+"main_protein": "pork",
+"ingredients": [
+"Dried shiitake mushrooms",
+"Shrimp",
+"Ground pork",
+"Sugar",
+"Baking soda",
+"Cornstarch",
+"Shaoxing wine",
+"Salt",
+"White pepper",
+"Vegetable oil",
+"Oyster sauce",
+"Sesame oil",
+"Round dumpling wrappers",
+"Carrot",
+"Chili garlic sauce"
+]
+},
+{
+"dish_name": "Sweet Potato Fries",
+"cuisine": "American",
+"main_protein": "vegan",
+"ingredients": [
+"Sweet potatoes",
+"Olive oil",
+"Cornstarch",
+"Salt",
+"Black pepper",
+"Garlic powder"
+]
+},
+{
+"dish_name": "Takoyaki",
+"cuisine": "Japanese",
+"main_protein": "seafood",
+"ingredients": [
+"Boiled octopus",
+"Dried bonito flakes (katsuobushi)",
+"Scallions",
+"Pickled red ginger (beni shoga)",
+"All-purpose flour",
+"Baking powder",
+"Salt",
+"Eggs",
+"Soy sauce",
+"Dashi stock",
+"Neutral oil",
+"Tenkasu (tempura scraps)",
+"Takoyaki sauce",
+"Japanese mayonnaise",
+"Aonori (dried green seaweed)"
+]
+},
+{
+"dish_name": "Tanghulu",
+"cuisine": "Chinese",
+"main_protein": "vegan",
+"ingredients": [
+"Strawberries",
+"Sugar",
+"Bamboo skewers",
+"Ice"
+]
+},
+{
+"dish_name": "Tapenade with Baguette",
+"cuisine": "French",
+"main_protein": "vegan",
+"ingredients": [
+"Mixed pitted olives",
+"Capers",
+"Marinated sun-dried tomatoes",
+"Garlic",
+"Dried oregano",
+"Fresh parsley",
+"Fresh basil",
+"Lemon",
+"Olive oil",
+"Black pepper",
+"Baguette"
+]
+},
+{
+"dish_name": "Tebasaki",
+"cuisine": "Japanese",
+"main_protein": "chicken",
+"ingredients": [
+"Chicken wings (party wings)",
+"Salt",
+"Black pepper",
+"Sugar",
+"Soy sauce",
+"Sake",
+"Fresh ginger",
+"Garlic",
+"Black vinegar (or balsamic vinegar)",
+"Potato starch",
+"Vegetable oil",
+"Toasted sesame seeds"
+]
+},
+{
+"dish_name": "Thai Red Curry with Chickpeas",
+"cuisine": "Thai",
+"main_protein": "chickpeas",
+"ingredients": [
+"Coconut oil",
+"Yellow onion",
+"Ginger",
+"Garlic",
+"Vegan red curry paste",
+"Yukon gold potatoes",
+"Red bell pepper",
+"Coconut milk",
+"Vegetable broth",
+"Brown sugar",
+"Salt",
+"Chickpeas",
+"Limes",
+"Cilantro",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Thit Heo Quay",
+"cuisine": "Vietnamese",
+"main_protein": "pork",
+"ingredients": [
+"Pork belly, skin on",
+"Ginger",
+"Scallions",
+"Shallots",
+"Chinese five-spice powder",
+"Salt",
+"Sugar",
+"White vinegar",
+"Jasmine rice",
+"Gluten-free tamari",
+"Thai chili"
+]
+},
+{
+"dish_name": "Tirokroketes",
+"cuisine": "Greek",
+"main_protein": "cheese",
+"ingredients": [
+"Feta",
+"Kefalotyri",
+"Eggs",
+"Fresh parsley",
+"Fresh dill",
+"Black pepper",
+"All-purpose flour",
+"Breadcrumbs",
+"Vegetable oil",
+"Honey"
+]
+},
+{
+"dish_name": "Tod Man Khao Pod",
+"cuisine": "Thai",
+"main_protein": "vegetarian",
+"ingredients": [
+"Corn",
+"Thai red curry paste",
+"Makrut lime leaves",
+"Rice flour",
+"Eggs",
+"Salt",
+"Vegetable oil",
+"Sweet chili sauce"
+]
+},
+{
+"dish_name": "Tofu Larb",
+"cuisine": "Thai",
+"main_protein": "tofu",
+"ingredients": [
+"Extra-firm tofu",
+"Sticky rice (glutinous rice)",
+"Shallots",
+"Garlic",
+"Cilantro",
+"Mint",
+"Limes",
+"Red chiles",
+"Tamari",
+"Vegetable oil",
+"Sugar",
+"Salt",
+"Black pepper",
+"Bibb lettuce"
+]
+},
+{
+"dish_name": "Tofu Pho",
+"cuisine": "Vietnamese",
+"main_protein": "tofu",
+"ingredients": [
+"Vegetable broth",
+"Yellow onion",
+"Ginger",
+"Star anise",
+"Whole cloves",
+"Cinnamon stick",
+"Coriander seeds",
+"Tamari",
+"Flat rice noodles",
+"Extra-firm tofu",
+"Cornstarch",
+"Vegetable oil",
+"Salt",
+"Shiitake mushrooms",
+"Baby bok choy",
+"Rice vinegar",
+"Mung bean sprouts",
+"Cilantro",
+"Limes",
+"Sriracha"
+]
+},
+{
+"dish_name": "Tofu Scramble Breakfast Tacos",
+"cuisine": "Mexican",
+"main_protein": "tofu",
+"ingredients": [
+"Firm tofu",
+"Olive oil",
+"Turmeric",
+"Garlic powder",
+"Salt",
+"Black pepper",
+"Black beans",
+"Corn tortillas",
+"Avocado",
+"Salsa",
+"Cilantro"
+]
+},
+{
+"dish_name": "Tomato Braised Tofu",
+"cuisine": "Chinese",
+"main_protein": "tofu",
+"ingredients": [
+"Jasmine rice",
+"Soft tofu",
+"Ripe tomatoes",
+"Scallions",
+"Neutral oil",
+"Dry sherry",
+"Sugar",
+"Gluten-free tamari",
+"Toasted sesame oil",
+"White pepper",
+"Cornstarch",
+"Salt"
+]
+},
+{
+"dish_name": "Tub Tim Krob",
+"cuisine": "Thai",
+"main_protein": "vegan",
+"ingredients": [
+"Canned water chestnuts",
+"Red food coloring",
+"Tapioca starch",
+"Sugar",
+"Coconut milk",
+"Ice"
+]
+},
+{
+"dish_name": "Tuna Onigirazu",
+"cuisine": "Japanese",
+"main_protein": "fish",
+"ingredients": [
+"Sushi rice",
+"Nori sheets",
+"Canned tuna",
+"Japanese mayo",
+"Soy sauce",
+"Green onions",
+"Carrots",
+"Parsley",
+"Lemon",
+"Green leaf lettuce",
+"Salt"
+]
+},
+{
+"dish_name": "Turkey Bolognese Bake",
+"cuisine": "Italian",
+"main_protein": "turkey",
+"ingredients": [
+"Ground turkey (93% lean)",
+"Olive oil",
+"Yellow onion",
+"Zucchini",
+"Cremini mushrooms",
+"Roasted red peppers",
+"Garlic",
+"Dried thyme",
+"Crushed tomatoes",
+"Basil",
+"Ziti or penne",
+"Fresh mozzarella",
+"Parmesan",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Turkey Bulgogi Bowls",
+"cuisine": "Korean",
+"main_protein": "turkey",
+"ingredients": [
+"Ground turkey",
+"Garlic",
+"Soy sauce",
+"Brown sugar",
+"Toasted sesame oil",
+"Ground ginger",
+"Vegetable oil",
+"Salt",
+"Red pepper flakes",
+"Jasmine rice",
+"Green onions",
+"Sesame seeds"
+]
+}
+]
