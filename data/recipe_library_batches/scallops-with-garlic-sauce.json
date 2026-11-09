@@ -1,0 +1,128 @@
+{
+ "dish_name": "Scallops with Garlic Sauce",
+ "cuisine": "Chinese",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Sea scallops",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a sieve under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes. No peeking.",
+  "Pull the small tough side muscle off each scallop if it's still there. Pat the scallops very dry with paper towels, transfer them to a bowl and toss with the 1/2 tsp salt.",
+  "Meanwhile, cut the bell peppers into thin strips and mince the 6 garlic cloves. Cut 3 of the scallions into 2 inch pieces, keeping the white and green parts apart. Chop 2 tbsp of the cilantro.",
+  "In a small bowl, whisk the broth, oyster sauce, wine and sugar. In a cup, stir the cornstarch into 3 tbsp cold water until smooth.",
+  "Heat a large skillet or wok over high heat for 1 minute. Add 1 tbsp of the oil and half the scallops in a single layer. Leave them alone for 1 minute, until golden underneath. Flip them and cook for 30 seconds. Transfer them to a plate. Wipe the pan, add 1 tbsp oil and cook the rest the same way. They'll finish cooking in the sauce.",
+  "Turn the heat to medium-high and add the last 1 tbsp oil, the bell peppers and the scallion whites. Stir-fry for 2 minutes, until the peppers are bright and just tender.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant and hasn't browned.",
+  "Stir the sauce and pour it in. Bring it to a simmer and cook for 2 minutes.",
+  "Stir the cornstarch mix again and pour it into the middle of the pan, stirring, until the sauce turns glossy and thick, about 30 seconds.",
+  "Return the scallops and any juices from the plate. Cook for 1 minute, turning them in the sauce. Cut the biggest one in half: it's done when it's opaque all the way through.",
+  "Take the pan off the heat and stir in the scallion greens and the chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version with 20 or more ratings turned up, so this leads with Food.com's Garlic Scallops, the closest readable version of this exact dish. It builds a sauce of broth, oyster sauce, wine and sugar around garlic and red bell pepper and thickens it with cornstarch. It simmers the scallops in the sauce for 5 minutes, which would toughen them, so here they're seared first, set aside and returned for the last minute, the way Healthy World Cuisine's bay scallop stir-fry does it. Quantities are scaled up by a quarter, with a second pepper and an extra clove of garlic. The 30 minutes includes the rice.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Garlic Scallops",
+   "url": "https://www.food.com/recipe/garlic-scallops-173194",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Healthy World Cuisine",
+   "title": "Asian Bay Scallops Stir Fry with Spring Veggies",
+   "url": "https://www.hwcmagazine.com/recipe/asian-bay-scallops-stir-fry-with-spring-veggies/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Use Real Butter",
+   "title": "Chinese Stir-Fried Scallops",
+   "url": "https://userealbutter.com/2010/09/29/chinese-stir-fried-scallops-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

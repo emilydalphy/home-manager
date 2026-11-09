@@ -1,0 +1,122 @@
+{
+ "dish_name": "Fish Fillet with Black Bean Sauce",
+ "cuisine": "Chinese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fermented black beans",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 large piece",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a sieve under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes. No peeking.",
+  "Meanwhile, rinse the black beans in a sieve and drain them. Mince 2 tbsp of the ginger. Cut 2 tbsp of the ginger into thin matchsticks. Cut 4 scallions into thin 2 inch strips.",
+  "In a bowl, stir together the black beans, oyster sauce, soy sauce, wine, minced ginger, sugar, salt and cornstarch.",
+  "Pat the cod fillets dry and cut them into 4 even pieces. Lay them on a heatproof plate with a rim, with as little overlap as you can. Spoon the sauce evenly over the top. If the pieces don't fit in one layer, use two plates and steam them in two rounds.",
+  "Set a small rack, or three balls of foil, in the bottom of your largest pot or a wok with a lid. Add about 1 inch of water, so it stays below the plate. Bring it to a boil over high heat.",
+  "Set the plate on the rack, cover and steam for 8 minutes. You're cooking it to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Press a fork into the thickest part: it's done when it flakes and is opaque all the way through.",
+  "Lift the plate out with oven mitts. Watch for steam. Scatter the ginger matchsticks and the scallions over the fish.",
+  "Heat the oil in a small saucepan over medium-high for about 1 minute, until it shimmers. Drop in a piece of scallion to check: it should sizzle right away. Pour the hot oil over the fish. Stand back a little. It will spatter.",
+  "Taste the sauce on the plate. If it's flat, add a pinch more salt.",
+  "Serve with the rice and the sauce from the plate."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version with 20 or more ratings turned up, so this leads with Omnivore's Cookbook's steamed fish with black bean sauce (5.0 from 9 ratings), the best-rated one that uses fillets. It steams fillets under a sauce of black beans, oyster sauce, soy sauce, Shaoxing wine, ginger and cornstarch, then pours hot oil over scallions and ginger. The Hong Kong Cookery steams the same way with plain black bean sauce, ginger and a splash of soy. This doubles the lead for 4 and uses cod. The 30 minutes includes the rice, which cooks while the fish steams.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Steamed Fish with Black Bean Sauce",
+   "url": "https://omnivorescookbook.com/steamed-fish-with-black-bean-sauce/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Hong Kong Cookery",
+   "title": "Chinese Steamed Fish with Black Bean Sauce",
+   "url": "https://www.thehongkongcookery.com/2016/03/chinese-steamed-fish-with-black-bean.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Scramble",
+   "title": "Tilapia with Chinese Black Bean Sauce",
+   "url": "https://www.thescramble.com/recipes/tilapia-with-chinese-black-bean-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

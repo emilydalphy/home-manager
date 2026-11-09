@@ -1,0 +1,94 @@
+{
+ "dish_name": "Salt and Pepper Pork Chops",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Boneless pork chops",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "7 1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a sieve under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes. No peeking.",
+  "Cut the 1 1/2 lbs pork chops into irregular pieces, about 1/2 to 1 inch across. Transfer them to a large bowl.",
+  "Add 3 tbsp of the oil, the wine, 1 1/2 tbsp of the cornstarch and 3/4 tsp of the salt. Mix until every piece is coated, and leave it for 10 minutes.",
+  "Meanwhile, slice the 5 garlic cloves thinly. Cut the jalapeño in half, scrape out the seeds and ribs, and slice it thinly. In a small bowl, stir together the last 1/2 tsp salt and the 3/4 tsp white pepper. This is your pepper salt.",
+  "Set a plate lined with paper towels next to the stove. Pour the remaining oil, 3/4 cup plus 1 tbsp, into a large heavy skillet and heat it over medium for about 2 minutes, until a slice of garlic dropped in sizzles gently.",
+  "Add the garlic and jalapeño and fry for 1 to 2 minutes, until the garlic is pale gold and the jalapeño edges look crisp. Stand back a little, it will spatter. Lift them out with a slotted spoon onto the paper towels. When they've cooled for a minute, transfer them to a large dry bowl.",
+  "Add the remaining 6 tbsp cornstarch to the pork and toss until every piece is coated. Break up any clumps.",
+  "Turn the heat to medium-high. Fry half the pork in a single layer for 2 to 3 minutes on each side, until crisp and golden. You're cooking it to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the biggest piece: it's done when there's no pink left. Drain it on the paper towels for 10 to 20 seconds, then transfer it to the bowl with the garlic. Fry the second half the same way.",
+  "Sprinkle half the pepper salt over the pork and toss. Taste it. If it's flat, add a pinch more of the pepper salt.",
+  "Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Omnivore's Cookbook (the lead) cuts boneless chops into small pieces, marinates them in Shaoxing wine, oil and cornstarch, fries them in a shallow pan, and tosses them with fried garlic, jalapeño and a salt and white pepper mix. The Woks of Life deep-fries thin pork shoulder in a flour and cornstarch batter and finishes with long hot peppers. This follows the lead at 1 1/2 times its size, with the marinade cut from 15 to 10 minutes and the jalapeño seeded to keep it mild. The total of 30 minutes includes the rice, which cooks while the pork marinates.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Salt and Pepper Pork Chops (椒盐猪排)",
+   "url": "https://omnivorescookbook.com/salt-pepper-pork-chops/",
+   "rating": 5.0,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Cantonese Salt and Pepper Pork Chops",
+   "url": "https://thewoksoflife.com/cantonese-salt-pepper-pork-chops/",
+   "rating": 4.79,
+   "rating_count": 23,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

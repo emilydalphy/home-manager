@@ -1,0 +1,129 @@
+{
+ "dish_name": "Szechuan Shrimp",
+ "cuisine": "Chinese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Doubanjiang",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Ground Szechuan peppercorns",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili oil (peanut-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a sieve under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes. No peeking.",
+  "If the shrimp are frozen, thaw them in a bowl of cold water for about 10 minutes. Peel and devein them if they aren't already. Pat them very dry with paper towels, transfer them to a bowl and toss with 2 tbsp of the wine and 2 tsp of the cornstarch.",
+  "Meanwhile, cut the broccoli into small florets. Mince the 4 garlic cloves and 1 tbsp of the ginger. Slice 2 of the scallions thinly.",
+  "In a small bowl, stir together 1/2 cup water, the doubanjiang, soy sauce, the last 1 tbsp wine and the ground Szechuan peppercorns. In a cup, stir the last 1 tsp cornstarch into 1 tsp cold water.",
+  "Heat 1 tbsp of the oil in a large skillet or wok over medium-high. Add the broccoli and 1/4 cup water, cover and cook for 2 minutes. Uncover and cook for 1 minute, until the water has cooked off and the broccoli is bright green. Transfer it to a plate.",
+  "Add 2 tbsp oil to the pan and let it heat for 30 seconds. Add the shrimp in one layer and stir for 3 to 4 minutes, until they're pink and curl into a loose C. Transfer them to the plate with the broccoli.",
+  "Turn the heat to medium and add the last 1 tbsp oil. Add the ginger and stir for 30 seconds. Add the garlic and stir for 30 seconds, until it smells fragrant and hasn't browned.",
+  "Stir the sauce and pour it in. Bring it to a boil and cook for 1 to 2 minutes.",
+  "Return the shrimp, the broccoli and any juices from the plate. Bring the sauce back to a boil, then stir the cornstarch mix and pour it in. Stir for 1 to 2 minutes, until the sauce is glossy and thick and the shrimp are hot all the way through.",
+  "Take the pan off the heat and scatter the scallions over the top.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice, and put the chili oil on the table for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All Ways Delicious (the lead) marinates the shrimp in Shaoxing wine and cornstarch, sears them and sets them aside, cooks garlic and ginger, then builds a quick sauce of doubanjiang, soy, wine and Szechuan pepper and thickens it with a cornstarch slurry. China Sichuan Food leans harder on dried chilies and whole Sichuan peppercorns; Craving Tasty adds broccoli and bell peppers. This follows the lead, with the doubanjiang cut to 1 tbsp, the chili oil moved to the table (use one made without peanuts) and broccoli added from the Craving Tasty version. The 30 minutes includes the rice.",
+ "sources": [
+  {
+   "name": "All Ways Delicious",
+   "title": "Spicy Szechuan Shrimp",
+   "url": "https://allwaysdelicious.com/szechuan-shrimp/",
+   "rating": 4.88,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "China Sichuan Food",
+   "title": "Szechuan Shrimp Stir Fry",
+   "url": "https://www.chinasichuanfood.com/szechuan-shrimp-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Craving Tasty",
+   "title": "Szechuan Shrimp with Broccoli and Peppers",
+   "url": "https://cravingtasty.com/szechuan-shrimp-recipe/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,123 @@
+{
+ "dish_name": "Zucchini and Egg Stir-Fry",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a sieve under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes. No peeking.",
+  "Halve the zucchini lengthwise and slice into 1/2 inch half-moons. Cut the tomatoes into bite-size wedges. Mince the 5 garlic cloves. Slice 3 of the scallions thinly, keeping the white and green parts apart.",
+  "In a bowl, beat the 8 eggs with 1/4 tsp of the salt, 1 tsp of the cornstarch and 2 tbsp water until there are no streaks of white.",
+  "In a cup, stir the remaining 2 tsp cornstarch into 1/3 cup cold water until smooth. Stir in the gluten-free soy sauce and the sugar.",
+  "Heat 3 tbsp of the oil in a large nonstick skillet or wok over high heat until it shimmers. Pour in the eggs and leave them alone for 20 seconds. Push the set edges toward the middle and let the runny egg flow underneath, until the eggs are set in big soft curds and golden in spots, about 1 minute. Transfer them to a plate.",
+  "Add the last 1 tbsp oil to the same pan over high heat. Add the scallion whites and garlic and stir for 15 seconds, until fragrant.",
+  "Add the tomatoes and stir for 1 minute, until they start to soften.",
+  "Add the zucchini and the last 1/2 tsp salt. Stir-fry for 3 to 4 minutes, until the zucchini is bright green, tender when poked and browned in spots.",
+  "Stir the cornstarch mix again and pour it in. Stir for about 1 minute, until the sauce turns glossy and thick.",
+  "Return the eggs and fold them in gently for 30 seconds.",
+  "Take the pan off the heat and stir in the vinegar and the scallion greens.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version with 20 or more ratings turned up, so this leads with China Food Recipe's zucchini stir-fry with eggs and tomato, the closest readable version of this dish. It browns the eggs first, stir-fries garlic, scallion and tomato, then adds zucchini and a cornstarch-thickened soy sauce, and brings the eggs back at the end. Here the black fungus is left out, the blanching step is skipped in favor of a hot stir-fry, and the vinegar goes in at the end instead of the blanching water. Gluten-free soy sauce keeps it gluten-free; Shaoxing wine, oyster sauce and fish sauce (used in other versions) are left out so it stays vegetarian, gluten-free and dairy-free. The 30 minutes includes the rice.",
+ "sources": [
+  {
+   "name": "China Food Recipe",
+   "title": "Chinese Zucchini Recipe",
+   "url": "https://www.chinafoodrecipe.com/recipe/chinese-zucchini-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Asian Food Style",
+   "title": "Zucchini Chinese Recipe: A Stir-Fry with Mushroom And Scrambled Eggs",
+   "url": "https://asianfoodstyle.com/zucchini-chinese-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Marion's Kitchen",
+   "title": "Mum's Egg and Vegetable Stir-fry",
+   "url": "https://www.marionskitchen.com/mums-egg-vegetable-stir-fry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
