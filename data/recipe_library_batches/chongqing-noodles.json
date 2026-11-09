@@ -1,0 +1,135 @@
+{
+ "dish_name": "Chongqing Noodles",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Dried wheat noodles",
+   "qty": "14 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 knob",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Ground Sichuan peppercorns",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Zha cai (Sichuan preserved mustard greens)",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "2 tbsp minced"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp, at the table"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil.",
+  "Meanwhile, grate the ginger, mince the garlic, mince the zha cai, crush the peanuts and slice the scallions. Drain and rinse the chickpeas, and cut the bok choy in half lengthways.",
+  "Put the soy sauce, vinegar, sesame oil, garlic, ginger, Sichuan pepper and sugar into 4 large bowls, dividing them evenly.",
+  "Pour the broth into a saucepan, add the chickpeas and bring it to a simmer over medium heat. Keep it at a low simmer for 3 minutes.",
+  "Cook the noodles in the boiling water as the package says. Add the bok choy for the last 1 to 2 minutes.",
+  "Drain the noodles and bok choy well and divide them between the bowls.",
+  "Ladle the hot broth and chickpeas over each bowl.",
+  "Top with the zha cai, peanuts and scallions.",
+  "Taste the broth. If it's flat, add a pinch of salt.",
+  "Serve with the chili oil at the table, so everyone adds as much as they like."
+ ],
+ "method_notes": "The lead (Cup of Yum, 5.0 from 94) builds a bowl of soy, vinegar, garlic, ginger and Sichuan pepper with a hot broth poured over noodles and greens, and it already uses chickpeas in the broth. Omnivore's Cookbook builds the base with sesame paste and chili oil instead of a stock. Both top the bowl with a seasoned pork. To keep this vegan, the pork is left out and the lead's stock is vegetable broth, so the chickpeas carry the protein. Chili oil moves to the table so the bowl stays mild. Check that the noodles are egg-free, and check the zha cai and chili oil labels.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Chongqing Noodles (Xiao Mian, 重庆小面)",
+   "url": "https://cupofyum.com/recipes/chongqing-noodles-xiao-mian",
+   "rating": 5.0,
+   "rating_count": 94,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Chongqing Noodles",
+   "url": "https://omnivorescookbook.com/chongqing-noodles/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

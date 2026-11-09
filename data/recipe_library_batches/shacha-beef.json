@@ -1,0 +1,108 @@
+{
+ "dish_name": "Shacha Beef",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shacha sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "5"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 knob",
+   "category": "produce",
+   "cook_qty": "1 1/2 tbsp minced"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of the rice and add it to a pot with 2 1/4 cups water. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Leave the lid on, off the heat, until you're ready to serve.",
+  "Slice the steak across the grain, about 1/8 inch thick.",
+  "In a bowl, mix the beef with 1 tsp of the soy sauce, the cornstarch and 1 tbsp of the oil. Leave it while you prep.",
+  "Meanwhile, mince the ginger, slice the garlic thinly, and cut the scallions on an angle into 2-inch pieces.",
+  "Heat a wok or large skillet over high heat until it's smoking, then add 2 tbsp of the oil.",
+  "Add half the beef in a single layer and stir for about 45 seconds, until it's just opaque. Slightly pink in the middle is fine. Transfer it to a plate and cook the second half the same way.",
+  "Turn the heat to medium and add 2 tbsp of the oil. Add the ginger and stir for 1 minute.",
+  "Add the garlic, shacha sauce and sugar. Stir for 2 minutes, until it smells toasty and the oil looks red-brown.",
+  "Return the beef and any juices to the wok, add the scallions and the remaining 1 tbsp soy sauce, and turn the heat to high. Stir-fry for about 1 minute, until the scallions wilt and the beef is cooked through.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve with the rice."
+ ],
+ "method_notes": "Only The Woks of Life gave a full, readable recipe for this dish (5.0 from 7 ratings, so the lead is a fallback under the 20-rating rule); Makansutra's shorter version confirms the idea. Both sear thin beef hard, then build the sauce on shacha, garlic and ginger in the same pan. Makansutra stir-fries everything together with chilies and a splash of rice wine; the lead keeps the beef separate so it stays tender, and this follows the lead. The list calls this a beef-and-greens dish, but the source's greens are scallions only, so nothing else was added. Shacha sauce brands often contain dried fish or shrimp, which is normal for the dish.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Sha Cha Beef Stir-fry",
+   "url": "https://thewoksoflife.com/sha-cha-beef-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Makansutra",
+   "title": "Stir Fry Sha Cha Beef Slices",
+   "url": "https://makansutra.com/recipe-stir-fry-sha-cha-beef-slices/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

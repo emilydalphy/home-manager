@@ -1,0 +1,115 @@
+{
+ "dish_name": "Shredded Pork with Green Peppers",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Pork tenderloin",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green bell peppers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of the rice and add it to a pot with 2 1/4 cups water. Bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Leave the lid on, off the heat, until you're ready to serve.",
+  "Cut the pork across the grain into thin strips, about 1/8 inch thick and 2 inches long.",
+  "In a large bowl, mix the pork with 2 tbsp of the soy sauce, the wine, the sugar, 1 tsp of the salt, the white pepper and 1/2 cup water. Stir until the pork has soaked up most of the water. Leave it for 15 minutes.",
+  "Meanwhile, cut the peppers in half, remove the seeds and slice them into thin strips. Mince the garlic.",
+  "Stir the cornstarch into the pork until no dry bits are left, then stir in 1 tbsp of the oil.",
+  "Heat a wok or large skillet over high heat until it's very hot, then add 2 tbsp of the oil. Give it 30 seconds to heat up.",
+  "Add half the pork and stir quickly for about 30 seconds, until the outside turns pale. A little pink in the middle is fine. Transfer it to a plate and cook the second half the same way.",
+  "Add the last 1 tbsp oil to the wok, then the garlic. Stir for 10 seconds, until you can smell it.",
+  "Add the peppers and the remaining 1/4 tsp salt. Stir-fry for 1 to 2 minutes, until they're bright and just starting to soften.",
+  "Return the pork and any juices to the wok. Add the last 1 tbsp soy sauce and toss for about 1 minute. You're cooking the pork to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut a piece open: it's done when there's no raw pink left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "method_notes": "The lead (China Sichuan Food) and Oh Snap Let's Eat agree on the method: shred the pork, give it a short soy and cornstarch marinade, sear it fast and set it aside, then stir-fry the peppers and toss everything together. They differ on aromatics (garlic in the lead, ginger in Oh Snap) and on seasoning (soy only versus doubanjiang). This follows the lead's garlic and its water-in-the-marinade trick, scaled to a pound of pork. The lead sears the pork for seconds in a restaurant wok; for a home stove the pork gets about 30 seconds and finishes when tossed back in.",
+ "sources": [
+  {
+   "name": "China Sichuan Food",
+   "title": "Pork and Pepper Stir Fry",
+   "url": "https://www.chinasichuanfood.com/pork-and-pepper-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Oh Snap! Let's Eat",
+   "title": "Chinese Shredded Pork with Peppers",
+   "url": "https://ohsnapletseat.com/2021/08/28/chinese-shredded-pork-with-peppers/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Travel China Guide",
+   "title": "Stir-fried Shredded Pork with Green Pepper",
+   "url": "https://travelchinaguide.com/tour/food/chinese-cooking/pork-green-pepper.htm",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

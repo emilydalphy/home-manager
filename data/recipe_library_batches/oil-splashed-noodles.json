@@ -1,0 +1,115 @@
+{
+ "dish_name": "Oil-Splashed Noodles",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Wide dried wheat noodles",
+   "qty": "14 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil.",
+  "Meanwhile, mince the garlic, slice the scallions and chop the cilantro. Cut the bok choy in half lengthways.",
+  "Divide the garlic, scallions, cilantro, both soy sauces, the vinegar and the salt between 4 large heatproof bowls.",
+  "Cook the noodles in the boiling water as the package says. Add the bok choy for the last 2 minutes.",
+  "Drain well and divide the noodles and bok choy between the bowls, setting them on top of the seasonings.",
+  "Put the pepper flakes on the adults' bowls only, 1/2 tsp on each.",
+  "Heat the oil in a small saucepan over high heat for about 2 minutes, until it shimmers and a pinch of scallion sizzles right away. Stand back a little. It will spatter.",
+  "Carefully pour the hot oil over the bowls a little at a time, so each one gets about the same. It will sizzle loudly.",
+  "Toss each bowl so the noodles pick up the seasonings.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve right away."
+ ],
+ "method_notes": "Cup of Yum (the lead, 4.9 from 40) and The Woks of Life (4.87 from 22) agree on the whole method: noodles and greens in a bowl over soy sauces, vinegar, garlic and scallions, then hot oil poured over. SBS's version is bigger on vinegar and uses peanut oil; this uses plain vegetable oil to keep it nut-free and a middle amount of vinegar. The sources scale for one serving, so amounts are multiplied for four. Buy egg-free noodles. The chili flakes go only on the adults' bowls to keep the base mild.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "15-Minute Hot Oil Noodles (You Po Mian)",
+   "url": "https://cupofyum.com/recipes/15-minute-hot-oil-noodles-you-po-mian",
+   "rating": 4.9,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "15-Minute Chinese Hot Oil Noodles (You Po Mian)",
+   "url": "https://thewoksoflife.com/hot-oil-noodles-you-po-mian/",
+   "rating": 4.87,
+   "rating_count": 22,
+   "read": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Hot Oil Noodles (Yo Po Mian)",
+   "url": "https://www.sbs.com.au/food/recipe/hot-oil-noodles-yo-po-mian/l0dr84srr",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
