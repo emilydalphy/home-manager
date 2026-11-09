@@ -1,0 +1,212 @@
+{
+ "dish_name": "Undhiyu",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {
+   "item": "Fresh fenugreek leaves (methi)",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Chickpea flour (besan)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Whole wheat flour (atta)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Carom seeds (ajwain)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp plus 1 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Baby potatoes",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Baby eggplants",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Sweet potato",
+   "qty": "1 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Green plantain",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen pigeon peas (tuvar lilva)",
+   "qty": "1 bag (10 oz)",
+   "category": "frozen",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Frozen green peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Unsweetened desiccated coconut",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Asafoetida (hing)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "a pinch, twice"
+  },
+  {
+   "item": "Black mustard seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup plus 1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Line a baking sheet with parchment.",
+  "Make the muthiya dough. In a bowl, mix the fenugreek leaves (chopped), 1/4 cup chickpea flour, 2/3 cup whole wheat flour, 1/2 tsp of the carom seeds, 1 tsp of the sugar, 1 tbsp of the lemon juice, a pinch of baking soda, 1/2 tsp salt and 2 tsp of the oil. Juice the lemon first. That should be about 3 tbsp.",
+  "Add water 1 tbsp at a time, starting with 1 tbsp, and knead until the dough holds together and feels firm. You'll need 2 to 3 tbsp.",
+  "Roll the dough into 16 marble-sized balls and flatten each one slightly. Set them on the baking sheet, then brush the tops with 1 tbsp of the oil.",
+  "Bake the muthiya for 20 to 25 minutes, flipping them once halfway, until they're golden and firm. Leave the oven on for the next steps if you like, and keep going while they bake.",
+  "Make the masala. Set aside a small handful of cilantro leaves for the end. Pulse the rest of the cilantro with the ginger, green chilies and garlic in a food processor into a coarse paste.",
+  "Transfer the paste into a large bowl. Stir in the coconut, 2 tbsp of the sugar, the remaining 2 tbsp lemon juice, the chili powder, ground coriander, ground cumin, garam masala, 1 tsp of the sesame seeds, a pinch of the asafoetida, 1 1/2 tsp salt and 1 tbsp of the oil.",
+  "Prep the vegetables. Cut a deep cross in the top of each baby potato and eggplant, going about three quarters of the way down so the bottom stays joined. Peel the sweet potato and the plantain, then cut both into 1 1/2-inch chunks.",
+  "Stuff the potatoes and eggplants with about a third of the masala, pressing it into the cuts. Toss the sweet potato, plantain and pigeon peas with the rest of the masala.",
+  "Heat 1/4 cup of the oil in a large, wide, heavy pot over medium heat. Add the mustard seeds and the remaining 1 tsp carom seeds. When the mustard seeds crackle, after about 30 seconds, add the remaining 1 tbsp sesame seeds and a pinch of asafoetida. Stir for 10 seconds.",
+  "Turn the heat to its lowest setting. Spread the masala-coated vegetables across the bottom of the pot, then set the stuffed potatoes and eggplants on top. Sprinkle 1/3 cup water over everything, cover, and cook for 20 to 25 minutes.",
+  "Lift the lid and let the drips fall back into the pot. Gently move the potatoes to the bottom. If the pot looks dry, add 2 tbsp water. Cover and cook for 15 to 20 minutes, until the vegetables are just starting to soften.",
+  "Scatter the baked muthiya and the green peas over the top, cover, and cook for 5 to 10 minutes, until a knife slides easily into the potato and the sweet potato.",
+  "Take the pot off the heat and stir everything together gently so the muthiya don't break. Sprinkle with the reserved cilantro.",
+  "Serve with warm rotis or rice. Keep the leftovers: they keep for 4 days in the fridge, or 3 months in the freezer. Cool them first, then store in a closed container. To reheat, warm them covered in a pot over low heat with a splash of water until hot, about 10 minutes. Thaw frozen undhiyu in the fridge overnight first.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "The lead (J Cooking Odyssey, 5 from 16 votes, so under the 20-vote bar) builds the dish the traditional Surti way: fried methi muthiya, a coriander, ginger, chili, garlic and coconut masala, a mustard, ajwain and sesame tempering, and everything cooked covered on very low heat. Profusion Curry's Instant Pot version and Sanjana Feasts' Kathiyawadi version confirm the green masala and the dumplings but cook it faster or with a tomato sauce. This one is the lead cut to a third of its size, with the muthiya baked (the lighter route Profusion Curry and others take) instead of deep fried and a lot less oil in the tempering; yam and surti papdi are left out because most stores don't sell them, and it is vegan as written. It is a big pot that keeps and freezes, so it takes about two hours.",
+ "sources": [
+  {
+   "name": "J Cooking Odyssey",
+   "title": "Undhiyu (Surti Undhiyu)",
+   "url": "https://www.jcookingodyssey.com/2020/01/09/undhiyu-recipe-gujarati-undhiyu/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Profusion Curry",
+   "title": "Easy Undhiyu Recipe (Instant Pot)",
+   "url": "https://profusioncurry.com/easy-undhiyu-recipe/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Sanjana Feasts",
+   "title": "Perfect Kathiyawadi Undhiyu",
+   "url": "https://www.sanjanafeasts.co.uk/?p=24751",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

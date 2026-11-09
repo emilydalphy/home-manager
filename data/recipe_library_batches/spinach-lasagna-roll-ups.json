@@ -1,0 +1,121 @@
+{
+ "dish_name": "Spinach Lasagna Roll-Ups",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Lasagna noodles",
+   "qty": "1 box (16 oz)",
+   "category": "pantry",
+   "cook_qty": "12 noodles"
+  },
+  {
+   "item": "Frozen chopped spinach",
+   "qty": "1 box (10 oz)",
+   "category": "frozen"
+  },
+  {
+   "item": "Ricotta cheese",
+   "qty": "1 container (15 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 small wedge",
+   "category": "dairy",
+   "cook_qty": "1/3 cup grated"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Put the frozen spinach in a bowl on the counter to thaw. Bring a large pot of water to a boil and add 1 tsp of the salt.",
+  "Cook the lasagna noodles in the boiling water for about 8 minutes, until they're al dente. Drain them, then lay them flat in a single layer on a sheet of parchment so they don't stick together.",
+  "Meanwhile, squeeze the spinach in a clean towel until no more water comes out. That should be about 1 cup.",
+  "In a large bowl, mix the spinach, ricotta, 1/3 cup grated Parmesan, the egg, the garlic (grated), 2 tbsp chopped basil, the Italian seasoning, 1/4 tsp salt and the pepper.",
+  "Spread 1 cup of the marinara over the bottom of a 9 by 13-inch baking dish.",
+  "Spread about 3 tbsp of the filling over each noodle, then roll it up from one short end. Set each roll seam side down in the dish, in 3 rows of 4.",
+  "Spoon the rest of the marinara over the rolls, then sprinkle the mozzarella on top.",
+  "Cover the dish tightly with foil and bake for 35 minutes. Take off the foil and bake for 5 minutes, until the cheese is melted and the sauce bubbles around the edges.",
+  "Let the roll-ups sit for 5 minutes, then sprinkle with chopped basil. Serve 3 rolls to each person, with extra sauce from the dish spooned over.",
+  "To freeze for later, build the dish up to the baking step, wrap it in two layers of foil and freeze for up to 3 months. Thaw it in the fridge overnight and bake as above, or bake from frozen for about 20 minutes longer. Baked leftovers keep for 3 to 4 days in the fridge. Reheat a single roll in the microwave for about 60 seconds.",
+  "Taste a bite. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "The lead (Cup of Yum, 5 from 170) mixes spinach, ricotta, Parmesan, egg and garlic, rolls it in al dente noodles, and bakes the rolls under marinara and mozzarella, covered then uncovered. The page's quantities for spinach and ricotta are typed as ounces with no weight, so they follow the usual 10 oz box and 15 oz container used by the other versions. A full 24 oz jar of marinara and a full cup of mozzarella go on, as in Aileen Cooks and A Southern Soul, so every roll sits in sauce, and the red pepper is left out to keep it mild. Freezing and make-ahead steps come from Aileen Cooks (assemble, freeze unbaked, bake from frozen with about 20 more minutes).",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Spinach Lasagna Roll Ups",
+   "url": "https://cupofyum.com/recipes/spinach-lasagna-roll-ups",
+   "rating": 5.0,
+   "rating_count": 170,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Aileen Cooks",
+   "title": "Spinach Lasagna Roll-Ups",
+   "url": "https://aileencooks.com/spinach-lasagna-roll-ups-recipe",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Salt & Lavender",
+   "title": "Lasagna Roll Ups",
+   "url": "https://www.saltandlavender.com/?p=48116",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

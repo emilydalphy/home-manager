@@ -1,0 +1,99 @@
+{
+ "dish_name": "Stromboli",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Thin-crust pizza dough",
+   "qty": "1 package (about 14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Pizza sauce",
+   "qty": "1 jar (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sliced salami",
+   "qty": "1 package (4 oz)",
+   "category": "meat/seafood",
+   "cook_qty": "12 slices"
+  },
+  {
+   "item": "Sliced pepperoni",
+   "qty": "1 package (3.5 oz)",
+   "category": "meat/seafood",
+   "cook_qty": "20 slices"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Unroll the dough onto a sheet of parchment on a baking sheet and gently stretch it into a rectangle about 14 by 10 inches.",
+  "Spread 1/2 cup of the pizza sauce over the dough, leaving 2 inches bare along all the edges.",
+  "Layer the salami over the sauce, then 1 cup of the mozzarella, then the pepperoni.",
+  "Starting at one long side, roll the dough into a tight log. Pinch the seam and both ends closed, then roll it seam side down.",
+  "Beat the egg in a small bowl and brush it over the top. Cut 5 small slits across the top with a knife so steam can escape.",
+  "Sprinkle the remaining 1/4 cup mozzarella and the oregano over the top.",
+  "Bake for 15 to 20 minutes, until the top is deep golden. Meanwhile, warm the rest of the pizza sauce in a small saucepan over medium-low heat for 3 minutes, stirring now and then.",
+  "Let the stromboli sit for 5 minutes so the cheese sets, then cut it into slices about 1 inch thick. Serve with the warm pizza sauce for dipping.",
+  "Leftovers keep for 3 days in the fridge. Warm slices in a 350°F oven for about 10 minutes, until hot in the middle. To freeze, wrap the cooled slices well and freeze for up to 3 months. Warm them from frozen in the oven for about 15 minutes.",
+  "Taste the sauce. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "The lead (Tasting Table, 5 from 21) uses a store-bought thin-crust dough, spreads sauce over it, layers salami, mozzarella and pepperoni, rolls it up, brushes it with egg and bakes it at 400°F. Insanely Good Recipes (4.7 from 15) and Sugar Dish Me bake at other temperatures and add Parmesan or an olive oil brush instead of egg. This version follows the lead but uses 1 1/4 cups of mozzarella instead of its 1/2 cup, as the other versions do, and warms extra pizza sauce for dipping.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Homemade Pepperoni Stromboli",
+   "url": "https://www.tastingtable.com/1113143/homemade-pepperoni-stromboli-recipe/",
+   "rating": 5.0,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Insanely Good Recipes",
+   "title": "Pepperoni Stromboli",
+   "url": "https://insanelygoodrecipes.com/pepperoni-stromboli/",
+   "rating": 4.7,
+   "rating_count": 15,
+   "read": true
+  },
+  {
+   "name": "Sugar Dish Me",
+   "title": "Easy Stromboli Recipe",
+   "url": "https://www.sugardishme.com/easy-stromboli-recipe/",
+   "rating": 4.8,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

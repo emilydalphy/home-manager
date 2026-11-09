@@ -1,0 +1,125 @@
+{
+ "dish_name": "Spaghetti Pie",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 small wedge",
+   "category": "dairy",
+   "cook_qty": "2/3 cup grated"
+  },
+  {
+   "item": "Ricotta cheese",
+   "qty": "1 container (15 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Canned diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Rub the inside of a deep-dish 9-inch pie plate with a little of the butter. Bring a large pot of salted water to a boil.",
+  "Cook the spaghetti until it's al dente, following the package. Drain it well. If you're using leftover spaghetti, you need about 4 cups.",
+  "Meanwhile, heat the olive oil in a large skillet over medium heat. Add the onion, diced, and cook for about 3 minutes, until it's soft.",
+  "Drain the diced tomatoes and add them with the marinara. Simmer uncovered for 10 minutes, until the sauce is thick enough to mound on a spoon. Taste the sauce and add a pinch of salt if it's flat.",
+  "Put the spaghetti in the pie plate and toss it with the rest of the butter until the butter melts. Let it cool for 2 minutes. Stir in the eggs and Parmesan, then press the spaghetti into an even crust.",
+  "Stir the ricotta, parsley and basil together in a bowl. Spread it over the spaghetti crust, then spoon the sauce over the top.",
+  "Bake uncovered for 20 to 25 minutes. Sprinkle on the mozzarella and bake for 5 minutes, until the cheese is browned and bubbling.",
+  "Let the pie sit for 10 minutes so it sets, then cut it into 6 wedges. Serve 1 or 2 wedges to each person.",
+  "To freeze for later, build the pie without baking it, cover it tightly and freeze. Bake it from frozen, covered with foil, for 30 minutes, then uncovered for 25 to 35 minutes, adding the mozzarella for the last 5. Baked leftovers keep for 3 to 5 days in the fridge. Warm a wedge in a 350°F oven for about 15 minutes.",
+  "Taste a bite. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "The lead (Spend With Pennies, 5 from 174) presses buttered, egg-and-Parmesan spaghetti into a pie plate, covers it with seasoned ricotta and a meat sauce, and bakes it with mozzarella on top. A Spicy Perspective (4.96 from 22) uses cream cheese and a baked-in meat sauce, and Once Upon a Chef's Gail Simmons pie is a sausage and cheddar version in a springform pan. This version leaves out the beef so it is vegetarian, using a simple onion, diced tomato and marinara sauce, and scales the crust up from 6 oz to 8 oz of spaghetti so a pie feeds 4 with a wedge left over.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Spaghetti Pie",
+   "url": "https://www.spendwithpennies.com/spaghetti-pie/",
+   "rating": 5.0,
+   "rating_count": 174,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "A Spicy Perspective",
+   "title": "Spaghetti Pie (Baked Spaghetti Pie)",
+   "url": "https://www.aspicyperspective.com/baked-spaghetti-pie/",
+   "rating": 4.96,
+   "rating_count": 22,
+   "read": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Gail Simmons' Epic Spaghetti Pie",
+   "url": "https://www.onceuponachef.com/recipes/gail-simmons-epic-spaghetti-pie.html",
+   "rating": 4.78,
+   "rating_count": 54,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

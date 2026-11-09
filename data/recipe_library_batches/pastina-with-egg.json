@@ -1,0 +1,89 @@
+{
+ "dish_name": "Pastina with Egg",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Pastina",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 small wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  }
+ ],
+ "instructions": [
+  "Bring the broth to a boil in a medium pot over high heat.",
+  "Add the pastina and stir. Turn the heat to medium and cook for 5 to 7 minutes, stirring often, until the pastina is tender and most of the broth is absorbed. It should look like a loose porridge.",
+  "Meanwhile, beat the eggs in a medium bowl with 1/3 cup of the Parmesan.",
+  "Take the pot off the heat. Add the butter and stir until it melts.",
+  "Stir 2 big spoonfuls of the hot pastina into the egg mixture, then pour it all back into the pot. Stir quickly for 30 seconds, until it's creamy and no strands of egg are left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the pastina into bowls right away and serve with the remaining 2 tbsp Parmesan and the pepper on top."
+ ],
+ "method_notes": "The lead (4 Sons 'R' Us, 4.72 from 57) cooks the pastina in water, then whisks in beaten egg, butter and Parmesan off the heat. Season and Thyme (4.54 from 82) and Seasons and Suppers use broth instead and Seasons and Suppers tempers the egg first, which is what this version does. It uses vegetable broth so it stays vegetarian, and 2 eggs rather than the lead's 1 so the bowl has enough protein for a dinner. Pastina keeps absorbing liquid as it sits, so it is best served at once.",
+ "sources": [
+  {
+   "name": "4 Sons 'R' Us",
+   "title": "Nonna's Pastina Recipe",
+   "url": "https://4sonrus.com/?p=42189",
+   "rating": 4.72,
+   "rating_count": 57,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Season and Thyme",
+   "title": "Chicken Pastina with Egg",
+   "url": "https://seasonandthyme.com/pastina-with-egg/",
+   "rating": 4.54,
+   "rating_count": 82,
+   "read": true
+  },
+  {
+   "name": "Seasons and Suppers",
+   "title": "Pastina with Egg and Cheese",
+   "url": "https://www.seasonsandsuppers.ca/pastina-egg-recipe/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

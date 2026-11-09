@@ -1,0 +1,99 @@
+{
+ "dish_name": "Creamy Tomato Tortellini",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Refrigerated cheese tortellini",
+   "qty": "2 packages (9 oz each)",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Canned tomato sauce",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 small wedge",
+   "category": "dairy",
+   "cook_qty": "1/4 cup grated"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Melt the butter in a large, deep skillet with a lid over medium heat. Add the garlic, minced, and stir for 1 minute, until it smells fragrant.",
+  "Add the tomato paste and stir for 1 minute, until it darkens a shade.",
+  "Add the tomato sauce, cream, Italian seasoning and salt. Whisk until smooth and bring it to a gentle bubble, about 2 minutes.",
+  "Add the tortellini straight from the package and stir to coat. Turn the heat to medium-low, cover, and cook for 5 minutes, stirring once halfway.",
+  "Bite into one tortellini. If the center is still firm, cover and cook for 2 minutes. If the sauce is too thick, add a splash of water.",
+  "Take the skillet off the heat and stir in the pepper and half the Parmesan.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rest of the Parmesan on top."
+ ],
+ "method_notes": "The lead (Salt & Lavender, 4.96 from 25) is a one-pan version: butter and garlic, tomato paste, tomato sauce and cream whisked smooth, then uncooked refrigerated tortellini cooked right in the sauce, covered, for about 5 minutes. Tastes Better From Scratch and Taste of Home add spinach or onion and boil the pasta separately, so they take longer. This version follows the lead, with the tomato paste cooked for a minute first so it tastes deeper. The lead says not to swap in half-and-half or milk, which can curdle in the tomato.",
+ "sources": [
+  {
+   "name": "Salt & Lavender",
+   "title": "Creamy Tomato Tortellini",
+   "url": "https://www.saltandlavender.com/creamy-tomato-tortellini/",
+   "rating": 4.96,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Tortellini with Tomato Cream Sauce",
+   "url": "https://www.tasteofhome.com/recipes/tortellini-with-tomato-cream-sauce",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

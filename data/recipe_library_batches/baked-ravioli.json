@@ -1,0 +1,89 @@
+{
+ "dish_name": "Baked Ravioli",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Frozen cheese ravioli",
+   "qty": "1 bag (25 oz)",
+   "category": "frozen"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 small wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Grease a 9 by 13-inch baking dish with a little oil or nonstick spray.",
+  "Spread 1/2 cup of the marinara across the bottom of the dish.",
+  "Lay half the frozen ravioli over the sauce in one layer, overlapping them a little if you need to. Don't thaw them first.",
+  "Spoon about 1 cup of the marinara over the ravioli. Sprinkle on 1 cup of the mozzarella and half of the Italian seasoning.",
+  "Add the rest of the ravioli, then spread the remaining 1 1/2 cups marinara over them.",
+  "Sprinkle with the remaining 1 cup mozzarella, the Parmesan and the rest of the Italian seasoning.",
+  "Cover the dish tightly with foil and bake for 25 minutes.",
+  "Take off the foil and bake for 5 to 10 minutes, until the cheese is melted and golden and the sauce bubbles around the edges. Poke a ravioli with a knife. It should slide in easily.",
+  "Let the dish sit for 5 minutes before you serve it. Serve with the extra sauce from the dish spooned over each portion.",
+  "Leftovers keep for 4 days in the fridge. Warm them covered in a 350°F oven for about 20 minutes. To freeze, cool the baked dish, cover it well and freeze for up to 3 months. Thaw it in the fridge overnight before reheating.",
+  "Taste a bite. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "None of the readable versions has 20 ratings, so this is a fallback. The lead (Family Fresh Meals, 5 from 7) layers frozen ravioli straight from the bag with marinara, mozzarella and Italian seasoning, covers the dish, and bakes it at 400°F. Spend With Pennies (5 from 7) and Kitchen Dreaming bake it at 350 to 375°F and add sausage or a cream sauce; those were left out to keep it meatless. Cover time here is 25 minutes, between the lead's 20 and Spend With Pennies' 35, because the ravioli go in frozen.",
+ "sources": [
+  {
+   "name": "Family Fresh Meals",
+   "title": "Baked Ravioli Casserole",
+   "url": "https://www.familyfreshmeals.com/?p=30020",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Baked Ravioli",
+   "url": "https://www.spendwithpennies.com/?p=368859",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Kitchen Dreaming",
+   "title": "Baked Ravioli with Rosa Pasta Sauce",
+   "url": "https://kitchendreaming.com/baked-ravioli-casserole/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}
