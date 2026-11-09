@@ -1,0 +1,127 @@
+{
+ "dish_name": "Mushroom Chow Mein",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 16,
+ "ingredients": [
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Vegan chow mein noodles",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 bag",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegan oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil for the noodles.",
+  "Meanwhile, slice the mushrooms about 1/4 inch thick and slice the onion. Mince the 3 garlic cloves. Cut the scallions into 1 inch pieces, keeping the whites and greens apart.",
+  "In a small bowl, stir together 3 tbsp soy sauce, 2 tbsp vegan oyster sauce, 2 tsp sugar, 1 tsp sesame oil and 1/4 cup water. This is the sauce.",
+  "Cook the noodles in the boiling water for 1 minute less than the package says. Drain them, rinse them under cold water and shake off as much water as you can.",
+  "Heat a large wok or skillet over medium-high heat. Add 1 tbsp of the vegetable oil, then half the mushrooms in a single layer and 1/4 tsp of the salt. Leave them alone for 2 minutes, until the underside is golden.",
+  "Stir the mushrooms and cook for 2 minutes, until they're browned all over. Transfer them to a plate.",
+  "Add 1 tbsp of the oil to the same pan, then the rest of the mushrooms and the last 1/4 tsp salt. Cook them the same way, 2 minutes untouched, then stir and cook for 2 minutes. Transfer them to the plate.",
+  "Add the last 1 tbsp oil to the pan with the onion and the scallion whites. Stir for 2 minutes, until the onion softens and starts to brown at the edges.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Add the noodles. Stir the sauce, pour it over and toss with tongs for 2 minutes, until the noodles are hot and coated.",
+  "Return the mushrooms and any juices to the pan. Add the bean sprouts and the scallion greens and toss for 30 seconds. Take the pan off the heat.",
+  "Taste it. If it's flat, add a splash more soy sauce.",
+  "Serve in bowls, sprinkled with the sesame seeds."
+ ],
+ "method_notes": "No version of this dish has 20 ratings (Oh My Veg 1, Loving It Vegan 6, Nutriciously 16), and RecipeTin Eats has only a chicken chow mein, so this leads with Oh My Veg, the one built around seared mushrooms. All the versions toss boiled noodles with a soy and vegan oyster sauce; Loving It Vegan adds peppers, carrot and broth, and Supper in the Suburbs adds bean sprouts and crisps the noodles. Scaled up from the lead's 200 g of mushrooms and noodles to fill four bowls, with vegan noodles (check the label, some are made with egg) and vegan oyster sauce.",
+ "sources": [
+  {
+   "name": "Oh My Veg",
+   "title": "Mushroom Chow Mein",
+   "url": "https://www.ohmyveg.co.uk/mushroom-chow-mein/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Loving It Vegan",
+   "title": "Vegan Chow Mein",
+   "url": "https://lovingitvegan.com/vegan-chow-mein/",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Nutriciously",
+   "title": "Easy Vegan Mushroom Chow Mein",
+   "url": "https://nutriciously.com/vegan-chow-mein-noodles/",
+   "rating": 4.57,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

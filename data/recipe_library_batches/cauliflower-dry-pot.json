@@ -1,0 +1,139 @@
+{
+ "dish_name": "Cauliflower Dry Pot",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 13,
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "1 large head",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp matchsticks"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Vegan oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on until you're ready to serve.",
+  "Cut the cauliflower into bite-sized florets about 1 inch across and pat them dry with a towel. Slice the bell pepper into bite-sized pieces.",
+  "Slice the 8 garlic cloves. Cut the ginger into thin matchsticks, about 1 tbsp. Cut 3 of the scallions into 2 inch pieces.",
+  "In a small bowl, stir together 2 tbsp vegan oyster sauce, 1 tbsp soy sauce, 1 tbsp Shaoxing wine, 1/4 tsp sugar, 1/2 tsp white pepper, 1/4 tsp of the salt and 1/2 cup water. This is the sauce.",
+  "Heat a 12 inch skillet or wok over high heat for 1 minute, until it's very hot. Add the vegetable oil, then the cauliflower in as even a layer as you can, with the last 1/4 tsp salt. Leave it alone for 2 minutes, until the underside is browned.",
+  "Stir the cauliflower and cook for 2 minutes, until it's browned in spots.",
+  "Add the bell pepper and ginger and stir for 1 minute.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Stir the sauce and pour it in. Cover and cook for 2 minutes, until a fork goes into the cauliflower with a little resistance.",
+  "Uncover and add the scallions and the sesame oil. Toss for 30 seconds, until most of the sauce has cooked into the cauliflower.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the red pepper flakes on the table."
+ ],
+ "method_notes": "The Woks of Life version leads (4.92 from 37 ratings); it is made with pork belly, so the pork is left out here and the oyster sauce is vegan. Olive Magazine's vegan version and Yi's Sichuan Kitchen agree on the dry style: florets, ginger, garlic, scallion and a short splash of sauce, with chili and Sichuan pepper doing the work. This cooks the cauliflower in plain oil until browned, since there is no pork fat to start with, and the dried chilies move to the table as red pepper flakes to keep the base mild.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Dry Pot Cauliflower",
+   "url": "https://thewoksoflife.com/dry-pot-cauliflower/",
+   "rating": 4.92,
+   "rating_count": 37,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Olive Magazine",
+   "title": "Chinese Dry-Pot Cauliflower",
+   "url": "https://www.olivemagazine.com/recipes/vegan/chinese-dry-pot-cauliflower/",
+   "rating": null,
+   "rating_count": 0,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Yi's Sichuan Kitchen",
+   "title": "Vegan Dry Pot Cauliflower",
+   "url": "https://sichuankitchenrecipes.com/2023/10/14/vegan-dry-pot-cauliflower-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

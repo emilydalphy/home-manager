@@ -1,0 +1,130 @@
+{
+ "dish_name": "Sweet and Sour Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "prep_time_minutes": 13,
+ "cook_time_minutes": 16,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Pineapple chunks in juice",
+   "qty": "1 can (20 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/3 cup + 1 tbsp"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on until you're ready to serve.",
+  "Cut the chicken into 3/4 inch pieces and pat them dry with paper towels. Transfer them to a large bowl and toss with the salt.",
+  "Drain the pineapple over a bowl, keeping the juice. Cut the bell peppers into 1 inch pieces and the onion into large dice. Mince the garlic.",
+  "In a small bowl, whisk together 1/4 cup of the pineapple juice, the garlic, 2 tbsp water, the vinegar, soy sauce, brown sugar, ketchup and 1 tbsp of the cornstarch. This is the sauce.",
+  "Sprinkle the remaining 1/3 cup cornstarch over the chicken and toss until every piece has an even coat. Shake off the extra.",
+  "Heat a large skillet over medium-high heat. Add 1 1/2 tbsp of the oil, then half the chicken in a single layer. Cook for 3 minutes, until the underside is golden and lets go of the pan.",
+  "Flip the pieces and cook the other side for 2 minutes. You're cooking it to 175°F in the middle, so if you have a thermometer, check a thick piece. No thermometer? Cut one open: it's done when there's no pink left. Transfer it to a plate.",
+  "Cook the rest of the chicken the same way in 1 1/2 tbsp oil. Transfer it to the plate.",
+  "Add the last 1 tbsp oil to the pan with the onion and bell peppers. Cook for 3 minutes, until they soften a little but still have a bite.",
+  "Stir the sauce and pour it in. Cook for 1 minute, until it thickens and turns glossy.",
+  "Return the chicken and any juices to the pan and add the pineapple chunks. Toss for 1 minute, until everything is coated and hot. Take the pan off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the red pepper flakes on the table."
+ ],
+ "method_notes": "Small Town Woman leads (5.0 from 209 ratings): cornstarch-dusted chicken browned in a skillet, onion and peppers, then a quick pineapple juice, vinegar, ketchup and soy sauce, thickened with cornstarch. RecipeTin Eats (4.93 from 65) agrees on the sweet-sour balance with more sugar and no coating, and adds Worcestershire and oyster sauce. This uses thighs, which the lead allows, and puts the red pepper flakes on the table to keep the base mild.",
+ "sources": [
+  {
+   "name": "Small Town Woman",
+   "title": "Sweet and Sour Chicken",
+   "url": "https://www.smalltownwoman.com/sweet-sour-chicken/",
+   "rating": 5,
+   "rating_count": 209,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Sweet and Sour Chicken",
+   "url": "https://www.recipetineats.com/sweet-and-sour-chicken/",
+   "rating": 4.93,
+   "rating_count": 65,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

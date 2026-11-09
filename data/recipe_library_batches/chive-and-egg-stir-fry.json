@@ -1,0 +1,85 @@
+{
+ "dish_name": "Chive and Egg Stir-Fry",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 9,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Chinese chives",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on until you're ready to serve.",
+  "Wash the chives and dry them well. Cut them into 1/2 inch pieces. That should be about 3 cups.",
+  "In a small bowl, stir 2 tsp cornstarch into 1 1/2 tbsp cold water until smooth.",
+  "Crack the 8 eggs into a large bowl. Add the sugar, salt, white pepper, sesame oil and 2 tbsp water. Beat for 30 seconds, until small bubbles form on top.",
+  "Stir the cornstarch mixture again, then stir it into the eggs. Mix in the chives.",
+  "Heat a wok or 12 inch nonstick skillet over high heat until it just starts to smoke, then turn the heat to medium-low. Wait 10 seconds, add 3 tbsp of the vegetable oil and swirl it around.",
+  "Stir the egg mixture, then pour half of it into the pan. Stir and flip it slowly with a spatula for about 2 minutes, until the eggs are just set and still glossy. Don't let them brown. Transfer them to a plate.",
+  "Wipe the pan, heat the last 3 tbsp oil and cook the rest of the egg mixture the same way.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "method_notes": "The Woks of Life version leads (5.0 from 26 ratings): eggs beaten with salt, a pinch of sugar, white pepper and sesame oil, a little cornstarch slurry for a tender curd, then chives folded in and cooked fast in a wok. Other versions on the first page of results agree that salt and chives carry the dish. The lead's Shaoxing wine is left out to keep it gluten-free, and the amounts are scaled from 5 eggs to 8, cooked in two batches so the eggs stay soft.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Chinese Chives & Eggs Stir Fry",
+   "url": "https://thewoksoflife.com/chinese-chives-eggs/",
+   "rating": 5,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

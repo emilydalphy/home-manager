@@ -1,0 +1,92 @@
+{
+ "dish_name": "Stir-Fried Broccoli with Garlic",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Broccoli",
+   "qty": "2 large crowns",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on until you're ready to serve.",
+  "Bring a large pot of water to a boil for the broccoli.",
+  "Meanwhile, cut the broccoli into small florets. Mince the 8 garlic cloves.",
+  "In a small bowl, stir 2 tbsp cornstarch into 4 tbsp cold water until smooth.",
+  "Add the broccoli to the boiling water and cook for 1 minute. Drain it, transfer it into a bowl of cold water for 30 seconds, then drain it again and shake off as much water as you can.",
+  "Heat a wok or large skillet over high heat for 1 minute, until it's very hot. Add the vegetable oil and the broccoli. Stir-fry for 1 minute, until the edges start to brown.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant. Pour in the Shaoxing wine and let it sizzle for 10 seconds.",
+  "Pour in the broth and bring it to a boil. Stir in 1 1/2 tsp salt and the white pepper.",
+  "Stir the cornstarch mixture again, then pour in about half of it. Cook for 1 minute, until the sauce is thick enough to coat the back of a spoon. Add more of the cornstarch mixture if it's still thin.",
+  "Take the pan off the heat and stir in the sesame oil.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "method_notes": "The Woks of Life version leads (4.97 from 29 ratings): blanch the broccoli for a minute, fry it in a very hot wok with the garlic, then thicken a light stock sauce with a cornstarch slurry. It uses chicken stock, so vegetable broth takes its place to keep the dish vegan. The recipe is doubled for four with garlic and broth scaled to match, and the garlic goes in after the broccoli so it doesn't burn.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Garlicky Broccoli Stir-Fry",
+   "url": "https://thewoksoflife.com/garlicky-broccoli/",
+   "rating": 4.97,
+   "rating_count": 29,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}
