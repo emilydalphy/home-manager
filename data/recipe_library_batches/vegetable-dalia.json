@@ -1,0 +1,110 @@
+{
+ "dish_name": "Vegetable Dalia",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Dalia (broken wheat)",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Split yellow moong dal",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1/4 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the moong dal and soak it in a bowl of water for 20 minutes while you chop.",
+  "Finely chop the tomato. Dice the carrot small. Grate the ginger.",
+  "Heat 1 tsp of the oil in a large heavy pot over low heat. Add the dalia and stir for 2 to 3 minutes, until it smells toasty. Transfer it to a bowl.",
+  "Return the pot to medium heat. Add the remaining 2 tsp oil, the cumin seeds and the asafoetida. Stir for about 20 seconds, until the cumin sizzles.",
+  "Add the ginger and stir for 30 seconds.",
+  "Add the tomato and cook for 3 to 4 minutes, stirring now and then, until it's soft and mushy.",
+  "Add the carrot, the peas, the turmeric and 1 1/2 tsp salt. Stir and cook for 2 minutes.",
+  "Drain the moong dal, add it to the pot and stir for 1 minute.",
+  "Add the toasted dalia and 6 cups of water. Stir well and bring it to a boil.",
+  "Turn the heat to low, cover and cook for 20 to 25 minutes, until the dalia and the dal are both soft. Stir every 5 minutes or so, so the bottom doesn't catch.",
+  "If it's thicker than you like, stir in a splash of hot water. Serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen leads (5 stars from 251) with a vegetable dalia khichdi: toasted dalia, a little moong dal, tomato, carrot and peas in a cumin and ginger base, with no onion or garlic. It's written for a pressure cooker (3 whistles); this version simmers on the stove, which takes longer, so the honest total is 45 minutes. Ghee became oil so it stays vegan, and the green chilies were left out to keep it mild. Bliss of Cooking and Foodviva cook the same dish with beans or green peas and no tomato, and agree on toasting the grain first.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Vegetable Dalia Khichdi (Broken Wheat Recipe)",
+   "url": "https://hebbarskitchen.com/daliya-khicdi-recipe-broken-wheat-recipe/",
+   "rating": 5.0,
+   "rating_count": 251,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bliss of Cooking",
+   "title": "Vegetable Dalia (Broken Wheat Vegetable Porridge)",
+   "url": "https://www.blissofcooking.com/2019/09/vegetable-dalia/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Foodviva",
+   "title": "Dalia Recipe with Vegetables",
+   "url": "https://foodviva.com/healthy-recipes/dalia-daliya-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

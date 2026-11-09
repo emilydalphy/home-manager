@@ -1,0 +1,83 @@
+{
+ "dish_name": "Appam",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cooked rice",
+   "qty": "1/2 cup",
+   "category": "other"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Active dry yeast",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The day before, in the afternoon: rinse the 1 1/4 cups rice and soak it in plenty of water for 5 to 6 hours.",
+  "That evening: stir the yeast and the sugar into 1 1/2 tbsp warm water in a small bowl. Leave it for 5 to 10 minutes, until it's bubbly.",
+  "Drain the soaked rice. In a blender, blend half of it with 1/4 cup of the coconut milk and 2 tbsp water until smooth. Transfer it to a large bowl and repeat with the other half.",
+  "Blend the cooked rice with the last 1/4 cup coconut milk and 2 tbsp water until smooth. Add it to the bowl with the yeast mix and stir.",
+  "Cover the bowl and leave it at room temperature overnight, 8 to 12 hours, until the batter is puffed and bubbly.",
+  "In the morning, stir in the salt.",
+  "Heat a large nonstick skillet over medium heat. Stir the batter, then pour 1/4 cup into the center.",
+  "Cook for about 1 minute, until bubbles appear on top. Cover with a lid and cook for 1 to 2 minutes, until the top is set. Don't flip it.",
+  "Transfer to a plate and repeat with the rest of the batter to make about 11 in all, stirring the batter between pancakes. Serve warm.",
+  "Leftover batter keeps in the fridge for up to 2 days. Let it sit at room temperature for about 10 minutes before cooking."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "Soak the rice in the afternoon, then blend and ferment the batter overnight, 8 to 12 hours.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "method_notes": "Nish Kitchen leads (5 stars from 44): soaked rice, cooked rice and coconut milk ground smooth, yeasted and left to ferment overnight, then cooked in a skillet with a lid and not flipped. The Familiar Kitchen (no ratings shown) adds grated coconut and sugar in the batter and proofs the yeast the same way. This is Nish's recipe halved to make about 11 pancakes, with a skillet instead of an appam pan, so the centers are soft and the edges are not lacy. The batter keeps in the fridge for up to 2 days.",
+ "sources": [
+  {
+   "name": "Nish Kitchen",
+   "title": "Appam (Rice and Coconut Milk Pancakes)",
+   "url": "https://nishkitchen.com/appam-rice-and-coconut-pancakes-video/",
+   "rating": 5.0,
+   "rating_count": 44,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Familiar Kitchen",
+   "title": "Kerala Appam / Palappam",
+   "url": "https://thefamiliarkitchen.com/kerala-appam-palappam/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

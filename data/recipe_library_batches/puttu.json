@@ -1,0 +1,64 @@
+{
+ "dish_name": "Puttu",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Puttu flour (steamed rice flour)",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Grated coconut",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bananas",
+   "qty": "4",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pour 3 cups of water into the pot of a puttu steamer and bring it to a boil over high heat while you prepare the flour.",
+  "In a large bowl, mix the puttu flour with the salt. Add 1/4 cup water and crumble it with your fingertips.",
+  "Keep adding water a little at a time, up to about 1 cup in all, and mixing, until the flour looks like damp sand.",
+  "Squeeze a handful. It should hold together in your fist and crumble when you press it. Break up any lumps with your fingers.",
+  "Fill the puttu tube with a quarter of the coconut and a quarter of the flour in layers: coconut, flour, coconut, flour, coconut. Start and end with coconut. Fill it loosely and level the top.",
+  "Close the tube and set it on the pot of boiling water. Steam for about 5 minutes, until steam comes out of the holes in the top.",
+  "Take the tube off the pot and let it rest for 2 minutes. Push the puttu out from the back with a wooden spoon.",
+  "Repeat with the rest of the flour and coconut to make 4 puttu in all. Serve hot with the sliced ripe bananas."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen leads (5 stars from 262): damp puttu flour layered with grated coconut in a puttu tube and steamed for about 5 minutes. Lathi's Kitchen (5 from 35) uses the same method with a plain rice flour and warm water. Both serve it with kadala curry or ripe banana; only the banana is written here, as no source gives a kadala curry for this dish. It needs a puttu maker, a tube set on a steamer pot, and with one tube the four puttu take about 30 minutes.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Kerala Puttu Recipe",
+   "url": "https://hebbarskitchen.com/kerala-puttu-recipe-puttu-maker/",
+   "rating": 5.0,
+   "rating_count": 262,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lathi's Kitchen",
+   "title": "Puttu / Kerala Puttu Recipe",
+   "url": "https://www.lathiskitchen.org/puttu-recipe/",
+   "rating": 5.0,
+   "rating_count": 35,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

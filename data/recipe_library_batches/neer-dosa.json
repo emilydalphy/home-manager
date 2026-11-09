@@ -1,0 +1,71 @@
+{
+ "dish_name": "Neer Dosa",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Grated coconut",
+   "qty": "1/2 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut chutney",
+   "qty": "1 tub",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 5 hours ahead: rinse the rice in cold water until it runs mostly clear. Cover it with plenty of water and soak it for 5 hours or overnight.",
+  "Drain the rice. Blend it with the coconut and 1 cup water until completely smooth. Rub a bit of batter between your fingers. It shouldn't feel gritty.",
+  "Transfer the batter to a large bowl. Stir in the salt and another 2 cups of water. The batter should be very thin and watery, like thin buttermilk.",
+  "Heat a large nonstick pan over medium-high heat. Wipe it with a little oil on a paper towel.",
+  "Stir the batter from the bottom every time, since the rice settles. Pour a ladleful, about 1/4 cup, in a circle from the edge of the pan. Tilt the pan to fill any gaps.",
+  "Cover and cook for 1 to 2 minutes, until the top is no longer wet and the edges lift. Don't flip it.",
+  "Fold the dosa in half, then into a triangle, and transfer it to a plate.",
+  "Wipe the pan with a little oil and repeat with the rest of the batter to make about 15. Serve warm with the coconut chutney."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "Soak the rice at least 5 hours ahead, or overnight.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Hebbar's Kitchen leads (5 stars from 264): rice soaked 5 hours, ground with grated coconut, thinned to a watery batter and poured thin onto a hot pan, cooked on one side only. Swasthi's Recipes (5 from 76) adds the pour-from-the-edge method and a pan wiped with oil between dosas; her batter has no coconut. The list promises batter made the night before, but neither source makes the batter ahead, so the rice soaks ahead and the batter is blended fresh. Fifteen dosas one at a time take about 35 minutes after the soak.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Neer Dosa Recipe",
+   "url": "https://hebbarskitchen.com/neer-dosa-recipe-neer-dose-neerdose/",
+   "rating": 5.0,
+   "rating_count": 264,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Neer Dosa Recipe (Mangalorean Rice Crepes)",
+   "url": "https://www.indianhealthyrecipes.com/neer-dosa-recipe/",
+   "rating": 5.0,
+   "rating_count": 76,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

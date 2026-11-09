@@ -1,0 +1,120 @@
+{
+ "dish_name": "Bread Omelette",
+ "cuisine": "Indian",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole wheat bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Onions",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion until you have about 1/2 cup. Finely chop half the bell pepper. Chop 4 tbsp of the cilantro. Chop the green chilies and put them in a small bowl for the table.",
+  "Crack the 8 eggs into a large bowl and beat until frothy. Add the onion, bell pepper, cilantro, 1 tsp salt, the turmeric, the black pepper and the chaat masala. Beat again.",
+  "Spread the butter over one side of each of the 8 slices of bread.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet over medium heat. Pour in a quarter of the egg mix, about 1/2 cup, and spread it to roughly the size of a slice of bread. Pour a second quarter beside it.",
+  "Cook for 1 to 2 minutes, until the bottoms are set. Flip each one and cook for 1 minute.",
+  "Fold the edges of each omelette in so it's a square that fits the bread. Transfer them to a plate.",
+  "Repeat with 1 tbsp oil and the rest of the egg mix to make 4 omelettes in all.",
+  "Wipe out the skillet and set it over medium heat with 1 tbsp of the oil. Put 2 slices of bread in the pan, buttered side up, and lay an omelette on each.",
+  "Top each with a second slice, buttered side down. Toast for 1 to 2 minutes, until golden, then flip and toast the other side for 1 to 2 minutes.",
+  "Repeat with the last 2 omelettes and the remaining oil.",
+  "Cut each sandwich in half. Serve hot with the ketchup and the chopped green chilies on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's Recipes leads (5 stars from 57): beaten eggs with onion, capsicum, coriander, turmeric and pepper, cooked as a flat omelette and toasted between two slices of bread. Easy Indian Cookbook (also 5 from 57) folds the omelette to the size of the bread and adds chutney, and Honey, What's Cooking has only 1 rating. The cheese all three offer is left out, and the green chili goes on the side to keep the sandwich mild. Cooked two omelettes at a time in a large skillet, four sandwiches take about 25 minutes, not the 10 the single-sandwich versions show.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Bread Omelette Sandwich",
+   "url": "https://www.indianhealthyrecipes.com/bread-omelet-sandwich-recipe/",
+   "rating": 5.0,
+   "rating_count": 57,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Easy Indian Cookbook",
+   "title": "Bread Omelette / Anda Bread (Omelet Sandwich)",
+   "url": "https://easyindiancookbook.com/bread-omelette/",
+   "rating": 5.0,
+   "rating_count": 57,
+   "read": true
+  },
+  {
+   "name": "Honey, What's Cooking",
+   "title": "Bread Omelette",
+   "url": "https://www.honeywhatscooking.com/bread-omelette/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

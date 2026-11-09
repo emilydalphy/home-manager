@@ -1,0 +1,107 @@
+{
+ "dish_name": "Akki Roti",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Fine rice flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Onions",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut chutney",
+   "qty": "1 tub",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Grate the carrot and half the cucumber. Finely chop half the onion. Chop 4 tbsp of the dill and 2 tbsp of the cilantro. Finely chop the ginger and a few of the curry leaves.",
+  "In a large bowl, mix the rice flour with the carrot, cucumber, onion, dill, cilantro, ginger, curry leaves, cumin seeds and salt.",
+  "Squeeze the vegetables into the flour with your hands for about 1 minute, until the flour looks damp.",
+  "Add warm water a few tablespoons at a time, mixing, until it comes together into a soft dough that doesn't crack when you press it.",
+  "Heat a flat skillet or tawa over medium heat. Cut a sheet of parchment paper about 8 inches square and brush it with oil.",
+  "Divide the dough into 10 balls. Put one on the oiled parchment. With oiled fingers, pat it into a thin round about 6 inches across.",
+  "Flip the parchment over so the roti sits on the hot pan, and press it lightly. Cook for about 20 seconds, then peel the parchment off slowly.",
+  "Drizzle about 1/2 tsp oil around the edge. Cook for 2 minutes, until the underside has golden spots.",
+  "Flip and cook the other side for 1 to 2 minutes. Transfer it to a plate.",
+  "Shape the next roti while the one in the pan cooks. Repeat with the rest of the dough to make 10 in all.",
+  "Serve hot with the coconut chutney."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen leads (5 stars from 443): rice flour kneaded with grated carrot and cucumber, onion, dill, cilantro, ginger, curry leaves and cumin, patted thin on oiled paper and roasted on a hot pan. My Cooking Journey (4.95 from 20) uses carrot and onion only, plain water and a parchment sheet. Hebbar's three green chilies are left out of the dough to keep it mild. Ten rotis one at a time take about 40 minutes all in, longer than a 30 minute breakfast; a second pan speeds it up.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Masala Akki Roti",
+   "url": "https://hebbarskitchen.com/akki-roti-recipe-masala-akki-rotti/",
+   "rating": 5.0,
+   "rating_count": 443,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Cooking Journey",
+   "title": "Karnataka Akki Roti",
+   "url": "https://www.mycookingjourney.com/akki-roti-karnataka-akki-roti-rice-flour-roti/",
+   "rating": 4.95,
+   "rating_count": 20,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
