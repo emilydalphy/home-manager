@@ -1,0 +1,101 @@
+{
+ "dish_name": "Pollo all'Arrabbiata",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 small pack",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut each chicken thigh in half. Pat the pieces dry and season them with 1/2 tsp of the salt and the pepper.",
+  "Mince the garlic. Strip the leaves from 2 rosemary sprigs and chop them. That should be about 2 tsp. Chop 2 tbsp of the parsley.",
+  "Warm the oil in a large deep skillet over medium-high heat. Add the chicken in a single layer and cook for 4 minutes, until the underside is deep golden and lets go of the pan. Flip and cook for 4 minutes. It won't be cooked through yet. Transfer it to a plate.",
+  "Lower the heat to medium. Add the garlic, rosemary and 1/4 tsp of the pepper flakes, and cook for 30 seconds, until fragrant.",
+  "Pour in the wine and scrape up the browned bits. Let it bubble for 2 minutes.",
+  "Add the crushed tomatoes, 1/2 cup of water and the rest of the salt. Return the chicken and any juices from the plate.",
+  "Bring to a boil, then lower the heat to medium-low and cover. Simmer for 15 minutes. Uncover and simmer for 5 minutes, until the sauce is thick enough to coat the chicken. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a thick piece: it's done when there's no pink left.",
+  "Take the pan off the heat. Stir in 1 tbsp of the vinegar and half the parsley. Taste it. If it's flat, add a pinch more salt.",
+  "Sprinkle the rest of the parsley over the chicken. Put the remaining 1/2 tsp pepper flakes in a small bowl on the table for anyone who wants it hotter."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on browning the chicken, then braising it with garlic, chile and white wine in tomato. They differ on the fat (pancetta, lard or oil), the herb (rosemary or parsley) and the time. The lead's bone-in pieces take 30 to 40 minutes; boneless thighs cut in half take 20, so it fits 50 minutes. The pancetta is left out, and most of the chile goes on the side to keep the sauce mild.",
+ "sources": [
+  {
+   "name": "Hilltop Recipes",
+   "title": "Chicken all'Arrabbiata (One-Skillet)",
+   "url": "https://hilltoprecipes.com/chicken-arrabbiata/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Italian Garden Seeds",
+   "title": "Pollo all'Arrabbiata",
+   "url": "https://www.italiangardenseeds.com/italian-recipes/pollo-all-arrabbiata",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

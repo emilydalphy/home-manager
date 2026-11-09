@@ -1,0 +1,78 @@
+{
+ "dish_name": "Pollo alla Griglia con Salmoriglio",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat a grill to medium-high, or heat a grill pan over medium-high heat for 5 minutes.",
+  "Make the salmoriglio. Mince the garlic. Juice the lemons. That should be about 1/3 cup. Whisk the garlic, the lemon juice, the oregano, the oil, 1/2 tsp of the salt and 1/4 tsp of the pepper in a bowl.",
+  "Spoon 1/4 cup of the salmoriglio into a small bowl and set it aside for the table.",
+  "Pat the chicken dry. Season it with the rest of the salt and pepper, then toss it with 2 tbsp of the salmoriglio.",
+  "Grill the chicken for 6 minutes, until it has dark grill marks and lets go of the grate. Flip and grill for 6 minutes. You're cooking it to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Transfer the chicken to a large skillet over medium heat. Pour in the rest of the salmoriglio and turn the pieces in it for 2 minutes.",
+  "Taste it. If it's flat, add a pinch more salt. Serve the chicken with the pan sauce spooned over and the reserved salmoriglio in a bowl on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that salmoriglio is just olive oil, lemon, garlic and oregano, whisked and spooned over grilled chicken. The lead finishes the chicken in a hot pan with most of the sauce and keeps a little back for the table, and this does the same. It uses boneless thighs so the grilling takes 12 minutes. Amounts are scaled from a whole chicken to 2 lbs of thighs.",
+ "sources": [
+  {
+   "name": "The Italian Chef",
+   "title": "Grilled Chicken with Salmoriglio",
+   "url": "https://italianchef.com/grilled-chicken-with-salmoriglio/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Our Italian Table",
+   "title": "Grilled Chicken with Sicilian Salmoriglio",
+   "url": "https://ouritaliantable.com/grilled-chicken-with-sicilian-salmoriglio/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

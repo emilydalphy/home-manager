@@ -1,0 +1,73 @@
+{
+ "dish_name": "Polenta Concia",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Quick-cooking polenta",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Fontina",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the rind off the fontina if it has one, then cut it into 1/2 inch cubes.",
+  "Bring 4 cups of water and the salt to a boil in a large heavy pot over high heat.",
+  "Turn the heat to medium-low. Pour in the polenta in a thin stream, whisking as you go. Switch to a wooden spoon and stir for 5 minutes, until it's thick and pulls away from the sides of the pot. Check your package, as the time can differ a little.",
+  "Stir in the milk until the polenta is smooth and loose again, about 1 minute. If it's too stiff, add a splash of water.",
+  "Take the pot off the heat. Add the fontina and 4 tbsp of the butter, and stir until both have melted.",
+  "Melt the remaining 2 tbsp butter in a small pan over medium heat for about 2 minutes, until it foams.",
+  "Taste the polenta. If it's flat, add a pinch more salt. Spoon it into warm bowls, drizzle with the melted butter and finish with the pepper."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version cooks polenta in salted water, loosens it with milk, and stirs in fontina and butter, with a little melted butter over the top. The lead simmers regular polenta for 45 minutes; this uses quick-cooking polenta so it fits a weeknight, and the second version says that works too. Stir the cheese in off the heat so it doesn't go stringy. Amounts are scaled up for 4 as a dinner.",
+ "sources": [
+  {
+   "name": "Great Italian Chefs",
+   "title": "Polenta Concia",
+   "url": "https://www.greatitalianchefs.com/recipes/polenta-concia-recipe",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Memorie di Angelina",
+   "title": "Polenta concia",
+   "url": "https://memoriediangelina.com/2023/02/25/polenta-concia/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

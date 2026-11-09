@@ -1,0 +1,102 @@
+{
+ "dish_name": "Zucchine Ripiene",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Arborio rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato passata",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Grana Padano",
+   "qty": "1 wedge (3 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Fontina",
+   "qty": "3 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Bring 3 cups of water and 1 tsp of the salt to a boil in a medium pot.",
+  "Meanwhile, trim the zucchini and halve them lengthwise. Scoop out the middle of each half with a spoon, leaving a wall about 1/2 inch thick. Finely chop the scooped pulp.",
+  "Add the rice to the boiling water and cook for 5 minutes. Add the chopped pulp and cook for 5 minutes. Drain well. The rice will still be firm, and it finishes in the oven.",
+  "While the rice cooks, mince the garlic. In a 9 by 13 inch baking dish, stir together 2 cups of the passata, the garlic, the oil, 1/4 tsp of the salt, the pepper and 6 torn basil leaves. Taste it. If it's flat, add a pinch more salt.",
+  "Set the zucchini halves in the sauce, cut side up. Dice the fontina into 8 cubes. Grate the Grana Padano. That should be about 1/2 cup.",
+  "Stir the butter and Grana Padano into the drained rice, with 1/4 tsp of the salt.",
+  "Fill each zucchini half about halfway with rice. Press a cube of fontina into each, then cover with the rest of the rice, mounding it a little.",
+  "Bake for 22 minutes, until a knife slides into the zucchini easily and the rice is golden at the edges.",
+  "Scatter the remaining basil over the top. Serve the zucchini with the sauce from the dish spooned over."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Ligurian lead cooks Carnaroli rice with the zucchini pulp, stirs in butter and Grana Padano, hides a cube of fontina in each boat and cooks them in tomato sauce. The other version bakes halved boats with a rice and mozzarella filling at 425°F. This one takes the oven route to fit 50 minutes: the rice is only part-cooked first, and the boats bake in the sauce.",
+ "sources": [
+  {
+   "name": "GialloZafferano",
+   "title": "Stuffed Zucchini with Rice",
+   "url": "https://www.giallozafferano.com/recipes/stuffed-zucchini-with-rice.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Fresh Apron",
+   "title": "Italian Rice Stuffed Zucchini",
+   "url": "https://freshapron.com/italian-rice-stuffed-zucchini/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

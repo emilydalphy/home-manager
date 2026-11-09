@@ -1,0 +1,103 @@
+{
+ "dish_name": "Pollo ai Peperoni",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pancetta",
+   "qty": "3 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bell peppers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole peeled tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut each chicken thigh in half. Pat the pieces dry and season them with 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Core the peppers and cut them into 1 1/2 inch squares. Slice the garlic thin. Chop the pancetta.",
+  "Warm the oil in a large deep skillet over medium-high heat. Add the pancetta and cook for 3 minutes, until the fat runs and the edges turn lightly golden.",
+  "Add the chicken in a single layer. Leave it alone for 3 minutes, until the underside is deep golden, then flip and cook for 3 minutes. It won't be cooked through yet. Transfer it to a plate.",
+  "Add the peppers to the skillet and cook, stirring, for 3 minutes. Add the garlic and cook for 30 seconds, until it smells sweet.",
+  "Pour in the wine and scrape up the browned bits. Let it bubble for 1 minute.",
+  "Add the tomatoes with their juice and crush them with the back of a spoon. Add the broth and the rest of the salt and pepper. Return the chicken and any juices from the plate.",
+  "Bring to a boil, then lower the heat to medium-low and partly cover. Simmer for 15 minutes, until the peppers are soft and the sauce clings to the chicken. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a thick piece: it's done when there's no pink left and the juices run clear.",
+  "Taste it. If it's flat, add a pinch more salt. Serve in shallow bowls with the sauce spooned over."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Roman versions agree on chicken braised with peppers, garlic, white wine and tomato. The lead adds pancetta and broth; the others use fresh tomatoes or tomato paste instead. The lead uses jointed bone-in chicken simmered for 40 minutes; boneless thighs cut in half cook in 15 minutes here, which keeps it under 50. None of the three pages had ratings.",
+ "sources": [
+  {
+   "name": "Donal Skehan",
+   "title": "Pollo Ai Peperoni",
+   "url": "https://donalskehan.com/recipes/pollo-ai-peperoni-roman-style-chicken/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Memorie di Angelina",
+   "title": "Pollo coi peperoni (Chicken and Peppers)",
+   "url": "https://memoriediangelina.com/2009/06/28/pollo-coi-peperoni/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Nonna Antoinette",
+   "title": "Pollo con Peperoni - Chicken with Peppers",
+   "url": "https://www.nonnaantoinette.com/recipe/pollo-con-peperoni---chicken-with-peppers",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

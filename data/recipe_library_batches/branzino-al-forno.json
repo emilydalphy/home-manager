@@ -1,0 +1,84 @@
+{
+ "dish_name": "Branzino al Forno",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Whole branzino",
+   "qty": "2 (1 to 1 1/2 lbs each)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 small pack",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Line a baking sheet with parchment.",
+  "Pat the branzino dry inside and out. Make 3 shallow cuts on each side of each fish.",
+  "Cut one lemon into thin slices and the other into wedges. Smash the garlic cloves.",
+  "Rub the fish all over with 2 tbsp of the oil, then season inside and out with 1 tsp of the salt and the pepper. Set them on the baking sheet.",
+  "Stuff each cavity with half the lemon slices, 2 garlic cloves, 3 thyme sprigs and a handful of parsley.",
+  "Roast for 16 to 18 minutes, until the flesh is opaque and flakes easily at the thickest part near the backbone.",
+  "Transfer the fish to a platter and let them sit for 2 minutes. Run a knife along the backbone of each fish, lift off the top fillet, pull out the bones, then lift off the bottom fillet.",
+  "Chop 2 tbsp of the remaining parsley. Drizzle the fillets with the remaining 2 tbsp oil, then scatter the parsley over them. Taste it. If it's flat, add the rest of the salt or a squeeze of the lemon wedges. Serve with the wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on a whole fish stuffed with lemon, garlic and herbs, oiled and roasted hot for under 20 minutes until it flakes. They differ on the herbs and on whether to add butter or cherry tomatoes. This follows the oil-only version so it stays dairy-free. Each fish feeds 2.",
+ "sources": [
+  {
+   "name": "Downshiftology",
+   "title": "Whole Roasted Branzino (Lemon Herb)",
+   "url": "https://downshiftology.com/recipes/whole-roasted-branzino-lemon-herb/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cilantro Parsley",
+   "title": "Roasted Branzino with Cherry Tomatoes",
+   "url": "https://www.cilantroparsley.com/branzino-al-forno/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

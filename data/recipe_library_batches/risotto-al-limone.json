@@ -1,0 +1,96 @@
+{
+ "dish_name": "Risotto al Limone",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Arborio rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (3 oz)",
+   "category": "dairy",
+   "cook_qty": "3/4 cup grated"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pour the broth into a small pot and heat it over low heat. Keep it warm the whole time you cook the rice.",
+  "Zest both lemons into a small bowl, then juice them into another. That should be about 1/4 cup of juice.",
+  "Finely dice the onion. Grate the Parmesan. That should be about 3/4 cup.",
+  "Warm the olive oil in a large wide pan over medium heat. Add the onion and 1/2 tsp of the salt, and cook, stirring, for 3 minutes, until it's soft and see-through.",
+  "Add the rice and stir for 2 minutes, until the grains look glossy and the edges turn slightly see-through.",
+  "Pour in the wine and stir until the pan is almost dry, about 2 minutes.",
+  "Add a ladle of the warm broth, about 1/2 cup, and stir until the rice has soaked it up. Add another ladle and keep going, stirring often, for 18 to 20 minutes. You'll use most or all of the broth. The risotto is ready when it's creamy and the rice is tender with a little bite in the middle.",
+  "Take the pan off the heat. Stir in the lemon zest, the lemon juice, the butter and 1/2 cup of the Parmesan. Stir hard for 1 minute, until it's creamy.",
+  "Taste it. If it's flat, add a pinch more salt and a few grinds of the pepper. Serve in warm bowls with the rest of the Parmesan on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on the method: soften the onion, toast the rice, add wine, then warm broth a ladle at a time, with the lemon and cheese stirred in off the heat. The lead is written for 2, so every amount here is doubled for 4. The second version adds mascarpone and shallot; this one stays with the lead's butter and Parmesan finish. Vegetable broth keeps it vegetarian; use a gluten-free broth.",
+ "sources": [
+  {
+   "name": "Cooking My Dreams",
+   "title": "Risotto al Limone (Creamy Lemon Risotto)",
+   "url": "https://cookingmydreams.com/lemon-risotto/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Seasoned and Salted",
+   "title": "Risotto al Limone (Lemon Risotto with Mascarpone)",
+   "url": "https://seasonedandsalted.com/italian-risotto-al-limone-lemon-risotto-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
