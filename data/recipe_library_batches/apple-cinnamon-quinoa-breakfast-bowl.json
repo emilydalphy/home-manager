@@ -1,0 +1,100 @@
+{
+ "dish_name": "Apple Cinnamon Quinoa Breakfast Bowl",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Quinoa",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 4 tsp"
+  },
+  {
+   "item": "Unsweetened soy milk",
+   "qty": "1 carton",
+   "category": "pantry",
+   "cook_qty": "1/4 cup, plus a splash for reheating"
+  },
+  {
+   "item": "Apples",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 4 days ahead: Rinse the 1 cup quinoa in a fine strainer under cold water for 30 seconds and shake it dry.",
+  "Add the quinoa, 2 cups water and a pinch of salt to a medium pot. Bring it to a boil over high heat, then cover, turn the heat to medium-low and cook for 15 minutes, until the water is absorbed.",
+  "Turn off the heat, leave the lid on and let it steam for 10 minutes. Meanwhile, peel, core and dice the apples.",
+  "Heat the 2 tbsp coconut oil in a medium skillet over medium-high heat. Add the apples, 4 tsp of the maple syrup and 1/2 tsp of the cinnamon. Cook for 5 minutes, stirring now and then, until the apples are soft.",
+  "Fluff the quinoa with a fork. Stir in the remaining 2 tsp cinnamon, the ginger, the nutmeg, the remaining 1/4 cup maple syrup and the 1/4 cup soy milk.",
+  "Fold in the apples, or keep them to spoon on top. Divide the quinoa among 4 bowls.",
+  "Fridge: let the quinoa cool, then keep it in a sealed container for up to 4 days. Eat it cold, or warm it.",
+  "To warm a bowl, microwave it for 1 to 2 minutes with a splash of soy milk, stirring once, until hot all the way through."
+ ],
+ "advance_prep_notes": "Cook the pot of quinoa and apples on Sunday, or up to 4 days ahead, and keep it in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "Recipe Runner is the lead, with its quinoa to water ratio (1 to 2), its cinnamon, ginger and nutmeg, and the apples cooked in a pan with maple syrup. Made vegan, dairy-free and nut-free: coconut oil instead of butter, soy milk, and the cinnamon yogurt, pecans and coconut flakes left off. Slender Kitchen cooks the quinoa right in the milk with the apples and says the bowls keep 3 to 4 days. Scaled from 2 servings to 4.",
+ "sources": [
+  {
+   "name": "Recipe Runner",
+   "title": "Apple Cinnamon Quinoa Breakfast Bowls",
+   "url": "https://reciperunner.com/apple-cinnamon-quinoa-breakfast-bowls/",
+   "rating": 4.29,
+   "rating_count": 52,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Slender Kitchen",
+   "title": "Apple Cinnamon Quinoa Breakfast Bowl",
+   "url": "https://slenderkitchen.com/recipe/apple-cinnamon-quinoa-breakfast-bowl",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

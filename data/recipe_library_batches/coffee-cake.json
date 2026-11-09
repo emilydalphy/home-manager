@@ -1,0 +1,113 @@
+{
+ "dish_name": "Coffee Cake",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 12,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "4 3/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 1/2 cups"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/3 cups"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "2 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "18 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 1/4 cups",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 3 days ahead: Heat the oven to 350°F and grease a 9 by 13 inch pan. Take the butter out ahead so 12 tbsp of it is soft.",
+  "Make the topping. Melt 6 tbsp of the butter. In a medium bowl, stir 1 cup sugar, 1/4 tsp salt, 1 cup flour and 1 tbsp cinnamon, then stir in the melted butter until it's crumbly. Set it aside.",
+  "Make the filling. In a small bowl, stir 1 cup brown sugar and the remaining 1 1/2 tbsp cinnamon. Set it aside.",
+  "In a large bowl, beat the 12 tbsp soft butter with the remaining 1 tsp salt, 1 1/2 cups sugar, the remaining 1/3 cup brown sugar, 2 1/2 tsp baking powder and 2 tsp vanilla for about 2 minutes, until smooth.",
+  "Beat in the 3 eggs, one at a time.",
+  "Whisk the 3/4 cup sour cream and 1 1/4 cups milk together in a measuring cup.",
+  "Add 1 1/4 cups of the remaining flour to the butter bowl and mix on low. Add a third of the milk mix and mix again. Repeat until all the flour (3 3/4 cups in total) and the milk are in, mixing only until no dry flour is left.",
+  "Spread half the batter into the pan. Sprinkle the filling over it, then spread the rest of the batter on top. Run a knife through the layers once or twice to swirl the filling.",
+  "Sprinkle the topping over the batter in clumps.",
+  "Bake for 55 to 60 minutes, until the top is golden and a toothpick in the center comes out clean.",
+  "Cool in the pan for 20 minutes, then cut it into 12 squares. This makes 12 squares.",
+  "Fridge: once the squares are completely cool, keep them in a sealed container for up to 5 days.",
+  "Freezer: wrap the squares one at a time and freeze them in a bag for up to 2 months.",
+  "In the morning, warm a square in the microwave for 20 to 30 seconds. For a frozen one, microwave it for 45 to 60 seconds, until warm in the middle."
+ ],
+ "advance_prep_notes": "Bake the whole pan on Sunday, or up to 3 days ahead, and keep the squares in the fridge or freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13
+ ],
+ "method_notes": "King Arthur's cinnamon streusel coffee cake is the lead: a sour cream batter, a brown sugar and cinnamon ribbon through the middle and a melted-butter streusel on top. The optional cocoa for color was left out. Search results for other sour cream coffee cakes (Rachel Cooks, Preppy Kitchen, House of Nash Eats) all use the same layering of batter, filling, batter, streusel. The recipe is a full 9 by 13 pan.",
+ "sources": [
+  {
+   "name": "King Arthur Baking",
+   "title": "Cinnamon Streusel Coffee Cake",
+   "url": "https://www.kingarthurbaking.com/recipes/cinnamon-streusel-coffee-cake-recipe",
+   "rating": 4.3,
+   "rating_count": 677,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

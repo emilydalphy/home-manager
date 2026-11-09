@@ -1,0 +1,85 @@
+{
+ "dish_name": "Savory Oatmeal with Egg",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Old-fashioned rolled oats",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Mild cheddar cheese",
+   "qty": "3/4 cup shredded (3 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 green onions"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Up to 4 days ahead, or just before eating: Bring 2 cups water to a boil in a small pot. Stir in the 1 cup oats, 1/4 tsp salt and 1/4 tsp pepper.",
+  "Turn the heat to low and simmer for 15 minutes, stirring now and then, until the oats are thick and creamy. Stir in 1 tbsp of the butter.",
+  "To keep them for the week, let the oats cool, then keep them in a sealed container in the fridge for up to 4 days.",
+  "To reheat a portion, microwave it for 1 to 2 minutes with a splash of water, stirring once, until hot.",
+  "Slice the green onions and shred the cheddar.",
+  "Melt the remaining 2 tbsp butter in a nonstick skillet over medium heat. Crack in the eggs, cover and cook for 2 to 3 minutes, until the whites are set and the yolks are still runny. For firm yolks, cook for 4 minutes.",
+  "Divide the oats among 4 bowls. Top each with some of the cheddar and green onion and a fried egg.",
+  "Sprinkle the remaining 1/4 tsp salt and 1/4 tsp pepper over the eggs."
+ ],
+ "advance_prep_notes": "Cook the oats ahead and keep them in the fridge for up to 4 days.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "The cooking is the Egg Farmers of Canada version: oats simmered in water, butter stirred in, then cheddar, green onion and a butter-fried egg on top. None of the readable versions has 20 or more ratings (Feel Good Foodie has none, Fit Foodie Finds' avocado version has 7), so this leads with the egg farmers' page, unrated. Fitting the 15-minutes-or-less breakfast, the oats are the make-ahead part: cooked fresh they take about 25 minutes, reheated they take 2.",
+ "sources": [
+  {
+   "name": "Egg Farmers of Canada",
+   "title": "Savoury Cheddar and Green Onion Oatmeal with Fried Eggs",
+   "url": "https://eggs.ca/recipes/savoury-cheddar-and-green-onion-oatmeal-with-fried-eggs",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Feel Good Foodie",
+   "title": "Savory Oatmeal",
+   "url": "https://feelgoodfoodie.net/recipe/savory-oatmeal/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

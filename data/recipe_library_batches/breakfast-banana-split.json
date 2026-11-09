@@ -1,0 +1,55 @@
+{
+ "dish_name": "Breakfast Banana Split",
+ "cuisine": "American",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 7,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Bananas",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "4 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Granola",
+   "qty": "1 small bag (gluten-free, nut-free)",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  }
+ ],
+ "instructions": [
+  "Peel the 4 bananas and slice each one in half lengthwise.",
+  "Lay 2 halves in each of 4 bowls, cut side up.",
+  "Spoon 1 cup of the yogurt between the banana halves in each bowl.",
+  "Top each bowl with 1/2 cup of the blueberries and 3 tbsp of the gluten-free, nut-free granola.",
+  "Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Choosing Chia is the lead: a split banana, yogurt in the middle, then berries and a crunchy topping. It has 2 ratings, so this is a fallback. The source calls for any yogurt and leaves the toppings open. This version uses plain yogurt, blueberries and a gluten-free, nut-free granola, so it keeps its gluten-free and nut-free tags. It is best put together just before eating, so the banana stays pale. You can portion the yogurt and berries ahead and slice the banana last.",
+ "sources": [
+  {
+   "name": "Choosing Chia",
+   "title": "Breakfast Banana Split",
+   "url": "https://choosingchia.com/breakfast-banana-split/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

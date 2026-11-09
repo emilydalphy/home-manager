@@ -1,0 +1,121 @@
+{
+ "dish_name": "Apple Cinnamon Muffins",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 12,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Apples",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 3 days ahead: Heat the oven to 400°F and line a 12-cup muffin tin with paper liners. Melt the 1/2 cup butter in a large bowl in the microwave, about 1 minute.",
+  "In a second large bowl, whisk the 2 1/2 cups flour, 2 tsp baking powder, 1 tsp baking soda and 1/2 tsp salt.",
+  "Whisk the 3/4 cup sugar and 1/2 cup brown sugar into the melted butter until it's smooth. Whisk in the 1 cup milk, 2 eggs and 2 tsp vanilla.",
+  "Peel and core the apples, then chop them small, about 1/4 inch. That should be about 2 cups.",
+  "Pour the wet mix into the flour bowl and fold until there's no dry flour left. A few lumps are fine. Fold in the apples and 2 tsp cinnamon. Stop as soon as they're mixed in.",
+  "Divide the batter among the 12 cups and fill each to the top.",
+  "Bake at 400°F for 5 minutes, then turn the oven down to 350°F and bake for 16 to 17 minutes, until a toothpick in the center comes out clean. Keep the oven door shut when you turn it down.",
+  "Cool the muffins in the pan for 5 minutes, then move them to a rack to cool completely. This makes 12 muffins.",
+  "Fridge: keep them in a sealed container with a paper towel on top for up to 5 days.",
+  "Freezer: spread the cooled muffins in a single layer on a tray and freeze for about 2 hours, until solid. Transfer them into a freezer bag. They keep for up to 3 months.",
+  "In the morning, warm a fridge muffin in the microwave for 20 to 30 seconds. For a frozen one, microwave it for 45 to 60 seconds, until warm in the middle."
+ ],
+ "advance_prep_notes": "Bake the whole batch on Sunday, or up to 3 days ahead, and keep the muffins in the fridge or freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "Wholefully's version is the lead: a plain muffin with the apple chopped small, and a hot start (5 minutes at 400°F, then 350°F) that gives tall tops. Love and Lemons also hot-starts at 400°F and uses the same 2 cups of apple, but it leans on almond flour, so none of it was used here. Wholefully shows 18 muffins on the card but bakes in a 12-cup tin, so this is written as 12 tall ones. Both sources freeze the muffins for up to 3 months.",
+ "sources": [
+  {
+   "name": "Wholefully",
+   "title": "Apple Cinnamon Muffins",
+   "url": "https://wholefully.com/apple-cinnamon-muffins-recipe",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Apple Muffins",
+   "url": "https://www.loveandlemons.com/apple-muffins-recipe/",
+   "rating": 4.95,
+   "rating_count": 18,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

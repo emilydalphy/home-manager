@@ -1,0 +1,126 @@
+{
+ "dish_name": "Chocolate Zucchini Muffins",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 12,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 23,
+ "ingredients": [
+  {
+   "item": "Whole wheat flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened cocoa powder",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bananas",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Chocolate chips",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 3 days ahead: Heat the oven to 375°F and line a 12-cup muffin tin with paper liners.",
+  "In a medium bowl, whisk the 1 1/2 cups flour, 1/2 cup cocoa, 1 tsp baking powder, 1 tsp baking soda and 1/2 tsp salt.",
+  "In a large bowl, mash the banana, then whisk in the 2 eggs, 1/2 cup sugar, 1/2 cup milk, 2 tsp oil and 1 tsp vanilla.",
+  "Shred the zucchini on the big holes of a box grater, then squeeze out the extra water in a clean towel. That should be about 1 cup.",
+  "Stir the flour mix into the wet bowl until just combined. Fold in the zucchini and 1/4 cup of the chocolate chips. Stop as soon as there's no dry flour left.",
+  "Divide the batter among the 12 cups and sprinkle the remaining 1/4 cup chips over the tops.",
+  "Bake for 23 minutes, until a toothpick in the center comes out clean.",
+  "Cool the muffins completely in the tin before you move them. This makes 12 muffins.",
+  "Counter or fridge: keep them in a sealed container for up to 4 days, in the fridge if your kitchen is warm.",
+  "Freezer: wrap the cooled muffins one at a time and freeze them in a bag for up to 2 months.",
+  "In the morning, warm a muffin in the microwave for 20 to 30 seconds. For a frozen one, microwave it for 45 to 60 seconds, until warm in the middle."
+ ],
+ "advance_prep_notes": "Bake the whole batch on Sunday, or up to 3 days ahead, and keep the muffins on the counter, in the fridge or in the freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "Our Zesty Life is the lead: whole wheat and cocoa, a mashed banana for sweetness and moisture, and chocolate chips folded in and sprinkled on top. It has 12 ratings, so this is a fallback. Its walnuts are left out to keep it nut-free. Little Sweet Baker says not to squeeze the zucchini, but this follows the lead and squeezes out the extra water. All the sources agree: shredded zucchini, cocoa, chips, and mix as little as you can.",
+ "sources": [
+  {
+   "name": "Our Zesty Life",
+   "title": "Chocolate Zucchini Muffins",
+   "url": "https://ourzestylife.com/chocolate-zucchini-muffins/",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Little Sweet Baker",
+   "title": "Healthy Chocolate Zucchini Muffins",
+   "url": "https://www.littlesweetbaker.com/healthy-chocolate-zucchini-muffins/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

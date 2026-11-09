@@ -1,0 +1,77 @@
+{
+ "dish_name": "Honey Lime Fruit Salad",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Strawberries",
+   "qty": "1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Kiwi",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Mango",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 container (6 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Green grapes",
+   "qty": "1/2 lb",
+   "category": "produce",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Canned pineapple chunks in juice",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Wash the strawberries, then hull and slice them. Peel the kiwi and slice them into half moons. Peel the mango and dice it.",
+  "Halve the 1/2 cup grapes. Drain the pineapple into a small bowl and save 1 tbsp of the juice.",
+  "Transfer all the fruit and the 6 oz blueberries into a large bowl.",
+  "Juice the lime into a small bowl. That should be about 2 tbsp. Whisk in the 2 tbsp honey and the 1 tbsp pineapple juice.",
+  "Pour the dressing over the fruit and toss gently until it's coated.",
+  "Chill it for 15 minutes if you have time. Toss it again before you serve, since the juices settle at the bottom.",
+  "Store leftovers in a sealed container in the fridge for up to 2 days, and toss before serving."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cafe Delites is the lead: a mix of berries, kiwi, mango, grapes and pineapple with a dressing of honey, lime juice and a spoon of pineapple juice. It has 10 ratings, so this is a fallback. The lead's dressing is mostly honey; here the lime is a whole lime, closer to what other honey lime salads use (equal honey and lime juice). It is halved to serve 4. The lead says to dress the fruit just before serving, or a few hours ahead with the dressing kept separate.",
+ "sources": [
+  {
+   "name": "Cafe Delites",
+   "title": "Honey Lime Fruit Salad",
+   "url": "https://cafedelites.com/honey-lime-fruit-salad-recipe/",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

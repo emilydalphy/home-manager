@@ -1,0 +1,61 @@
+{
+ "dish_name": "Bagel with Lox and Cream Cheese",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 3,
+ "ingredients": [
+  {
+   "item": "Bagels",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Cream cheese",
+   "qty": "1 tub (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Smoked salmon",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 small jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Slice the red onion as thin as you can and set it aside. Use about a quarter of the onion.",
+  "Split the 4 bagels in half and toast them until golden, about 3 minutes.",
+  "Spread the 1/2 cup cream cheese over the cut sides of all 8 halves.",
+  "Lay the 12 oz smoked salmon over the cream cheese, 3 oz per bagel.",
+  "Top with the onion slices and scatter the 2 tbsp capers over the top. The capers stay put on the cream cheese.",
+  "Serve open faced, or close each bagel into a sandwich."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Mountain Kitchen's bagels and lox is the lead: a toasted bagel, cream cheese on both halves, salmon, red onion and capers. It has only 3 ratings, so this is a fallback lead. It uses 4 oz of salmon per bagel; this uses 3 oz (the amount Philadelphia suggests per mini bagel) to keep it affordable. The optional tomato, cucumber, avocado, lemon and dill were left out to keep it as the classic. Best put together just before eating.",
+ "sources": [
+  {
+   "name": "The Mountain Kitchen",
+   "title": "Bagels and Lox",
+   "url": "https://www.themountainkitchen.com/bagels-and-lox/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
