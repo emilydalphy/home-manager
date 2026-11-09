@@ -1,0 +1,226 @@
+[
+{
+"dish_name": "Turkey Sausage Breakfast Sandwiches",
+"cuisine": "American",
+"main_protein": "turkey",
+"ingredients": [
+"Ground turkey",
+"Fennel seeds",
+"Garlic powder",
+"Paprika",
+"Salt",
+"Black pepper",
+"Olive oil",
+"Eggs",
+"Baby spinach",
+"Whole wheat English muffins",
+"Shredded cheddar"
+]
+},
+{
+"dish_name": "Turkey Shepherd's Pie",
+"cuisine": "American",
+"main_protein": "turkey",
+"ingredients": [
+"Ground turkey",
+"Olive oil",
+"Yellow onion",
+"Garlic",
+"Tomato paste",
+"Dried thyme",
+"Gluten-free chicken broth",
+"Gluten-free Worcestershire sauce",
+"Frozen peas",
+"Frozen corn",
+"Yukon Gold potatoes",
+"Butter",
+"Milk",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Turkey Taco Lettuce Wraps",
+"cuisine": "Mexican",
+"main_protein": "turkey",
+"ingredients": [
+"Ground turkey",
+"Olive oil",
+"Yellow onion",
+"Red bell pepper",
+"Garlic powder",
+"Ground cumin",
+"Chili powder",
+"Paprika",
+"Dried oregano",
+"Salt",
+"Tomato sauce",
+"Iceberg lettuce",
+"Salsa"
+]
+},
+{
+"dish_name": "Vada Pav",
+"cuisine": "Indian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Yukon gold potatoes",
+"Cilantro",
+"Green chilies",
+"Garlic",
+"Ginger",
+"Lemon",
+"Curry leaves",
+"Unsweetened shredded coconut",
+"Besan (chickpea flour)",
+"Rice flour",
+"Cumin seeds",
+"Mustard seeds",
+"Kashmiri red chili powder",
+"Turmeric",
+"Gluten-free asafoetida (hing)",
+"Salt",
+"Vegetable oil",
+"Pav buns (soft dinner rolls)"
+]
+},
+{
+"dish_name": "Vendakka Mappas",
+"cuisine": "Indian",
+"main_protein": "vegan",
+"ingredients": [
+"Okra",
+"Onion",
+"Tomato",
+"Fresh ginger",
+"Green chilies",
+"Curry leaves",
+"Coconut milk",
+"Coconut oil",
+"Ground turmeric",
+"Ground coriander",
+"Kashmiri chili powder",
+"Garam masala",
+"Black pepper",
+"Mustard seeds",
+"Dried red chilies",
+"Salt",
+"Basmati rice"
+]
+},
+{
+"dish_name": "Xiu Mai",
+"cuisine": "Vietnamese",
+"main_protein": "pork",
+"ingredients": [
+"Ground pork",
+"Jicama",
+"Yellow onion",
+"Garlic",
+"Fish sauce",
+"Salt",
+"Black pepper",
+"Sugar",
+"Sesame oil",
+"Chicken bouillon powder",
+"Tomatoes",
+"Tomato paste",
+"Cornstarch",
+"Jasmine rice"
+]
+},
+{
+"dish_name": "Yakgwa",
+"cuisine": "Korean",
+"main_protein": "vegetarian",
+"ingredients": [
+"All-purpose flour",
+"Sweet rice flour",
+"Toasted sesame oil",
+"Vegetable oil",
+"Salt",
+"Honey",
+"Ground cinnamon",
+"Korean rice syrup",
+"Ground ginger",
+"Fresh ginger"
+]
+},
+{
+"dish_name": "Yetakelt Wat",
+"cuisine": "Ethiopian",
+"main_protein": "vegan",
+"ingredients": [
+"Onion",
+"Garlic",
+"Carrots",
+"Russet potatoes",
+"Snow peas",
+"Tomatoes",
+"Vegetable oil",
+"Berbere",
+"Paprika",
+"Black pepper",
+"Salt",
+"Tomato paste",
+"Vegetable broth",
+"Injera"
+]
+},
+{
+"dish_name": "Zeppole",
+"cuisine": "Italian",
+"main_protein": "vegetarian",
+"ingredients": [
+"Unsalted butter",
+"Whole milk",
+"All-purpose flour",
+"Eggs",
+"Sugar",
+"Salt",
+"Powdered sugar",
+"Vegetable oil"
+]
+},
+{
+"dish_name": "Zuppa di Farro",
+"cuisine": "Italian",
+"main_protein": "vegan",
+"ingredients": [
+"Yellow onion",
+"Carrots",
+"Celery",
+"Garlic",
+"Fresh rosemary",
+"Fresh sage",
+"Olive oil",
+"Tomato paste",
+"Canned borlotti beans",
+"Semi-pearled farro",
+"Vegetable broth",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Zuppa Toscana",
+"cuisine": "Italian",
+"main_protein": "pork",
+"ingredients": [
+"Bacon",
+"Mild Italian sausage",
+"Yellow onion",
+"Garlic",
+"Chicken broth",
+"Yukon Gold potatoes",
+"Salt",
+"Black pepper",
+"Dried oregano",
+"Dried thyme",
+"Bay leaves",
+"Kale",
+"Heavy cream",
+"Parmesan"
+]
+}
+]
