@@ -1,0 +1,44 @@
+{
+ "dish_name": "Ga Nuong Mat Ong",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1 1/2 lbs", "category": "meat/seafood"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Lemongrass", "qty": "3 stalks", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 piece (2 inches)", "category": "produce"},
+  {"item": "Gluten-free tamari", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Honey", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Mince the tender lower half of the lemongrass stalks as fine as you can. That should be about 3 tbsp. Mince the garlic and grate 1 tbsp of the ginger.",
+  "In a large bowl, whisk the lemongrass, garlic, ginger, tamari, fish sauce, the juice of 1 lime, the honey, 1 tbsp of the oil and the pepper.",
+  "Add the chicken and turn it until every piece is coated. Cover and refrigerate for 30 minutes. Don't go past 2 hours.",
+  "Heat the oven to 425°F. Line a rimmed baking sheet with foil and brush it with the remaining 1 tbsp oil.",
+  "Rinse the rice and cook it by the directions on the package.",
+  "Meanwhile, take the chicken out of the fridge and leave it on the counter for 10 minutes. Shake off the extra marinade and lay the thighs on the baking sheet, smooth side up, with space between them.",
+  "Bake on the middle rack for 20 minutes. You're cooking the thighs to 175°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into the thickest piece: it's done when the juices run clear and there's no pink left.",
+  "Switch the oven to broil. Broil for 2 to 3 minutes, until the tops are deep golden and glossy. Stay by the oven. The honey burns fast.",
+  "Let the chicken rest for 5 minutes. Meanwhile, chop the cilantro and cut the second lime into wedges.",
+  "Taste a piece. If it's flat, add a squeeze of lime.",
+  "Serve with the rice, the cilantro and the lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Girl Carnivore leads: boneless thighs in a lemongrass, garlic, ginger, fish sauce, lime and honey marinade, baked at 425°F on a rack, then broiled briefly. Dobber Nation's version uses skin-on thighs and bakes at 400°F for about 40 minutes with a honey-butter glaze, which is too slow here. Soy sauce became gluten-free tamari, fresh lemongrass replaces the tube paste, and thighs are taken to 175°F rather than the source's 165°F. Neither source has a sauce, so none was added. The 30-minute marinade happens beside the 45 minutes of prep and cook.",
+ "sources": [
+  {"name": "Girl Carnivore", "title": "Baked Lemongrass Chicken Thighs", "url": "https://girlcarnivore.com/baked-lemongrass-chicken-thighs/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Dobber Nation Loves", "title": "Ga Nuong Vietnamese Grilled Chicken", "url": "https://dobbernationloves.com/wprm_print/ga-nuong-vietnamese-grilled-chicken", "rating": 5.0, "rating_count": 1, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,50 @@
+{
+ "dish_name": "Bo Nuong La Lot",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {"item": "Ground beef (80% lean)", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Wild betel leaves (la lot)", "qty": "1 pack (4 oz)", "category": "produce"},
+  {"item": "Lemongrass", "qty": "2 stalks", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Chinese five-spice powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Toasted sesame oil", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "5 tbsp plus 1 tsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Rice vermicelli", "qty": "8 oz", "category": "pantry"},
+  {"item": "Green leaf lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Mint", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Heat the oven to 450°F. Brush a rimmed baking sheet with the vegetable oil.",
+  "Rinse the betel leaves in cold water, then pat them dry with a clean towel. Lay them flat on a second towel with the shiny side down.",
+  "Mince the tender lower half of both lemongrass stalks. Finely chop 2 of the green onions, and slice the rest thinly for the end.",
+  "In a large bowl, combine the beef, the lemongrass, the 2 chopped green onions, 1 tsp fish sauce, the cornstarch, the five-spice, the sesame oil and the pepper. Mix with your hands for about 1 minute, until it looks sticky and you can't see any dry cornstarch.",
+  "Put about 2 tsp of the filling near the tip of a leaf, then roll it up to about 1/2 inch from the stem. Set it seam side down on the baking sheet. Repeat with the rest, leaving a little space between the rolls. That should be about 40 rolls.",
+  "Bring a large pot of water to a boil for the vermicelli.",
+  "Meanwhile, make the dipping sauce. Stir 5 tbsp fish sauce, 5 tbsp warm water and the sugar in a small bowl until the sugar dissolves. Mince the garlic and stir it in with the juice of the lime.",
+  "Bake the rolls for 5 minutes. Flip each one and bake for 3 minutes, until the leaves are dark and the filling feels firm. You're cooking the beef to 160°F in the middle, so if you have a thermometer, check one roll there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "While the rolls bake, cook the vermicelli for the time on the package, usually 3 to 5 minutes. Drain it and rinse it under cold water.",
+  "Tear the lettuce into pieces and pick the mint leaves.",
+  "Divide the vermicelli, lettuce and mint between 4 bowls and set the rolls on top. Scatter the sliced green onions over them and serve with the dipping sauce.",
+  "Taste the sauce. If it's flat, add a pinch more sugar or a splash of fish sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Runaway Rice leads: a ground beef filling with lemongrass, green onion, fish sauce and five-spice, rolled in betel leaves and cooked at 450°F for 5 minutes, then flipped for 3. The other versions read (L'Academie, Helen's Recipes) add ground pork and peanuts and bake longer at 400°F; those were left out to keep this beef-only and nut-free. Oyster sauce was dropped (most brands contain wheat) and the dipping sauce is a plain nuoc cham in the proportions L'Academie gives. No version had 20 or more ratings. La lot is wild betel, not the chewing leaf; look for it fresh or frozen at Asian grocers.",
+ "sources": [
+  {"name": "Runaway Rice", "title": "Beef Wrapped in Betel Leaves (Bo La Lot)", "url": "https://runawayrice.com/appetizers/beef-wrapped-in-betel-leaves-bo-la-lot/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "L'Academie", "title": "Bo Nuong La Lot (Grilled Beef Wrapped in Wild Betel Leaves)", "url": "https://www.lacademie.com/grilled-beef-wrapped-in-betel-leaves-recipe/", "rating": 5.0, "rating_count": 1, "read": true},
+  {"name": "Helen's Recipes", "title": "Bo La Lot (Grilled Beef Wrapped in Betel Leaf)", "url": "https://helenrecipes.com/recipe-56-bo-la-lot-grilled-beef-wrapped-in-betel-leaf", "rating": null, "rating_count": null, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,39 @@
+{
+ "dish_name": "Mit Kho",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Young green jackfruit in brine or water", "qty": "2 cans (19 oz each)", "category": "pantry"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "6 tbsp"},
+  {"item": "Shallots", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "6 tbsp"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups rice and cook it by the directions on the package.",
+  "Drain the jackfruit and rinse it well. Cut any large pieces in half. Mince the shallots and the garlic, and slice the green onions.",
+  "Put the sugar and 2 tbsp water in a wide pot over medium heat. Don't stir. Let it bubble for 4 to 5 minutes, until it turns a deep golden brown. Stand back a little. It will spatter.",
+  "Add the shallots and stir for 1 minute. Add the garlic and stir for 30 seconds.",
+  "Pour in 1 1/2 cups water, slowly, since it will bubble up hard. Stir for 1 to 2 minutes, until the caramel melts into the water.",
+  "Add the soy sauce, the pepper and the jackfruit. Stir to coat the jackfruit.",
+  "Cover and simmer over medium heat for 15 minutes.",
+  "Uncover and simmer for 5 minutes, until the sauce is thick enough to coat the jackfruit.",
+  "Take the pot off the heat and stir in most of the green onions.",
+  "Taste it. If it's flat, add a splash of soy sauce.",
+  "Serve over the rice with the rest of the green onions on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Full of Plants leads: a caramel made from sugar and a spoonful of water, shallot and garlic stirred in, thinned with water, then young green jackfruit simmered in soy sauce and pepper. The amounts here are the source's doubled for four. The source's optional sweet chili sauce and dark soy were left out to keep the pot mild, and plain soy sauce is used rather than vegan fish sauce so nothing is hard to find. Buy jackfruit packed in brine or water, not syrup. It keeps in the fridge for 3 days and freezes for 2 months; reheat gently with a splash of water. The source has 3 ratings, so this is a fallback lead.",
+ "sources": [
+  {"name": "Full of Plants", "title": "Braised Jackfruit", "url": "https://fullofplants.com/braised-jackfruit/", "rating": 5.0, "rating_count": 3, "read": true, "lead": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,46 @@
+{
+ "dish_name": "Bo Nhung Dam",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {"item": "Thinly sliced beef for hot pot (eye of round or sirloin)", "qty": "1 1/4 lbs", "category": "meat/seafood"},
+  {"item": "Pineapple", "qty": "1", "category": "produce"},
+  {"item": "Lemongrass", "qty": "3 stalks", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1 small", "category": "produce"},
+  {"item": "Coconut water", "qty": "1 carton (20 oz)", "category": "pantry", "cook_qty": "2 1/2 cups"},
+  {"item": "White vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp plus 2 tsp"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Red Thai chili", "qty": "1", "category": "produce"},
+  {"item": "Cucumber", "qty": "1", "category": "produce"},
+  {"item": "Green leaf lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Mint", "qty": "1 bunch", "category": "produce"},
+  {"item": "Rice paper wrappers", "qty": "1 package", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel and core the pineapple. Finely chop one quarter of it, or blend it. That should be about 1/2 cup. Slice the rest lengthwise into thin spears.",
+  "Make the dipping sauce. Stir the 1/2 cup pineapple, the fish sauce, 2 tsp of the sugar and the minced garlic together in a small bowl.",
+  "Cut the cucumber into thin sticks about 3 inches long. Separate the lettuce leaves and pick the mint leaves. Thinly slice the chili and put it in a small bowl for the table.",
+  "Arrange the beef, the pineapple spears, the cucumber, the lettuce and the mint on platters. Fill a wide bowl with warm water for the rice paper.",
+  "Bruise the lemongrass by whacking it with the back of a knife, then tie each stalk into a knot. Cut the onion into rings.",
+  "In a wide pot, combine the coconut water, the vinegar, the salt, the remaining 1 tbsp sugar, the lemongrass, the onion and a few pineapple spears. Bring it to a boil over high heat, then turn it to a gentle simmer.",
+  "Taste the broth. If it's flat, add a pinch more salt or sugar.",
+  "Move the pot to a portable burner or an electric skillet in the middle of the table. If you don't have one, keep it on low on the stove and dip the beef there.",
+  "Dip a few slices of beef in the broth for 10 to 20 seconds, until the color changes and there's no pink left.",
+  "Dip a rice paper sheet in the warm water for a few seconds, then lay it flat. Put on the warm beef with some lettuce, mint, cucumber and pineapple, and roll it up.",
+  "Serve with the dipping sauce, and the chili for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Helen's Recipes is the only version of the dish with usable amounts: a coconut water and white vinegar broth with lemongrass, onion and pineapple, thin beef dipped for 10 to 20 seconds, and a pineapple and fish sauce dip. Other write-ups say the broth is sometimes plain vinegar and water. The page shows no rating. The anchovy dipping sauce (mam nem) and plantain, star fruit and chicken stock were left out so the shopping stays simple. The chili is for the table only. Ask the butcher for beef sliced for hot pot, or freeze eye of round for 20 minutes before slicing it very thin.",
+ "sources": [
+  {"name": "Helen's Recipes", "title": "Bo nhung dam (Beef in Vinegar Hotpot)", "url": "https://helenrecipes.com/recipe-58-bo-nhung-dam-beef-in-vinegar-hotpot", "rating": null, "rating_count": null, "read": true, "lead": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

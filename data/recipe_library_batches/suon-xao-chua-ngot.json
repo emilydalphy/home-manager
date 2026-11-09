@@ -1,0 +1,49 @@
+{
+ "dish_name": "Suon Xao Chua Ngot",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 14,
+ "cook_time_minutes": 36,
+ "ingredients": [
+  {"item": "Pork spare ribs, cut into 1-inch pieces", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Ketchup", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Gluten-free tamari", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1 tbsp plus 1 tsp"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Shallot", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Bell peppers", "qty": "2", "category": "produce"},
+  {"item": "Cremini mushrooms", "qty": "4 oz", "category": "produce"},
+  {"item": "Green onions", "qty": "2", "category": "produce"}
+ ],
+ "instructions": [
+  "Start the rice first. Rinse the rice and cook it by the directions on the package.",
+  "Pat the ribs dry. Toss them with the salt and the pepper and leave them on the counter.",
+  "In a small bowl, stir together the ketchup, sugar, tamari, 1 tsp lime juice, the cornstarch and 1/3 cup water. Set it aside.",
+  "Meanwhile, thinly slice the shallot and the garlic. Cut the bell peppers into 1-inch squares, slice the mushrooms, and slice the green onions.",
+  "Heat the vegetable oil in a large lidded skillet over medium-high until it shimmers. Add the ribs in a single layer, working in two batches if they crowd. Leave them alone for 2 minutes until the underside is deep brown, then turn them and brown the other sides for 2 minutes. Transfer them to a plate.",
+  "Turn the heat down to medium. Add the shallot to the same pan and cook for 1 minute, scraping up the browned bits. Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Return the ribs and any juices to the pan and add 2/3 cup water. Cover and cook over medium-low for 25 minutes, until a chopstick slips easily into the meat. Check once halfway and add a splash of water if the pan is dry.",
+  "Add the bell peppers and cook uncovered for 2 minutes. Add the mushrooms and cook for 1 minute, until they soften.",
+  "Stir the sauce again, since the cornstarch settles, and pour it into the pan. Toss for about 1 minute, until it thickens and coats the ribs.",
+  "Take the pan off the heat. Squeeze the rest of the lime over the ribs and scatter the green onions over the top.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Vicky Pham leads: pork spare ribs cut small, browned, braised in a little water until tender, then finished with bell peppers, mushrooms and a ketchup-based sauce thickened with cornstarch. Delightful Plate and Runaway Rice build the sauce differently (vinegar, honey and tomato; or pineapple-orange juice and tomato paste) and cook the ribs longer. Maggi seasoning and oyster sauce were swapped for gluten-free tamari to keep this gluten-free, and the optional parboil was dropped to hold the time. Ask the butcher to cut the ribs into 1-inch pieces. At 50 minutes this sits right on the line for the 45-minute area.",
+ "sources": [
+  {"name": "Vicky Pham", "title": "Sweet and Sour Pork Spare Ribs (Suon Xao Chua Ngot)", "url": "https://vickypham.com/blog/vietnamese-sweet-sour-pork-spare-ribs-stir-fry-suon-xao-chua-ngot/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Delightful Plate", "title": "Vietnamese Sweet and Sour Pork Ribs (Suon Xao Chua Ngot)", "url": "https://delightfulplate.com/vietnamese-sweet-sour-pork-ribs/", "rating": 5.0, "rating_count": 3, "read": true},
+  {"name": "Runaway Rice", "title": "Sweet and Sour Pork Ribs (Suon Xao Chua Ngot)", "url": "https://runawayrice.com/main-dishes/sweet-and-sour-pork-ribs-suon-xao-chua-ngot/", "rating": null, "rating_count": null, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
