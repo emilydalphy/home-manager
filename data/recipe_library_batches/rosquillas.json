@@ -1,0 +1,95 @@
+{
+ "dish_name": "Rosquillas",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "1 2/3 cups (200 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Egg",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Milk",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp in the dough and about 2 cups for frying"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Anise seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On the weekend, or up to a week ahead: Crush the 1 tsp anise seeds lightly with the back of a spoon on a cutting board. Zest the lemon.",
+  "In a large bowl, whisk the egg with 1/4 cup of the sugar, the 3 tbsp milk, 3 tbsp of the oil, the lemon zest and the anise seeds.",
+  "Add the 1 2/3 cups flour and the baking powder. Mix until you have a soft dough.",
+  "Pour about 2 inches of oil, roughly 2 cups, into a heavy pot and heat over medium-high heat to 350°F. No thermometer? A small piece of dough should sizzle steadily as soon as it goes in.",
+  "Meanwhile, put the other 1/4 cup sugar in a shallow bowl. Oil your hands. Roll the dough into 20 to 25 small balls the size of a walnut and poke a hole through the middle of each with your finger.",
+  "Fry 4 or 5 at a time for about 3 minutes, turning once, until they're deep golden. Stand back a little. They'll spatter.",
+  "Transfer them to a plate lined with paper towels. While they're still warm, roll each one in the sugar.",
+  "Let them cool completely. Keep them in a tin or a sealed bag at room temperature for up to 1 week."
+ ],
+ "advance_prep_notes": "Fry a batch on the weekend, or up to a week ahead; they keep in a tin.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "The anise doughnuts read are fried rings of a quick egg, flour and oil dough, flavored with lemon and anise. The lead, Spanish Foods Recipes (no rating shown), uses anise liquor, which is optional there, so this uses crushed anise seeds as Food.com's version does. Food.com's dough is much larger and fried twice for flavor, and Kenwood uses anise extract. The week of keeping time is from the lead.",
+ "sources": [
+  {
+   "name": "Spanish Foods Recipes",
+   "title": "Rosquillas de Anís: the traditional Spanish doughnuts",
+   "url": "https://spanishfoodsrecipes.blogspot.com/2014/02/rosquillas-de-anis-traditional-spanish.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Rosquillas (Spanish Doughnuts)",
+   "url": "https://www.food.com/recipe/rosquillas-spanish-doughnuts-107386",
+   "rating": null,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,66 @@
+{
+ "dish_name": "Huevos Tirados",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 13,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Refried black beans (check the label for lard)",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the onion into thin half-moons. Mince the garlic.",
+  "Heat 2 tbsp of the oil in a saucepan over medium heat. Add three-quarters of the onion and 1/2 tsp salt. Cook for 4 minutes, stirring now and then, until it's soft and just starting to color.",
+  "Add the garlic and cook for 30 seconds. Add the refried beans and 1/2 cup water, and stir until smooth.",
+  "Warm the beans over low heat for 5 minutes, stirring now and then. If they're thicker than a soup you could ladle, stir in water a splash at a time.",
+  "Meanwhile, beat the eggs in a bowl with 1/2 tsp salt.",
+  "Heat the other 2 tbsp oil in a large skillet over medium-high heat. Add the rest of the onion and cook for 3 minutes, until soft.",
+  "Add the eggs and stir with a spatula for about 3 minutes, until they're set but still soft. Take the pan off the heat.",
+  "Serve the eggs in bowls with the beans ladled over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Zarela Martínez's Veracruz version scrambles eggs with onion and ladles a seasoned bean purée over them, and she says any cooked, well-seasoned beans work, mashed, puréed or refried, and the dish can be as dry or soupy as you like. Hers purées dried chiles, black beans and stock; this keeps the base mild and the time short by warming canned refried black beans with sautéed onion and garlic instead, and uses oil for lard. No rating is shown on her page.",
+ "sources": [
+  {
+   "name": "Zarela Martínez",
+   "title": "Scrambled Eggs with Black Beans (Huevos tirados)",
+   "url": "https://zarela.com/?p=31358",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

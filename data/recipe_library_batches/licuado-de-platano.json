@@ -1,0 +1,70 @@
+{
+ "dish_name": "Licuado de Platano",
+ "cuisine": "Mexican",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 1,
+ "ingredients": [
+  {
+   "item": "Ripe bananas",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Milk",
+   "qty": "4 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the bananas and slice them into the blender. Use ones with brown spots, since they're the sweetest.",
+  "Add the 4 cups milk, the 2 tsp vanilla and 3/4 tsp of the cinnamon. If your blender holds less than 6 cups, blend it in two batches.",
+  "Blend for about 1 minute, until it's smooth and frothy.",
+  "Pour into 4 glasses and dust the tops with the last 1/4 tsp cinnamon. Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The three versions read are the same drink: banana, milk, vanilla and cinnamon blended smooth. In Mama Maggie's Kitchen (the lead, 5.0 from 41 ratings) the sugar is optional, and a ripe banana is sweet enough, so it is left out here. Cupofyum adds a little agave and Mexican Made Meatless adds ice, and both are optional.",
+ "sources": [
+  {
+   "name": "In Mama Maggie's Kitchen",
+   "title": "Licuado de Plátano (Banana Smoothie)",
+   "url": "https://inmamamaggieskitchen.com/licuado-de-platano-banana-smoothie/",
+   "rating": 5.0,
+   "rating_count": 41,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Licuado de Plátano",
+   "url": "https://cupofyum.com/recipes/licuado-de-platano/",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Licuado de Plátano (Mexican Banana Smoothie)",
+   "url": "https://mexicanmademeatless.com/?p=104890",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

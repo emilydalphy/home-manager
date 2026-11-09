@@ -1,0 +1,117 @@
+{
+ "dish_name": "Sobao Pasiego",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Unsalted butter",
+   "qty": "1 cup + 2 tbsp (250 g)",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 1/4 cups (250 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups (250 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Paper baking cups",
+   "qty": "12",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "On the weekend, or up to 5 days ahead: Heat the oven to 350°F with a rack in the middle. Set 12 paper baking cups in a muffin pan. Take the butter and eggs out so they come up to room temperature.",
+  "Beat the butter and sugar with a mixer for 5 to 7 minutes, until pale and fluffy.",
+  "Add the eggs one at a time, beating until each one is mixed in before the next.",
+  "Zest the lemon into the bowl. Stir in the honey and the vanilla.",
+  "Sift the flour, baking powder and a pinch of salt together into a second bowl. Do it twice.",
+  "Fold the flour into the batter in three additions with a large spoon. Stop when no streaks are left, so the batter stays light.",
+  "Spoon the batter into the cups, filling each about two-thirds full.",
+  "Bake for 25 to 30 minutes, until the tops are golden and a skewer comes out clean.",
+  "Let them sit in the pan for 5 minutes, then transfer to a rack to cool completely.",
+  "Once they're cool, keep the sobaos in a zip bag at room temperature for up to 5 days. They're best from the second day. For the freezer, wrap each one and freeze for up to 2 months.",
+  "Thaw a frozen one on the counter. To warm any of them, microwave for 10 seconds."
+ ],
+ "advance_prep_notes": "Bake the whole batch on the weekend, or up to 5 days ahead; they're best the day after baking.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "method_notes": "None of the three versions read shows a full set of ratings, so this leads with The Spanish Chef (4.8, no count shown). All use equal weights of butter, sugar and flour with eggs and a raising agent. The Spanish Chef uses baking powder, honey, lemon zest and vanilla; spain.info uses powdered yeast and rum and bakes at a similar heat, and Bake Street fills 6 big molds. Storage comes from Bake Street (best on day two, tender for about 5 days).",
+ "sources": [
+  {
+   "name": "The Spanish Chef",
+   "title": "Sobao Pasiego",
+   "url": "https://www.thespanishchef.com/recipes/sobao-pasiego-spanish-recipes-dessert",
+   "rating": 4.8,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain.info",
+   "title": "Sobaos pasiegos",
+   "url": "https://www.spain.info/en/recipe/sobaos-pasiegos",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Bake Street",
+   "title": "How to make Sobao Pasiego",
+   "url": "https://bake-street.com/en/how-to-make-sobao-pasiego/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

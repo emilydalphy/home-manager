@@ -1,0 +1,117 @@
+{
+ "dish_name": "Conchas",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 150,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Active dry yeast",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup + 2 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Evaporated milk",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "3/4 cup + 1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Egg",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On the weekend, or up to 5 days ahead: In a large bowl, stir 2 1/2 tsp yeast into 1/2 cup warm water (about 110°F, warm but not hot to your wrist) with 2 tsp of the sugar. Let it sit about 10 minutes, until it's foamy.",
+  "Melt 5 tbsp of the butter in the microwave. Add it to the bowl with the 1/2 cup evaporated milk, 1/3 cup of the sugar, the egg, 1 tsp salt and 2 cups of the flour. Stir until smooth.",
+  "Add 2 more cups of the flour and 1/2 tsp of the cinnamon a little at a time, stirring until a soft dough forms.",
+  "Knead the dough for 6 to 8 minutes, in the bowl or on a clean counter, until it's smooth and stretchy and no longer sticks to your hands.",
+  "Cover the bowl and let the dough rise somewhere warm for 1 to 1 1/2 hours, until it has doubled.",
+  "Meanwhile, make the topping. Beat the other 8 tbsp softened butter with 2/3 cup of the sugar until light and fluffy. Stir in the last 1 cup flour until you have a thick paste that holds together and isn't crumbly.",
+  "Divide the topping in half. Mix 2 tsp cinnamon into one half and 1 tsp vanilla into the other.",
+  "Line two baking sheets with parchment. Divide the risen dough into 12 pieces, roll each into a ball and set them 3 inches apart on the sheets.",
+  "Divide each half of the topping into 6 pieces, so you have 6 cinnamon and 6 vanilla. Flatten each piece into a thin round, press one onto each dough ball, then cut shallow shell grooves into the topping with a knife. Don't cut through to the dough.",
+  "Cover the sheets and let the conchas rise about 45 minutes, until puffy. Heat the oven to 375°F near the end of this time.",
+  "Bake for 16 to 20 minutes, until the conchas are deep golden. Transfer to a rack and let them cool completely.",
+  "Store the cooled conchas in a sealed container, in the fridge or at room temperature, for up to 3 days. For the freezer, freeze them on a baking sheet first, then transfer to a freezer bag. They keep for up to 2 months.",
+  "To reheat, wrap one in a slightly damp paper towel and microwave it for 10 to 15 seconds. Thaw frozen ones on the counter first."
+ ],
+ "advance_prep_notes": "Bake the whole batch on the weekend, or up to 5 days ahead. The dough rises for about 2 hours in all; the baked conchas keep 3 days or freeze for 2 months.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11
+ ],
+ "method_notes": "No version read has 20 ratings, so this leads with the best rated one, Hostess at Heart (4.6 from 5 ratings). The three agree on a soft yeast dough with a butter, sugar and flour topping that is pressed on and scored. They differ on the milk (evaporated milk or whole milk), on cinnamon in the dough, and on the oven (350°F or 375°F); this follows the lead. Storage and reheating come from Amanda's Cookin and Baked Bree.",
+ "sources": [
+  {
+   "name": "Hostess at Heart",
+   "title": "Conchas Recipe (Mexican Sweet Bread)",
+   "url": "https://hostessatheart.com/conchas-mexican-sweet-bread-twelveloaves/",
+   "rating": 4.6,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Amanda's Cookin'",
+   "title": "Conchas (Mexican Sweet Bread)",
+   "url": "https://amandascookin.com/conchas-mexican-sweet-bread/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Baked Bree",
+   "title": "Conchas (Mexican Sweet Bread)",
+   "url": "https://bakedbree.com/conchas-mexican-sweet-bread",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

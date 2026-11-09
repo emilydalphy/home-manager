@@ -1,0 +1,102 @@
+{
+ "dish_name": "Ensaimada",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 180,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "4 cups (500 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Powdered sugar",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The afternoon before, or at least 8 hours ahead: Warm the milk until it's just lukewarm. In a large bowl, mix the 4 cups flour, 2 1/4 tsp yeast, 6 tbsp sugar and 1 tsp salt. Add the milk and knead for 3 minutes.",
+  "Whisk the eggs with the 2 tbsp olive oil. Add them to the dough and knead for 3 minutes, until it's smooth.",
+  "Shape the dough into a ball, cover the bowl and let it rise somewhere warm for 2 hours, until it has doubled.",
+  "Melt the butter. Line two baking sheets with parchment.",
+  "Knead the dough briefly on a lightly floured counter and cut it into 8 pieces. Roll each piece out very thin into a rough square.",
+  "Brush each square with melted butter. Roll it up from one side into a long rope, then coil the rope into a spiral and set it on a baking sheet, 4 to a sheet with space between them.",
+  "Cover the sheets and leave them in a cool spot for 5 to 8 hours, or overnight. They will puff up a lot.",
+  "Heat the oven to 400°F. Bake for about 15 minutes, until they start to turn light brown.",
+  "Let them cool for about 10 minutes, then dust them generously with the powdered sugar.",
+  "Wrap the cooled ensaimadas and keep them at room temperature for up to 3 days. For the freezer, wrap them tightly. They keep for up to 1 month.",
+  "To warm a frozen one, bake it in a 350°F oven for 5 to 8 minutes. Add a little more powdered sugar if you like."
+ ],
+ "advance_prep_notes": "Make and shape the dough the afternoon before; the spirals rest 5 to 8 hours, or overnight, and bake in the morning.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "No version read shows ratings, so this leads with Carrots and Tigers, a simple home version with an enriched dough, thin-rolled squares brushed with fat and coiled into spirals, and a long cool rest. Real Mallorcan ensaimada uses pork lard for the layers; Carrots and Tigers allows butter, which is used here. Fascinating Spain's pages say the pastry is best the day it's baked and Labs Alliebe freezes leftovers, so the keeping times here are the usual ones for a yeast pastry.",
+ "sources": [
+  {
+   "name": "Carrots and Tigers",
+   "title": "Ensaimada de Mallorca … so simple, so good!",
+   "url": "https://carrotsandtigers.com/2021/06/16/ensaimada-de-mallorca-so-simple-so-good/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Labs Alliebe",
+   "title": "Authentic Ensaimada de Mallorca",
+   "url": "https://labsalliebe.com/en/authentic-ensaimada-de-mallorca-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

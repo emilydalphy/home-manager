@@ -1,0 +1,83 @@
+{
+ "dish_name": "Napolitanas",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Puff pastry sheet (all-butter, thawed)",
+   "qty": "1 sheet (about 10 oz)",
+   "category": "frozen"
+  },
+  {
+   "item": "Dark or milk chocolate bar",
+   "qty": "6 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Egg",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "The day before, or up to 3 days ahead: Cut the pastry into 8 rectangles about 5 by 3 inches and set them on a parchment-lined baking sheet. Heat the oven to 350°F.",
+  "Break the chocolate into 16 strips. Set 1 strip about 1 1/2 inches from one short end of each rectangle, fold the short end over it, lay a second strip on top, then roll the pastry over that.",
+  "Beat the egg. Brush half of it over the napolitanas and let them rest for 15 minutes.",
+  "Meanwhile, bring 1/4 cup sugar and 1/4 cup water to a boil in a small saucepan without stirring. Turn off the heat and let it cool.",
+  "Brush the napolitanas again with the rest of the egg. Bake for 10 to 12 minutes, until they're risen and golden.",
+  "Brush the hot napolitanas with the syrup. Let them cool on the pan for 10 minutes so the chocolate sets a little.",
+  "Once they're completely cool, keep them in a sealed container in the fridge for up to 3 days. For the freezer, freeze them on a baking sheet first, then transfer to a freezer bag. They keep for up to 1 month.",
+  "To warm them, heat the oven to 300°F. Bake for 5 to 6 minutes from the fridge, or 8 to 10 minutes from frozen, until hot in the middle."
+ ],
+ "advance_prep_notes": "Bake a batch up to 3 days ahead and warm them in the oven in the morning.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "Directo al Paladar (the lead, 169 votes, no average shown) cuts store-bought puff pastry into rectangles, rolls chocolate inside, brushes with egg twice with a 15 minute rest between, and finishes with a sugar syrup. Las Recetas de Cocina and Merca2 follow the same shaping, and Las Recetas de Cocina brushes with marmalade instead. The melted chocolate drizzle is left off, and none of the pages give storage, so the keeping times here are the usual ones for baked puff pastry.",
+ "sources": [
+  {
+   "name": "Directo al Paladar",
+   "title": "Receta de napolitanas de chocolate caseras",
+   "url": "https://www.directoalpaladar.com/postres/receta-napolitanas-chocolate-caseras-para-alegrar-desayunos-meriendas",
+   "rating": null,
+   "rating_count": 169,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Merca2",
+   "title": "Receta de napolitanas de chocolate",
+   "url": "https://www.merca2.es/2024/02/25/receta-napolitanas-chocolate-1587175/5/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Las Recetas de Cocina",
+   "title": "Mini chocolate napolitanas",
+   "url": "https://en.lasrecetascocina.com/mini-chocolate-napolitanas-2/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
