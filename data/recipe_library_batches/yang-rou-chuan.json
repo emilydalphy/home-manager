@@ -1,0 +1,109 @@
+{
+ "dish_name": "Yang Rou Chuan",
+ "cuisine": "Chinese",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Boneless lamb shoulder",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 1 hour ahead: cut the lamb into 3/4-inch cubes and leave the fat on. Slice the onion thinly and the garlic thinly. In a bowl, toss the lamb with the onion, the garlic, the cornstarch and 2 tbsp of the oil. Cover and refrigerate.",
+  "When you're ready to cook, take the lamb out of the fridge. If you're using bamboo skewers, put 8 of them in water to soak for 30 minutes. Metal skewers need nothing.",
+  "Put 1 1/2 cups of rice, 3 cups of water and 1/4 tsp of the salt in a medium pot. Bring it to a boil over high heat, then turn it to low, cover, and cook for 15 minutes. Take it off the heat and leave the lid on.",
+  "Heat the oven broiler to high, with a rack 4 inches from the heat. Line a rimmed baking sheet with foil and set a wire rack on it.",
+  "Toast the cumin seeds in a dry skillet over medium heat for about 1 minute, until they smell toasty. Add 1 tsp of the pepper flakes and stir for 10 seconds. Transfer both to a mortar or a spice grinder and crush them coarsely, so you can still see pieces. Put this spice mix in a small bowl.",
+  "Put the remaining 1 tbsp pepper flakes in a second small bowl for the table.",
+  "Shake the onion and garlic off the lamb and throw them away. Thread the lamb onto the 8 skewers, pressing the cubes together. Sprinkle 1 tsp of the salt over all sides.",
+  "Lay the skewers on the rack. Broil for 4 minutes, then turn them over and broil for 3 minutes, until the edges are browned and crisp.",
+  "Dust the skewers with half the spice mix. Broil for 1 minute more. Turn them, dust with the rest of the spice mix and broil for 1 minute.",
+  "You're cooking the lamb to 145°F in the middle, so if you have a thermometer, check one cube there. No thermometer? Cut one cube open. It's done when it's just barely pink and the juices run clear.",
+  "Meanwhile, slice the cucumber into rounds.",
+  "Taste a piece. If it's flat, add a pinch more salt.",
+  "Serve with the rice and the cucumber, with the bowl of pepper flakes at the table for anyone who wants more heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "marinate the lamb at least 1 hour ahead, or overnight",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Lead is Not Quite Nigella (5.0 from 15 ratings, under the 20 needed; the other same-dish versions had 7 to 8 ratings or none, so none could lead properly). All the versions agree on fatty lamb shoulder in small cubes, coarsely crushed cumin seeds and chili flakes, and a second dusting of spice partway through cooking. They differ on the marinade: Not Quite Nigella and The Woks of Life keep it to oil, with onion, garlic and a little starch, while Andy Cooks uses soy sauce and sesame. This one follows Not Quite Nigella, with no soy or sesame, so it stays gluten-free. It is cooked under the broiler instead of on charcoal, and most of the chili flakes go on the side to keep the skewers mild. Sources serve with bread; rice and cucumber keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Not Quite Nigella",
+   "title": "Cumin Lamb Skewers (Xinjiang Chinese)",
+   "url": "https://www.notquitenigella.com/2022/02/25/cumin-lamb-skewers-xinjiang-chinese/",
+   "rating": 5.0,
+   "rating_count": 15,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Beijing Lamb Skewers (Yangrou Chuan)",
+   "url": "https://thewoksoflife.com/spicy-beijing-lamb-skewers-yangrou-chuan/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Honest Cooking",
+   "title": "Chinese Xinjiang Chilli Lamb Skewers",
+   "url": "https://honestcooking.com/chinese-xinjiang-chilli-lamb-skewers/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

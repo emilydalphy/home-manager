@@ -1,0 +1,93 @@
+{
+ "dish_name": "Tian Provencal",
+ "cuisine": "French",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Italian eggplant",
+   "qty": "2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "8",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Herbes de Provence",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack in the middle.",
+  "Slice the zucchini, eggplant and tomatoes into rounds about 1/8 inch thick. Cut the eggplant rounds in half.",
+  "Mince the garlic. Stir it with the olive oil and 1 tbsp of the herbes de Provence in a small bowl. Spoon 2 tbsp of this into a 9 by 13 inch baking dish and spread it over the bottom.",
+  "Stand the slices in the dish in tight rows, alternating eggplant, zucchini and tomato, so you can see the edge of each slice. Pack them in, as they shrink while they bake.",
+  "Drizzle the rest of the herb oil over the top. Sprinkle on the salt, the pepper and the other 1 tbsp herbes de Provence.",
+  "Cover the dish with foil and bake for 20 minutes.",
+  "Take off the foil and bake for 20 minutes, until the eggplant is soft, the tomatoes are jammy and the edges are browned.",
+  "Taste a slice. If it's flat, add a pinch more salt.",
+  "Spoon the juices from the bottom of the dish over each portion."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is La Cuisine de Geraldine (4.99 from 51 ratings). Every version agrees on thin vegetable slices packed in rows, olive oil and Provencal herbs, and a bake of around 40 to 60 minutes. They differ on whether there is an onion layer underneath (From A Chef's Kitchen cooks onions first and adds Gruyere and potatoes) and on temperature (350°F in A Lady in France, 425°F in Geraldine's). This follows Geraldine's hot, covered-then-uncovered bake, which keeps it vegan and near the time target. Honest time is about an hour, because the slicing takes a while.",
+ "sources": [
+  {
+   "name": "La Cuisine de Geraldine",
+   "title": "Vegetable Tian a la Provencale",
+   "url": "https://lacuisinedegeraldine.fr/en/vegetable-tian-a-la-provencale",
+   "rating": 4.99,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "From A Chef's Kitchen",
+   "title": "Provencal Vegetable Tian",
+   "url": "https://www.fromachefskitchen.com/late-summer-vegetable-tian/",
+   "rating": 4.73,
+   "rating_count": 11,
+   "read": true
+  },
+  {
+   "name": "A Lady in France",
+   "title": "Tian Provencal Recipe",
+   "url": "https://aladyinfrance.com/tian-provencal-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

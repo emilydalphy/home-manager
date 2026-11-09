@@ -1,0 +1,94 @@
+{
+ "dish_name": "Gratin de Chou-Fleur",
+ "cuisine": "French",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "1 large head",
+   "category": "produce"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "2 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gruyere",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Put a large pot of water on to boil over high heat with 1 tbsp of salt in it. Use 1 tbsp of the butter to grease a 9 by 13 inch baking dish. Grate the Gruyere, which should be about 1 cup.",
+  "Cut the cauliflower into florets about 1 1/2 inches across.",
+  "Add the florets to the boiling water and cook for 8 to 9 minutes, until a knife goes in with a little resistance. Drain them well and leave them in the colander for 5 minutes.",
+  "While they drain, whisk the cornstarch into 1/2 cup of the cold milk in a small bowl until smooth.",
+  "Put the remaining 2 cups milk and the other 2 tbsp butter in a saucepan over medium heat. When it's steaming, whisk in the cornstarch mixture. Keep whisking for 2 to 3 minutes at a gentle bubble, until the sauce coats the back of a spoon.",
+  "Take the saucepan off the heat. Stir in the nutmeg, the pepper, 3/4 tsp salt and half the cheese.",
+  "Transfer the cauliflower to the baking dish. Pour the sauce over and fold it through gently so it settles between the florets.",
+  "Sprinkle the rest of the cheese on top. Bake for 15 to 18 minutes, until golden and bubbling at the edges.",
+  "Leave it for 5 minutes.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is 750g (4.0 from 25 ratings). The sources agree on cauliflower boiled until just tender and drained well, a nutmeg-scented white sauce, and Gruyere split between the sauce and the top. They differ on the sauce: 750g and Simple et Bon thicken with a butter and flour roux, and 750g also boils the cauliflower in bouillon. To keep it vegetarian and gluten-free, this thickens the milk with cornstarch and boils the cauliflower in plain salted water. Amounts are scaled from 750g (which serves 2) using the 4-serving quantities in Simple et Bon.",
+ "sources": [
+  {
+   "name": "750g",
+   "title": "Gratin de chou-fleur au gruyere et a la bechamel",
+   "url": "https://www.750g.com/gratin-de-chou-fleurs-r7990.htm",
+   "rating": 4.0,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simple et Bon",
+   "title": "Gratin de chou-fleur",
+   "url": "https://www.simpleetbon.com/gratin-de-chou-fleur/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "La p'tite cuisine de Pauline",
+   "title": "Gratin de chou-fleur en bechamel",
+   "url": "https://www.ptitecuisinedepauline.com/article-gratin-de-choux-fleur-en-bechamel-115853684.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

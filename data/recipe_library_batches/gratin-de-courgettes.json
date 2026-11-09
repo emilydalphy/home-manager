@@ -1,0 +1,93 @@
+{
+ "dish_name": "Gratin de Courgettes",
+ "cuisine": "French",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Gruyere",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the upper third. Grate the Gruyere, which should be about 1 1/2 cups.",
+  "Slice the zucchini into rounds about 1/8 inch thick.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat. Add half the zucchini in one layer with 1/4 tsp salt. Cook for 2 minutes on each side, until soft and just starting to color. Transfer them to a plate. Repeat with the other 1 tbsp oil, the rest of the zucchini and 1/4 tsp salt.",
+  "In a bowl, whisk the cream, eggs, nutmeg, pepper and 1/2 tsp of the salt until smooth. Stir in half the cheese.",
+  "Overlap the zucchini slices in an 8 by 11 inch baking dish, in slightly slanting rows.",
+  "Pour the cream mixture over the zucchini and sprinkle on the rest of the cheese.",
+  "Bake for 20 minutes, until the custard is set in the middle and bubbling at the edges. Switch the oven to broil and cook for 2 to 3 minutes, until the top is golden. Watch it the whole time.",
+  "Leave it for 5 minutes, then cut into squares.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 33,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 ratings, so the lead is the highest-rated one that gave amounts: Frugal Flexitarian (5.0 from 5 ratings). The sources agree on thin zucchini slices, an egg and cream custard with nutmeg and Gruyere or Emmental, and a hot oven. They differ on how the zucchini is dried: Frugal Flexitarian fries the slices, France Today boils them for a couple of minutes, and Nigella softens them with shallot. This follows the frying, and the cream, egg and cheese amounts are scaled from Frugal's 2-zucchini version to a dinner for 4. Honest time is a few minutes over 45, because the zucchini cooks in two batches.",
+ "sources": [
+  {
+   "name": "Frugal Flexitarian",
+   "title": "Courgette Gratin",
+   "url": "https://frugalflexitarian.com/courgette-gratin/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "France Today",
+   "title": "Gratin de courgettes / Zucchini Gratin",
+   "url": "https://francetoday.com/food-drink/recipes/appetizer-13/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Nigella",
+   "title": "Courgette Gratin",
+   "url": "https://www.nigella.com/recipes/guests/courgette-gratin",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,119 @@
+{
+ "dish_name": "Napa Cabbage and Tofu Stew",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Napa cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Medium tofu",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups of rice and 3 cups of water in a medium pot with 1/4 tsp salt. Bring it to a boil over high heat, then turn it to low, cover, and cook for 15 minutes. Take it off the heat and leave the lid on.",
+  "Meanwhile, cut the napa into 2-inch pieces and keep the pale stem pieces apart from the leafy green tops. Slice the mushrooms. Cut the tofu into 1-inch cubes. Slice 4 thin coins of ginger, smash the garlic, and slice the scallions, keeping the white parts apart from the green.",
+  "Heat the vegetable oil in a large pot over medium-high heat. Add the mushrooms in one layer with 1/4 tsp salt and leave them alone for 3 minutes, until the underside is browned. Stir, then cook for 2 minutes more.",
+  "Add the ginger, the scallion whites and the garlic. Stir for 30 seconds, until you can smell them.",
+  "Pour in the broth and 1 tbsp soy sauce. Bring it to a boil.",
+  "Add the napa stems and simmer for 4 minutes, until they start to soften.",
+  "Add the leafy tops and the tofu. Simmer for 4 minutes, until the leaves are wilted and the stems are soft all the way through.",
+  "Take the pot off the heat. Stir in the white pepper and the sesame oil, and scatter on the scallion greens.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Omnivore's Cookbook's napa cabbage tofu soup (4.94 from 16 ratings, so under the 20 needed, and the other versions had too few ratings or none). The sources agree on a quick ginger, scallion and garlic base, napa stems going in before the leaves, tofu added near the end, and sesame oil and white pepper to finish. They differ on broth: Omnivore's uses chicken broth, so this uses vegetable broth to keep it vegan, and Omnivore's keeps the tofu soft where The Tofu Kitchen uses firmer cubes and fries the aromatics first. Browning the mushrooms first is the app's own depth step; rice follows Tiff Loves Tofu's serving. Mildly peppery on purpose, with no chili.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Napa Cabbage Tofu Soup (白菜豆腐汤)",
+   "url": "https://omnivorescookbook.com/napa-cabbage-tofu-soup/",
+   "rating": 4.94,
+   "rating_count": 16,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Tofu Kitchen",
+   "title": "Napa Cabbage Tofu Bowl (白菜豆腐): The Simple Home Stew",
+   "url": "https://thetofukitchen.com/napa-cabbage-tofu-soup-bai-cai-dou-fu/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Tiff Loves Tofu",
+   "title": "8-Ingredient Napa Cabbage & Carrot Tofu Soup",
+   "url": "https://tifflovestofu.com/soup/8-ingredient-napa-cabbage-carrot-tofu-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
