@@ -1,0 +1,82 @@
+{
+ "dish_name": "Crispy Tofu Bites",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "14 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain the tofu and wrap it in a clean towel. Set a cutting board on top with something heavy on it and press for 20 to 30 minutes.",
+  "While the tofu presses, whisk the soy sauce, rice vinegar, maple syrup and garlic powder in a small bowl for the dip and set it aside.",
+  "Cut the pressed tofu into 1-inch cubes and put them in a bowl. Sprinkle over the cornstarch and toss gently until every cube is coated.",
+  "Heat the oil in a large skillet over medium until it shimmers. Add the tofu in a single layer, working in two batches if the pan is crowded.",
+  "Cook for 3 to 4 minutes without moving it, until the underside is golden, then turn the cubes and repeat until the sides are all browned.",
+  "Transfer the tofu to a plate and serve warm with the soy dip."
+ ],
+ "method_notes": "Broke Bank Vegan's pan-fried tofu (the lead) coats pressed, cubed tofu in cornstarch and browns it in a skillet. Its soy, rice vinegar and maple sauce is served here as a dip instead of being tossed through the tofu, so the cubes stay crisp, and the Sriracha is left out to keep the base mild. Nora Cooks coats the cubes in soy sauce before the cornstarch and says the same about not moving the tofu while it crusts. Cut down from the lead's two-serving amounts to a single block for a snack for 4.",
+ "sources": [
+  {
+   "name": "Broke Bank Vegan",
+   "title": "Crispy Pan-Fried Tofu Recipe (In 15 Minutes)",
+   "url": "https://brokebankvegan.com/pan-fried-tofu/",
+   "rating": 5.0,
+   "rating_count": 69,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nora Cooks",
+   "title": "Perfect Fried Tofu",
+   "url": "https://www.noracooks.com/fried-tofu/",
+   "rating": 4.89,
+   "rating_count": 27,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

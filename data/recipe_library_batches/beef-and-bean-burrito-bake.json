@@ -1,0 +1,121 @@
+{
+ "dish_name": "Beef and Bean Burrito Bake",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Refried beans",
+   "qty": "1 can (16 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Taco seasoning",
+   "qty": "1 packet (1 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mild enchilada sauce",
+   "qty": "2 cans (10 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "White American cheese",
+   "qty": "12 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Large flour tortillas (burrito size)",
+   "qty": "6",
+   "category": "other"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F and grease a 9 by 13-inch baking dish. Spread 1 can of enchilada sauce over the bottom.",
+  "Dice the onion. Brown the beef and onion in a large skillet over high heat for 8 to 10 minutes, breaking the beef up, until no pink is left and the onion is soft. Drain off the fat.",
+  "Stir in the refried beans, taco seasoning, garlic powder, oregano, cumin, salt and pepper. Stir in a splash of water only if you need it, since the filling should stay thick. Let it cool for 5 minutes.",
+  "Shred the cheese. Stir 1 cup of it into the filling and keep the rest for the top.",
+  "Divide the filling between the 6 tortillas, fold in the sides and roll them up. Set them seam side down in the dish.",
+  "Pour the second can of enchilada sauce over the burritos so every bit of tortilla is covered, then top with the rest of the cheese.",
+  "Cover with foil, tenting it so it doesn't touch the cheese. Bake for 35 to 45 minutes, until the cheese has melted and the sauce is bubbling. The filling should reach 165°F in the middle; with no thermometer, cut into one burrito and check that it's steaming hot all through.",
+  "Sprinkle with the chopped cilantro and serve.",
+  "To keep it: cool leftovers and refrigerate in an airtight container for up to 4 days. To freeze a pan, let the baked burritos cool completely, wrap the dish tightly in foil and freeze for up to 2 months. Thaw overnight in the fridge and reheat covered at 350°F for about 25 minutes, until hot all through. Make two pans and freeze one the same way."
+ ],
+ "method_notes": "South Your Mouth (the lead) stuffs flour tortillas with browned beef, refried beans and cheese, then bakes them under enchilada sauce and cheese, covered with foil. The lead's rating of 4.9 counts 22 reviews. It has no freezing notes, so the keeping and freezing times come from Classic Recipes' beef and bean burrito bake (4 days in the fridge, 2 months frozen after baking). The author of the lead says to add the top sauce just before baking if you build it a day early, since the burritos go soggy. Two Bite Club's version bakes rolled burritos for only 15 minutes with black beans and taco sauce.",
+ "sources": [
+  {
+   "name": "South Your Mouth",
+   "title": "Smothered Beef & Bean Burrito Bake",
+   "url": "https://www.southyourmouth.com/2021/03/smothered-beef-bean-burrito-bake.html",
+   "rating": 4.9,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Classic Recipes",
+   "title": "Beef and Bean Burrito Bake",
+   "url": "https://classic-recipes.com/beef-and-bean-burrito-bake",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Two Bite Club",
+   "title": "Cheesy Beef and Bean Burrito Bake",
+   "url": "https://thetwobiteclub.com/2021/03/cheesy-beef-and-bean-burrito-bake.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

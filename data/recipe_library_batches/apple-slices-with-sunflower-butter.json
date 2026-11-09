@@ -1,0 +1,44 @@
+{
+ "dish_name": "Apple Slices with Sunflower Butter",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Apples",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Sunflower seed butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Wash the apples, cut them in half and cut out the cores.",
+  "Slice each half into wedges, or cut the apples crosswise into rings about 1/4 inch thick.",
+  "Spoon the sunflower seed butter into a small bowl and put it in the middle of a plate.",
+  "Fan the apple slices around the bowl. Dip each slice or spread the butter on with a knife.",
+  "For a lunch box, pack the sunflower butter in a small container beside the apple slices. Cut the apples the same morning you eat them."
+ ],
+ "method_notes": "SunButter's apple sandwich page is the only published version that matches this snack by name: apple slices cored and sliced into rings, spread with sunflower seed butter. It has no rating and gives no amounts, so the amounts here are for three apples and a half cup of butter, and its granola and chocolate chips are left out. Sunflower seed butter is the usual nut-free swap for peanut butter, but check the jar for a nut-free label. Super Fresh Growers' sunflower seed dip is a related idea (a thinned seed butter dip) but adds almond milk, so it is not used.",
+ "sources": [
+  {
+   "name": "SunButter",
+   "title": "SunButter Apple Sandwich",
+   "url": "https://sunbutter.com/recipe/sunbutter-apple-sandwich",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

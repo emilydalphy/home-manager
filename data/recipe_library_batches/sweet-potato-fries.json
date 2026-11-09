@@ -1,0 +1,84 @@
+{
+ "dish_name": "Sweet Potato Fries",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Sweet potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Set the oven racks in the upper and lower thirds, heat the oven to 400°F and line two baking sheets with parchment.",
+  "Scrub the sweet potatoes and dry them well. Leave the peels on and cut them into sticks about 1/4 to 1/2 inch wide and 3 inches long, keeping them even so they cook at the same speed.",
+  "Put the sticks in a big bowl, sprinkle over the cornstarch and toss until they look lightly dusted. Drizzle over the olive oil, then add 1/2 tsp of the salt, the pepper and the garlic powder and toss until every stick is coated.",
+  "Spread the fries on the two sheets in a single layer with space between them, since crowded fries steam and go soft.",
+  "Bake for 20 minutes. Flip the fries with a spatula, move any that are browning fast toward the middle, swap the pans' positions and bake for 10 to 15 minutes, until they're crisp and brown outside and soft inside.",
+  "Sprinkle with the last 1/4 tsp salt and serve right away while they're crisp.",
+  "To keep leftovers: refrigerate in an airtight container for up to 4 days and re-crisp on a baking sheet at 350°F until hot. They won't crisp in the microwave."
+ ],
+ "method_notes": "Well Plated (the lead) bakes peel-on sticks at 400°F on two sheets, flipping them halfway and swapping the pans. Its egg white is left out for a vegan snack, with an extra tablespoon of oil as the lead suggests. A tablespoon of cornstarch, which Cookie and Kate and The Forked Spoon both use for crunch, makes up for the missing egg white. Cookie and Kate bake hotter, at 425°F, with thinner sticks.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Sweet Potato Fries",
+   "url": "https://www.wellplated.com/sweet-potato-fries/",
+   "rating": 4.89,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cookie and Kate",
+   "title": "Crispy Baked Sweet Potato Fries",
+   "url": "https://cookieandkate.com/baked-sweet-potato-fries/",
+   "rating": 4.1,
+   "rating_count": 386,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Forked Spoon",
+   "title": "Perfect Baked Sweet Potato Fries",
+   "url": "https://theforkedspoon.com/sweet-potato-fries-recipe/",
+   "rating": 4.74,
+   "rating_count": 19,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

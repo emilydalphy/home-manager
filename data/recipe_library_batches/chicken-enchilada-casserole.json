@@ -1,0 +1,129 @@
+{
+ "dish_name": "Chicken Enchilada Casserole",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Rotisserie chicken",
+   "qty": "1",
+   "category": "meat/seafood",
+   "cook_qty": "4 cups shredded"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salsa verde",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  },
+  {
+   "item": "Monterey Jack cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Diced mild green chiles",
+   "qty": "1 can (4 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F and spray a 9 by 13-inch baking dish with cooking spray. Pull the meat off the rotisserie chicken and shred 4 cups of it.",
+  "Whisk the cornstarch into the milk until smooth and set it aside.",
+  "Melt the butter in a medium saucepan over low heat. Add the minced garlic and cook for 1 minute until fragrant. Stir in the cumin, garlic powder and chili powder and cook for 30 seconds.",
+  "Pour in the milk mixture and 1/2 cup of the chicken broth, turn the heat up to medium and stir for a few minutes until the sauce is smooth and thick enough to coat a spoon.",
+  "Take the pan off the heat and stir in the salsa verde and sour cream until smooth. Stir in the salt and pepper.",
+  "Quarter the tortillas. Scatter half the chicken (2 cups) in the baking dish, spoon over half the sauce and spread it out. Cover with half the tortilla quarters, overlapping them a little, then sprinkle with 4 oz of the Monterey Jack. Drizzle 1/2 cup of the broth over the top.",
+  "Repeat with the rest of the chicken, sauce, tortillas, the other 4 oz cheese and the last 1/2 cup broth. Scatter the green chiles over the top.",
+  "Cover with foil and bake for 15 minutes. Take the foil off and bake for 30 minutes, until hot and bubbly and the center reaches 165°F. If you don't have a thermometer, the sauce should be bubbling in the middle and the casserole steaming all the way through.",
+  "Let the casserole rest for 15 minutes so it sets, then cut into squares. Serve with extra salsa verde for the table.",
+  "To keep it: cool leftovers and refrigerate for 3 to 4 days. For a freezer meal, stop after layering, wrap the unbaked dish tightly in foil and freeze for up to 3 months. Thaw it overnight in the fridge, then bake as above, adding 10 to 15 minutes if the center isn't hot. Reheat single portions in the microwave or in a 350°F oven."
+ ],
+ "method_notes": "Five Heart Home (the lead) stacks shredded chicken, a creamy salsa verde sauce, corn tortillas and Monterey Jack in two layers and bakes it covered, then uncovered. Its sauce starts with a flour roux, so this version thickens it with cornstarch to keep the dish gluten-free, and calls for gluten-free chicken broth and corn tortillas that say gluten-free on the label. Bloomed the spices in the butter first. Freezing times come from Taste of Home's chicken enchilada bake, which also layers corn tortillas, chicken, sauce and cheese and freezes unbaked or baked for up to 3 months. Five Heart Home rating is 4.92 from 78.",
+ "sources": [
+  {
+   "name": "Five Heart Home",
+   "title": "Chicken Enchilada Casserole (Easy + From-Scratch!)",
+   "url": "https://www.fivehearthome.com/stacked-chicken-enchilada-casserole-recipe-with-sour-cream-salsa-verde-green-chiles/",
+   "rating": 4.92,
+   "rating_count": 78,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Chicken Enchilada Bake",
+   "url": "https://www.tasteofhome.com/recipes/chicken-enchilada-casserole/",
+   "rating": 4.41,
+   "rating_count": 115,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
