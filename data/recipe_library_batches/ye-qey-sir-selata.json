@@ -1,0 +1,86 @@
+{
+ "dish_name": "Ye Qey Sir Selata",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Beets",
+   "qty": "4 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1 large",
+   "category": "produce",
+   "cook_qty": "3 tbsp juice"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "1/4 cup diced"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Peel the beets and cut them into 3/4 inch cubes. The juice stains, so wear gloves if you like.",
+  "Put the beets in a medium pot, cover with water by 1 inch and add 1/2 tsp of the salt. Bring to a boil over high heat, then turn the heat to medium-low and simmer for 15 to 20 minutes, until a knife slides into a cube easily.",
+  "Meanwhile, dice the onion until you have 1/4 cup. Cut the stem off the jalapeño, scrape out the seeds and dice it finely.",
+  "In a large bowl, whisk the lemon juice with the oil and the remaining 1/4 tsp salt. Stir in the onion and jalapeño.",
+  "Drain the beets, rinse them under cold water and drain them well.",
+  "Add the beets to the bowl and toss until they're coated.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Cover and refrigerate for at least 1 hour. Serve cold."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Clan Grant's Yeqey Sir Qiqqil: beets simmered until tender, cubed and dressed with equal lemon juice and oil and plenty of salt. The red onion and seeded jalapeño come from the UC Davis Keye Sir recipe, which dresses boiled beets, carrots and potatoes with lemon, olive oil, onion and jalapeño and marinates them for an hour. The beets are cubed before boiling (the lead boils them whole for 45 minutes) to keep it under 40 minutes. Ethiopian-food.org's Key Sir sautés the beets with onion and ginger, which was not used. No source has a rating, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Clan Grant",
+   "title": "ET-Beet Salad (Yeqey Sir Qiqqil)",
+   "url": "https://clangrant.wordpress.com/whats-cookin/ethiopian-beet-salad-yeqey-sir-qiqqil/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "UC Davis Health Office of Student Wellness",
+   "title": "Keye Sir: Ethiopian Beets Salad",
+   "url": "https://health.ucdavis.edu/mdprogram/student_wellness/pdfs/Recipes/Keye%20Sir-Ethiopian%20Beets%20Salad%20Recipe.pdf",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Ethiopian Food",
+   "title": "Key Sir: Ethiopian Beets and Potatoes",
+   "url": "https://ethiopian-food.org/key-sir-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

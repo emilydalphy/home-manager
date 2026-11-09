@@ -1,0 +1,98 @@
+{
+ "dish_name": "Dinich Salata",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Red or white potatoes",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1 large",
+   "category": "produce",
+   "cook_qty": "juice of the lemon, about 1/4 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3/4 cup sliced"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Cut the potatoes into 1 1/2 inch cubes. Put them in a medium pot, cover with cold water by 1 inch and add 1/2 tsp of the salt.",
+  "Bring the potatoes to a boil over high heat. Turn the heat to medium and cook for 8 to 10 minutes, until a knife slides in with just a little push.",
+  "Meanwhile, slice the scallions and chop the parsley. Cut the stem off the jalapeño, scrape out the seeds and mince it.",
+  "In a large bowl, whisk the juice of the lemon with the oil, the remaining 1/2 tsp salt and the pepper. Stir in the scallions, parsley and jalapeño.",
+  "Drain the potatoes, rinse them under cold water and drain them well.",
+  "Add the potatoes to the bowl and toss gently until they're coated.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Cover and refrigerate for at least 1 hour, or overnight if you're packing it for lunch. Toss it before serving cold or at room temperature."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is the Together Women Rise potato salad from a DC Ethiopian restaurant: boiled potatoes, lemon juice, oil, scallions, parsley and a minced jalapeño, chilled for at least an hour. Food.com's Ethiopian potato salad swaps in white onion and white pepper, and the Fox 13 yedinich selata adds garlic and ginger with far less dressing. The lead's 1 lb of potatoes is scaled to 1 1/2 lb for 4 lunches. None of the pages has a rating, so this is a fallback lead. It's a make-ahead salad: the hour in the fridge isn't counted in the times.",
+ "sources": [
+  {
+   "name": "Together Women Rise",
+   "title": "Ethiopian Potato Salad",
+   "url": "https://togetherwomenrise.org/recipes/ethiopian-potato-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Ethiopian Potato Salad",
+   "url": "https://www.food.com/recipe/ethiopian-potato-salad-123119",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Fox 13",
+   "title": "Yedinich Selata (Ethiopian-Style Potato Salad)",
+   "url": "https://www.fox13news.com/dinner-deeas/recipes-ethiopian-eats",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

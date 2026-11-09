@@ -1,0 +1,104 @@
+{
+ "dish_name": "Mushroom Congee",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (2 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 scallions"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "for the table"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Cut the ginger into thin coins.",
+  "Bring 10 cups of water to a rolling boil in a large pot over high heat. Add the rice, the ginger and 1 tsp of the salt, and stir once.",
+  "Turn the heat to low so the water simmers gently. Cover and cook for 30 to 40 minutes, stirring every 10 minutes so the rice doesn't stick.",
+  "Meanwhile, cut the stems off the shiitake and slice the caps 1/4 inch thick. Thinly slice the scallions.",
+  "After the congee has simmered for 15 minutes, stir half of the sliced mushrooms into the pot and keep simmering.",
+  "Heat the oil in a large skillet over medium-high heat. Add the rest of the mushrooms in a single layer and leave them alone for 3 minutes, until golden underneath. Stir and cook for 2 minutes.",
+  "Take the skillet off the heat and stir in 2 tsp of the soy sauce.",
+  "The congee is ready when the rice has broken down and it's thick and creamy. If it's too thick, stir in a splash of hot water. Stir in the remaining 1/2 tsp salt.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the congee into bowls and top with the browned mushrooms, scallions, sesame seeds and a pinch of white pepper. Serve with the chili oil and the remaining 2 tsp soy sauce at the table.",
+  "To pack it for lunch, cool the congee and refrigerate it in a covered container for up to 3 days. Reheat it in a pot over low heat with a splash of water, stirring until hot, and add the toppings after."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Che Jorge's vegan congee: 1 cup short-grain rice to 10 cups water with sliced ginger and salt, simmered 30 to 45 minutes. Plateful of Veggies tops its congee with mushrooms browned in a pan with soy sauce, which is used here for half the mushrooms. The other half simmers in the pot as the lead does. The lead keeps 2 to 3 days in the fridge and reheats on the stove with water. The lead has only 13 ratings, so this is a fallback lead. It's over 30 minutes, but it's the kind of lunch you make once and pack.",
+ "sources": [
+  {
+   "name": "Che Jorge",
+   "title": "Vegan Congee (Rice Porridge)",
+   "url": "https://chejorge.com/2020/12/21/vegan-congee-rice-porridge/",
+   "rating": 4.2,
+   "rating_count": 13,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Plateful of Veggies",
+   "title": "Vegan Instant Pot Congee with Mushrooms",
+   "url": "https://platefulofveggies.com/vegan-instant-pot-congee-with-mushrooms/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

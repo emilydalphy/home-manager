@@ -1,0 +1,99 @@
+{
+ "dish_name": "Tiger Skin Peppers",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cubanelle peppers",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Chinkiang black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, wash the peppers and dry them well. Cut off the stems and make a slit down each pepper without cutting it in two. Scrape out the seeds. Halve any that are longer than your hand.",
+  "Mince the garlic. In a small bowl, stir together 3 tbsp soy sauce, 1 1/2 tbsp black vinegar, 1/2 tsp sugar, 1 tbsp water and a pinch of salt until the sugar dissolves.",
+  "Heat a large skillet or wok over medium-high heat. Add 1 tbsp of the oil and half the peppers in a single layer. Cook for 3 to 4 minutes, turning now and then, until the skins blister and darken in spots. Transfer them to a plate.",
+  "Add the remaining 1 tbsp oil and the rest of the peppers to the pan. Cook them the same way, then return the first batch to the pan.",
+  "Push the peppers to one side and add the garlic to the oil. Stir for 20 seconds, until it smells fragrant.",
+  "Lower the heat to medium and pour in the sauce. Stir for about 1 minute, until it thickens a little and coats the peppers. Take the pan off the heat.",
+  "Taste it. If it's flat, add a pinch more salt or a splash more of the vinegar.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on the method: slit long mild peppers, blister them in a hot pan until the skins darken, then toss with garlic, soy sauce and black vinegar. The lead is the quick Sassy Chopsticks version (peppers, garlic, soy, Chinkiang vinegar, a pinch of sugar), scaled from 2 servings to 4 using the 1 lb of peppers a second source serves four with. The other versions add black beans or oyster sauce, or cook the peppers dry for 10 minutes or more, so they were left out to keep it quick and vegan. Cubanelle peppers keep the base mild. The lead has only 1 rating, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Sassy Chopsticks",
+   "title": "Sautéed Tiger Skin Peppers (Hu Pi Qing Jiao, 虎皮青椒)",
+   "url": "https://sassychopsticks.com/tiger-skin-peppers/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste Cooking",
+   "title": "Tiger-Skin Peppers (Hu Pi Qing Jiao)",
+   "url": "https://tastecooking.com/recipes/tiger-skin-peppers-hu-pi-qing-jiao/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "HomeNaturallyMade",
+   "title": "Hu Pi Qing Jiao {Tiger Skin Green Peppers}",
+   "url": "https://homenaturallymade.com/hu-pi-qing-jiao/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

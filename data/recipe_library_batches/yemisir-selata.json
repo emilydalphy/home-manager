@@ -1,0 +1,83 @@
+{
+ "dish_name": "Yemisir Selata",
+ "cuisine": "Ethiopian",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "Dried brown or green lentils",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "4 large",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the lentils in a sieve. Transfer them to a medium pot, cover with water by 2 to 3 inches and add 1/2 tsp of the salt.",
+  "Bring the lentils to a boil over high heat. Turn the heat to medium-low, partly cover and simmer for 25 to 30 minutes, until they're tender but still hold their shape.",
+  "Meanwhile, thinly slice the shallots. Cut the stem off the jalapeño, scrape out the seeds and chop it finely.",
+  "In a large bowl, whisk the vinegar, oil, the remaining 1/2 tsp salt and the pepper. Stir in the shallots and jalapeño.",
+  "Drain the lentils, rinse them under cold water and drain them well.",
+  "Add the lentils to the bowl and stir. Leave the salad at room temperature for at least 30 minutes, stirring now and then.",
+  "Taste it. If it's flat, add a pinch more salt or a splash more vinegar.",
+  "Serve at room temperature, or refrigerate it for about an hour first. It doesn't need reheating."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Food.com and the International Vegetarian Union give the same classic yemiser selatta: brown or green lentils kept firm, tossed while warm-cool with red wine vinegar, oil, shallots and fresh chili, then left to sit for 30 minutes. They call for 8 large shallots and 2 hot chilies; here it's 4 shallots and 1 seeded jalapeño to keep the base mild. Neither version has lemon (the list's note says lemon), so none was added. Neither source has a rating, so this is a fallback lead. The 30 minute rest is on top of the 40 minutes of work, which suits a salad you make ahead and pack.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Yemiser Selatta: Ethiopian Lentil Salad With Shallots and Chile",
+   "url": "https://www.food.com/recipe/yemiser-selatta-ethiopian-lentil-salad-with-shallots-and-chile-133099",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "International Vegetarian Union",
+   "title": "Yemiser Selatta: Ethiopian Lentil Salad With Shallots and Chili",
+   "url": "https://ivu.org/vegan-recipes-around-the-world/vegan-food-academy/front-page/item/yemiser-selatta-ethiopian-lentil-salad-with-shallots-and-chili.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

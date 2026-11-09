@@ -1,0 +1,151 @@
+{
+ "dish_name": "Suan La Fen",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Dried sweet potato noodles",
+   "qty": "1 package (7 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Low-sodium vegetable broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground Sichuan peppercorn",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Chinkiang black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Pickled mustard stem (zha cai)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Roasted soybeans",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 scallions"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp, for the table"
+  },
+  {
+   "item": "Chili flakes",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp, for the table"
+  }
+ ],
+ "instructions": [
+  "Pour the broth into a medium pot and bring it to a low simmer over medium heat. Keep it hot.",
+  "Meanwhile, bring a large pot of water to a boil over high heat. Add the noodles and boil for 7 to 8 minutes, until they're tender but still chewy.",
+  "Drain the noodles, rinse them under cold water and drain them well.",
+  "Mince the ginger and garlic. Thinly slice the scallions and chop 2 tbsp of the cilantro. Put the chili oil and chili flakes into two small bowls for the table.",
+  "In a large heatproof bowl, combine the ginger, garlic, sesame seeds, Sichuan pepper and white pepper.",
+  "Heat the oil in a small pan over medium-high heat for about 2 minutes, until it shimmers and just starts to smoke. Stand back a little. Pour it over the spices in the bowl. It will sizzle.",
+  "Stir in the vinegar, soy sauce, sugar and sesame oil.",
+  "Divide the sauce among 4 bowls. Pour about 1 1/4 cups of the hot broth into each bowl and stir.",
+  "Divide the noodles among the bowls. Top with the pickled mustard stem, scallions, cilantro and roasted soybeans.",
+  "Taste it. If it's flat, add a splash more vinegar or soy sauce.",
+  "Serve with the chili oil and chili flakes at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is The Woks of Life, which pours hot oil over garlic, ginger and sesame seeds, adds black vinegar and soy sauce, then hot stock and boiled sweet potato noodles, scaled here from 2 to 4 bowls. Taste Asian Food builds the same bowl with peanuts and chicken broth. The chili oil and chili flakes move to the table to keep the base mild, and the Sichuan pepper is halved. Roasted soybeans replace the peanuts in the list (nut-free) and the dark soy sauce is left out.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Suan La Fen (Chongqing Hot & Sour Noodle Soup)",
+   "url": "https://thewoksoflife.com/suan-la-fen-hot-sour-sweet-potato-glass-noodle-soup/",
+   "rating": 5,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste Asian Food",
+   "title": "Suan la fen (酸辣粉)",
+   "url": "https://tasteasianfood.com/suan-la-fen/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

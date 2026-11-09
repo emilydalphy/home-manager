@@ -1,0 +1,125 @@
+{
+ "dish_name": "Chinese Tofu Skin Salad",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Tofu skin (bean curd skin)",
+   "qty": "14 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chinkiang black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 scallions"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "for the table"
+  }
+ ],
+ "instructions": [
+  "Unroll the tofu skin and rinse it under cold water. Drain it well and cut it into ribbons about 1/4 inch wide. If yours comes pre-cut, just rinse and drain it.",
+  "Cut the cucumber and carrot into thin matchsticks. Thinly slice the scallions and chop the cilantro.",
+  "Grate the ginger and mince the garlic. In a large bowl, whisk them with the vinegar, soy sauce, maple syrup and sesame oil.",
+  "Add the tofu skin, cucumber and carrot to the bowl. Toss until everything is coated in the dressing.",
+  "Taste it. If it's flat, add a splash more vinegar or soy sauce.",
+  "Top with the scallions, cilantro and sesame seeds. Serve with the chili oil at the table.",
+  "To pack it for lunch, keep the dressing in a jar and the tofu skin and vegetables in a box. Toss them together when you're ready to eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Okonomi Kitchen's spicy tofu skin salad: tofu skin ribbons with cucumber and carrot in a black vinegar, soy, ginger and garlic dressing with a little sesame oil, scaled from 2 to 4. Chloe Ting's version uses the same vinegar, soy and sesame oil with peanut butter, which was left out (nut-free). The lead's lao gan ma chili crisp and peanut garnish are replaced by plain chili oil at the table and sesame seeds. The lead has only 6 ratings, so this is a fallback lead. Check the tofu skin package: if it says to blanch it first, boil it for 1 minute and cool it before step 2.",
+ "sources": [
+  {
+   "name": "Okonomi Kitchen",
+   "title": "Spicy Tofu Skin Salad",
+   "url": "https://www.okonomikitchen.com/spicy-tofu-skin-salad/",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chloe Ting Recipes",
+   "title": "Chinese Spicy Tofu Skin Salad",
+   "url": "https://chloeting.com/recipes/chinese-spicy-tofu-skin-salad",
+   "rating": 4.4,
+   "rating_count": 19,
+   "read": true
+  },
+  {
+   "name": "Woks of Love",
+   "title": "Spicy Cold Tofu Skin Salad (Qiang Ban Dou Fu Si)",
+   "url": "https://woksoflove.com/spicy-cold-tofu-skin-salad-qiang-ban-dou-fu-si/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

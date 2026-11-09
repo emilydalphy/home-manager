@@ -1,0 +1,88 @@
+{
+ "dish_name": "Liangban Doufu",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Silken tofu",
+   "qty": "1 package (about 1 lb)",
+   "category": "dairy"
+  },
+  {
+   "item": "Spicy bean paste (doubanjiang)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, mince the garlic and finely chop enough scallion to make 2 tbsp.",
+  "In a small bowl, stir together 1 tbsp soy sauce, 1 tbsp bean paste, 1 tsp sesame oil and 1/2 tsp sugar. Add half the garlic and half the scallion and mix.",
+  "Run a knife around the edge of the tofu package and turn the tofu out onto a plate. Slice it crosswise into 1/2 inch pieces, then slide the slices into a serving bowl.",
+  "Spoon the sauce over the tofu. Top with the rest of the garlic and scallion.",
+  "Serve the tofu cold with the rice. Stir it at the table so the sauce gets in between the slices."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 17,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both Cup of Yum and The Woks of Life use the same five-minute sauce of soy sauce, spicy bean paste, sesame oil and sugar over sliced silken tofu with garlic and scallion, so this follows it exactly. The century eggs and herbs they list as optional were left out to keep it vegan and simple. Jasmine rice was added so it works as a lunch; the tofu itself takes 5 minutes, the rice is the 25 minute total. The base is only as hot as the bean paste, so choose a mild one.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Spicy Cold Tofu (Liangban Dofu)",
+   "url": "https://cupofyum.com/recipes/spicy-cold-tofu-liangban-dofu",
+   "rating": 5,
+   "rating_count": 90,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Spicy Cold Tofu: 5 Minute Recipe",
+   "url": "https://thewoksoflife.com/spicy-cold-tofu-liangban-dofu/",
+   "rating": 4.97,
+   "rating_count": 60,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
