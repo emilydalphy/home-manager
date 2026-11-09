@@ -1,0 +1,141 @@
+{
+ "dish_name": "Hasanpasa Koftesi",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "18 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Gluten-free breadcrumbs",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "1 1/4 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cheddar cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Mozzarella cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "3/4 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F (190°C). Peel the potatoes, cut them into 1 inch chunks and put them in a pot with cold water to cover. Bring to a boil, then simmer for 12 minutes, until a knife slides in easily.",
+  "Meanwhile, grate the onion into a large bowl. Add the beef, the garlic minced, the breadcrumbs, 1 egg white (keep the yolk), 3/4 tsp of the salt, 1/2 tsp of the pepper and the paprika. Knead by hand for 3 minutes, until it holds together.",
+  "Divide the meat into 8 balls. Flatten each slightly and press a hollow into the center. Set them in a 9 by 13 inch baking dish.",
+  "Drain the potatoes and return them to the hot pot for 1 minute to steam dry. Mash them with the cream, butter, nutmeg, the last 1/2 tsp salt and the last 1/4 tsp pepper. Stir in the cheddar, then the egg yolk.",
+  "Spoon about 1 1/2 tbsp of peas into each hollow. Top each with a big spoonful of mash.",
+  "Bake for 20 minutes.",
+  "Meanwhile, stir the tomato paste, 1 cup boiling water and the thyme together in a jug.",
+  "Lower the oven to 350°F (180°C). Sprinkle the mozzarella over the mashed potato tops. Pour the sauce around the meatballs, not over the mash.",
+  "Bake for 20 minutes, until the cheese has melted and the edges are golden. You're cooking the meatballs to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Spoon the meatballs and the sauce from the dish onto plates."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead and the other two sources agree on the meatballs with a hollow, mash on top, and a tomato sauce poured around. The lead keeps the mash on top with peas inside and bakes twice; the second source bakes the meat first and adds peppers and canned tomatoes to the sauce. Gluten-free breadcrumbs replace the crumbs, and mozzarella stands in for kasar cheese. The chili flakes are left out to keep it mild. Honest total is about an hour. The lead says they freeze for up to 3 months.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Hasanpasa Kofte (Turkish Meatballs with Mashed Potatoes)",
+   "url": "https://cookingorgeous.com/blog/hasanpasa-kofte-turkish-meatballs-with-mashed-potatoes/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ozlem's Turkish Table",
+   "title": "Pasha's Meatballs with Garlicky Mashed Potato",
+   "url": "https://ozlemsturkishtable.com/2010/11/pashas-meatballs-with-garlicky-mashed-potato-pasa-koftesi",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Turkish Style Cooking",
+   "title": "Hasan Pasha Kofte",
+   "url": "https://turkishstylecooking.com/hasan-pasha-kofte-recipe.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

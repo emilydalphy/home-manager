@@ -1,0 +1,99 @@
+{
+ "dish_name": "Kuzu Tandir",
+ "cuisine": "Turkish",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Bone-in lamb shoulder",
+   "qty": "4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 430°F (220°C). Take the lamb out of the fridge while it heats.",
+  "In a small bowl, mix the olive oil, the garlic pressed to a paste, 1 1/2 tsp of the salt, the pepper and the oregano.",
+  "Cut shallow slits into the fatty side of the lamb with a small sharp knife. Rub the mixture all over and massage it in for a couple of minutes.",
+  "Wrap the lamb tightly in two layers of parchment paper, then two layers of foil.",
+  "Set the wrapped lamb on a rack over a baking tray and roast it for 2 hours.",
+  "Lower the oven to 285°F (140°C). Roast for 2 hours, until the meat is fork tender. No thermometer needed. The meat should pull easily from the bone when you press it.",
+  "Open the wrapping carefully. The steam is hot. Lift the meat off the bone and shred it with two forks. Transfer it to a baking dish with all the juices from the foil.",
+  "Raise the oven to 360°F (180°C). Meanwhile, rinse the rice. Put it in a pot with 2 1/4 cups water and the last 1/2 tsp salt, bring it to a boil over high heat, then cover, lower the heat and cook for 15 minutes. Keep the lid on and let it stand off the heat for 10 minutes.",
+  "Bake the shredded lamb for 15 minutes, until it's lightly browned at the edges.",
+  "While the lamb browns, slice the tomato, the green pepper and the onion.",
+  "Taste the lamb. If it's flat, add a pinch more salt.",
+  "Serve the lamb and its juices with the rice and the sliced tomato, pepper and onion.",
+  "Let the leftovers cool, then store the lamb with its juices in an airtight container, and the rice in a separate one. The lamb keeps in the fridge for up to 5 days and in the freezer for up to 3 months. Thaw it overnight in the fridge. Reheat it covered with a splash of water over low heat, or in a 300°F (150°C) oven covered with foil. The rice reheats with a splash of water, covered."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 255,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Nothing but salt, pepper, oil, garlic and oregano goes on the lamb, as in both sources. Scaled down from a 5 1/2 lb shoulder (5 hours) to 4 lbs (4 hours), so check for tender rather than the clock. The lead calls for naan, so the rice replaces it to keep the dish gluten-free; the other source serves it with yogurt, which is left off to keep it dairy-free. Honest time is over 4 hours, so this is a weekend roast with leftovers.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Kuzu Tandir Kebab (Turkish Roasted Lamb)",
+   "url": "https://cookingorgeous.com/blog/kuzu-tandir-kebab-turkish-roasted-lamb/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Turkish Lamb Shoulder (Kuzu Tandir)",
+   "url": "https://www.sbs.com.au/food/the-cook-up-with-adam-liaw/recipe/turkish-lamb-shoulder/ip2sgzjwk",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

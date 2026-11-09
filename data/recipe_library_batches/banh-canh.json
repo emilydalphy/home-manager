@@ -1,0 +1,132 @@
+{
+ "dish_name": "Banh Canh",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork belly",
+   "qty": "14 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Daikon",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Shallots",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bok choy",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Udon noodles",
+   "qty": "28 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Boil a kettle of water. Put the pork belly in a pot and cover it with boiling water. Let it sit for 5 minutes, then drain and rinse the pork and the pot.",
+  "Return the pork to the pot with 6 cups of fresh water, the onion (whole), the daikon (whole), the salt and the sugar. Bring to a boil, then cover, lower the heat and simmer for 1 hour, until a knife slides easily into the pork. Skim off any scum as it rises.",
+  "Meanwhile, slice the shallots thinly. Put them in a small skillet with the oil and cook over low heat for 12 minutes, stirring, until golden. Transfer them to a paper towel. They crisp as they cool.",
+  "Cut 1/2 cup of cilantro, the green onions and the bok choy into 1 inch pieces. Slice the chili thinly for the table.",
+  "Lift the pork out of the pot onto a board and let it cool for 10 minutes. Slice it thinly. Take the onion and daikon out of the broth and throw them away.",
+  "Stir the fish sauce into the broth and simmer for 5 minutes.",
+  "Meanwhile, cook the udon in a large pot of boiling water for the time on the package. Add the bok choy for the last minute. Drain.",
+  "Divide the noodles and bok choy among 4 bowls. Top with the sliced pork, the cilantro, the green onions, the crispy shallots and a pinch of black pepper.",
+  "Bring the broth back to a boil and ladle it over each bowl. Squeeze the lime over the top.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Serve with the sliced chili on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 80,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Real banh canh is a long broth, so this is the shortest pork version found: the lead simmers a pork belly broth for 1 hour, where most versions simmer bones for 2 hours or more. Udon stands in for the tapioca noodles, as the lead does. The fish cakes and chicken powder are optional there and left out. Two other pork banh canh pages (Vicky Pham, 4 and 5 servings) simmer bones for 2 hours. Honest time is about 90 minutes, over the 60 minute target.",
+ "sources": [
+  {
+   "name": "Taste",
+   "title": "Banh Canh Thit Heo (Pork Udon)",
+   "url": "https://tastecooking.com/recipes/banh-canh-thit-heo-pork-udon",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Thick Noodle Soup (Banh Canh)",
+   "url": "https://vickypham.com/blog/vietnamese-thick-noodle-soup-banh-canh/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Went Here 8 This",
+   "title": "Banh Canh",
+   "url": "https://www.wenthere8this.com/banh-canh/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

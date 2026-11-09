@@ -1,0 +1,113 @@
+{
+ "dish_name": "Kadinbudu Kofte",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Long grain rice",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the rice and 1/3 cup water in a small pot, bring to a boil, then cover, lower the heat and cook for 15 minutes. Spread it on a plate to cool.",
+  "Meanwhile, heat the olive oil in a large skillet over medium heat. Cook the onion, finely chopped, for 5 minutes, until soft.",
+  "Add half the beef and cook for 8 minutes, breaking it up, until the moisture has cooked off. Take the pan off the heat and let it cool for 10 minutes.",
+  "Peel the potatoes, cut them into chunks and put them in a pot with cold water and 1/2 tsp of the salt. Bring to a boil, then simmer for 15 minutes, until tender.",
+  "Separate 1 egg. In a large bowl, mix the cooked beef and onion, the raw beef, the cooled rice, 2 tbsp chopped parsley, the cumin, 1/2 tsp of the salt, the pepper and the egg white. Chill for 20 minutes if you have time.",
+  "Beat the egg yolk with the 2 remaining eggs in a shallow bowl. Put the panko in another.",
+  "With wet hands, shape the mixture into about 20 oval patties, each about the size of your palm.",
+  "Coat each patty in panko, then dip it in the egg.",
+  "Heat the vegetable oil in a large skillet over medium heat until it comes about halfway up the patties. Fry them in batches for 3 to 4 minutes per side, until golden and crisp. Cut one open to check there's no pink. Transfer them to a paper towel.",
+  "Drain the potatoes. Mash them with 2 tbsp of the cooking water, a drizzle of olive oil and the green onions, thinly sliced. Season with the last 1/2 tsp salt.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve the patties with the mashed potatoes."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources agree on half the beef cooked with the onion, mixed with raw beef and cooked rice, shaped into ovals and fried. The lead coats them in panko then egg, the second source in flour then egg. The potatoes and spring onion mash are the usual serving with this dish, made dairy-free here with olive oil and potato water in place of butter and milk.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Kadinbudu Kofte (Turkish Meatballs with Rice)",
+   "url": "https://cookingorgeous.com/blog/kadinbudu-kofte-turkish-meatballs-with-rice/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkey's For Life",
+   "title": "Turkish Recipes: Kadin Budu Kofte (Lady's Thigh)",
+   "url": "https://www.turkeysforlife.com/2011/09/turkish-recipes-kadin-budu-kofte-lady.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

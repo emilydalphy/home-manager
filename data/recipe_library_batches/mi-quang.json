@@ -1,0 +1,156 @@
+{
+ "dish_name": "Mi Quang",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork neck bones",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pork belly",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shrimp, head on",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried yellow rice noodles",
+   "qty": "14 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame rice crackers",
+   "qty": "1 pack",
+   "category": "pantry"
+  },
+  {
+   "item": "Fried shallots",
+   "qty": "1 small tub",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the pork belly into thin strips. Mix it in a bowl with 1/2 tsp of the salt, 1/2 tsp of the sugar, 2 tsp of the fish sauce, 1/2 tsp of the paprika and 1/2 tsp of the turmeric.",
+  "Pull the heads off the shrimp and keep them. Peel and devein the shrimp. Mix them in a second bowl with 1/4 tsp of the salt, 1/4 tsp of the sugar, 1 tsp of the fish sauce, 1/2 tsp of the paprika and 1/2 tsp of the turmeric.",
+  "Heat 1 tbsp of the oil in a large pot over medium high heat. Add the shrimp heads and cook for 5 minutes, mashing them with a ladle to release the red orange fat.",
+  "Add the pork bones, the onion (quartered) and 6 cups of water. Bring to a boil, then lower the heat and simmer uncovered for 45 minutes.",
+  "Meanwhile, finely chop the shallots. Shred 1 1/2 cups of the cabbage, tear the lettuce, slice the green onions and pick the cilantro. Cut the limes into wedges.",
+  "Remove and throw away the bones, onion and shrimp heads from the broth.",
+  "Heat 1 tbsp of the oil in a skillet over medium high heat. Add half the shallots and 2 of the garlic cloves, finely chopped, and cook for 20 seconds. Add the pork belly and cook for 5 minutes, until caramelized at the edges. Transfer it to the broth and simmer for 15 minutes.",
+  "Wipe out the skillet and heat the last 1 tbsp oil over medium high heat. Add the rest of the shallots and the last 2 garlic cloves, finely chopped, and cook for 20 seconds. Add the shrimp and cook for 3 minutes, until opaque. Transfer them to a plate.",
+  "Stir the remaining 1 1/4 tsp salt, 1 1/4 tsp sugar, 1 tbsp fish sauce, 1 tsp paprika and 1 tsp turmeric into the broth. Taste it. If it's flat, add a pinch more salt.",
+  "Cook the noodles in boiling water for the time on the package. Drain.",
+  "Dampen the rice crackers lightly and microwave each side for 30 seconds, until puffed. Break them into pieces.",
+  "In each of 4 bowls, layer the bean sprouts, cabbage and lettuce, then the noodles. Ladle about 1 cup of broth with the pork belly over the top.",
+  "Top with the shrimp, the crackers and the fried shallots, then the green onions and cilantro. Serve with the lime wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 65,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources fry marinated pork belly and shrimp separately and build the broth on pork bones and shrimp heads, with turmeric and paprika for the color. The lead has no rating; the second source (Helen Le) uses a tomato puree broth, pineapple and quail eggs instead. Peanuts, which are a usual topping, are left out to keep it nut-free. Scaled from 6 servings to 4, and the broth seasoning is split across the marinades and the pot as the lead does. Honest time is over an hour.",
+ "sources": [
+  {
+   "name": "Vicky Pham",
+   "title": "Central Vietnam's Must-Eat Noodle Dish: Mi Quang",
+   "url": "https://www.vickypham.com/blog/central-vietnams-must-eat-noodle-dish-mi-quang",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Helen's Recipes",
+   "title": "Quang Style Noodle with Pork and Shrimp",
+   "url": "https://helenrecipes.com/quang-style-noodle-with-pork-and-shrimp",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

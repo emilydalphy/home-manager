@@ -1,0 +1,120 @@
+{
+ "dish_name": "Cokertme Kebabi",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "White wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: cut the beef into thin strips about 1/4 inch wide. Mix it in a bowl with the olive oil, vinegar, 3/4 tsp of the salt and 3/4 tsp of the pepper. Cover and refrigerate.",
+  "Cut the potatoes into thin matchsticks and soak them in cold water for 15 minutes.",
+  "Meanwhile, grate the tomatoes into a small saucepan, leaving the skins behind. Add the tomato paste, 1/2 tsp of the salt, the sugar, the paprika and 1/3 cup water. Simmer over low heat for 15 minutes.",
+  "Stir the yogurt with the garlic, crushed, and 1/4 tsp of the salt. Chop 2 tbsp of the parsley.",
+  "Drain the potatoes and pat them completely dry with a towel.",
+  "Heat the vegetable oil in a large deep skillet over medium high heat. Fry the potatoes in 3 batches for 4 minutes each, until golden and crisp. Transfer each batch to a paper towel and sprinkle with the last 1/4 tsp salt.",
+  "Wipe out a large skillet and heat it over high heat until it's very hot. Cook the beef in 2 batches for 2 minutes each, stirring, until browned. Season with the last 1/4 tsp pepper.",
+  "Put the fries on a platter or plates. Spoon the garlic yogurt over, then the beef, then the sauce from the saucepan. Sprinkle with the parsley.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "marinate the beef at least 2 hours ahead, or overnight",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Both sources agree on marinated strips of beef, thin fried potatoes, a grated tomato sauce and plain yogurt, layered in that order. The lead leaves the garlic out of the yogurt as optional; the second source gives the yogurt a crushed garlic and thyme mix. Here the garlic goes in, as the list promises garlic yogurt. Scaled from 2 servings to 4. The paprika was named in the lead's method but missing from its list, so it's added. Marinate at least 2 hours.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Cokertme Kebabi",
+   "url": "https://cookingorgeous.com/blog/cokertme-kebabi/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sara Moulton",
+   "title": "Cokertme Kebabi",
+   "url": "https://saramoulton.com/2024/09/cokertme-kebabi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

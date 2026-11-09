@@ -1,0 +1,119 @@
+{
+ "dish_name": "Xiu Mai",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Ground pork",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jicama",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "7 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken bouillon powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F (180°C) and line a baking sheet with parchment. Put the rice and 2 1/4 cups water in a pot, bring to a boil, then cover, lower the heat and cook for 15 minutes. Keep the lid on and let it stand off the heat.",
+  "Heat a skillet over medium heat. Cook the onion, finely diced, for 2 minutes. Add 1 cup of the jicama, finely diced, and 4 of the garlic cloves, minced, and cook for 1 minute. Spread it on a plate to cool for 10 minutes.",
+  "Heat the sesame oil in a medium pot over medium heat. Add the remaining 3 garlic cloves, minced, and cook for 30 seconds. Stir in 2 1/4 cups water, the bouillon, the tomatoes diced, the tomato paste, 3/4 tbsp of the fish sauce, 1 1/2 tbsp of the sugar and 3/4 tsp of the pepper. Cover, bring to a boil, then lower the heat and simmer for 20 minutes.",
+  "In a bowl, gently mix the pork with the cooled onion mixture, the remaining 3/4 tbsp fish sauce, the salt, the remaining 3/4 tsp pepper and the remaining 1 1/2 tsp sugar. Don't overmix.",
+  "Shape the mixture into 15 golf ball sized meatballs and set them on the baking sheet.",
+  "Bake for 15 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Stir the cornstarch with 1 tbsp water in a small bowl. Stir it into the sauce and simmer for 1 minute, until it thickens a little.",
+  "Add the meatballs to the sauce and simmer for 3 minutes.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve the meatballs and sauce over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only the lead gave a full recipe with a rating (5.0 from 50 votes). The other source (Wok and Kin) also cooks the aromatics first and uses jicama, but steams the meatballs for 20 minutes and builds the sauce from fresh tomatoes browned with garlic and spring onion. The lead's bake option is used here. Scaled up from 6 servings to 4 with a bigger portion of pork. Bread would also go with it, but rice is listed so the timeline includes it.",
+ "sources": [
+  {
+   "name": "Savory Sweet Spoon",
+   "title": "Vietnamese Xiu Mai (Meatballs in Tomato Sauce)",
+   "url": "https://savorysweetspoon.com/xiu-mai-vietnamese-meatballs/",
+   "rating": 5.0,
+   "rating_count": 50,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wok & Kin",
+   "title": "Xiu Mai (Vietnamese Meatballs in Tomato Sauce)",
+   "url": "https://www.wokandkin.com/xiu-mai/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
