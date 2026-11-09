@@ -1,0 +1,653 @@
+[
+{
+"dish_name": "Alubias con Verduras",
+"cuisine": "Spanish",
+"main_protein": "beans",
+"ingredients": [
+"Canned white beans",
+"Yellow onion",
+"Red bell pepper",
+"Green bell pepper",
+"Carrots",
+"Zucchini",
+"Garlic",
+"Extra virgin olive oil",
+"Sweet paprika",
+"Tomato sauce",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Arroz a la Cubana",
+"cuisine": "Spanish",
+"main_protein": "eggs",
+"ingredients": [
+"Long-grain white rice",
+"Tomato sauce",
+"Bananas",
+"Eggs",
+"Garlic",
+"Bay leaves",
+"Olive oil",
+"Sugar",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Atun Encebollado",
+"cuisine": "Spanish",
+"main_protein": "fish",
+"ingredients": [
+"Fresh tuna steaks",
+"Yellow onions",
+"Olive oil",
+"Garlic",
+"Bay leaves",
+"Dried oregano",
+"Sweet paprika",
+"Dry sherry",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Avocado Tostadas",
+"cuisine": "Mexican",
+"main_protein": "vegan",
+"ingredients": [
+"Corn tostada shells",
+"Vegetarian refried black beans",
+"Avocados",
+"Red cabbage",
+"Romaine lettuce",
+"Limes",
+"Salt"
+]
+},
+{
+"dish_name": "Bistec Encebollado",
+"cuisine": "Spanish",
+"main_protein": "beef",
+"ingredients": [
+"Sirloin steaks, about 1/2 inch thick",
+"Sweet onions",
+"Lemon",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Black Bean Quesadillas",
+"cuisine": "Mexican",
+"main_protein": "beans",
+"ingredients": [
+"Black beans",
+"Salsa",
+"Sharp cheddar cheese",
+"Flour tortillas (8-inch)",
+"Olive oil",
+"Ground cumin",
+"Salt",
+"Sour cream"
+]
+},
+{
+"dish_name": "Boquerones Fritos",
+"cuisine": "Spanish",
+"main_protein": "fish",
+"ingredients": [
+"Fresh anchovies",
+"All-purpose flour",
+"Salt",
+"Extra virgin olive oil",
+"Flaky sea salt",
+"Lemon"
+]
+},
+{
+"dish_name": "Camarones a la Plancha",
+"cuisine": "Mexican",
+"main_protein": "shrimp",
+"ingredients": [
+"Jumbo shrimp, peeled and deveined",
+"Ground cumin",
+"Ancho chile powder",
+"Garlic powder",
+"Salt",
+"Black pepper",
+"Olive oil",
+"Limes",
+"Orange"
+]
+},
+{
+"dish_name": "Carne Molida con Papas",
+"cuisine": "Mexican",
+"main_protein": "beef",
+"ingredients": [
+"Ground beef",
+"Yukon Gold potatoes",
+"Carrots",
+"White onion",
+"Garlic",
+"Roma tomatoes",
+"Jalape\u00f1o",
+"Tomato sauce",
+"Gluten-free beef broth",
+"Vegetable oil",
+"Ground cumin",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Chorizo a la Sidra",
+"cuisine": "Spanish",
+"main_protein": "pork",
+"ingredients": [
+"Spanish-style chorizo, gluten-free",
+"Dry hard apple cider, gluten-free",
+"Olive oil",
+"Garlic",
+"Bay leaves",
+"Black pepper",
+"Fresh parsley",
+"Gluten-free bread"
+]
+},
+{
+"dish_name": "Crying Tiger Steak",
+"cuisine": "Thai",
+"main_protein": "beef",
+"ingredients": [
+"Flank steak",
+"Tamari",
+"Brown sugar",
+"Vegetable oil",
+"Limes",
+"Black pepper",
+"Garlic",
+"Fish sauce",
+"Tamarind paste",
+"Shallot",
+"Cilantro",
+"Green onions",
+"Glutinous rice",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Fattet Batinjan",
+"cuisine": "Lebanese",
+"main_protein": "vegetarian",
+"ingredients": [
+"Eggplant",
+"Olive oil",
+"Salt",
+"Pita bread",
+"Chickpeas",
+"Plain yogurt",
+"Garlic",
+"Pine nuts",
+"Flat-leaf parsley"
+]
+},
+{
+"dish_name": "Filete Ruso",
+"cuisine": "Spanish",
+"main_protein": "beef",
+"ingredients": [
+"Ground beef",
+"Ground pork",
+"White sandwich bread",
+"Egg",
+"Garlic",
+"Fresh parsley",
+"Ripe tomatoes",
+"All-purpose flour",
+"Olive oil",
+"Sunflower or vegetable oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Gambas a la Plancha",
+"cuisine": "Spanish",
+"main_protein": "shrimp",
+"ingredients": [
+"Large shrimp, shell on",
+"Olive oil",
+"Sea salt",
+"Garlic",
+"Flat-leaf parsley",
+"Lemons"
+]
+},
+{
+"dish_name": "Halloumi Mishwi",
+"cuisine": "Lebanese",
+"main_protein": "cheese",
+"ingredients": [
+"Halloumi",
+"Cornstarch",
+"Black pepper",
+"Vegetable oil",
+"Lemons",
+"Tomatoes",
+"Salt",
+"Red pepper flakes"
+]
+},
+{
+"dish_name": "Huevos Ahogados",
+"cuisine": "Mexican",
+"main_protein": "eggs",
+"ingredients": [
+"Eggs",
+"Roma tomatoes",
+"Red onion",
+"Serrano peppers",
+"Garlic",
+"Cilantro",
+"Avocados",
+"Corn tortillas",
+"Olive oil",
+"Salt"
+]
+},
+{
+"dish_name": "Judias Verdes con Patatas",
+"cuisine": "Spanish",
+"main_protein": "vegetarian",
+"ingredients": [
+"Green beans",
+"Yukon gold potatoes",
+"Garlic",
+"Extra virgin olive oil",
+"Smoked paprika",
+"Salt"
+]
+},
+{
+"dish_name": "Kafta bi Banadoura",
+"cuisine": "Lebanese",
+"main_protein": "beef",
+"ingredients": [
+"Ground beef",
+"Yellow onion",
+"Flat-leaf parsley",
+"Ground allspice",
+"Ground cinnamon",
+"Black pepper",
+"Salt",
+"Olive oil",
+"Tomato sauce",
+"Diced tomatoes",
+"Long-grain white rice"
+]
+},
+{
+"dish_name": "Kebab Halabi",
+"cuisine": "Lebanese",
+"main_protein": "lamb",
+"ingredients": [
+"Ground lamb",
+"Aleppo pepper",
+"Salt",
+"Tomatoes",
+"Mild red pepper paste",
+"Garlic",
+"Olive oil",
+"Pine nuts",
+"Flat-leaf parsley",
+"Long-grain white rice"
+]
+},
+{
+"dish_name": "Kua Kling",
+"cuisine": "Thai",
+"main_protein": "pork",
+"ingredients": [
+"Ground pork",
+"Jasmine rice",
+"Thai red curry paste",
+"Lemongrass",
+"Makrut lime leaves",
+"Red Fresno chili",
+"Thai bird chilies",
+"Fish sauce",
+"Sugar",
+"Vegetable oil",
+"English cucumber"
+]
+},
+{
+"dish_name": "Macarrones con Tomate",
+"cuisine": "Spanish",
+"main_protein": "vegetarian",
+"ingredients": [
+"Macaroni",
+"Crushed tomatoes",
+"Yellow onion",
+"Carrots",
+"Red bell pepper",
+"Garlic",
+"Olive oil",
+"Dried oregano",
+"Sugar",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Makanek",
+"cuisine": "Lebanese",
+"main_protein": "lamb",
+"ingredients": [
+"Ground lamb",
+"Pine nuts",
+"Ground coriander",
+"Paprika",
+"Ground nutmeg",
+"Black pepper",
+"Ground cloves",
+"Salt",
+"Red wine vinegar",
+"Olive oil",
+"Pomegranate molasses",
+"Lemons",
+"Flat-leaf parsley"
+]
+},
+{
+"dish_name": "Mejillones a la Marinera",
+"cuisine": "Spanish",
+"main_protein": "seafood",
+"ingredients": [
+"Mussels",
+"Yellow onion",
+"Garlic",
+"Diced tomatoes",
+"Dry white wine",
+"Smoked paprika",
+"Bay leaves",
+"Flat-leaf parsley",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Msabaha",
+"cuisine": "Lebanese",
+"main_protein": "chickpeas",
+"ingredients": [
+"Chickpeas",
+"Tahini",
+"Lemons",
+"Garlic",
+"Ground cumin",
+"Olive oil",
+"Salt",
+"Cucumber",
+"Tomatoes",
+"Flat-leaf parsley"
+]
+},
+{
+"dish_name": "Nopales con Huevo",
+"cuisine": "Mexican",
+"main_protein": "eggs",
+"ingredients": [
+"Nopales",
+"Eggs",
+"White onion",
+"Vegetable oil",
+"Corn tortillas",
+"Salsa",
+"Salt"
+]
+},
+{
+"dish_name": "Papas con Rajas",
+"cuisine": "Mexican",
+"main_protein": "vegan",
+"ingredients": [
+"Yukon Gold potatoes",
+"Poblano peppers",
+"White onion",
+"Olive oil",
+"Garlic powder",
+"Salt",
+"Black pepper",
+"Corn tortillas"
+]
+},
+{
+"dish_name": "Patatas a lo Pobre",
+"cuisine": "Spanish",
+"main_protein": "vegetarian",
+"ingredients": [
+"Yukon Gold potatoes",
+"Green bell pepper",
+"Red bell pepper",
+"Yellow onion",
+"Garlic",
+"Olive oil",
+"Salt"
+]
+},
+{
+"dish_name": "Pescado al Mojo de Ajo",
+"cuisine": "Mexican",
+"main_protein": "fish",
+"ingredients": [
+"Tilapia fillets",
+"Long-grain white rice",
+"Garlic",
+"Limes",
+"Vegetable oil",
+"Flat-leaf parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Pollo a la Plancha",
+"cuisine": "Mexican",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken breasts",
+"Olive oil",
+"Limes",
+"Garlic powder",
+"Onion powder",
+"Sweet paprika",
+"Ground cumin",
+"Dried oregano",
+"Salt",
+"Black pepper",
+"Cilantro"
+]
+},
+{
+"dish_name": "Pollo al Chipotle",
+"cuisine": "Mexican",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken breasts",
+"Long-grain white rice",
+"Heavy cream",
+"Milk",
+"Chipotle peppers in adobo",
+"Yellow onion",
+"Garlic",
+"Olive oil",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Pollo al Limon",
+"cuisine": "Spanish",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken breasts",
+"Lemons",
+"Dry white wine",
+"Gluten-free chicken broth",
+"Olive oil",
+"Italian parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Pollo con Tomate",
+"cuisine": "Spanish",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken breasts",
+"Cornstarch",
+"Garlic powder",
+"Sweet smoked paprika",
+"Olive oil",
+"Yellow onion",
+"Garlic",
+"Dried thyme",
+"Dry white wine",
+"Bay leaves",
+"Diced tomatoes",
+"Fresh parsley",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Pollo en Salsa Verde",
+"cuisine": "Mexican",
+"main_protein": "chicken",
+"ingredients": [
+"Boneless skinless chicken thighs",
+"Tomatillos",
+"Zucchini",
+"White onion",
+"Serrano peppers",
+"Cilantro",
+"Garlic",
+"Dried oregano",
+"Ground cumin",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Corn tortillas"
+]
+},
+{
+"dish_name": "Quesadillas de Flor de Calabaza",
+"cuisine": "Mexican",
+"main_protein": "vegetarian",
+"ingredients": [
+"Squash blossoms",
+"Corn tortillas",
+"Oaxaca cheese",
+"White onion",
+"Garlic",
+"Jalape\u00f1o",
+"Olive oil",
+"Salt",
+"Salsa verde"
+]
+},
+{
+"dish_name": "Revuelto de Esparragos",
+"cuisine": "Spanish",
+"main_protein": "eggs",
+"ingredients": [
+"Asparagus",
+"Eggs",
+"Garlic",
+"Olive oil",
+"Smoked paprika",
+"White wine vinegar",
+"Salt",
+"Black pepper"
+]
+},
+{
+"dish_name": "Samak Meqli",
+"cuisine": "Lebanese",
+"main_protein": "fish",
+"ingredients": [
+"Firm white fish fillets (hake, whiting or snapper)",
+"All-purpose flour",
+"Ground cumin",
+"Ground coriander",
+"Salt",
+"Vegetable oil",
+"Lemons"
+]
+},
+{
+"dish_name": "Sardinas a la Plancha",
+"cuisine": "Spanish",
+"main_protein": "fish",
+"ingredients": [
+"Fresh sardines",
+"Extra virgin olive oil",
+"Coarse sea salt",
+"Lemons"
+]
+},
+{
+"dish_name": "Sopa de Papa",
+"cuisine": "Mexican",
+"main_protein": "vegetarian",
+"ingredients": [
+"Yukon Gold potatoes",
+"Roma tomatoes",
+"White onion",
+"Garlic",
+"Vegetable broth",
+"Vegetable oil",
+"Dried oregano",
+"Cilantro",
+"Salt"
+]
+},
+{
+"dish_name": "Sujuk bi Bayd",
+"cuisine": "Lebanese",
+"main_protein": "eggs",
+"ingredients": [
+"Sujuk",
+"Eggs",
+"Yellow onion",
+"Tomatoes",
+"Olive oil",
+"Salt",
+"Black pepper",
+"Flat-leaf parsley"
+]
+},
+{
+"dish_name": "Sultan Ibrahim",
+"cuisine": "Lebanese",
+"main_protein": "fish",
+"ingredients": [
+"Skin-on fish fillets (red mullet, snapper or sea bream)",
+"Coarse salt",
+"Black pepper",
+"All-purpose flour",
+"Extra virgin olive oil",
+"Garlic",
+"Lemons",
+"Flat-leaf parsley",
+"Pita bread"
+]
+}
+]
