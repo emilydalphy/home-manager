@@ -47,8 +47,10 @@ def test_five_hundred_dishes_split_as_proposed():
     # for the breakfasts and the snacks ... add about 60 more"),
     # and 200 more on 2026-11-03 (Emily, 2026-11-02: "research more recipes",
     # "add snacks and breakfasts to that list, and make it 200"),
+    # and 1,000 more on 2026-11-08 (Emily: "Let's add 1000 more recipes to the
+    # database"), led by the gaps a household's settings leave,
     # still only the cuisines a household can pick.
-    assert len(DISHES) == 1104
+    assert len(DISHES) == 2104
     assert Counter(d["cuisine"] for d in DISHES[:500]) == PROPOSED
     assert set(d["cuisine"] for d in DISHES[500:]) <= set(PROPOSED)
 
