@@ -1,0 +1,148 @@
+{
+ "dish_name": "Chicken and Waffles",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "3 (about 1 1/4 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Buttermilk",
+   "qty": "1 quart",
+   "category": "dairy",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 1/4 cups"
+  },
+  {
+   "item": "Yellow cornmeal",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Canola oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded cheddar cheese",
+   "qty": "1 small bag",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 small pack",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 small bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 1/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: pound the chicken breasts to an even 1/2 inch thickness. Put them in a zip-top bag with 1 cup of the buttermilk, 1/2 tsp of the salt and 1/2 tsp of the pepper. Seal, turn to coat, and refrigerate.",
+  "Heat the oven to 250°F. Set a baking sheet with a rack in it for keeping the chicken warm.",
+  "Make the waffle batter first so it can sit. Whisk 1 cup of the cornmeal, 1 cup of the flour, the baking powder, baking soda and 1/4 tsp of the salt in a large bowl. Whisk 2 cups of the buttermilk, the eggs, melted butter and 1/4 cup of the maple syrup in a smaller bowl. Stir the wet into the dry until just combined. Slice the scallions and mince the chives, then fold them into the batter with the cheddar.",
+  "Mix the remaining 1 1/4 cups flour, the remaining 1/2 cup cornmeal, the paprika, 1/2 tsp of the salt and 1/4 tsp of the pepper in a shallow dish. Pour the remaining 1 cup buttermilk into a second shallow dish.",
+  "Lift the chicken out of the bag and pat it dry. Slice each breast into strips about 1 inch wide.",
+  "Pour the oil into a heavy skillet or Dutch oven to about 1 inch deep and heat over medium-high heat to 350 to 375°F. No thermometer? A pinch of the flour mixture should sizzle right away when it hits the oil. Put the waffle iron on to heat.",
+  "Coat each strip in the flour mixture, dip it in the buttermilk, then coat it in the flour mixture again. Shake off the extra.",
+  "Lower 3 or 4 strips into the oil. Stand back a little. They'll spatter. Fry for 6 to 8 minutes, turning with tongs, until deep golden and crisp. Cut one open to check: it's done when there's no pink left. Don't crowd the pan.",
+  "Transfer the strips to the rack on the baking sheet and keep them warm in the oven. Taste the first strip. If it's flat, sprinkle the rest with a pinch more salt as they come out of the oil.",
+  "Fry the rest of the chicken in batches, letting the oil come back up to temperature between them.",
+  "Cook the waffles in the greased, hot iron for 5 to 7 minutes each, until browned and crisp. Keep the finished ones warm in the oven with the chicken.",
+  "Stack 2 waffles on each plate, top with chicken strips and drizzle with the remaining 1/2 cup maple syrup. Put the hot sauce on the table for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "brine the chicken at least 4 hours ahead or overnight",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Lead is Garlic and Zest (4.1 from 74): buttermilk-brined chicken strips, dredged in flour and cornmeal and fried, with cornmeal cheddar waffles, scallions and chives. Food Network's sheet-pan version (cornflake chicken on frozen waffles) had no readable rating. The base is kept mild: the lead's 2 tbsp hot sauce in the brine and pinch of cayenne in the coating are left out, and hot sauce goes on the table instead. Scaled to 3 breasts for 4 people. It needs a waffle iron, and the written time is about 65 minutes plus the brine.",
+ "sources": [
+  {
+   "name": "Garlic and Zest",
+   "title": "Chicken and Waffles Recipe",
+   "url": "https://www.garlicandzest.com/southern-style-chicken-and-waffles/",
+   "rating": 4.11,
+   "rating_count": 74,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network",
+   "title": "Sheet-Pan Chicken and Waffles",
+   "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/sheet-pan-chicken-and-waffles-5448120",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

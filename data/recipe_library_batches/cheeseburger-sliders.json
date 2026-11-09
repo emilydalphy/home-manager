@@ -1,0 +1,121 @@
+{
+ "dish_name": "Cheeseburger Sliders",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Soft dinner rolls",
+   "qty": "1 pack of 12",
+   "category": "other"
+  },
+  {
+   "item": "Sliced cheddar cheese",
+   "qty": "4 slices",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded cheddar cheese",
+   "qty": "1 small bag",
+   "category": "dairy",
+   "cook_qty": "3 oz"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Rub the bottom of a rimmed baking sheet with 1 tbsp of the butter.",
+  "Finely dice half of the onion. Heat the oil in a large skillet over medium-high heat. Add the onion and the beef, then break the beef apart with a spatula.",
+  "Sprinkle on the salt, pepper and garlic powder. Cook until no pink is left, about 7 minutes. Take the skillet off the heat.",
+  "Tilt the skillet and spoon off the fat and liquid. Stir in the mayonnaise.",
+  "Taste a little of the beef. If it's flat, add a pinch more salt.",
+  "Slice the rolls in half sideways and set the bottom halves on the baking sheet.",
+  "Lay the cheddar slices over the bottoms. Spoon the beef over the top and press it flat with the back of a spatula. Sprinkle on the shredded cheddar.",
+  "Set the tops on, cut side down. Melt the remaining 1 tbsp butter, brush it over the tops, and sprinkle the sesame seeds on right away.",
+  "Bake for 12 to 15 minutes, until the cheese has melted and the tops are golden. Let them sit for 5 minutes.",
+  "Cut apart into 12 sliders."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Natasha's Kitchen (4.98 from 1,557), cut in half from 24 sliders to 12. This Farm Girl Cooks (4.75 from 12) is nearly the same with ketchup and relish stirred into the beef, and Graceful Little Honey Bee (5.0 from 3) adds ketchup, mustard and Worcestershire. All cook the beef first, then bake it under the rolls with melted cheese and a butter and sesame top. Some other versions press raw beef into a pan and bake it in one piece. Kept to the lead's mild beef with mayonnaise stirred in.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Cheeseburger Sliders",
+   "url": "https://natashaskitchen.com/cheeseburger-sliders/",
+   "rating": 4.98,
+   "rating_count": 1557,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "This Farm Girl Cooks",
+   "title": "Big Mac Style Cheeseburger Sliders",
+   "url": "https://www.thisfarmgirlcooks.com/cheeseburger-sliders-recipe/",
+   "rating": 4.75,
+   "rating_count": 12,
+   "read": true
+  },
+  {
+   "name": "Graceful Little Honey Bee",
+   "title": "Oven-Baked Cheeseburger Sliders",
+   "url": "https://www.gracefullittlehoneybee.com/oven-baked-cheeseburger-sliders/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

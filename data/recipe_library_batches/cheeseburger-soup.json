@@ -1,0 +1,135 @@
+{
+ "dish_name": "Cheeseburger Soup",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 stalk",
+   "category": "produce"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "2 medium (about 1 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Dried parsley flakes",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Velveeta cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 small tub",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat a large pot over medium heat. Add the beef and 1/4 tsp of the salt. Cook, breaking it into small pieces with a spoon, until no pink is left, 6 to 8 minutes.",
+  "Transfer the beef to a bowl with a slotted spoon. Spoon all but a teaspoon of the fat out of the pot.",
+  "Chop the onion, shred the carrot on the big holes of a grater and dice the celery. Melt 1 tbsp of the butter in the same pot over medium heat. Add the onion, carrot, celery, basil and parsley flakes. Cook, stirring now and then, until soft, about 10 minutes.",
+  "Peel the potatoes and cut them into 1/2 inch cubes. Add them to the pot with the broth and the beef. Bring to a boil, then turn the heat down, cover and simmer for 10 to 12 minutes, until a fork slides into a potato.",
+  "Meanwhile, melt the remaining 2 tbsp butter in a small skillet over medium heat. Stir in the flour and cook, stirring, until it bubbles, 3 to 5 minutes.",
+  "Stir the flour mixture into the soup and bring it to a boil. Cook, stirring, for 2 minutes, until the soup thickens.",
+  "Turn the heat to low. Cut the Velveeta cheese into cubes and add it with the milk, the remaining 1/4 tsp salt and the pepper. Stir until the cheese melts, about 3 minutes. Keep it at a gentle steam and don't let it boil.",
+  "Take the pot off the heat, then stir in the sour cream. Boiling it can make the soup curdle.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle into bowls. Leftovers keep in the fridge for up to 3 days. Reheat over low heat with a splash of milk."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Taste of Home's cheeseburger soup, the most rated version found (699 ratings), but the page shows only a star icon, so its average could not be read; it is used as a fallback lead. Six Sisters' Stuff (5.0 from 3) follows the same method with a full pound of beef. Both build the soup the same way: vegetables softened, potatoes simmered in broth, a butter and flour roux, then Velveeta, milk and sour cream off the boil. This version is halved to serve 4, with 12 oz of beef (the original uses half a pound for 8). Other versions (Budget Bytes, The Recipe Critic) block the reader.",
+ "sources": [
+  {
+   "name": "Taste of Home",
+   "title": "Cheeseburger Soup",
+   "url": "https://www.tasteofhome.com/recipes/cheeseburger-soup/",
+   "rating": null,
+   "rating_count": 699,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Six Sisters' Stuff",
+   "title": "The Best Cheeseburger Soup",
+   "url": "https://www.sixsistersstuff.com/recipe/the-best-cheeseburger-soup-recipe-cheesy-ground-beef-soup/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Cheeseburger Soup Recipe",
+   "url": "https://www.food.com/recipe/cheeseburger-soup-recipe-492596",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,101 @@
+{
+ "dish_name": "French Dip Sandwiches",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef chuck roast",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 small pack",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Low-sodium beef broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "French rolls or hoagie rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Pat the roast dry. Rub it all over with the salt and pepper.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat until it shimmers. Sear the roast for 3 to 4 minutes on each side, until deep brown all over. Transfer it to a slow cooker.",
+  "Pour 1/4 cup of the broth into the hot skillet and scrape up the browned bits. Pour it into the slow cooker.",
+  "Slice the onions and mince the garlic. Add them to the slow cooker with the rest of the broth, the Worcestershire and the rosemary.",
+  "Cover and cook on low for 8 hours or on high for 4 hours, until the beef shreds with a fork. Keep the lid on while it cooks.",
+  "Transfer the roast to a cutting board and let it rest for 15 minutes. Spoon the fat off the top of the juices and take out the rosemary.",
+  "Shred or thinly slice the beef and put it back in the juices to keep warm. Taste the juices. If they're flat, add a pinch more salt.",
+  "Heat the broiler. Split the rolls and brush the cut sides with the remaining 1 tbsp oil. Broil, cut side up, for 1 to 2 minutes, until golden.",
+  "Pile the beef on the rolls. Serve with the juices in small bowls for dipping.",
+  "Leftover beef keeps in its juices in the fridge for 4 days, or in the freezer for up to 3 months. Reheat in a pot over low heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 265,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Spend With Pennies (4.98 from 239). It sears the roast, then cooks it 4 hours on high or 8 on low in beef broth, condensed French onion soup, beer, onion, garlic, rosemary and Worcestershire, and serves it on buttered, broiled rolls. Adapted for dairy-free: the butter on the rolls is olive oil, and the condensed soup and beer became more broth and a second onion, with a little more Worcestershire; there is no cheese. Scaled to 2 lb of beef and 4 rolls. Carlsbad Cravings is similar with soy sauce and cola and provolone. About 40 minutes of the time is hands on; the rest is the slow cooker.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "French Dip Sandwich",
+   "url": "https://www.spendwithpennies.com/french-dip-sandwich/",
+   "rating": 4.98,
+   "rating_count": 239,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Carlsbad Cravings",
+   "title": "Best Slow Cooker French Dip Sandwiches",
+   "url": "https://carlsbadcravings.com/best-slow-cooker-french-dip-sandwiches/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,95 @@
+{
+ "dish_name": "Tater Tot Casserole",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Frozen tater tots",
+   "qty": "1 bag (16 oz)",
+   "category": "frozen"
+  },
+  {
+   "item": "Cream of chicken soup",
+   "qty": "1 can (10.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 small bag",
+   "category": "frozen",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "1 small bag",
+   "category": "frozen",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Frozen diced carrots",
+   "qty": "1 small bag",
+   "category": "frozen",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Shredded cheddar cheese",
+   "qty": "1 small bag",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F.",
+  "Heat a large skillet over medium-high heat. Add the beef and 1/4 tsp of the salt. Cook, breaking it into small pieces and leaving it alone between stirs so it browns, until no pink is left, 7 to 8 minutes. Drain off the fat.",
+  "In a large bowl, stir together the soup, the remaining 1/4 tsp salt, the pepper, the peas, corn, carrots, 1/4 cup of the cheese, the beef and half of the tater tots (about 8 oz).",
+  "Taste a spoonful of the filling. If it's flat, add a pinch more salt.",
+  "Spread the filling in an 8 inch square baking dish. Arrange the rest of the tots on top in rows.",
+  "Cover the dish with foil and bake for 40 minutes.",
+  "Take off the foil and sprinkle on the remaining 1/4 cup cheese. Bake for 10 minutes, until the cheese is bubbly and the tots on top are golden and crisp.",
+  "Let it sit for 5 minutes, then scoop out of the dish."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 55,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is This Vivacious Life (5.0 from 30): cooked ground beef, peas, corn and carrots in cream of chicken soup with cheddar, half the tater tots stirred in and half laid on top, baked covered then uncovered. Rose Bakes (5.0 from 2) skips the vegetables and layers tots over beef with soup and milk. The lead's gluten-free soup is plain cream of chicken here, and the recipe is halved to 4 servings with a little extra beef. It comes to about 65 minutes.",
+ "sources": [
+  {
+   "name": "This Vivacious Life",
+   "title": "Easy Tater Tot Casserole (Grandma's Recipe)",
+   "url": "https://www.thisvivaciouslife.com/grandma-donnas-tater-tot-casserole/",
+   "rating": 5,
+   "rating_count": 30,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rose Bakes",
+   "title": "Easy Tater Tot Casserole",
+   "url": "https://rosebakes.com/easy-meal-idea-tater-tot-casserole/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

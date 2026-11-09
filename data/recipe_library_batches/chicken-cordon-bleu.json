@@ -1,0 +1,121 @@
+{
+ "dish_name": "Chicken Cordon Bleu",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "4 (5 to 6 oz each)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Deli ham",
+   "qty": "4 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Swiss cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Seasoned breadcrumbs",
+   "qty": "1 container",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "5 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Grated Parmesan",
+   "qty": "1 small container",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F and line a rimmed baking sheet with parchment.",
+  "Put a chicken breast between two sheets of plastic wrap. Pound the thick end with a rolling pin or the bottom of a pan until the breast is about 1/4 inch thick. Do the other three. Sprinkle both sides with 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Lay a slice of ham and 1 oz of the Swiss on each breast. Roll it up like a jelly roll and hold it closed with a toothpick.",
+  "Melt 3 tbsp of the butter and mince the garlic. Stir the garlic into the butter in a small bowl. In a second bowl, mix the breadcrumbs and thyme.",
+  "Dip each roll in the garlic butter, then press it into the breadcrumbs. Set the rolls seam side down on the baking sheet.",
+  "Bake for 35 to 40 minutes, until the crumbs are golden. You're cooking the chicken to 160°F in the middle, and it will rest up to 165°F, so if you have a thermometer, check it there. No thermometer? Cut into one roll: it's done when there's no pink left in the chicken.",
+  "While the chicken bakes, melt the remaining 2 tbsp butter in a small saucepan over medium heat. Stir in the flour and cook for 1 minute.",
+  "Slowly whisk in the milk and the broth until smooth. Add the Dijon and Worcestershire. Bring to a boil, whisking, then turn the heat down and simmer for 1 minute.",
+  "Take the sauce off the heat and stir in the Parmesan. Taste it. If it's flat, add a pinch more salt.",
+  "Let the chicken rest for 5 minutes, then pull out the toothpicks. Serve with the sauce spooned over."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Spend With Pennies (4.99 from 274): pounded breasts rolled around ham and Swiss, dipped in garlic butter, coated in seasoned crumbs and baked, with a Dijon cream sauce. The source lists a 50 minute cook; the bake is 35 to 40 and the sauce is made during it, so 20 and 40 minutes are written. The sauce's white wine and bouillon cube became chicken broth, so it's wine-free. The source says the rolls can be assembled up to 24 hours ahead and baked 5 minutes longer. Nut-free as written.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Oven Baked Chicken Cordon Bleu",
+   "url": "https://www.spendwithpennies.com/chicken-cordon-bleu/",
+   "rating": 4.99,
+   "rating_count": 274,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

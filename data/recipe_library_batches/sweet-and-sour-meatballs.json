@@ -1,0 +1,159 @@
+{
+ "dish_name": "Sweet and Sour Meatballs",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Breadcrumbs",
+   "qty": "1 container",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Canned pineapple chunks in juice",
+   "qty": "1 can (8 oz)",
+   "category": "pantry",
+   "cook_qty": "1/3 cup chunks plus 3 tbsp juice"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup packed"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F and line a baking sheet with parchment.",
+  "Put the rice, 2 1/4 cups water and 1/4 tsp of the salt in a medium pot. Bring to a boil, then turn the heat to low, cover and cook for 15 minutes. Take it off the heat and leave it covered until you serve, so it's best to have the rice going first.",
+  "Grate half of the onion on the big holes of a box grater into a large bowl. Add the breadcrumbs, eggs, garlic powder, 3/4 tsp of the salt and the pepper. Add the beef and mix with your hands. Stop as soon as there are no streaks left. Any longer and the meatballs come out dense.",
+  "Scoop about 1 1/2 tablespoons of the mixture at a time and roll into balls. Set them on the baking sheet and bake for 12 to 15 minutes, until browned. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "While they bake, dice the rest of the onion and cut both peppers into 1 inch pieces. Mince the garlic. Drain the pineapple and keep 3 tbsp of the juice.",
+  "Whisk the 3 tbsp pineapple juice, broth, brown sugar, ketchup, rice vinegar, soy sauce, tomato paste, cornstarch and the remaining 1/4 tsp salt in a bowl until smooth.",
+  "Heat the oil in a large skillet over medium-high heat. Add the diced onion and peppers. Cook, stirring now and then, until they're crisp-tender and starting to brown at the edges, about 4 minutes. Add the garlic and stir for 30 seconds.",
+  "Whisk the sauce again, then pour it into the skillet. Stir for about 2 minutes, until it's thick and glossy.",
+  "Add the meatballs and 1/3 cup of the pineapple chunks. Toss to coat and cook for 2 minutes. Take the skillet off the heat.",
+  "Taste it. If it's flat, add a pinch more salt or a splash of rice vinegar.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Jo Cooks (4.9 from 32). Jar of Lemons (5.0 from 8) is the same idea with fewer ratings. Both bake the meatballs, then toss them with peppers in a pineapple, vinegar and brown sugar sauce thickened with cornstarch. The Jo Cooks card lists only a half teaspoon of cornstarch and no soy sauce although its text uses both, so the cornstarch (1 tbsp) and soy sauce (1 tbsp) follow Jar of Lemons. Scaled to 4 servings: 1.5 lb of beef and one onion shared between the meatballs and the pan. Dairy-free and nut-free as written.",
+ "sources": [
+  {
+   "name": "Jo Cooks",
+   "title": "Sweet And Sour Meatballs",
+   "url": "https://www.jocooks.com/recipes/sweet-and-sour-meatballs/",
+   "rating": 4.91,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jar of Lemons",
+   "title": "Sweet and Sour Meatball Recipe",
+   "url": "https://www.jaroflemons.com/sweet-sour-meatballs/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
