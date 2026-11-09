@@ -1,0 +1,130 @@
+{
+ "dish_name": "Lamb Shawarma",
+ "cuisine": "Lebanese",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Boneless lamb shoulder",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Allspice",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead: slice the lamb as thin as you can, against the grain. Thinly slice the yellow onions. In a large bowl, combine the lamb, onions, olive oil, the juice of 1 lemon, allspice, cinnamon, cumin, coriander, the leaves from 3 thyme sprigs, 1 tsp of the salt and the pepper. Cover and refrigerate for 2 to 4 hours.",
+  "Meanwhile, make the tahini sauce. Spoon the tahini into a bowl. Whisk in the juice of the second lemon and the 6 tbsp water, a little of each at a time, until it is thick and creamy. Grate in the garlic, add 1/4 tsp of the salt, and taste.",
+  "Slice the tomatoes. Cut the red onion into thin wedges. Pick a handful each of mint and parsley leaves.",
+  "Set a 12-inch skillet over medium-high heat for 2 minutes, until it's very hot.",
+  "Add half the lamb and onions in a single layer. Leave them alone for 2 minutes, until the underside is browned.",
+  "Stir and cook for 2 to 3 minutes, until there's no pink left in the lamb. Transfer it to a plate. Cook the second half the same way.",
+  "Taste a piece. If it's flat, add the remaining 1/4 tsp salt. Serve with the tomatoes, red onion, mint, parsley and the tahini sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "marinate at least 2 hours ahead",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "The sources agree on thinly sliced or cubed lamb in a lemon and olive oil marinade with allspice and cinnamon, cooked hot and served with a lemon tahini sauce and fresh vegetables. PureWow (the lead) slices the lamb, marinates it 2 to 4 hours with onions and sears it in a skillet. Recipes From A Pantry skewers cubes with cumin, coriander and pomegranate molasses. This version takes PureWow's method, borrows the cumin and coriander from the second, and serves it without the pita to stay gluten-free. RecipeTin Eats' lamb shawarma is a 3 hour slow roast, so it isn't used.",
+ "sources": [
+  {
+   "name": "PureWow",
+   "title": "Lamb Shawarma Sandwich",
+   "url": "https://www.purewow.com/recipes/lamb-shawarma-sandwich",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipes From A Pantry",
+   "title": "Lamb Shawarma",
+   "url": "https://recipesfromapantry.com/lamb-shawarma/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

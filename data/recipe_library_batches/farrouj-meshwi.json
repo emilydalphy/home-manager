@@ -1,0 +1,84 @@
+{
+ "dish_name": "Farrouj Meshwi",
+ "cuisine": "Lebanese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 3 hours ahead, or the night before: mash the garlic and the salt together into a paste. Stir in the olive oil, the juice of 1 lemon and the sumac until it looks creamy.",
+  "Cut a few shallow slits into each thigh. Put the chicken and the garlic mixture in a zip-top bag and massage it in. Refrigerate for at least 3 hours, or overnight.",
+  "Set a 12-inch cast-iron skillet or grill pan over medium-high heat for 2 minutes. Lift the thighs out of the bag and let the extra marinade drip off.",
+  "Lay the thighs in the pan, in two batches if they don't fit in one layer. Cook for 6 to 7 minutes, until the underside is deep brown and lets go of the pan.",
+  "Flip them and cook for 6 to 7 minutes. You're cooking the chicken to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut the thickest piece open: it's done when the juices run clear and there's no pink left.",
+  "Transfer the chicken to a board and rest it for 5 minutes. Cut the second lemon into wedges.",
+  "Taste a piece. If it's flat, add a pinch more salt or a squeeze of the lemon. Serve with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "marinate at least 3 hours ahead, or overnight",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "All the versions marinate the chicken in a paste of garlic, olive oil, lemon and sumac and cook it over medium heat until the juices run clear. Fas Kitchen (the lead) uses 6 garlic cloves, a 3 hour marinade and boneless pieces, Food.com cuts a whole chicken and marinates 3 to 6 hours, and Chef Soju adds paprika, cinnamon and cumin and a toum on the side. This version uses boneless thighs in a skillet so it fits a weeknight.",
+ "sources": [
+  {
+   "name": "Fas Kitchen",
+   "title": "Farrouj Meshwi Recipe, Arabic Garlic Chicken",
+   "url": "https://www.faskitchen.com/farrouj-meshwi-recipe-lebanese-grilled-garlic-chicken/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Farrouj Meshwi - Lebanese Garlic Chicken Recipe",
+   "url": "https://www.food.com/recipe/farrouj-meshwi-lebanese-garlic-chicken-326849",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Chef Soju's World",
+   "title": "Ferrouj Meshwi (Lebanese Garlic Chicken)",
+   "url": "https://chefsojusfood.com/recipes/ferrouj-meshwi-lebanese-garlic-chicken/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

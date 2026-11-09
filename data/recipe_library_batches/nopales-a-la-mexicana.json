@@ -1,0 +1,109 @@
+{
+ "dish_name": "Nopales a la Mexicana",
+ "cuisine": "Mexican",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Nopales (cactus paddles)",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeno",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano chile",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a medium pot with about 2 quarts of water, add 1/2 tsp of the salt and bring it to a boil.",
+  "Meanwhile, clean the nopales. Hold each paddle by the narrow base and trim off the outer edge all the way around. Shave off any spines with the knife flat against the paddle, front and back, then cut off the base. If yours are already de-spined, just rinse them. Cut the paddles into 1/2-inch strips.",
+  "Add the nopales to the boiling water and simmer for 8 to 10 minutes, until tender and darker green. Drain them and rinse under cold water until the slime is gone.",
+  "While they cook, slice the onion half into thin slivers. Seed and mince the jalapeno, mince the garlic and chop the tomatoes. Chop 1/4 cup of the cilantro.",
+  "Heat the olive oil in a large skillet over medium heat. Add the onion and cook for 4 to 5 minutes, until soft.",
+  "Add the jalapeno and garlic and cook for 1 minute.",
+  "Add the nopales and the remaining 1/2 tsp salt. Cook for 5 minutes, stirring now and then, until the liquid has cooked off.",
+  "Add the tomatoes and oregano. Cook for 4 minutes, until the tomatoes break down. Take the pan off the heat and stir in the cilantro.",
+  "Warm the tortillas in a dry skillet for about 30 seconds on each side.",
+  "Taste the nopales. If they're flat, add a pinch more salt. Serve in the warm tortillas. Slice the serrano thin and put it on the table for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions boil the cleaned paddles first to lose the slime, then cook them with onion, garlic, tomato and chile. Mexican Made Meatless (the lead) boils the strips, softens onion, chile and garlic in olive oil, then adds the nopales and tomato. Kent Rollins adds oregano and cumin with a roasted poblano, and Los Originarios finishes with cilantro and oregano. This version keeps the chile mild with a jalapeno and puts a sliced serrano on the table for heat.",
+ "sources": [
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Nopales a la Mexicana",
+   "url": "https://mexicanmademeatless.com/have-you-ever-eaten-cactus/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kent Rollins",
+   "title": "Nopales a la Mexicana",
+   "url": "https://kentrollins.com/blogs/vegetables/nopales-a-la-mexicana",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Los Originarios",
+   "title": "Nopales a la mexicana",
+   "url": "https://losoriginarios.mx/en/nopales-a-la-mexicana/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

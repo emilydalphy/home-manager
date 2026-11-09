@@ -1,0 +1,76 @@
+{
+ "dish_name": "Saeu Gui",
+ "cuisine": "Korean",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp, shell on",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Coarse sea salt",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "With kitchen scissors, snip off the whiskers and the sharp tip of each head end. Cut a shallow line along the back of each shell and pull out the dark vein. Leave the shells on.",
+  "Rinse the shrimp and pat them very dry with paper towels.",
+  "Mince the garlic. Put it in a small pan with the olive oil, off the heat.",
+  "Set the pan over medium-low heat and cook for about 1 minute, until the garlic smells fragrant. Take it off the heat.",
+  "Spread the coarse salt in a 12-inch heavy skillet in an even layer. Set it over medium heat for about 2 minutes, until the salt is hot and dry. Open a window or turn on the fan. The salt will smoke a little.",
+  "Lay half the shrimp on the salt in a single layer without overlapping them. Cook for 3 to 4 minutes, until the shells turn bright orange on the underside.",
+  "Flip them and cook the other side for 3 to 4 minutes, until the flesh is white all the way through. Transfer them to a platter.",
+  "Cook the second half of the shrimp the same way on the same salt.",
+  "Brush the garlic oil over the shrimp, grind the pepper over them and squeeze over the juice of 1 lemon. Cut the second lemon into wedges.",
+  "Taste a shrimp. If it's flat, add a pinch more salt or a squeeze of the lemon. Serve with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources cook shell-on shrimp directly on a thick bed of coarse salt in a covered or hot pan and pull them as soon as the shells turn orange. Zen Kimchi (the lead) gives the method with no amounts, so the quantities and timings follow Charim's salt-grilled king prawns, which uses a 1 cm bed of salt and about 3 to 4 minutes a side. Charim finishes with garlic butter. This version uses olive oil to keep it dairy-free. The cook should expect some smoke from the salt.",
+ "sources": [
+  {
+   "name": "Zen Kimchi",
+   "title": "Sae-u Sogeum Gui (Salt-grilled Shrimp)",
+   "url": "https://zenkimchi.com/recipes/korean-food-recipes/kr-2-se-u-sogum-kui-salt-grilled/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Charim",
+   "title": "Korean Salt-Grilled King Prawns",
+   "url": "https://charim.soundedfun.dev/en/recipe/daeha-sogeum-gui",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

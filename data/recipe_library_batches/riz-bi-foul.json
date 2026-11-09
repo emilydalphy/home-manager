@@ -1,0 +1,114 @@
+{
+ "dish_name": "Riz bi Foul",
+ "cuisine": "Lebanese",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Frozen shelled fava beans",
+   "qty": "1 lb",
+   "category": "frozen"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Allspice",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a bowl, cover it with cold water and swish it with your hand. Pour off the cloudy water and repeat until the water is mostly clear. Drain well.",
+  "Finely chop the onion and mince the garlic. Chop 1/2 cup of the cilantro leaves and tender stems.",
+  "Heat the olive oil in a large pot over medium heat. Add the onion and 1/2 tsp of the salt and cook for 6 to 7 minutes, until soft and lightly golden. Don't rush the onions. That's where the flavor starts.",
+  "Add the garlic, cumin, cinnamon, allspice, ginger and pepper. Stir for 1 minute, until it smells fragrant.",
+  "Add the fava beans straight from the freezer with 1/4 cup water. Stir, cover and cook over medium-low heat for 8 minutes, until the beans are tender.",
+  "Add the rice and stir for 1 minute so every grain is coated. Pour in 2 1/4 cups hot water and the remaining 1 tsp salt.",
+  "Bring it to a boil, then cover and turn the heat to the lowest setting. Cook for 15 minutes without lifting the lid.",
+  "Take the pot off the heat and let it sit, still covered, for 5 minutes.",
+  "Fluff the rice gently with a fork so the beans stay whole. Stir in the chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt. Serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 38,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Lebanese versions cook onion, garlic and cumin with fava beans first, then add basmati and simmer it covered on low heat. The Chef In Me (the lead) uses coriander, cumin, cinnamon and ginger with 4 cups of liquid for 2 cups of rice, and Eat Live Be Grateful adds allspice and cooks the beans 10 minutes before the rice. Dill is the herb in the Iraqi version (MidEastChef), so this Lebanese version uses fresh cilantro. The meat, butter and stock cubes in the sources are left out to keep it vegan.",
+ "sources": [
+  {
+   "name": "The Chef In Me",
+   "title": "Riz B'Foul",
+   "url": "http://samar-aoun.blogspot.com/2012/02/riz-bfoul.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Eat Live Be Grateful",
+   "title": "Rice with Fava beans (riz b foul)",
+   "url": "https://eatlivebegrateful.com/recipe/rice-with-fava-beans-riz-b-foul/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "MidEastChef",
+   "title": "Fava Bean and Dill Rice",
+   "url": "https://www.mideastchef.com/middle-eastern-and-chaldean-recipes-blog/fava-bean-and-dill-rice",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

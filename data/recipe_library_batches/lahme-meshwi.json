@@ -1,0 +1,99 @@
+{
+ "dish_name": "Lahme Meshwi",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Allspice",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: cut the beef into 1 1/2-inch cubes and pat them dry. In a large bowl, stir together the olive oil, the juice of 1 lemon, the garlic minced, the allspice, the cinnamon, 1 tsp of the salt and the pepper. Add the beef and toss until every cube is coated. Cover and refrigerate.",
+  "When you're ready to cook, set a rack about 6 inches under the broiler and heat the broiler to high. Line a sheet pan with foil.",
+  "Cut each onion into 1 1/2-inch chunks and pull the layers apart.",
+  "Thread the beef cubes and onion pieces onto skewers, alternating them and leaving a little space between. If you're using wooden skewers, soak them in water for 30 minutes first.",
+  "Lay the skewers on the sheet pan and sprinkle the remaining 1/2 tsp salt over them.",
+  "Broil for 4 minutes, until the edges are browned. Turn the skewers and broil the other side for 4 minutes. You're cooking the beef to 135°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut a cube open: it should be pink, not red.",
+  "Let the skewers rest on the pan for 5 minutes. Spoon the juices from the pan over them.",
+  "Cut the second lemon into wedges. Taste a cube. If it's flat, add a pinch more salt or a squeeze of the lemon. Serve with the lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "marinate at least 2 hours ahead, or overnight",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "The sources agree on cubed beef or lamb marinated in olive oil with warm spice, threaded with onion and grilled hot and quick. Cook Lebanese (the lead) uses olive oil, vinegar, cinnamon and black pepper or allspice with a 4 hour marinade. World Traveler Guide adds lemon and garlic and marinates 2 hours, and Oasis uses lamb with pomegranate molasses. This version takes the lead's cinnamon and allspice, borrows lemon and garlic from World Traveler Guide, and uses a broiler for cooks without a grill.",
+ "sources": [
+  {
+   "name": "Cook Lebanese (Cookpad)",
+   "title": "Grilled Meat Cubes On Skewers Lahem Meshwi",
+   "url": "https://cookpad.com/eng/recipes/4635114",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "World Traveler Guide",
+   "title": "Grilled Beef Shish Kebab (Lahm Mishwi)",
+   "url": "https://www.worldtravelerguide.net/grilled-beef-shish-kebab-lahm-mishwi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Oasis",
+   "title": "Lebanese BBQ: Lahem Meshwi Recipe",
+   "url": "https://oasisonline.com.au/blogs/recipes/lebanese-bbq-lahem-meshwi-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
