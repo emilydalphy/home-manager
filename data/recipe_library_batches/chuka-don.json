@@ -1,0 +1,124 @@
+{
+ "dish_name": "Chuka Don",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Thinly sliced pork belly",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Napa cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "half the head"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "4 heads",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Chicken bouillon powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve under cold water until the water runs almost clear. Put it in a pot with 1 3/4 cups water and cover.",
+  "Bring the rice to a boil over high heat, about 4 minutes. Turn the heat to low and cook for 12 minutes without lifting the lid. Take it off the heat and let it sit, covered, for 10 minutes.",
+  "Meanwhile, in a bowl, stir 1 3/4 cups water, the sake, the soy sauce, the oyster sauce, the sugar and the bouillon powder until the sugar dissolves.",
+  "Stir the cornstarch with 1 1/2 tbsp water in a cup.",
+  "Cut the pork into 1-inch pieces. Cut the carrot into thin sticks. Halve the bok choy lengthwise. Slice the shiitake caps and half the napa cabbage.",
+  "Put the firm parts together: the carrot, the cabbage stems and the bok choy stems. Put the soft parts together: the cabbage leaves, the bok choy leaves and the shiitake.",
+  "Heat the sesame oil in a large deep skillet over medium-high heat. Add the pork and 1/4 tsp of the salt. Cook for 3 minutes, stirring now and then, until it's golden and there's no pink left.",
+  "Add the firm vegetables and cook for 2 minutes, stirring often.",
+  "Add the soft vegetables and cook for 2 minutes, until the leaves wilt.",
+  "Pour in the sauce and bring it to a boil, about 2 minutes.",
+  "Stir the cornstarch mixture again, then pour it in a little at a time while you stir. Cook for 1 minute, until the sauce is thick and glossy. Take the skillet off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Divide the rice among 4 bowls. Serve with the pork and vegetables spooned over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 23,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 ratings, so the lead (Japanese Taste, no rating shown) is the first one read. It stir-fries pork, cooks the firm vegetables before the leafy ones, adds a seasoned broth and thickens it with a starch slurry. The Sakura cooking school version does the same with ginger and a splash of sesame oil at the end. This skips the shrimp and quail eggs in the lead, since the list promises pork and vegetables, and makes it for four. The rice cooks while you chop, so it's about 33 minutes in all.",
+ "sources": [
+  {
+   "name": "Japanese Taste",
+   "title": "How to Make Chukadon (Chinese-Style Rice Bowl Recipe)",
+   "url": "https://japanesetaste.com/blogs/japanese-taste-recipes/how-to-make-chukadon-chinese-style-rice-bowl-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Shokujidokoro Sakura Cooking School",
+   "title": "Chuka Don (Chinese Rice Bowl)",
+   "url": "https://howtocook.jp/?p=23316",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

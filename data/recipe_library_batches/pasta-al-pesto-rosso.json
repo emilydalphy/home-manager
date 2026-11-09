@@ -1,0 +1,115 @@
+{
+ "dish_name": "Pasta al Pesto Rosso",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Penne",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Sun-dried tomatoes in oil",
+   "qty": "1 jar (8.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 cup leaves"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 small wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Extra-virgin olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 2 tsp of the salt and bring it to a boil over high heat.",
+  "Drain the sun-dried tomatoes in a fine sieve.",
+  "Add the penne to the boiling water. Cook for 11 minutes, or as the box says, until it's tender with a little bite.",
+  "Meanwhile, chop 1/4 cup of the red onion and grate 1/2 cup of the Parmesan.",
+  "In a food processor, add the drained tomatoes, the basil leaves, the Parmesan, the pine nuts, the chopped onion, the garlic cloves, 1/4 tsp of the salt and the pepper.",
+  "Start the processor and pour in the olive oil in a thin stream. Process until it's smooth.",
+  "Add the red wine vinegar and pulse a few times. That should be about 1 1/2 cups.",
+  "Scoop out 1 cup of the pasta water, then drain the penne.",
+  "Return the penne to the empty pot, off the heat. Add all of the blended mixture and 1/2 cup of the pasta water. Toss until every piece is coated, adding more pasta water a spoonful at a time if it's thick.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (The Wimpy Vegetarian, 5 stars from 15 ratings) blends oil-packed sun-dried tomatoes with basil, Parmesan, pine nuts, red onion and garlic, then finishes with a little red wine vinegar. Platings and Pairings and Most Hungry use almonds, lemon juice or no basil, but all three build the pesto the same way and say to loosen it with pasta water. The sources don't give a pesto-to-pasta ratio, so this uses the whole batch for 1 lb of penne. Parmesan is made with animal rennet, so for strict vegetarians use a Parmesan labeled vegetarian.",
+ "sources": [
+  {
+   "name": "The Wimpy Vegetarian",
+   "title": "Sun-Dried Tomato Pesto with Pasta",
+   "url": "https://thewimpyvegetarian.com/2015/08/sun-dried-tomato-pesto-with-pasta/",
+   "rating": 5.0,
+   "rating_count": 15,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Platings and Pairings",
+   "title": "Sun-Dried Tomato Pesto (Pesto Rosso)",
+   "url": "https://www.platingsandpairings.com/sun-dried-tomato-pesto-pesto-rosso/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "Most Hungry",
+   "title": "Pesto Rosso (Sun-Dried Tomato Pesto)",
+   "url": "https://mosthungry.com/pesto-rosso-sun-dried-tomato-pesto",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

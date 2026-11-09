@@ -1,0 +1,96 @@
+{
+ "dish_name": "Penne Salsiccia e Panna",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Sweet Italian sausage",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Penne",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 pint",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 small wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 2 tsp of the salt and bring it to a boil over high heat.",
+  "Thinly slice the onion. Grate 1/2 cup of the Parmesan. If the sausage is in casings, slip them off.",
+  "Heat the olive oil in a large deep skillet over medium-high heat. Add the onion and 1/4 tsp of the salt. Cook for 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the sausage and break it into small pieces with a wooden spoon. Cook for 10 minutes, stirring now and then, until it's browned in places. You're cooking it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Break a piece open: it's done when there's no pink left.",
+  "As soon as the sausage goes in, add the penne to the boiling water. Cook for 11 minutes, or as the box says, until it's tender with a little bite.",
+  "Pour the cream into the skillet and add the pepper and 1/2 tsp of the salt. Cook over medium heat for 3 minutes, until the sauce coats the back of a spoon. Keep it at a gentle bubble. A hard boil can make cream sauce grainy.",
+  "Scoop out 1/2 cup of the pasta water, then drain the penne.",
+  "Add the penne to the skillet with the pasta water. Toss over medium heat for 1 minute, until the sauce clings to every piece. Add a splash more water if it looks tight.",
+  "Take the skillet off the heat. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the grated Parmesan."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (Italian Chef, 4 stars from 1 rating) browns onion and sausage, adds cream to thicken for a few minutes, then tosses with penne and serves Parmesan on the side. The Premio and Food.com (Bon Appetit) versions add wine, tomatoes, garlic or spinach, but all three agree on the sausage-cream-penne core. This version keeps the lead's short ingredient list, cuts the pasta to 12 oz for four, and adds a little pasta water, which the lead leaves out, so there's plenty of sauce. Nothing here has 20 ratings, so the lead is the first version read.",
+ "sources": [
+  {
+   "name": "Italian Chef",
+   "title": "Penne with Sausage and Cream",
+   "url": "https://italianchef.com/penne-with-sausage-and-cream/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Premio Foods",
+   "title": "Sausage & Penne Pasta in Cream Sauce",
+   "url": "https://www.premiofoods.com/recipes/penne-pasta-in-cream-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Penne in Cream Sauce with Sausage",
+   "url": "https://www.food.com/recipe/penne-in-cream-sauce-with-sausage-55210",
+   "rating": 4.0,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

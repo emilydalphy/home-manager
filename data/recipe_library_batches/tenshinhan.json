@@ -1,0 +1,108 @@
+{
+ "dish_name": "Tenshinhan",
+ "cuisine": "Japanese",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Imitation crab sticks",
+   "qty": "1 pack (8 oz)",
+   "category": "meat/seafood",
+   "cook_qty": "6 oz"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp plus 2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp plus 2 tsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp plus 1 tsp"
+  },
+  {
+   "item": "Chicken bouillon powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 tbsp plus 2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve under cold water until the water runs almost clear. Put it in a pot with 1 3/4 cups water and cover.",
+  "Bring the rice to a boil over high heat, about 4 minutes. Turn the heat to low and cook for 12 minutes without lifting the lid. Take it off the heat and let it sit, covered, for 10 minutes.",
+  "Meanwhile, pull the crab sticks apart into thin strands, using 6 oz. Thinly slice the green onions.",
+  "Beat the eggs in a large bowl with the salt. Stir in the crab and green onions.",
+  "In a small pot, stir 1 1/3 cups water, the bouillon powder, the soy sauce, the sugar and the vinegar over medium heat until the sugar dissolves.",
+  "Stir the cornstarch with 2 tbsp water in a cup. Bring the sauce to a simmer, pour in the cornstarch mixture and stir for 1 to 2 minutes, until it's thick and clear. Take it off the heat.",
+  "Taste the sauce. If it's flat, add a splash of soy sauce.",
+  "Fluff the rice and divide it among 4 wide bowls.",
+  "Heat 1 tbsp of the oil in a 10-inch nonstick skillet over medium-high heat. Pour in a quarter of the egg mixture. Stir gently for 30 seconds, until the edges are set and the top is still soft and wet. Stop there. A dry omelet won't take up the sauce.",
+  "Slide the omelet onto a bowl of rice so it covers the rice.",
+  "Cook the other 3 omelets the same way, 1 tbsp oil each and about 1 minute apiece, sliding each onto a bowl of rice.",
+  "Warm the sauce for 30 seconds if it has cooled. Spoon a quarter of the sauce over each omelet.",
+  "Serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (RecipeTinEats, 5 stars from 3 ratings, the trusted-cook fallback) makes a soft crab omelet, slides it onto rice and pours a thickened sweet and sour sauce over it. Japanese Taste uses the same layout with oyster sauce, mirin and a sprinkle of sesame oil. This uses the lead's Tokyo-style sauce with vinegar, multiplied for four and made without butter. The rice is the long part, so it's 33 minutes in all, a little over the 30-minute target.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Crab Omelette on Rice (Tenshinhan)",
+   "url": "https://japan.recipetineats.com/crab-omelette-on-rice-tenshinhan/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Taste",
+   "title": "How To Make Tenshinhan (Crab Omelet Over Rice)",
+   "url": "https://japanesetaste.com/blogs/japanese-taste-recipes/how-to-make-tenshinhan-crab-omelet-over-rice",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

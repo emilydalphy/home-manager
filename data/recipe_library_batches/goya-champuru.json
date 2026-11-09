@@ -1,0 +1,96 @@
+{
+ "dish_name": "Goya Champuru",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Bitter melon",
+   "qty": "2 (about 1 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Medium-firm tofu",
+   "qty": "2 blocks (14 oz each)",
+   "category": "dairy"
+  },
+  {
+   "item": "Thinly sliced pork belly",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Katsuobushi (bonito flakes)",
+   "qty": "1 bag",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 6 tbsp of the katsuobushi in a small bowl. Pour 1/2 cup of just-boiled water over it and let it steep while you prep.",
+  "Halve the bitter melons lengthwise. Scrape out the seeds and white pith with a spoon, then slice them crosswise 1/8 inch thick.",
+  "Toss the bitter melon with 2 tsp of the salt in a bowl. Let it stand for 10 minutes.",
+  "Meanwhile, wrap the tofu in paper towels, set a plate on top and put a heavy can on the plate. Let it drain for 10 minutes.",
+  "Cut the pork into 1 1/2-inch pieces. Beat the eggs in a bowl. Tear the tofu into bite-size pieces.",
+  "Strain the steeped katsuobushi through a sieve over a cup and throw the flakes away. You should have about 1/3 cup of the broth.",
+  "Rinse the bitter melon quickly under cold water, drain it, then pat it dry with a clean towel.",
+  "Heat a large skillet or wok over medium-high heat. Add 1 tbsp of the oil, then half of the tofu in a single layer. Cook for 3 minutes without stirring, until the bottom is golden, then toss and cook for 2 minutes. Transfer to a plate. Repeat with 1 tbsp oil and the rest of the tofu.",
+  "Add 2 tbsp of the oil to the skillet, then the bitter melon and 1/4 tsp of the salt. Stir-fry for 3 minutes, until it's bright green and tender with a little crunch. Transfer it to the plate with the tofu.",
+  "Add the last 1 tbsp of oil and the pork. Sprinkle with the pepper and the last 1/4 tsp of salt. Stir-fry for 3 minutes, until it's golden and there's no pink left.",
+  "Return the bitter melon and tofu to the skillet. Add the katsuobushi broth and the soy sauce. Toss for 1 minute, until the liquid is gone.",
+  "Pour in the eggs and shake the pan. Cook for 1 minute, until no runny egg is left, then take the skillet off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with a pinch of the extra katsuobushi on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead (Just One Cookbook, 4.77 from 59 votes) salts the bitter melon to draw out the bitterness, browns the tofu on its own, stir-fries the melon and pork, then folds in katsuo dashi, soy sauce and beaten egg. Kikkoman uses a much quicker version with mirin and soy and cooks the egg first. This keeps the lead's method doubled for four and presses the tofu while the melon stands, which is how it fits in about 30 minutes. It's a tight 30, and it needs a large pan.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Goya Champuru",
+   "url": "https://www.justonecookbook.com/goya-champuru/",
+   "rating": 4.77,
+   "rating_count": 59,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kikkoman",
+   "title": "Goya Champuru (Bitter Melon Stir-Fry)",
+   "url": "https://www.kikkoman.com/en/cookbook/recipe/00002089.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,76 @@
+{
+ "dish_name": "Saba Misoni",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Mackerel fillets",
+   "qty": "1 1/2 lbs (4 fillets)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (about 1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Miso",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  }
+ ],
+ "instructions": [
+  "Cut each mackerel fillet in half crosswise. Peel the ginger and slice it thin.",
+  "In a wide skillet with a lid, stir 1/4 cup water, the sake, the mirin, the sugar, the soy sauce and the ginger over medium heat. Bring it to a simmer.",
+  "Add the mackerel skin side up in a single layer. Turn the heat to medium-low and cover.",
+  "Cook for 4 minutes, then turn the fish over and cook for 3 minutes.",
+  "Spoon 1/4 cup of the hot liquid into a small bowl. Stir in the miso until it's smooth, then pour it back into the skillet around the fish.",
+  "Simmer uncovered for 8 minutes, spooning the sauce over the fish now and then, until the sauce thickens a little and the fish flakes easily with a fork.",
+  "Taste the sauce. If it's flat, add a splash of soy sauce.",
+  "Serve with the sauce and the ginger spooned over the fish."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one version could be read, Japanese Cooking 101 (no rating shown), so this is the lead. It simmers mackerel in sake, mirin, sugar, soy sauce and ginger, then stirs in the miso and reduces the sauce a little. Other versions listed in search results blanch the fish first and rest it for 30 minutes, which this skips to stay near 30 minutes. This uses 1 1/2 lbs of fish where the source cut one fillet into 8 pieces, and the same sauce amounts.",
+ "sources": [
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Saba Misoni (Simmered Mackerel in Miso)",
+   "url": "https://japanesecooking101.com/saba-misoni-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
