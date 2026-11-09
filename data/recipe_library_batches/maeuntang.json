@@ -1,0 +1,137 @@
+{
+ "dish_name": "Maeuntang",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Korean radish",
+   "qty": "1 small (about 8 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Watercress",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free gochujang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Gochugaru (Korean chili flakes)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice until the water runs mostly clear. Put it in a pot with 2 1/4 cups water, bring to a boil, then cover, turn the heat to low and cook for 15 minutes. Leave it covered off the heat until you serve.",
+  "Peel the radish and cut it into thin slices about 1/8 inch thick. Cut the cod into 2 inch pieces and sprinkle with the 1/2 tsp salt. Cut the tofu into 1 inch cubes. Halve the zucchini lengthwise and slice it 1/4 inch thick. Cut the scallions into 1 inch lengths. Mince the 4 garlic cloves. Grate the ginger.",
+  "Heat the 1 tbsp oil in a Dutch oven or large pot over medium heat. Add the ginger and stir for 20 seconds. Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Add the 6 cups broth, the radish, the 1 tbsp gochujang, 2 tsp of the gochugaru, the 1 tbsp tamari and the pepper. Stir until the gochujang dissolves. Bring it to a boil, then turn it down to a simmer and cook for 8 minutes, until the radish is nearly tender.",
+  "Add the fish, tofu, zucchini and scallions. Bring it back to a gentle simmer, cover, and cook for 4 minutes, until the fish flakes apart when you press it.",
+  "Add the watercress and cook for 30 seconds, until it wilts.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Ladle the stew into bowls and serve with the rice. Put the last 1 tsp gochugaru in a small bowl on the table for anyone who wants it hotter."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "America's Test Kitchen is the lead (4.0 from 22 ratings): garlic and ginger in oil, then broth, gochujang and gochugaru, then the fish, tofu, zucchini and scallions for 3 to 4 minutes. Beyond Kimchee and Aeri's Kitchen both simmer sliced Korean radish in the broth first and finish with crown daisy, so the radish and a green are added here. The lead's kimchi and cilantro are left out, since kimchi can hide wheat, and watercress stands in for crown daisy. Gluten free gochujang and tamari replace the regular ones, and the chili flakes are cut so the pot is mild, with the rest on the table.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Maeuntang (Korean Spicy Fish Stew)",
+   "url": "https://www.americastestkitchen.com/recipes/13974-maeuntang-korean-spicy-fish-stew",
+   "rating": 4.0,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Maeuntang (Korean Fish Stew with Croaker)",
+   "url": "https://www.beyondkimchee.com/spicy-yellow-croaker-fish-stew/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Aeri's Kitchen",
+   "title": "Spicy Red Snapper Guk (DoMi MaeUnTang)",
+   "url": "https://www.aeriskitchen.com/2019/10/korean-style-red-snapper-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

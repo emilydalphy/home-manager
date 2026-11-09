@@ -1,0 +1,62 @@
+{
+ "dish_name": "Shio Koji Chicken",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Boneless skin-on chicken thighs",
+   "qty": "6 (about 2 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shio koji",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, and up to 3 hours: stir the 3/4 cup shio koji and the 2 tsp tamari together in a bowl.",
+  "Pat the 6 chicken thighs dry with paper towels. Season both sides with the 1/2 tsp pepper.",
+  "Put the thighs in the bowl and turn them until every piece is coated. Cover and refrigerate. Don't go past 3 hours, or the meat turns mushy.",
+  "When you're ready to cook, heat the oven to 350°F and line a baking sheet with parchment paper.",
+  "Scrape as much of the shio koji off the thighs as you can. Lay them skin side up on the baking sheet.",
+  "Bake on the middle shelf for 25 minutes. You're cooking the thighs to 175°F in the thickest part, so if you have a thermometer, check one there. No thermometer? Cut into the thickest one: it's done when the juices run clear.",
+  "Switch the oven to broil. Broil for 3 to 5 minutes, until the skin is browned and charred in spots. Watch it. It goes fast.",
+  "Let the thighs sit on the tray for 5 minutes.",
+  "Cut each thigh into 4 pieces and serve with the juices from the tray spooned over."
+ ],
+ "advance_prep_notes": "marinate 1 to 3 hours ahead",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Only Just One Cookbook was read in full, so this follows it: skin on boneless thighs coated in shio koji and a little soy sauce, marinated 30 minutes to 3 hours, baked at 350°F and broiled to char the skin. The search results show other versions with much less shio koji for a longer marinade (Kikkoman uses about 2 tbsp per pound for 3 to 12 hours). Soy sauce is swapped for tamari so it stays gluten free, and the marinade is pushed to an hour or more so the 30 minute minimum is already done by dinnertime. Check that the shio koji label has no wheat.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Shio Koji Chicken",
+   "url": "https://www.justonecookbook.com/shio-koji-chicken/",
+   "rating": 4.75,
+   "rating_count": 54,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

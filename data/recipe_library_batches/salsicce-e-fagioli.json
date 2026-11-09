@@ -1,0 +1,43 @@
+{
+ "dish_name": "Salsicce e Fagioli",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 32,
+ "ingredients": [
+  {"item": "Italian pork sausage links", "qty": "1 1/4 lbs", "category": "meat/seafood"},
+  {"item": "Cannellini beans", "qty": "2 cans (15 oz each)", "category": "pantry"},
+  {"item": "Diced tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
+  {"item": "Tomato sauce", "qty": "1 can (8 oz)", "category": "pantry"},
+  {"item": "Low-sodium chicken broth", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Chop the onion. Cut the bell pepper into 1/2 inch pieces. Mince the 3 garlic cloves. Drain and rinse the beans in a colander.",
+  "Heat the 2 tbsp olive oil in a deep, wide skillet over medium high heat. Add the sausages and brown them on all sides, about 8 minutes. They don't need to be cooked through yet. Transfer them to a plate.",
+  "Add the onion and bell pepper to the same skillet with the 1/2 tsp salt. Cook, stirring, until soft and lightly browned, about 5 minutes. Scrape up the browned bits as you stir.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Add the diced tomatoes with their juice, the tomato sauce, the broth, the oregano, the 1/4 tsp pepper and the beans. Stir and bring it to a simmer.",
+  "Nestle the sausages and any juices from the plate back into the skillet. Turn the heat to low, cover, and cook for 15 minutes, until the sauce has thickened a little.",
+  "You're cooking the sausages to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Spoon the beans and sauce into bowls and set 2 sausages on each."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The versions agree on browning the sausages first, then simmering them in tomato with canned white beans. Lana's Cooking is the lead: it builds a base of onion, garlic and bell pepper before the tomatoes, and cooks everything in one covered skillet. David Rocco's Food Network version is plainer (garlic, rosemary, canned tomatoes and beans, about 35 minutes), and Most Hungry's has only sausage, tomatoes and beans with cheese and bread on top. This version follows the lead with the simmer cut to 15 minutes and the pepper flakes left out to keep the base mild. Check the sausage label for gluten.",
+ "sources": [
+  {"name": "Lana's Cooking", "title": "Italian Sausage and White Beans Skillet", "url": "https://www.lanascooking.com/italian-sausage-white-beans/", "rating": 5.0, "rating_count": 24, "read": true, "lead": true},
+  {"name": "Food Network", "title": "Salsiccie e Fagioli: Pork and Beans", "url": "https://www.foodnetwork.com/recipes/salsiccie-e-fagioli-pork-and-beans-1961201", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Most Hungry", "title": "Easy Italian Sausage and Beans (Salsicce e Fagioli)", "url": "https://mosthungry.com/sausage-and-beans/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,102 @@
+{
+ "dish_name": "Kenchinjiru",
+ "cuisine": "Japanese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Daikon radish",
+   "qty": "1 small (about 10 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Burdock root (gobo)",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Kombu",
+   "qty": "1 piece (4 by 4 inches)",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the kombu, the 4 dried shiitake and 6 cups of water in a large pot. Heat over medium until it's steaming and small bubbles start at the edge, about 8 minutes. Take the pot off the heat and let it steep while you chop.",
+  "Peel the daikon, quarter it lengthwise and slice it thin. Peel the carrots, halve them lengthwise and slice them thin. Peel the potatoes and cut them into 1/2 inch pieces.",
+  "Scrape the burdock with the back of a knife under running water. Halve it lengthwise and slice it thin on an angle. Soak the slices in a bowl of water for 5 minutes, then drain.",
+  "Take the kombu and shiitake out of the pot and pour the broth into a large bowl or jug. Discard the kombu. Cut the stems off the shiitake, throw them away, and quarter the caps. Wipe the pot out.",
+  "Pat the tofu dry with paper towels. Tear it into bite sized pieces by hand.",
+  "Heat the 1 tbsp sesame oil in the pot over medium heat. Add the daikon, carrots, burdock, potatoes and shiitake. Stir for 3 minutes, until everything is coated and shiny.",
+  "Add the tofu and stir for 1 minute.",
+  "Pour in the broth and bring it to a boil. Turn the heat down to a simmer and skim off any foam with a spoon.",
+  "Simmer for 10 minutes. Add the 3 tbsp sake and the 1/2 tsp salt and cook for 5 minutes, until a piece of daikon and a piece of potato are tender when you poke them with a fork.",
+  "Stir in the 2 tbsp soy sauce. Slice the scallions thin.",
+  "Taste the soup. If it's flat, add a pinch more salt.",
+  "Ladle the soup into bowls and top with the scallions."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only Just One Cookbook was read in full, so this follows it: a vegan kombu and shiitake broth, root vegetables and tofu sautéed in sesame oil first, then simmered and seasoned with sake and soy sauce at the end. This version steeps the broth for about 8 minutes while the vegetables are cut instead of overnight, skips pressing the tofu and the konnyaku, and uses potatoes in place of taro, which is hard to find. Burdock stays because it is what the soup tastes of.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Kenchinjiru (Japanese Vegetable Soup)",
+   "url": "https://www.justonecookbook.com/kenchinjiru/",
+   "rating": 4.69,
+   "rating_count": 44,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
