@@ -1,8 +1,6 @@
 {
-"Moo Tod Kratiem": [["well"], ["nuggets", "#C48A55", "#E8C08E", 8, 10, 16, 44, 46], ["dots", "#F5EBCB", 14, 1.1, 17, 44, 46], ["rounds", "#6FA04A", "#BFD396", 4, 6, 29], ["rice", 70, 68, 15, 13, "#FFFFFF", "#ECE6D6"], ["leaves", "#4F7A3A", 3, 4.5, 10]],
 "Muc Xao Sa Ot": [["pool", "#B8452A"], ["calamari", 9, 20, 50, 50, 1], ["strips", "#E8E2A4", 4, 13, 2.2, 20], ["rings", "#6E9150", 6, 27], ["rice", 68, 66, 15, 13, "#FFFFFF", "#ECE6D6"]],
 "Nam Xao": [["pool", "#D9B070"], ["mushroom", "#9C7452", 7, 8, 19, 46, 48], ["strips", "#E9B6C0", 5, 12, 2.2, 22], ["dots", "#2A2018", 14, 0.9, 28], ["rice", 68, 66, 15, 13, "#FFFFFF", "#ECE6D6"]],
-"Neua Pad Prik Thai Dum": [["pool", "#9A6A3C"], ["slices", "#4E2615", "#8A5A3A", 6, 20], ["strips", "#D9302A", 5, 15, 3.6, 22], ["strips", "#6E9A45", 5, 15, 3.6, 22], ["strips", "#F0DEB8", 4, 13, 2.4, 24], ["dots", "#1E1410", 14, 1, 26]],
 "Nohutlu Pilav": [["well"], ["rice", 50, 50, 31, 29, "#F2D98A", "#DDB860"], ["nuggets", "#D9B36A", "#EBCF94", 11, 5.5, 17], ["cubes", "#6E9A45", 5, 4.5, 22], ["dots", "#8A5A2A", 10, 1, 24]],
 "Nui Xao Bo": [["pool", "#E0643A"], ["shortpasta", "elbow", "", 13, 24], ["slices", "#7A4226", "#9A6038", 4, 13], ["cubes", "#B8301F", 5, 5, 27], ["dots", "#6E9A45", 10, 1.3, 29]],
 "Pad Hed": [["pool", "#7A4220"], ["mushroom", "#BFA27E", 7, 8.5, 20, 46, 48], ["leaves", "#3F7A34", 6, 6, 22], ["rings", "#E0402A", 6, 26], ["rice", 69, 68, 14, 12, "#FFFFFF", "#ECE6D6"]],
@@ -18,7 +16,6 @@
 "Tacos de Nopales": [["well"], ["tacos", "#7FA050", "#F4EBD0", "#D9302A", ""], ["nuggets", "#7FA050", "#A6C878", 6, 3.4, 6, 32, 44], ["nuggets", "#7FA050", "#A6C878", 6, 3.4, 6, 51, 36], ["nuggets", "#7FA050", "#A6C878", 6, 3.4, 6, 63, 48], ["wedges", "#8DB84F", "#C5DE85", 2, 30]],
 "Tacos Gobernador": [["well"], ["tacos", "#F0A878", "#F6D870", "#4F7A3A", ""], ["nuggets", "#F4A07C", "#FBC9AD", 5, 3.4, 6, 32, 44], ["nuggets", "#F4A07C", "#FBC9AD", 5, 3.4, 6, 51, 36], ["nuggets", "#F4A07C", "#FBC9AD", 5, 3.4, 6, 63, 48], ["dots", "#5F8445", 8, 1.6, 8, 33, 70]],
 "Tantuni": [["well"], ["wrap", "#E8D2A0", "#6B3A25", "#7FB04E"], ["rounds", "#D9402A", "#F08A70", 3, 6, 29], ["wedges", "#F4E36A", "#E3C23A", 2, 31], ["leaves", "#4F7A3A", 4, 4.5, 28]],
-"Thai Basil Eggplant": [["pool", "#B9793F"], ["eggplant", 5, 17, 45, 48], ["strips", "#D9302A", 4, 12, 2.8, 22], ["leaves", "#3F6B34", 4, 5, 26], ["rice", 68, 66, 15, 13, "#FFFFFF", "#ECE6D6"]],
 "Thai Coconut Pumpkin Soup": [["pool", "#F2A24A"], ["dots", "#E8883A", 24, 1.4, 30], ["mash", 50, 50, 11, 7, "#FFF6E0", "#F0DDB8"], ["leaves", "#3F6B34", 3, 4.5, 5], ["rings", "#7FA653", 8, 28]],
 "Thai Pineapple Curry with Shrimp": [["pool", "#D9622E"], ["shrimp", "#F4A07C", "#C9583A", 4, 20], ["cubes", "#F5D44E", 5, 8, 27], ["rings", "#C9302A", 4, 29], ["leaves", "#3F6B34", 3, 4.5, 28]],
 "Thai Red Curry with Chicken": [["pool", "#C9452A"], ["nuggets", "#E3B070", "#F4DDA8", 6, 9, 17, 45, 46], ["rice", 68, 66, 15, 13, "#FFFFFF", "#ECE6D6"], ["rings", "#7FA653", 5, 28], ["leaves", "#3F6B34", 3, 4.5, 26]],

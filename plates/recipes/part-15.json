@@ -126,19 +126,6 @@
 ]
 },
 {
-"dish_name": "Biberli Yumurta",
-"cuisine": "Turkish",
-"main_protein": "eggs",
-"ingredients": [
-"Long sweet green peppers (sivri, Cubanelle or Anaheim)",
-"Eggs",
-"Olive oil",
-"Salt",
-"Black pepper",
-"Dried thyme"
-]
-},
-{
 "dish_name": "Bo Xao Rau Muong",
 "cuisine": "Vietnamese",
 "main_protein": "beef",
@@ -195,24 +182,6 @@
 "Mint",
 "Fried shallots",
 "Roasted peanuts"
-]
-},
-{
-"dish_name": "Ca Hap Gung",
-"cuisine": "Vietnamese",
-"main_protein": "fish",
-"ingredients": [
-"White fish fillets",
-"Jasmine rice",
-"Ginger",
-"Green onions",
-"Gluten-free tamari",
-"Fish sauce",
-"Toasted sesame oil",
-"Sugar",
-"Vegetable oil",
-"Salt",
-"Black pepper"
 ]
 },
 {
@@ -427,21 +396,6 @@
 ]
 },
 {
-"dish_name": "Domatesli Bulgur Pilavi",
-"cuisine": "Turkish",
-"main_protein": "vegetarian",
-"ingredients": [
-"Coarse bulgur",
-"Yellow onion",
-"Green bell pepper",
-"Roma tomatoes",
-"Tomato paste",
-"Olive oil",
-"Salt",
-"Black pepper"
-]
-},
-{
 "dish_name": "Ga Rang Muoi",
 "cuisine": "Vietnamese",
 "main_protein": "chicken",
@@ -606,25 +560,6 @@
 ]
 },
 {
-"dish_name": "Kabak Mucver",
-"cuisine": "Turkish",
-"main_protein": "vegetarian",
-"ingredients": [
-"Zucchini",
-"Salt",
-"Feta",
-"Yellow onion",
-"Green onions",
-"Garlic",
-"Fresh dill",
-"Eggs",
-"All-purpose flour",
-"Black pepper",
-"Canola oil",
-"Plain Greek yogurt"
-]
-},
-{
 "dish_name": "Karides Tava",
 "cuisine": "Turkish",
 "main_protein": "shrimp",
@@ -654,25 +589,6 @@
 ]
 },
 {
-"dish_name": "Kuzu Pirzola",
-"cuisine": "Turkish",
-"main_protein": "lamb",
-"ingredients": [
-"Lamb rib chops",
-"Lemon",
-"Garlic",
-"Red onion",
-"Tomato",
-"Zucchini",
-"Red bell pepper",
-"Olive oil",
-"Dried oregano",
-"Sumac",
-"Salt",
-"Black pepper"
-]
-},
-{
 "dish_name": "Mantarli Tavuk",
 "cuisine": "Turkish",
 "main_protein": "chicken",
@@ -688,19 +604,6 @@
 "Black pepper",
 "Salt",
 "Long-grain white rice"
-]
-},
-{
-"dish_name": "Mercimekli Pilav",
-"cuisine": "Turkish",
-"main_protein": "lentils",
-"ingredients": [
-"Long-grain white rice",
-"Red lentils",
-"Yellow onion",
-"Olive oil",
-"Salt",
-"Black pepper"
 ]
 }
 ]

@@ -1,25 +1,5 @@
 [
 {
-"dish_name": "Moo Tod Kratiem",
-"cuisine": "Thai",
-"main_protein": "pork",
-"ingredients": [
-"Pork tenderloin",
-"Garlic",
-"Cilantro",
-"White pepper",
-"Oyster sauce",
-"Soy sauce",
-"Fish sauce",
-"Sugar",
-"Cornstarch",
-"Vegetable oil",
-"Salt",
-"Jasmine rice",
-"Cucumber"
-]
-},
-{
 "dish_name": "Muc Xao Sa Ot",
 "cuisine": "Vietnamese",
 "main_protein": "seafood",
@@ -47,27 +27,6 @@
 "Shallots",
 "Soy sauce",
 "Black pepper",
-"Vegetable oil",
-"Jasmine rice"
-]
-},
-{
-"dish_name": "Neua Pad Prik Thai Dum",
-"cuisine": "Thai",
-"main_protein": "beef",
-"ingredients": [
-"Beef sirloin",
-"Eggs",
-"Cornstarch",
-"Oyster sauce",
-"Sesame oil",
-"Soy sauce",
-"Black peppercorns",
-"Yellow onion",
-"Red bell pepper",
-"Green bell pepper",
-"Green onions",
-"Garlic",
 "Vegetable oil",
 "Jasmine rice"
 ]
@@ -341,27 +300,6 @@
 "Salt",
 "Cayenne pepper",
 "Vegetable oil"
-]
-},
-{
-"dish_name": "Thai Basil Eggplant",
-"cuisine": "Thai",
-"main_protein": "vegan",
-"ingredients": [
-"Japanese or Chinese eggplants",
-"Red bell pepper",
-"Yellow onion",
-"Garlic",
-"Fresh ginger",
-"Thai basil",
-"Red Thai chili",
-"Soy sauce",
-"Vegetarian oyster sauce",
-"Rice vinegar",
-"Maple syrup",
-"Cornstarch",
-"Neutral oil",
-"Jasmine rice"
 ]
 },
 {

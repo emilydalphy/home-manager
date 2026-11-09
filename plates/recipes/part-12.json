@@ -428,25 +428,6 @@
 ]
 },
 {
-"dish_name": "Pesce al Cartoccio",
-"cuisine": "Italian",
-"main_protein": "fish",
-"ingredients": [
-"White fish fillets",
-"Salt",
-"Black pepper",
-"Cherry tomatoes",
-"Pitted black olives",
-"Capers",
-"Lemon",
-"Garlic",
-"Thyme",
-"Dry white wine",
-"Olive oil",
-"Parchment paper"
-]
-},
-{
 "dish_name": "Pitaroudia",
 "cuisine": "Greek",
 "main_protein": "chickpeas",

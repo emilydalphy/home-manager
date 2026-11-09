@@ -603,23 +603,6 @@
 ]
 },
 {
-"dish_name": "Kolokithokeftedes",
-"cuisine": "Greek",
-"main_protein": "vegetarian",
-"ingredients": [
-"Zucchini",
-"Salt",
-"Scallions",
-"Fresh mint",
-"Feta",
-"Eggs",
-"Plain breadcrumbs",
-"Black pepper",
-"Vegetable oil",
-"Tzatziki"
-]
-},
-{
 "dish_name": "Kotopoulo Riganato",
 "cuisine": "Greek",
 "main_protein": "chicken",
