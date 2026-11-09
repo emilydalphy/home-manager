@@ -1,0 +1,117 @@
+{
+ "dish_name": "Zuppa Toscana",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Bacon",
+   "qty": "4 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mild Italian sausage",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Kale",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4 cups chopped"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/4 cup grated"
+  }
+ ],
+ "instructions": [
+  "Cut the bacon into small pieces. Chop the onion and mince the garlic. Cut the potatoes into 1/2-inch cubes. Pull the kale leaves off the thick stems and tear them into bite-size pieces, so you have about 4 cups.",
+  "Set a large pot over medium heat and cook the bacon for 5 minutes, until it's browned and the fat has melted.",
+  "Add the sausage and break it up with a spoon. Cook for 6 minutes, until there's no pink left and it's browned in spots. Spoon off all but about 2 tbsp of the fat.",
+  "Add the onion and cook for 3 minutes, until it's soft. Add the garlic and stir for 30 seconds.",
+  "Add the broth, potatoes, salt, pepper, oregano, thyme and the bay leaf. Bring it to a boil, then turn the heat to low. Cover and simmer for 12 minutes, until the potatoes are tender when you poke one with a fork.",
+  "Add the kale and simmer uncovered for 3 minutes, until it's wilted and tender.",
+  "Take the pot off the heat. Remove the bay leaf and stir in the cream. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle into bowls and grate the Parmesan over the top at the table.",
+  "To make it ahead, cool the soup and refrigerate it in a covered container for up to 3 days, or freeze it for up to 3 months. Reheat it gently over low heat with a splash of broth, and don't let it boil."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Daring Gourmet (5.0 from 42) leads under the rating rule; America's Test Kitchen (4.0 from 703) builds the same soup with hot sausage, onion, a spoonful of flour, potatoes, broth, kale and cream finished off the heat. Both brown the sausage first, simmer the potatoes in broth, add the kale last and stir in the cream at the end. This version scales the lead to four, uses mild sausage, and leaves out the optional wine, red pepper flakes and cornstarch, which also keeps it gluten-free. Check the labels on the sausage and the broth for gluten.",
+ "sources": [
+  {
+   "name": "The Daring Gourmet",
+   "title": "Zuppa Toscana",
+   "url": "https://www.daringgourmet.com/zuppa-toscana/",
+   "rating": 5.0,
+   "rating_count": 42,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "America's Test Kitchen",
+   "title": "Our Zuppa Toscana",
+   "url": "https://www.americastestkitchen.com/recipes/17086-our-zuppa-toscana",
+   "rating": 4.0,
+   "rating_count": 703,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

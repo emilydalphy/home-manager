@@ -1,0 +1,140 @@
+{
+ "dish_name": "Chicken Parmesan Sandwiches",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (4 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 cup grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Hoagie rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup sliced"
+  }
+ ],
+ "instructions": [
+  "Cut each chicken breast in half horizontally so you have 4 thin cutlets, one for each roll. Lay them between sheets of plastic wrap and pound them to about 1/4 inch thick.",
+  "Make the sauce. Grate the onion into a saucepan with the 2 tbsp olive oil, then mince the garlic. Set the pan over medium heat and cook the onion for 3 minutes, until it's soft.",
+  "Add the garlic and stir for 30 seconds. Add the tomato sauce, 1 tbsp of the Italian seasoning, 1 tsp salt and 1 tsp sugar. Simmer gently for 10 minutes, stirring now and then. Taste it and add a pinch more salt if it's flat. Turn the heat to low to keep it warm.",
+  "Set up three shallow dishes. Put the flour in the first, the beaten eggs in the second, and the panko in the third. Stir the Parmesan, the remaining 1 tbsp Italian seasoning and 1 tsp salt into the panko.",
+  "Pat the cutlets dry. Coat each one in the flour, then the egg, then press it firmly into the panko on both sides.",
+  "Heat the vegetable oil in a large deep skillet over medium heat until a pinch of panko sizzles right away. Fry 2 cutlets at a time for 4 minutes on the first side, until deep golden. Flip them and cook the other side for 4 minutes. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check the thickest cutlet there. No thermometer? Cut into the center of one: it's done when there's no pink left. Transfer the cutlets to a paper towel lined plate.",
+  "Heat the broiler to high with the rack in the middle. Split the rolls and set them open on a baking sheet.",
+  "Put a cutlet on the bottom half of each roll. Spoon about 1/4 cup of the sauce over each cutlet and top with 1/2 cup of the mozzarella.",
+  "Broil for 3 to 5 minutes, until the cheese is melted and bubbling. Watch closely, since the rolls toast quickly.",
+  "Scatter the basil over the top, close the sandwiches and serve with the rest of the warm sauce.",
+  "To make the cutlets ahead, fry them, cool them and refrigerate for up to 3 days. Warm them on a rack in a 400°F oven for 10 minutes, then assemble and broil. Keep the sauce in a separate container."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bread cutlets in flour, egg and crumbs with Parmesan, then top them with marinara and melted mozzarella on a toasted roll. The lead (Tasting Table, 5.0 from 21) fries panko cutlets and makes a quick onion and garlic tomato sauce, which this follows; DeLallo and Real Food with Sarah bake the cutlets instead. The dairy-free tag is dropped for this dish because Parmesan and mozzarella are what make it chicken Parmesan; nut-free is kept.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Hoagie-Style Chicken Parmesan Sandwich",
+   "url": "https://www.tastingtable.com/1891220/hoagie-chicken-parmesan-sandwich-recipe",
+   "rating": 5.0,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "DeLallo",
+   "title": "Chicken Parmesan Sandwich",
+   "url": "https://www.delallo.com/recipe/chicken-parmesan-sandwich",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Real Food with Sarah",
+   "title": "Chicken Parm Sandwiches",
+   "url": "https://www.realfoodwithsarah.com/chicken-parmesan-sandwiches/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

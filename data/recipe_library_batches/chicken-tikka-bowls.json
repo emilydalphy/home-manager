@@ -1,0 +1,142 @@
+{
+ "dish_name": "Chicken Tikka Bowls",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "2 tbsp juice"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "7 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub (17 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup plus 2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup leaves"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the chicken into 1-inch cubes. Put them in a bowl with the juice of the lemon and 1/2 tsp salt, mix well, cover and refrigerate for 10 minutes.",
+  "Meanwhile, finely grate the ginger and 6 of the garlic cloves into a small bowl. Crush the cumin seeds under the flat of a knife and add them. Stir in the coriander, garam masala, paprika, chili powder, 2 tbsp of the yogurt and 2 tbsp of the oil.",
+  "Stir the spice paste into the chicken until every piece is coated. Cover and refrigerate for 30 minutes, or overnight if you'd like to get ahead.",
+  "While the chicken marinates, rinse the rice in a strainer until the water runs mostly clear. Put it in a pot with 2 1/4 cups water and 1/2 tsp salt and bring it to a boil. Turn the heat to its lowest setting, cover and cook for 12 minutes. Take it off the heat and leave it covered for 5 minutes, then fluff it with a fork.",
+  "Make the sauce. Finely chop 1/4 cup of mint leaves, 1/4 cup of cilantro and the last garlic clove. Stir them into the remaining yogurt with 1/2 tsp salt and a splash of water to loosen it. Taste it and add a pinch more salt if it's flat.",
+  "Peel the cucumber into long thin strips with a vegetable peeler and roll each strip up. Halve the cherry tomatoes. Pick a few cilantro sprigs for the top.",
+  "Heat a large skillet over medium-high heat for 2 minutes. Add half the remaining oil, then half the chicken in a single layer. Leave it alone for 4 minutes, until the underside is browned and a little charred at the edges.",
+  "Flip the pieces and cook the other side for 3 to 4 minutes. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check the biggest piece there. No thermometer? Cut the biggest piece open: it's done when there's no pink left and the juices run clear. Transfer it to a plate and cook the second batch the same way.",
+  "Divide the rice among 4 bowls. Add the chicken, the cucumber rolls and the tomatoes. Drizzle the yogurt sauce over the top and finish with the cilantro sprigs.",
+  "To pack it for lunch, keep the chicken, rice, cucumber and sauce in separate containers. The chicken and rice keep in the fridge for up to 3 days. Reheat them until hot, then add the cold parts."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The bowl itself (Nish Kitchen, 5.0 from 40) is rice, chicken tikka, rolled cucumber and tomatoes with mint chutney, but gives no tikka amounts, so the marinade and the chicken come from Nish Kitchen's own chicken tikka recipe (5.0 from 46, the lead under the rating rule): lemon and salt first, then a ginger, garlic, cumin and garam masala paste with yogurt. Matt Cooper Bites supplies the yogurt dressing with mint, coriander and garlic, which the list promises and the lead lacks. The chicken is cooked in a skillet instead of on a grill, and the red chili is cut in half to keep the base mild. Ratings were read from the visible star line.",
+ "sources": [
+  {
+   "name": "Nish Kitchen",
+   "title": "Murgh Tikka (Chicken Tikka)",
+   "url": "https://nishkitchen.com/chicken-tikka/",
+   "rating": 5.0,
+   "rating_count": 46,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nish Kitchen",
+   "title": "Chicken Tikka Rice Bowl",
+   "url": "https://nishkitchen.com/chicken-tikka-rice-bowl-video/",
+   "rating": 5.0,
+   "rating_count": 40,
+   "read": true
+  },
+  {
+   "name": "Matt Cooper Bites",
+   "title": "High Protein Chicken Tikka Rice Bowls",
+   "url": "https://mattcooperbites.com/blogs/recipes/high-protein-chicken-tikka-rice-bowls",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

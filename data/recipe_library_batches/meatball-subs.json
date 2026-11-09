@@ -1,0 +1,102 @@
+{
+ "dish_name": "Meatball Subs",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Hoagie rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F and line a baking sheet with parchment.",
+  "Put the breadcrumbs in a large bowl with 3 tbsp water and let them soak for 2 minutes.",
+  "Add the beef, egg, garlic powder, onion powder, Italian seasoning, salt and pepper. Mix with your hands. Stop as soon as there are no streaks left. Any longer and the meatballs come out dense.",
+  "Roll the mixture into 1-inch balls, about 28 of them, and set them on the sheet an inch apart.",
+  "Bake for 15 minutes, until they're browned. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "While they bake, warm the marinara in a large saucepan over medium heat until it bubbles, then turn the heat to low.",
+  "Transfer the meatballs into the sauce. Simmer over low heat for 10 minutes, spooning the sauce over them now and then. Taste it. If it's flat, add a pinch more salt.",
+  "Split the rolls lengthwise and brush the cut sides with the olive oil. Toast them cut side up on a baking sheet in the oven for 3 to 5 minutes, until golden.",
+  "Spoon 6 or 7 meatballs and plenty of sauce into each roll and serve hot.",
+  "To make the meatballs ahead, cook them through step 7 and cool. They keep in the fridge in their sauce for up to 3 days, or in the freezer for up to 3 months. Thaw frozen ones overnight in the fridge and reheat them in a saucepan over low heat. Keep the rolls separate and fill them when you're ready to eat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Neither version has 20 ratings, so this is a fallback lead. Baked Bree bakes beef meatballs with breadcrumbs and an egg, simmers them in marinara and toasts the rolls; Seasons and Suppers soaks bread in milk, browns the meatballs at a higher heat and says the meatballs, sauce and rolls can all be made ahead. To stay dairy-free the mozzarella and the butter on the rolls are left out (oil on the rolls instead), and the crumbs are soaked in water, not milk. Check the label on the marinara and the rolls for milk.",
+ "sources": [
+  {
+   "name": "Baked Bree",
+   "title": "Meatball Sub Recipe",
+   "url": "https://bakedbree.com/meatball-sub-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Seasons and Suppers",
+   "title": "Meatball Subs",
+   "url": "https://www.seasonsandsuppers.ca/meatball-subs/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

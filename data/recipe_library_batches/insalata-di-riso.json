@@ -1,0 +1,125 @@
+{
+ "dish_name": "Insalata di Riso",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned tuna",
+   "qty": "2 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Canned corn",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Pitted olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Marinated artichoke hearts",
+   "qty": "1 jar (12 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "6 tbsp chopped"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil and stir in 1 tsp salt. Add the rice and cook it uncovered for 12 to 15 minutes, until it's tender with a little bite left.",
+  "Meanwhile, dice the bell pepper, halve the cherry tomatoes and drain the corn. Halve the olives and cut the artichoke hearts into quarters. Chop 6 tbsp of parsley and 4 tbsp of basil, and keep a few small basil leaves for the top.",
+  "Drain the rice in a strainer and rinse it under cold running water until it's cool. Shake off the water and spread the rice on a large plate or tray for 10 minutes so it dries.",
+  "Make the dressing. Squeeze the lemon into a small bowl and mince the garlic. Whisk in the olive oil, 1/2 tsp salt and the pepper.",
+  "Drain the tuna and flake it into a large bowl. Add the rice, bell pepper, tomatoes, corn, olives, artichokes, parsley and chopped basil.",
+  "Pour the dressing over and toss until everything is coated. Taste it. If it's flat, add a pinch more salt or a squeeze of lemon.",
+  "Chill it for 30 minutes if you have time. Garnish with the basil leaves you kept back.",
+  "To pack it, spoon it into lidded containers. It keeps in the fridge for up to 2 days and is good cold or at room temperature."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this salad has 20 ratings; the lead (Eating European, 5.0 from 3) has the vegetable-and-tuna build the list describes, so it leads as the fallback. All three agree on cooked, cooled rice, canned tuna, pickled or marinated vegetables, olive oil and lemon or vinegar. To keep it dairy-free, gluten-free and nut-free the lead's mozzarella and roasted pine nuts are left out, the rice is boiled in plenty of water and rinsed as the other two do, and the amounts are doubled for four servings. The made-ahead note (up to 2 days) follows End of the Fork and Maricruz Avalos.",
+ "sources": [
+  {
+   "name": "Eating European",
+   "title": "Italian Rice Salad with Tuna (Insalata di Riso)",
+   "url": "https://eatingeuropean.com/?p=6806",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "End of the Fork",
+   "title": "Giardiniera Rice Salad",
+   "url": "https://www.endofthefork.com/easy-giardiniera-rice-salad/",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Insalata di Riso (Italian Rice Salad)",
+   "url": "https://www.maricruzavalos.com/italian-rice-salad-insalata-di-riso/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

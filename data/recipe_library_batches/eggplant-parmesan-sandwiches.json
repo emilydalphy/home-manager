@@ -1,0 +1,123 @@
+{
+ "dish_name": "Eggplant Parmesan Sandwiches",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Eggplant",
+   "qty": "1 (about 20 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 cup diced"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (4 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Hoagie rolls",
+   "qty": "4",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Peel the eggplant and cut it into 8 rounds, each 1/2 inch thick. Sprinkle both sides with 2 tsp of the salt and set the rounds in a colander for 15 minutes.",
+  "Meanwhile, dice 1/4 cup of onion and dice the tomatoes. Heat the olive oil in a small saucepan over medium heat, add the onion and cook for 4 minutes, until soft.",
+  "Add the tomatoes and cook for 5 minutes, until they break down. Stir in the basil, the remaining 1 tsp salt and the pepper. Turn the heat to low and let it simmer while you cook the eggplant. Taste it. If it's flat, add a pinch more salt.",
+  "Rinse the salt off the eggplant and pat the rounds very dry with a towel.",
+  "Whisk the eggs in one shallow dish. Grate the Parmesan, stir it into the breadcrumbs in a second dish.",
+  "Dip each round in the egg, then press it into the crumbs on both sides.",
+  "Heat the vegetable oil in a large high-sided skillet over medium heat until a crumb sizzles right away. Fry 3 or 4 rounds at a time for 3 to 4 minutes on the first side, until golden. Flip them and cook the other side for 3 to 4 minutes. Transfer them to a paper towel lined plate.",
+  "Heat the broiler to high. Split the rolls and set them open on a baking sheet.",
+  "Spread a spoonful of the cooked tomatoes on each roll, set 2 eggplant rounds on the bottom half, then add more of the tomatoes and 1/4 cup of the mozzarella.",
+  "Broil for 2 to 3 minutes, until the cheese is melted and the bread is crisp. Watch closely.",
+  "Close the sandwiches and serve hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has 20 ratings, so this is a fallback lead. Stetted (5.0 from 1) is the one that fits a lunch: eggplant salted for 15 minutes, breaded in egg and Parmesan crumbs, shallow fried and broiled on rolls with a quick fresh tomato sauce. Girl Heart Food salts for an hour and uses butter-toasted ciabatta, and the Methodist version bakes the slices. Parmesan is traditionally made with animal rennet, so choose a vegetarian Parmesan-style cheese if that matters.",
+ "sources": [
+  {
+   "name": "Stetted",
+   "title": "Eggplant Parmesan Sandwich",
+   "url": "https://stetted.com/?p=5152",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Girl Heart Food",
+   "title": "Eggplant Parmesan Sandwich",
+   "url": "https://girlheartfood.com/eggplant-parmesan-sandwich/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Methodist Health System",
+   "title": "Eggplant Parmesan Sandwiches",
+   "url": "https://healthlibrary.methodisthealthsystem.org/wellness/recipes/eggplant-parmesan-sandwiches",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
