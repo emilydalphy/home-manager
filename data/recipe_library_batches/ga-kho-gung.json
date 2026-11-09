@@ -1,0 +1,107 @@
+{
+ "dish_name": "Ga Kho Gung",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 28,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (about 3 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, cut the chicken into 1 inch pieces and transfer them to a bowl. Add 2 tbsp fish sauce, 1 tbsp sugar and 1/4 tsp pepper, and toss to coat. Leave it for 15 minutes while you do the rest of the prep.",
+  "Peel the ginger and cut it into thin matchsticks. Thinly slice the shallots, mince the garlic, and slice 2 of the green onions.",
+  "Add the oil and the remaining 1 tbsp sugar to a wide skillet with a lid, about 12 inches across. Set it over medium-high heat and shake it gently to spread the sugar. Don't stir. After 3 to 5 minutes the sugar will melt and turn the color of dark amber. Watch it closely. Burnt sugar tastes bitter.",
+  "Add the shallots and ginger to the caramel and stir for 20 seconds. Add the garlic and stir for 10 seconds, until it smells fragrant.",
+  "Add the chicken with all the marinade and toss for 2 minutes, until the pieces are coated and lightly tinted. The color will deepen as it cooks.",
+  "Stand back a little. It will spatter. Pour in 1 cup of water, cover the skillet and turn the heat to low. Cook for 10 minutes, tossing halfway through.",
+  "Uncover and cook for 10 minutes, until the sauce is reduced and clings to the chicken, with a little still pooling in the pan. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a piece: it's done when there's no pink left and the juices run clear.",
+  "Take the skillet off the heat and stir in the remaining 1/4 tsp pepper.",
+  "Taste it. If it's flat, add a splash more fish sauce.",
+  "Serve over the rice, topped with the sliced green onions."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on the method: marinate bite-sized chicken in fish sauce and sugar, melt sugar in the pan to a dark amber caramel, fry plenty of ginger with the aromatics, then braise covered and reduce uncovered until sticky. They differ on the liquid (coconut soda or coconut juice in most, water in this one), on bouillon (left out here so it stays gluten-free) and on marinating time (30 minutes or overnight in the lead, 15 here while the rice cooks). No source had 20 or more ratings; the lead is the best-rated readable one.",
+ "sources": [
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Ginger Chicken (Ga Kho Gung)",
+   "url": "https://vickypham.com/blog/vietnamese-ginger-chicken-ga-kho-gung/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Deelycious",
+   "title": "Vietnamese Braised Ginger Chicken (Gà kho gừng)",
+   "url": "https://deelycious.com/vietnamese-braised-ginger-chicken-ga-kho-gung/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "MM Bon Appetit",
+   "title": "Gà kho gừng, Vietnamese ginger braised chicken",
+   "url": "https://mmbonappetit.com/ga-kho-gung/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
