@@ -1,0 +1,98 @@
+{
+ "dish_name": "Tavuklu Pilav",
+ "cuisine": "Turkish",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken drumsticks",
+   "qty": "6 (about 2 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the drumsticks in a large pot with 5 cups water and 1/2 tsp of the salt. Bring it to a boil, skim off any foam, then turn the heat to low, cover and simmer for 25 minutes. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when the juices run clear.",
+  "Meanwhile, rinse the rice in a strainer until the water runs mostly clear, then let it drain. Drain and rinse the chickpeas.",
+  "Make the cacik. Grate the cucumber and squeeze out as much water as you can. That should be about 3/4 cup. Stir it into the yogurt with the garlic grated in, 2 tbsp chopped mint and 1/2 tsp of the salt. Chill it.",
+  "Transfer the drumsticks to a plate. Strain the broth. You need 3 1/2 cups for the rice.",
+  "Melt the butter with the olive oil in a second large pot over medium-low heat. Add the rice and stir for 3 minutes, until the grains turn opaque and smell toasty.",
+  "Add the chickpeas, 3 1/2 cups of the broth and the remaining 1 tsp salt. Bring it to a boil, then cover, turn the heat to low and cook for 15 minutes, until the broth is absorbed.",
+  "Take the pot off the heat. Lay a folded clean tea towel over the pot and put the lid on top. Let it rest for 10 minutes.",
+  "While the rice rests, pull the chicken off the bones in shreds and throw away the skin and bones. Moisten the chicken with a spoonful of the leftover broth.",
+  "Fluff the rice with a fork.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the rice onto plates and top with the chicken. Serve with the cacik."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Carter's Cooking leads (no rating shown): chicken boiled for stock, rice toasted in butter and olive oil, chickpeas added, the rice cooked in the stock and rested under a tea towel, shredded chicken on top and cacik on the side. Lezzet and Ckbk agree on the toasted rice and the rest; neither shows a rating, so this is a fallback. It's plain rice with no orzo or vermicelli, which keeps it gluten-free.",
+ "sources": [
+  {
+   "name": "Carter's Cooking",
+   "title": "Tavuklu Pilav",
+   "url": "https://carterscooking.substack.com/p/tavuklu-pilav",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lezzet",
+   "title": "Turkish Rice Pilaf with Chicken",
+   "url": "https://www.lezzet.com.tr/en/recipe/turkish-rice-pilaf-with-chicken",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

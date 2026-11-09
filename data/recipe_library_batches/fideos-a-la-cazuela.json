@@ -1,0 +1,118 @@
+{
+ "dish_name": "Fideos a la Cazuela",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork spare ribs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fideo noodles",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1 leaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Ask the butcher to cut the ribs into pieces of one or two bones, or do it yourself with a heavy knife. Pat them dry and season with 1 tsp of the salt and the pepper.",
+  "Chop the onion and bell pepper small. Mince the garlic. Grate the tomatoes on the big holes of a box grater and throw away the skins. That should be about 1 cup.",
+  "Heat 2 tbsp of the oil in a wide, deep pan over medium-high heat. Brown the ribs in two batches, about 6 minutes per batch, until they're deep brown on both sides. Transfer them to a plate.",
+  "Turn the heat down to medium. Add the onion and bell pepper to the same pan and cook for 6 minutes, stirring now and then, until soft and starting to brown.",
+  "Add the garlic and cook for 30 seconds. Stir in the smoked paprika for 15 seconds, then add the grated tomato. Cook for 5 minutes, stirring, until it's thick and darker.",
+  "Pour in the broth, add the bay leaf and put the ribs back with any juices on the plate. Bring it to a boil, cover, turn the heat to low and simmer for 20 minutes.",
+  "Meanwhile, heat the last tbsp of oil in a skillet over medium heat. Add the fideos and stir for 3 to 4 minutes, until they're deep golden brown. Watch them closely, they go from toasted to burnt fast.",
+  "Stir the toasted fideos and the peas into the pan with the ribs. Add the remaining 1/2 tsp salt. Simmer uncovered for 8 minutes, stirring now and then, until the noodles are tender and most of the broth is absorbed.",
+  "Take the pan off the heat. Chop 3 tbsp of the parsley and stir it in. Let it rest for 5 minutes.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in shallow bowls with the ribs on top. Store any leftovers in the fridge for up to 3 days and reheat with a splash of water or broth."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Okdiario's version leads: ribs and pork browned, a sofrito of onion, pepper and grated tomato, fideos toasted in oil, then broth added to cook the noodles. Monix confirms the sofrito, 1 tbsp pimenton and a rib-and-noodle ratio of roughly 1 part meat to 1 part noodles; here the noodles are cooked in a soupy pan with 5 cups of broth. The sausage (butifarra) is left out and peas come from Monix. Neither page shows a rating, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Okdiario",
+   "title": "Fideos a la cazuela con caldo",
+   "url": "https://okdiario.com/recetas/fideos-cazuela-2536776",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Monix",
+   "title": "Casserole noodles with ribs and chirlas",
+   "url": "https://monix.es/en/blogs/blog/fideos-a-la-cazuela-con-costillas-y-chirlas",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

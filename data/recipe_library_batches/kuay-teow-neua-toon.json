@@ -1,0 +1,130 @@
+{
+ "dish_name": "Kuay Teow Neua Toon",
+ "cuisine": "Thai",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef chuck roast",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Star anise",
+   "qty": "3 whole",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon sticks",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into chunks about 1 1/2 inches wide. Pat them dry and toss with the salt.",
+  "Peel the garlic. Chop the stems of the cilantro (about 1/4 cup) and set the leaves aside. Pound the garlic, cilantro stems and peppercorns into a rough paste in a mortar, or crush them with the flat of a knife.",
+  "Heat the oil in a Dutch oven or large pot over medium-high heat. Brown the beef in two batches, about 5 minutes per batch, until it's deep brown on most sides. Transfer it to a plate.",
+  "Turn the heat to medium. Add the garlic paste and cook for 30 seconds, until it smells fragrant.",
+  "Return the beef and its juices to the pot. Add the star anise, cinnamon stick, soy sauce, dark soy sauce and broth. Bring it to a boil, then cover, turn the heat to low and simmer for 1 hour and 15 minutes, until a chunk of beef falls apart when you press it with a fork.",
+  "Cook the rice noodles following the package, then rinse them under cool water and drain. Cut the bok choy in half lengthwise. Pick the Thai basil leaves.",
+  "Lift out the star anise and cinnamon stick. Add the bok choy to the pot and simmer for 2 to 3 minutes, until it's tender.",
+  "Taste the broth. If it's flat, add a pinch more salt, or a splash of the fish sauce.",
+  "Divide the noodles among 4 bowls. Top with the beef and bok choy and ladle the hot broth over. Add the bean sprouts, the basil and the cilantro leaves to each bowl. Serve with the rest of the fish sauce on the table.",
+  "To store it, keep the broth with the beef separate from the noodles and the toppings. The broth and beef keep in the fridge for up to 4 days and in the freezer for up to 3 months. Reheat it until it simmers and add fresh noodles and toppings."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 100,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Marion's Kitchen leads (5 stars from 6 reviews, so a fallback): a garlic, cilantro and pepper paste, seared beef, star anise, cinnamon and two soy sauces, then a long covered simmer in beef broth with greens. The beef is cut up before browning to shorten the simmer. Import Food's version shows the other approach (a bone stock with a dipping sauce), which isn't used. The beef balls are left out.",
+ "sources": [
+  {
+   "name": "Marion's Kitchen",
+   "title": "Thai Beef Noodle Soup",
+   "url": "https://www.marionskitchen.com/thai-beef-noodle-soup/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Import Food",
+   "title": "Thai Beef Noodles Soup, 'Kuaitiao Neua'",
+   "url": "https://importfood.com/recipes/recipe/1188-thai-beef-noodles-soup-kuaitiao-neua",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,123 @@
+{
+ "dish_name": "Gai Tod Hat Yai",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken wings",
+   "qty": "2 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shallots",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "7 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White peppercorns",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sweet dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet chili sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, and up to 3: grind the black and white peppercorns coarsely. Chop the stems and roots of the cilantro (about 3 tbsp) and pound them with the garlic and peppercorns into a rough paste. Stir the paste in a large bowl with the light soy sauce, dark soy sauce, sugar and 1 tsp of the salt until the sugar dissolves. Add the wings, toss to coat, cover and chill.",
+  "Slice the shallots thin and evenly. Rinse the rice in a strainer, put it in a saucepan with 2 1/4 cups water, bring it to a boil, cover, turn the heat to low and cook for 15 minutes. Let it sit covered.",
+  "Pour the oil into a heavy pot at least 4 inches deep. Heat it over medium heat to 250°F, or until a shallot slice sizzles gently. Add the shallots and fry for 2 to 3 minutes, stirring, until golden. Lift them out with a slotted spoon onto paper towels. They crisp as they cool.",
+  "Turn the heat up to medium-high and bring the oil to 350°F. Without a thermometer, drop in a pinch of flour. It should sizzle right away.",
+  "Mix the rice flour into the wings and marinade by hand, a little at a time, with about 1/2 cup water, until it makes a batter as thick as pancake batter that clings to the wings.",
+  "Fry the wings in two batches, about 8 wings at a time, for 8 minutes each, turning now and then, until the coating is deep golden brown. Stand back a little. They'll spatter. Check the oil comes back to 350°F between batches.",
+  "You're cooking the wings to 175°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into the thickest wing: it's done when there's no pink left.",
+  "Transfer the wings to a rack set over a baking sheet and let them rest for 10 minutes. Keep the first batch warm in a 200°F oven.",
+  "Taste a wing. If it's flat, sprinkle the rest with a pinch more salt, using the remaining 1/4 tsp.",
+  "Pile the wings on a platter and scatter the fried shallots over the top. Serve with the rice and the sweet chili sauce in a small bowl."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "marinate the wings 2 to 3 hours ahead",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Thai Cookbook leads (4.5 from 6,266 ratings): a coriander root, garlic and peppercorn marinade with soy sauces and sugar, a rice flour batter and a deep fry of wings, topped with crisp fried shallots. Hungry in Thailand (5 from 5 votes) agrees on the spice paste and fried shallots and suggests sweet chili sauce. Jasmine rice replaces the soaked and steamed sticky rice to keep it a weeknight dinner, and the wing count is for a 4-person table.",
+ "sources": [
+  {
+   "name": "Thai Cookbook",
+   "title": "Hat Yai Fried Chicken (Gai Tod Hat Yai)",
+   "url": "https://thaicookbook.tv/thai-recipes/main-dishes/hat-yai-fried-chicken",
+   "rating": 4.5,
+   "rating_count": 6266,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Hat Yai Fried Chicken Recipe",
+   "url": "https://hungryinthailand.com/hat-yai-fried-chicken/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
