@@ -17107,7 +17107,7 @@
   }
 
   // ---------- The first-open tour (static/tour.js) ----------
-  // Loop Board "Build the in-app tour (Option A)", Emily 2026-10-18. Six
+  // Loop Board "Build the in-app tour (Option A)", Emily 2026-10-18. Five
   // stops over the real screens, ending back on the draft. tour.js draws
   // it; this is the shell's half: when it starts, the tab switching it
   // borrows, and recording that it's over (GET/POST /api/tour — per adult,
