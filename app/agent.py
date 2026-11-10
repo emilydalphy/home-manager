@@ -8827,6 +8827,15 @@ def _finish_week_slots(
         plan_id, intake, household_memory, nobody_home, asked_on_nights_out,
         asks=((context or {}).get("constraints_notes"), (intake or {}).get("freeform")), report=report,
     )
+    # Two dishes they asked for on one day (Emily's rule 7, 2026-11-09):
+    # fitted across that day's lunch and dinner, or the more specific keeps
+    # it and the other goes to the nearest meal it fits — after rule 8,
+    # before rule 3, which then leaves both alone. See
+    # cap_enforce.place_two_asks_one_day; it swallows its own failures.
+    _cap_enforce.place_two_asks_one_day(
+        plan_id, intake, household_memory,
+        asks=((context or {}).get("constraints_notes"), (intake or {}).get("freeform")), report=report,
+    )
     # A dinner they named a night for ("Tacos Tuesday") goes on that night
     # when the model put it elsewhere — after rule 8, which owns a named
     # night nobody is home; before every pass that reads it as theirs.
