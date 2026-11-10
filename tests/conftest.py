@@ -1457,3 +1457,34 @@ def switched_on_before_the_morning(monkeypatch):
         _digest, "_switched_on_at",
         lambda conn: _dt.datetime.combine(household_today(), _dt.time(6, 0)),
     )
+
+
+# ---------- "Save it anyway" is a tap (Emily, 2026-11-09) ----------
+#
+# A chat refusal is offered for override only inside a conversation, and
+# only a tap arms it. `in_chat` binds a conversation for a test (and
+# unbinds it after, so a ContextVar never outlives the test); `tap_anyway`
+# is the tap's replay as main.chat_save_anyway does it — armed for exactly
+# the dish the refusal named — for tests that drive the tools directly.
+
+@pytest.fixture
+def in_chat():
+    from app.tools import allergen_gate
+    token = allergen_gate._CHAT_CONVERSATION.set("h1:test-conversation")
+    allergen_gate._OFFERS.clear()
+    allergen_gate.begin_chat_turn()
+    yield "h1:test-conversation"
+    allergen_gate._CHAT_CONVERSATION.reset(token)
+    allergen_gate._OFFERS.clear()
+    allergen_gate._TAP_NOTES.clear()
+
+
+def tap_anyway(refused, fn, *args, **kwargs):
+    """Replay `fn(*args, override=True, **kwargs)` as the tap on `refused`'s
+    button would: armed for the dish keys that refusal pinned, nothing else."""
+    from app.tools import allergen_gate
+    keys = getattr(refused, "override_keys", None)
+    assert keys, "that refusal offered no Save it anyway button"
+    offer = {"conversation": allergen_gate.chat_conversation(), "keys": keys}
+    with allergen_gate.armed_for(offer):
+        return fn(*args, override=True, **kwargs)

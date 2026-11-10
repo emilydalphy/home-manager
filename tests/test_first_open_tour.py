@@ -2,7 +2,7 @@
 The first-open tour (Loop Board "Build the in-app tour (Option A)", Emily,
 2026-10-18, branch overnight/first-open-tour).
 
-Six stops right after "Here's your week." on the household's first draft,
+Five stops right after "Here's your week." on the household's first draft,
 ending back on it. Skippable, never shown again once done or skipped —
 stored per adult on the server (the household with nobody picked), not in
 the browser. "Show me around again" in Preferences replays it. No tour for a
@@ -14,6 +14,7 @@ setup's "Approve the week" has approved it (Emily, 2026-10-25). See app/tools/to
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import nodeharness
@@ -280,13 +281,13 @@ def _run(body: str) -> dict:
     return json.loads(res.stdout.strip().splitlines()[-1])
 
 
-def test_six_stops_at_most_with_the_copy_from_the_mockup():
+def test_five_stops_with_the_copy_from_the_mockup():
     out = _run("""
       console.log(JSON.stringify(Tour.STOPS.map(function (s) { return [s.tab, s.title]; })));
     """)
     assert out == [
         ["week", "Swap it or tweak it"], ["week", "Move it, or pick it"], ["week", "Or just tell me"],
-        ["grocery", "Shop"], ["kitchen", "Cook"], ["today", "Today"],
+        ["grocery", "Shop"], ["kitchen", "Cook"],
     ]
     mockup = (REPO / "mockups" / "first-open-tour.html").read_text(encoding="utf-8")
     for line in ("Swap gives you a few other dishes to choose from.", "Skip the tour", "Back to my week",
@@ -302,7 +303,7 @@ def test_next_through_every_stop_finishes_on_the_draft_and_esc_skips():
       var next = document.activeElement;   // focus moved into the card, on Next
       var focusedNext = next.id === 'tour-next';
       var labels = [];
-      for (var i = 0; i < 6; i++) { labels.push(next.textContent); next.click(); }
+      for (var i = 0; i < 5; i++) { labels.push(next.textContent); next.click(); }
       var done = { ended: ended.slice(), tabs: tabs.slice(), open: Tour.isOpen() };
       Tour.start(host);
       var esc = { key: 'Escape', preventDefault: function () {}, stopPropagation: function () {} };
@@ -311,9 +312,9 @@ def test_next_through_every_stop_finishes_on_the_draft_and_esc_skips():
         afterEsc: ended, openAfterEsc: Tour.isOpen() }));
     """)
     assert out["focusedNext"] is True
-    assert out["labels"] == ["Next"] * 5 + ["Back to my week"]
+    assert out["labels"] == ["Next"] * 4 + ["Back to my week"]
     assert out["done"]["ended"] == [False] and out["done"]["open"] is False
-    assert out["done"]["tabs"] == ["week", "week", "week", "grocery", "kitchen", "today", "week"]
+    assert out["done"]["tabs"] == ["week", "week", "week", "grocery", "kitchen", "week"]
     assert out["afterEsc"] == [False, True] and out["openAfterEsc"] is False
 
 
@@ -383,7 +384,6 @@ def test_a_replay_on_an_approved_week_does_not_ask_for_it_to_be_approved():
           seen[root.querySelector('#tour-title').textContent] = root.querySelector('#tour-body').textContent;
           next.click();
         }
-        next.click();
         return seen;
       }
       console.log(JSON.stringify({ set: walk(true), draft: walk(false), unknown: walk(null) }));
@@ -398,3 +398,21 @@ def test_a_replay_on_an_approved_week_does_not_ask_for_it_to_be_approved():
     # ...and the shell's answer is Plan's own approved/draft read.
     host = SHELL_JS[SHELL_JS.index("var tourHost = {"):SHELL_JS.index("function tourBlocked()")]
     assert "weekApproved: function () { return weekPlanState(weekState.data) === 'set'; }" in host
+
+
+def test_every_stop_points_at_a_tab_the_bar_actually_has():
+    """Loop Board 2026-11-09 (Emily, "Yes, fix it tonight"): the sixth stop
+    pointed at Today, which left the tab bar on 2026-11-01, so it rang
+    nothing and switched to a tab that isn't there. Every stop's `tab` must
+    be a key in TABS in static/shell.js, and no stop may name Today."""
+    out = _run("""
+      console.log(JSON.stringify(Tour.STOPS.map(function (s) { return [s.tab, s.title, String(s.body)]; })));
+    """)
+    tabs_src = SHELL_JS[SHELL_JS.index("var TABS = ["):]
+    tabs_src = tabs_src[:tabs_src.index("];")]
+    keys = set(re.findall(r"\{ key: '([a-z]+)'", tabs_src))
+    assert keys and "today" not in keys
+    for tab, title, body in out:
+        assert tab in keys, (tab, title)
+        assert "today" not in tab.lower() and title.lower() != "today"
+    assert out[-1][1] == "Cook"

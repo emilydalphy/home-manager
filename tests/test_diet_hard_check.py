@@ -206,18 +206,19 @@ def test_the_three_picks_never_offer_the_meat_one(week):
     assert [o["meal"] for o in out["options"]] == ["Bean Tacos", "Lentil Soup"]
 
 
-def test_chat_declines_a_meat_dish_and_only_the_persons_answer_gets_past(week):
-    """Mirrors the allergy exactly: refused, and an override counts only as
-    an answer in a later turn."""
-    allergen_gate._RECIPE_REFUSALS.clear()
-    allergen_gate.begin_chat_turn()
-    with pytest.raises(_wp.SlotRefused, match="Chicken Soup has chicken, which Maya can’t have"):
+def test_chat_declines_a_meat_dish_and_only_the_persons_tap_gets_past(week, in_chat):
+    """Mirrors the allergy exactly: refused, a typed override is refused
+    too, and only the tap on the refusal's button gets it past."""
+    from conftest import tap_anyway
+    with pytest.raises(_wp.SlotRefused, match="Chicken Soup has chicken, which Maya can’t have") as refused:
         tools.swap_meal_in_plan_for_chat(week, DAYS[3], "Chicken Soup", slot="dinner", override=True)
     with pytest.raises(_wp.SlotRefused):
         tools.plan_meal_for_chat(DAYS[5], "Chicken Soup", slot="lunch", weekly_plan_id=week)
     assert _slot(week, DAYS[3], "dinner")["meal"] == "Chili"
     allergen_gate.begin_chat_turn()
-    tools.swap_meal_in_plan_for_chat(week, DAYS[3], "Chicken Soup", slot="dinner", override=True)
+    with pytest.raises(_wp.SlotRefused):
+        tools.swap_meal_in_plan_for_chat(week, DAYS[3], "Chicken Soup", slot="dinner", override=True)
+    tap_anyway(refused.value, tools.swap_meal_in_plan_for_chat, week, DAYS[3], "Chicken Soup", slot="dinner")
     assert _slot(week, DAYS[3], "dinner")["meal"] == "Chicken Soup"
 
 

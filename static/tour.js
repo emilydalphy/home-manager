@@ -1,9 +1,14 @@
 /*
  * The first-open tour (Loop Board "Build the in-app tour (Option A)",
- * Emily, 2026-10-18). Six stops over the real screens: how to change the
- * plan (Swap and Tweak, Move and Pick, the Pomona button), then Shop, Cook
- * and Today, ending back on the draft week. Drawn in
- * mockups/first-open-tour.html; the copy here is that copy.
+ * Emily, 2026-10-18). Five stops over the real screens: how to change the
+ * plan (Swap and Tweak, Move and Pick, the Pomona button), then Shop and
+ * Cook, ending back on the draft week. Drawn in
+ * mockups/first-open-tour.html; the copy here is that copy. It was six
+ * stops until 2026-11-09: the last one pointed at Today, a tab that left
+ * the bar on 2026-11-01, so it rang nothing. Emily: drop it rather than
+ * replace it — Cook already has its own stop, so Cook is now the last one
+ * and carries "Back to my week". A stop's `tab` must be a key in TABS in
+ * shell.js; tests/test_first_open_tour.py checks every one.
  *
  * shell.js decides WHEN (a first draft on Plan, GET /api/tour says show;
  * or "Show me around again" in Preferences) and hands in the few shell
@@ -96,12 +101,6 @@
           ', with when to start and the recipe. Start cooking takes you through it a step at a time.';
       },
       target: function (late) { return first('#kit-dock button') || (late ? tabButton('kitchen') : null); }
-    },
-    {
-      tab: 'today',
-      title: 'Today',
-      body: 'What today needs: what to buy, what to cook, and when to start. Tick things off as you go.',
-      target: function () { return tabButton('today'); }
     }
   ];
   var LAST_LABEL = 'Back to my week';

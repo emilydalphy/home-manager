@@ -40,11 +40,11 @@ from app.tools import weekly_plan as _wp
 
 @pytest.fixture(autouse=True)
 def _no_old_refusals():
-    allergen_gate._RECIPE_REFUSALS.clear()
+    allergen_gate._OFFERS.clear()
     token = allergen_gate._CHAT_TURN.set(None)
     yield
     allergen_gate._CHAT_TURN.reset(token)
-    allergen_gate._RECIPE_REFUSALS.clear()
+    allergen_gate._OFFERS.clear()
 
 
 def _restrict(restriction):
@@ -610,69 +610,72 @@ def test_an_override_on_the_first_call_is_not_honoured(dairy_free):
     assert "Grandma's Cheesecake Bars" not in _recipe_names()
 
 
-def test_an_override_in_the_same_turn_as_the_refusal_is_not_honoured(dairy_free):
-    """A new message from the person has to arrive between the refusal and
-    the override: the model retrying with override in one turn is refused."""
-    allergen_gate.begin_chat_turn()
+def test_a_typed_answer_never_arms_the_override(dairy_free, in_chat):
+    """Emily, 2026-11-09: no typed reply arms it, not even "yes" — the
+    model's override=True in this turn or the next is refused alike."""
     lines = [{"item": "cream cheese", "qty": "1 block"}]
     with pytest.raises(_wp.SlotRefused):
         tools.add_recipe_for_chat("Grandma's Cheesecake Bars", lines)
     with pytest.raises(_wp.SlotRefused):
         tools.add_recipe_for_chat("Grandma's Cheesecake Bars", lines, override=True)
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(_wp.SlotRefused):
+        tools.add_recipe_for_chat("Grandma's Cheesecake Bars", lines, override=True)
+    assert "Grandma's Cheesecake Bars" not in _recipe_names()
 
 
 def test_an_override_outside_a_chat_turn_is_never_honoured(dairy_free):
     allergen_gate._CHAT_TURN.set(None)
     lines = [{"item": "cream cheese", "qty": "1 block"}]
-    with pytest.raises(_wp.SlotRefused):
+    with pytest.raises(_wp.SlotRefused) as refused:
         tools.add_recipe_for_chat("Cheesecake Bars", lines)
     with pytest.raises(_wp.SlotRefused):
         tools.add_recipe_for_chat("Cheesecake Bars", lines, override=True)
+    assert not getattr(refused.value, "override_keys", None), "no conversation, no button"
 
 
-def test_an_override_in_a_later_turn_for_the_same_recipe_saves_it(dairy_free):
-    allergen_gate.begin_chat_turn()
+def test_the_tap_saves_the_same_recipe(dairy_free, in_chat):
+    from conftest import tap_anyway
     lines = [{"item": "cream cheese", "qty": "1 block"}]
-    with pytest.raises(_wp.SlotRefused):
+    with pytest.raises(_wp.SlotRefused) as refused:
         tools.add_recipe_for_chat("Grandma's Cheesecake Bars", lines)
-    allergen_gate.begin_chat_turn()
-    # A different recipe was never refused: its override is not an answer.
+    # A different recipe was never refused: the tap does not cover it.
     with pytest.raises(_wp.SlotRefused):
-        tools.add_recipe_for_chat("Cheese Board", [{"item": "brie", "qty": "1"}], override=True)
+        tap_anyway(refused.value, tools.add_recipe_for_chat, "Cheese Board", [{"item": "brie", "qty": "1"}])
     # Same dish, case and spacing aside.
-    tools.add_recipe_for_chat("  grandma's   CHEESECAKE bars ", lines, override=True)
+    tap_anyway(refused.value, tools.add_recipe_for_chat, "  grandma's   CHEESECAKE bars ", lines)
     assert "grandma's cheesecake bars" in {" ".join(n.lower().split()) for n in _recipe_names()}
 
 
-def test_an_override_does_not_cover_a_changed_list(dairy_free):
+def test_the_tap_does_not_cover_a_changed_list(dairy_free, in_chat):
     """Keyed on content: "butter" refused doesn't cover butter and shrimp."""
+    from conftest import tap_anyway
     tools.set_member_dietary_restrictions("Emily", ["dairy free", "shellfish allergy"])
-    allergen_gate.begin_chat_turn()
-    with pytest.raises(_wp.SlotRefused):
+    with pytest.raises(_wp.SlotRefused) as refused:
         tools.add_recipe_for_chat("Butter Pancakes", [{"item": "butter"}])
-    allergen_gate.begin_chat_turn()
     with pytest.raises(_wp.SlotRefused):
-        tools.add_recipe_for_chat("Butter Pancakes", [{"item": "butter"}, {"item": "shrimp"}], override=True)
+        tap_anyway(refused.value, tools.add_recipe_for_chat,
+                   "Butter Pancakes", [{"item": "butter"}, {"item": "shrimp"}])
     assert "Butter Pancakes" not in _recipe_names()
 
 
-def test_an_old_refusal_does_not_arm_an_override(dairy_free, monkeypatch):
-    allergen_gate.begin_chat_turn()
+def test_an_old_offer_cannot_be_tapped(dairy_free, in_chat, monkeypatch):
     lines = [{"item": "cream cheese", "qty": "1 block"}]
-    with pytest.raises(_wp.SlotRefused):
+    with pytest.raises(_wp.SlotRefused) as refused:
         tools.add_recipe_for_chat("Cheesecake Bars", lines)
-    allergen_gate.begin_chat_turn()
+    token = allergen_gate.record_offer(refused.value, "add_recipe", {"name": "Cheesecake Bars"}, "tu_1")
     monkeypatch.setattr(allergen_gate, "RECIPE_OVERRIDE_WINDOW_SECONDS", -1)
-    with pytest.raises(_wp.SlotRefused):
-        tools.add_recipe_for_chat("Cheesecake Bars", lines, override=True)
+    assert allergen_gate.take_offer(token, in_chat) is None
 
 
-def test_plan_meal_and_swap_overrides_need_the_same_answer(dairy_free):
+def test_plan_meal_and_swap_need_the_tap_too(dairy_free, in_chat):
+    from conftest import tap_anyway
+    with pytest.raises(_wp.SlotRefused) as refused:
+        tools.plan_meal_for_chat("2026-10-05", "Cheese Toastie", slot="lunch", override=True)
     allergen_gate.begin_chat_turn()
     with pytest.raises(_wp.SlotRefused):
         tools.plan_meal_for_chat("2026-10-05", "Cheese Toastie", slot="lunch", override=True)
-    allergen_gate.begin_chat_turn()
-    assert tools.plan_meal_for_chat("2026-10-05", "Cheese Toastie", slot="lunch", override=True)
+    assert tap_anyway(refused.value, tools.plan_meal_for_chat, "2026-10-05", "Cheese Toastie", slot="lunch")
 
 
 def test_every_chat_turn_marks_itself(monkeypatch):
@@ -689,14 +692,14 @@ def test_the_other_add_recipe_callers_are_not_gated(dairy_free):
     assert "Butter Chicken" in _recipe_names()
 
 
-def test_the_agent_tool_points_at_the_gated_twin_and_describes_override():
+def test_the_agent_tool_points_at_the_gated_twin_and_offers_the_model_no_override():
     # Since 2026-10-25 the chat tool is agent.add_recipe_from_chat, which
     # hands a dictated list to the gated twin and a name-only recipe to the
     # recipe writer (tests/test_chat_on_haiku.py covers that half).
     assert agent.TOOL_FUNCTIONS["add_recipe"] is agent.add_recipe_from_chat
     schema = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "add_recipe")
-    assert "override" in schema["input_schema"]["properties"]
-    assert "never on a first call" in schema["input_schema"]["properties"]["override"]["description"]
+    # Only the tap on the refusal's button saves it (Emily, 2026-11-09).
+    assert "override" not in schema["input_schema"]["properties"]
 
 
 def test_the_chat_prompt_names_add_recipe_in_the_allergy_paragraph():

@@ -643,6 +643,9 @@ _MIGRATIONS = [
     # Whether that count is an answer (2026-10-19) — see schema.sql and
     # _backfill_snack_dishes_set below.
     ("meal_preferences", "snack_dishes_per_week_set", "INTEGER NOT NULL DEFAULT 0"),
+    # Sweet, savory or both (Emily, 2026-11-05) — see schema.sql. Existing
+    # households plan as 'both' until they change it, as the card asks.
+    ("meal_preferences", "snack_taste", "TEXT NOT NULL DEFAULT 'both'"),
     # Whether the three per-week counts are answers (Emily, 2026-09-21,
     # "Each week I plan" numbers are targets, not caps) — see schema.sql
     # and _backfill_meal_counts_set below.

@@ -185,5 +185,5 @@ def test_six_dishes_in_one_sentence_are_three_lines_not_six(capped, stub_model, 
     assert _lines(plan_id) == [
         "Tacos is Monday dinner. It takes about 15 minutes.",
         "Lentil Soup is Tuesday dinner. It takes about 15 minutes.",
-        "Your other four asks are on the plan too, each on a day with the time for it.",
+        "Your other 4 requests are on the plan too.",
     ]
