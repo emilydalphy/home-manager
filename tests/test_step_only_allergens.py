@@ -236,14 +236,14 @@ def test_the_draft_root_draws_the_soft_line_and_an_approved_week_does_not():
     assert "draftSoftNoteHtml(data)" in _extract("reviewStepHtml", shell)
     line = "The steps for Tuesday’s Thai Basil Chicken Stir-Fry use eggs, which Sam is allergic to."
     out = _run_node(
-        _extract("escapeHtml", shell) + "\n" + _extract("weekPlanState", shell) + "\n"
+        _extract("escapeHtml", shell) + "\n" + _extract("headsUpRowHtml", shell) + "\n" + _extract("headsUpHtml", shell) + "\n" + _extract("weekPlanState", shell) + "\n"
         + _extract("draftSoftNoteHtml", shell) + "\n"
         + "var line = " + json.dumps(line) + ";\n"
         + "console.log(JSON.stringify([draftSoftNoteHtml({weekly_plan_id: 1, days: [{}], status: 'draft', soft_note: line}),"
         + " draftSoftNoteHtml({weekly_plan_id: 1, days: [{}], status: 'approved', soft_note: line}),"
         + " draftSoftNoteHtml({weekly_plan_id: 1, days: [{}], status: 'draft', soft_note: null})]));"
     )
-    assert 'class="wk-note"' in out[0] and "Sam is allergic to" in out[0]
+    assert 'class="heads-up-item wk-note"' in out[0] and "Sam is allergic to" in out[0]
     assert out[1] == "" and out[2] == ""
 
 

@@ -37,7 +37,7 @@ def test_a_draft_root_has_no_crumb_and_approve_in_the_dock():
     # the week's dates, title and DRAFT chip are the band's. Only the
     # deeper, approved-week form draws the "Check the week." title under
     # its crumb.
-    assert "? weekSuggestedNoteHtml(data)" in review.split("var head = root", 1)[1][:80]
+    assert "? headsUpHtml(weekSuggestedNoteHtml(data)" in review.split("var head = root", 1)[1][:80]
     assert review.count('<h1 class="wk-title">Check the week.</h1>') == 1
     assert "weekStepHeadHtml" not in SHELL_JS
     assert "rv-invite" not in review

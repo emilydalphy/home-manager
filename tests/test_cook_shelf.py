@@ -86,6 +86,7 @@ _PRELUDE = (
     + _function("kitchenNextCookLine") + "\n" + _function("kitchenNextCook") + "\n" + _function("kitchenNextWhen") + "\n"
     + _function("cookSessionOn") + "\n"
     + _function("tileHtml") + "\n"
+    + _function("headsUpRowHtml") + "\n" + _function("headsUpHtml") + "\n"
     + _function("recipeTopHtml") + "\n"
     + _function("roundBtnHtml") + "\n"
     + "var RECIPE_ICONS = { chevLeft: '' };\nfunction cookDockHtml(h){ return '<div class=\"dock cook-dock\">' + h + '</div>'; }\n"

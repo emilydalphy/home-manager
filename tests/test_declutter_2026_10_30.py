@@ -66,7 +66,7 @@ def _plan_prelude() -> str:
         "planDishRowsHtml", "planBreakfastHtml", "planMainsDayRows", "planMainsHtml", "planSnackRows",
         "planSnacksHtml", "planDayTagsHtml", "planNotesHtml", "planDockHtml",
         "planWeekHtml", "planRowSheetOptions", "planRowSheetHtml", "quietSheetHeadHtml",
-        "wkCanMove", "weekBandExtras", "weekBandMoreHtml",
+        "wkCanMove", "weekBandExtras", "weekBandMoreHtml", "headsUpRowHtml", "headsUpHtml",
     ]
     return (
         _prelude()
