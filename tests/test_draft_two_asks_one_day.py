@@ -138,3 +138,57 @@ def test_a_lunch_and_a_dinner_they_named_themselves_need_no_line(stub_model, run
     assert _where(plan_id, "lunch", "Fish Tacos") == [(dates[4], "lunch")]
     assert _where(plan_id, "dinner", "Pizza") == [(dates[4], "dinner")]
     assert _lines(plan_id) == []
+
+
+# ---------------------------------------------------------------- review, 2026-11-10
+
+def test_a_lunch_holding_another_request_is_never_overwritten(stub_model, run):
+    """CATCH (review of 9d00283b: Fish Tacos overwrote their Soup on Friday
+    lunch — Soup gone, nothing said — and Pizza was moved off the Friday
+    dinner they named for it). Different meals named, and Friday lunch is
+    theirs: everything stays."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    _seed(("Fish Tacos", 15), ("Pizza", 30), ("Soup", 10))
+    tools.save_week_intake(week, freeform="Fish tacos for Friday lunch. Pizza for Friday dinner. Soup for lunch once")
+    dinners = list(_OTHERS)
+    dinners[1], dinners[4] = "Fish Tacos", "Pizza"
+    lunches = [f"Wrap {i}" for i in range(7)]
+    lunches[4] = "Soup"
+    stub_model(_week(dates, dinners, lunches, **{f"{dates[1]}:dinner": _asked("Fish tacos for Friday lunch"),
+                                                 f"{dates[4]}:dinner": _asked("Pizza for Friday dinner"),
+                                                 f"{dates[4]}:lunch": _asked("Soup for lunch once")}))
+
+    plan_id, _ = run(week, None)
+
+    assert _where(plan_id, "lunch", "Soup") == [(dates[4], "lunch")]
+    assert _where(plan_id, "dinner", "Pizza") == [(dates[4], "dinner")]
+    assert _where(plan_id, "dinner", "Fish Tacos") == [(dates[1], "dinner")]
+    assert not any("Fish Tacos and Pizza" in t for t in _lines(plan_id))
+    _audit_clean(plan_id)
+
+
+def test_a_lunch_nobody_is_home_for_is_never_filled(stub_model, run):
+    """CATCH (review of 9d00283b: Friday lunch, nobody home for it, was
+    planned_empty; Fish Tacos were written into it and Pizza moved off
+    Friday dinner to Saturday LUNCH). The lunch stays empty and Pizza stays
+    Friday dinner."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    tools.add_member("Emily")
+    tools.add_member("Vineeth")
+    _seed(("Fish Tacos", 15), ("Pizza", 30))
+    tools.save_week_intake(week, freeform="Fish tacos for Friday lunch. Pizza on Friday")
+    for who in ("Emily", "Vineeth"):
+        tools.set_member_attendance(dates[4], "lunch", who, present=False)
+    dinners = list(_OTHERS)
+    dinners[1], dinners[4] = "Fish Tacos", "Pizza"
+    stub_model(_week(dates, dinners, **{f"{dates[1]}:dinner": _asked("Fish tacos for Friday lunch"),
+                                        f"{dates[4]}:dinner": _asked("Pizza on Friday")}))
+
+    plan_id, _ = run(week, None)
+
+    assert _where(plan_id, "dinner", "Pizza") == [(dates[4], "dinner")]
+    assert (dates[4], "lunch") not in _where(plan_id, "lunch", "Fish Tacos")
+    assert not any("Fish Tacos and Pizza" in t for t in _lines(plan_id))
+    _audit_clean(plan_id)

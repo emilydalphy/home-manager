@@ -1158,8 +1158,14 @@ def place_on_named_days(plan_id: int, intake: dict | None, memory: dict | None,
 #     then the one mentioned first at lunch (her own example's order).
 #     Said only when Pomona chose a meal — a lunch and a dinner they named
 #     themselves need no line.
-#   * The one that moves keeps the KIND of meal it lost (or the one it
-#     named) and goes to the nearest day's meal of that kind it fits —
+#   * Only two asks wanting the SAME meal of the day compete (each wants
+#     the meal it named, or dinner). Wanting different meals, each goes on
+#     its own meal where that meal is free, and otherwise stays put — never
+#     written into a meal nobody is home for, an open one, another request,
+#     a reheat or a batch (review, 2026-11-10).
+#   * The one that moves keeps the KIND of meal it named (or the one it is
+#     on), moves FIRST so the keeper's write can never land on it, and goes
+#     to the nearest day's meal of that kind it fits —
 #     everyone home first, a tie to the later day (move_target's rule) —
 #     never a meal nobody is home for, one already gone, a dish they asked
 #     for, a reheat, a cooked meal, or a table where someone has said no.
@@ -1360,17 +1366,23 @@ def _settle_pair(plan_id: int, intake, memory, day: str, pair: list[dict],
     from . import weekday_lunches as _weekday_lunches
     first, second = pair
     rows = {s: {r["date"]: r for r in nights(plan_id, intake, memory, s)} for s in ("dinner", "lunch")}
-    dinner, lunch = rows["dinner"].get(day), rows["lunch"].get(day)
-    if dinner is None or dinner["slot_state"] != "planned" or dinner["cooked_status"] == "done":
-        return []  # nobody home that night is rule 8's; a cooked or open night is not Pomona's to fill
     ids = {first["id"], second["id"]}
+
+    def free(slot: str) -> bool:
+        """Whether that day's meal may be written into: planned (somebody is
+        home, a decision not handed back), not cooked, and holding Pomona's
+        own pick — or one of these two dishes. Never another request, a
+        reheat or a batch (review, 2026-11-10: a lunch holding their soup
+        was overwritten, and an empty lunch was filled)."""
+        r = rows[slot].get(day)
+        return bool(r is not None and r["slot_state"] == "planned" and r["cooked_status"] != "done"
+                    and (r["id"] in ids or not (_meal_variety.theirs(r["derived"]) or r["reheat"] or r["source"])))
+
     lunch_cap = _time_caps.minutes_cap(day, "lunch", [], memory,
                                        lunch_kind=_weekday_lunches.kinds_by_date(intake).get(day))
 
     def suits_lunch(x: dict) -> bool:
-        if (lunch is None or lunch["slot_state"] != "planned" or lunch["cooked_status"] == "done"
-                or (lunch["id"] not in ids and (_meal_variety.theirs(lunch["derived"])
-                                                 or lunch["reheat"] or lunch["source"]))):
+        if not free("lunch"):
             return False
         if x["named"] == "lunch":
             return True  # their word
@@ -1382,11 +1394,11 @@ def _settle_pair(plan_id: int, intake, memory, day: str, pair: list[dict],
     def at(x: dict, slot: str) -> bool:
         return (x["date"], x["slot"]) == (day, slot)
 
+    contents = {x["meal"]: _row_contents(x["id"]) for x in pair}
     options = [] if first["named"] and first["named"] == second["named"] else [
         (lo, hi) for lo, hi in ((first, second), (second, first))
-        if lo["named"] != "dinner" and hi["named"] != "lunch" and suits_lunch(lo)
+        if lo["named"] != "dinner" and hi["named"] != "lunch" and suits_lunch(lo) and free("dinner")
     ]
-    contents = {x["meal"]: _row_contents(x["id"]) for x in pair}
     if options:
         lo, hi = min(options, key=lambda o: (-(at(o[0], "lunch") + at(o[1], "dinner")),
                                              o[0]["minutes"] or 10 ** 4, o[0]["order"]))
@@ -1403,13 +1415,26 @@ def _settle_pair(plan_id: int, intake, memory, day: str, pair: list[dict],
                                                  "lunch": lo["meal"], "dinner": hi["meal"]})
         return [{"meal": x["meal"], "from": x["date"], "to": day, "how": "fitted"} for x in (lo, hi)]
 
+    # Not fitted. Each wants the meal it named, or dinner (rule 1's default).
+    # Wanting DIFFERENT meals is not a fight over one slot: each goes on its
+    # own meal of the day only where that meal is free, and otherwise stays
+    # where it is — nothing written, nothing said, no rule 7 mark (so the
+    # other rules treat them as they always have).
+    if (first["named"] or "dinner") != (second["named"] or "dinner"):
+        for x in pair:
+            want = x["named"] or "dinner"
+            if not at(x, want) and free(want):
+                _put(plan_id, intake, memory, contents[x["meal"]], day, want)
+        return []
+
+    # Both want the same meal of that day: the more specific keeps it.
     keeper = max(pair, key=lambda x: (bool(x["named"]), -x["order"]))
     mover = second if keeper is first else first
     k_slot = keeper["named"] or "dinner"
-    m_slot = mover["named"] or k_slot
-    if not _put(plan_id, intake, memory, contents[keeper["meal"]], day, k_slot):
+    # The mover keeps the kind of meal IT named, or the one it is on.
+    m_slot = mover["named"] or mover["slot"]
+    if not free(k_slot):
         return []
-    now = _find(plan_id, intake, memory, mover["meal"])
     minutes = mover["minutes"]
     targets = []
     for r in nights(plan_id, intake, memory, m_slot):
@@ -1417,7 +1442,7 @@ def _settle_pair(plan_id: int, intake, memory, day: str, pair: list[dict],
                 or r["cooked_status"] == "done" or _weekly_plan.night_has_gone(r["date"])
                 or (m_slot == "dinner" and "left" in (r.get("tags") or []))):
             continue
-        mine = now is not None and r["id"] == now["id"]
+        mine = r["id"] == mover["id"]
         if not mine and (_meal_variety.theirs(r["derived"]) or r["reheat"] or r["source"]):
             continue
         if r.get("cap") and minutes and minutes > r["cap"]:
@@ -1427,9 +1452,14 @@ def _settle_pair(plan_id: int, intake, memory, day: str, pair: list[dict],
             continue
         gap = (datetime.date.fromisoformat(r["date"]) - datetime.date.fromisoformat(day)).days
         targets.append(((_someone_out(r["date"], m_slot), abs(gap), 0 if gap > 0 else 1), r))
+    # The mover goes FIRST, so the keeper's write can never land on it: a
+    # request is moved, never dropped. Nowhere for it: nothing is written.
     for _key, target in sorted(targets, key=lambda t: t[0]):
         if not _put(plan_id, intake, memory, contents[mover["meal"]], target["date"], m_slot):
             continue
+        if not _put(plan_id, intake, memory, contents[keeper["meal"]], day, k_slot):
+            logger.info("Plan %s: %s moved for %s, which then would not go on %s", plan_id,
+                        mover["meal"], keeper["meal"], day)
         both = first["named"] if first["named"] and first["named"] == second["named"] else ""
         stamp = {"day": day, "how": "moved", "first": first["meal"], "second": second["meal"], "both": both}
         for x, moved in ((keeper, False), (mover, True)):
