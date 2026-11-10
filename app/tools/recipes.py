@@ -5825,6 +5825,7 @@ def _add_recipe_ingredients_for_entries(
     entry_ids: list[int], recipe_ingredients: list[dict], weekly_plan_id: int | None,
     default_servings: int | None = None, buffer: "WeekGroceryBuffer | None" = None,
     conn=None, chain_scale: bool = True, reheat_buys_it: bool = False,
+    night_side: bool = False,
 ) -> tuple[list[str], list[str]]:
     """
     Put ONE RECIPE's ingredients onto the grocery list for every meal in
@@ -6081,7 +6082,17 @@ def _add_recipe_ingredients_for_entries(
             # cooked fresh on the reheat night, so it could cover a later
             # one) and narrowing it on a review pass would be deciding that
             # unmeasured.
-            batch = _leftovers.batch_for_entry(entry_id, chains, conn=entry_conn) if chain_scale else None
+            # `night_side`: these are a cooked-on-the-night SIDE, and a side
+            # is per night (Emily, 2026-11-09) — the cook's salad covers only
+            # the fed nights with no side of their own
+            # (leftovers.side_batch_for_entry). The dish itself still covers
+            # every night it feeds.
+            if not chain_scale:
+                batch = None
+            elif night_side:
+                batch = _leftovers.side_batch_for_entry(entry_id, chains, conn=entry_conn)
+            else:
+                batch = _leftovers.batch_for_entry(entry_id, chains, conn=entry_conn)
             if batch:
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
                     # Both factors, because a batch really is more food: a

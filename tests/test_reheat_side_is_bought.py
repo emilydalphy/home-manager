@@ -110,6 +110,19 @@ def _links(entry_id: int) -> list[str]:
     return sorted(r["item"] for r in rows)
 
 
+def _shares(entry_id: int) -> dict[str, str]:
+    """This entry's ledger shares by item — the UNROUNDED amount each
+    night is on the list for."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT g.item, l.quantity FROM meal_plan_grocery_links l "
+        "JOIN grocery_items g ON g.id = l.grocery_item_id WHERE l.meal_plan_entry_id = ?",
+        (entry_id,),
+    ).fetchall()
+    conn.close()
+    return {r["item"]: r["quantity"] for r in rows}
+
+
 # ---------- the reported bug ----------
 
 @ON_MONDAY
@@ -194,26 +207,18 @@ def test_a_side_on_the_cook_night_is_still_bought_exactly_once():
 
 
 @ON_MONDAY
-def test_a_side_on_each_end_of_the_chain_buys_the_cooks_for_two_and_the_reheats_for_one():
+def test_a_side_on_each_end_of_the_chain_buys_one_salad_per_night():
     """CATCH — the two halves together, which is where a fix that shared
     one flag between the dish and the side would show up as either a
     missing salad or a doubled one.
 
-    It is named for what it measures rather than for what would be tidy,
-    because the number is not obviously the right one and a reader should
-    see that. Three heads buy TWO salads: the cook night's own salad is
-    scaled to cover the night it feeds (the 2026-09-13 round-2 decision,
-    untouched here) and Thursday's own salad is bought on top. Un-batch
-    the same week and the app settles on two, so the approved state is one
-    head heavier than the app's own answer once the chain is gone.
-
-    Reachable only by a deliberate tap — the plate pass never puts a side
-    on a reheat (agent._complete_plates_pass) — so it is a household that
-    asked for a salad on Thursday being sold one, over a cook-night salad
-    they were never shown on Thursday's plate. Whether the cook night's
-    side should still cover a fed night that has a side of its own is the
-    open half of the 2026-09-13 decision and is NOT this card's to
-    settle."""
+    Renamed from `..._buys_the_cooks_for_two_and_the_reheats_for_one`,
+    which pinned THREE heads for two salads: the cook night's salad was
+    scaled to cover the night it feeds and Thursday's own salad was bought
+    on top, one head heavier than the same week un-batched. Decided by
+    Emily, 2026-11-09: "2 heads. A side is per night." When a fed night has
+    a side of its own, the cook night's side is not scaled up to cover it
+    (leftovers.side_batch_for_entry). Red on main (3 heads)."""
     _household()
     _chili()
     plan_id, cook, reheat = _chain()
@@ -222,8 +227,110 @@ def test_a_side_on_each_end_of_the_chain_buys_the_cooks_for_two_and_the_reheats_
 
     tools.approve_weekly_plan(plan_id)
 
-    # 2 for the cook night's batch + 1 for Thursday's own.
-    assert _list() == {"Ground turkey": "3 lbs", "Lettuce": "3 heads"}
+    # 1 for Monday's own + 1 for Thursday's own. The chili still covers both.
+    assert _list() == {"Ground turkey": "3 lbs", "Lettuce": "2 heads"}
+    assert _shares(cook)["Lettuce"] == "1 head"
+    assert _shares(reheat)["Lettuce"] == "1 head"
+
+
+@ON_MONDAY
+def test_the_batched_and_unbatched_readings_of_the_same_week_agree():
+    """CATCH — the decision's own test: the same two salads cost the same
+    whether Monday's chili is cooked double for Thursday or cooked twice.
+    On main the batched week bought 3 heads and the un-batched 2."""
+    _household()
+    _chili()
+    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    mon = tools.plan_meal(MON, "Turkey Chili", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    thu = tools.plan_meal(THU, "Turkey Chili", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    _plates.attach_sides(mon, [SALAD], ["vegetable"])
+    _plates.attach_sides(thu, [SALAD], ["vegetable"])
+    tools.approve_weekly_plan(plan_id)
+    unbatched = _list()["Lettuce"]
+    tools.clear_weekly_plan(plan_id)
+
+    plan_id, cook, reheat = _chain()
+    _plates.attach_sides(cook, [SALAD], ["vegetable"])
+    _plates.attach_sides(reheat, [SALAD], ["vegetable"])
+    tools.approve_weekly_plan(plan_id)
+
+    assert unbatched == "2 heads"
+    assert _list()["Lettuce"] == unbatched
+
+
+@ON_MONDAY
+def test_a_side_put_on_the_fed_night_after_approval_shrinks_the_cooks_and_grows_it_back():
+    """CATCH — the door after approval. Monday's salad was bought for both
+    nights (Thursday had none); a salad carried onto Thursday is bought for
+    Thursday, and Monday's shrinks back to Monday's table — two heads, not
+    three. Taking Thursday's off again grows Monday's back to cover it.
+    Pinned by the mutation that drops the resize from _buy_side_now (3
+    heads after the add)."""
+    _household()
+    _chili()
+    plan_id, cook, reheat = _chain()
+    _plates.attach_sides(cook, [SALAD], ["vegetable"])
+    tools.approve_weekly_plan(plan_id)
+    assert _list()["Lettuce"] == "2 heads"
+    assert _shares(cook)["Lettuce"] == "2 heads"
+
+    _plates.carry_sides([SALAD], reheat)
+
+    assert _list()["Lettuce"] == "2 heads"
+    assert _shares(cook)["Lettuce"] == "1 head"
+    assert _shares(reheat)["Lettuce"] == "1 head"
+
+    assert _plates.remove_component(reheat, "Green salad")["status"] == "removed"
+
+    assert _list()["Lettuce"] == "2 heads"
+    assert _shares(cook)["Lettuce"] == "2 heads"
+    assert "Lettuce" not in _shares(reheat)
+
+
+@ON_MONDAY
+def test_dropping_a_fed_night_with_its_own_side_leaves_the_cooks_salad_at_one():
+    """GUARD — the rescale after a fed night goes
+    (weekly_plan._rescale_leftover_source_grocery, through
+    _ingest_recipe_group_and_sides) asks the same per-night question:
+    Thursday's salad goes with Thursday and Monday's stays Monday's."""
+    _household()
+    _chili()
+    plan_id, cook, reheat = _chain()
+    _plates.attach_sides(cook, [SALAD], ["vegetable"])
+    _plates.attach_sides(reheat, [SALAD], ["vegetable"])
+    tools.approve_weekly_plan(plan_id)
+
+    tools.clear_plan_slot(plan_id, THU, "dinner")
+
+    assert _list() == {"Ground turkey": "1.5 lbs", "Lettuce": "1 head"}
+    assert _shares(cook)["Lettuce"] == "1 head"
+
+
+@ON_MONDAY
+def test_a_standing_lettuce_stays_exactly_the_households_own_head():
+    """GUARD — the ledger rule from CLAUDE.md: a household's own "Lettuce
+    1 head" takes the ROUNDED plan contribution on and off and is never
+    re-rounded. Through approval, the add and the removal on the fed night
+    and the week's own reversal, the household's head is still one."""
+    _household()
+    _chili()
+    tools.add_grocery_item("Lettuce", quantity="1 head", category="produce")
+    plan_id, cook, reheat = _chain()
+    _plates.attach_sides(cook, [SALAD], ["vegetable"])
+    _plates.attach_sides(reheat, [SALAD], ["vegetable"])
+
+    tools.approve_weekly_plan(plan_id)
+    assert _list()["Lettuce"] == "3 heads"
+
+    _plates.remove_component(reheat, "Green salad")
+    assert _list()["Lettuce"] == "3 heads"
+    _plates.carry_sides([SALAD], reheat)
+    assert _list()["Lettuce"] == "3 heads"
+
+    from app.tools import grocery as _grocery
+    _grocery._reverse_meal_grocery_contributions(reheat)
+    _grocery._reverse_meal_grocery_contributions(cook)
+    assert _list()["Lettuce"] == "1 head"
 
 
 # ---------- the route a household actually reaches today ----------

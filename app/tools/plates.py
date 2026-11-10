@@ -1299,6 +1299,7 @@ def _buy_side_now(row, side: dict) -> list[str]:
         added, _have = _recipes._add_recipe_ingredients_for_entries(
             [row["id"]], ingredients, row["weekly_plan_id"], default_servings=servings,
             chain_scale=cooked_on_the_night, reheat_buys_it=cooked_on_the_night,
+            night_side=True,
         )
         added_all.extend(added)
     # Remember exactly which ledger rows this addition wrote, so Undo can
@@ -1307,7 +1308,122 @@ def _buy_side_now(row, side: dict) -> list[str]:
     new_ids = sorted(_link_ids(row["id"]) - before)
     if new_ids:
         _set_side_field(row["id"], side["name"], "grocery_link_ids", new_ids)
+    if cooked_on_the_night:
+        # A reheat that just gained a side of its own: the cook night's
+        # side stops covering it (a side is per night, 2026-11-09).
+        try:
+            resize_feeding_cooks_sides(row["id"])
+        except Exception:
+            logger.exception("Re-sizing the cook night's side after adding to %s failed", row["id"])
     return added_all
+
+
+def resize_feeding_cooks_sides(fed_entry_id: int) -> None:
+    """
+    Re-buy the side on the cook night that feeds this reheat, after the
+    reheat gained or lost a side of its own on an approved week.
+
+    A side is per night (Emily, 2026-11-09): the cook's salad covers a fed
+    night only while that night has no side of its own
+    (leftovers.side_batch_for_entry). So "add a salad to Thursday's
+    leftovers" shrinks Monday's salad back to Monday's table, and taking it
+    off grows Monday's again — two heads for two salads, never three.
+
+    Only the cook's side lines are touched: its ledger rows on those items
+    are reversed (the line re-derives from the ledger) and re-bought through
+    one buffer, with the recipe's own share of any item it shares with a
+    side (a lemon) re-bought beside it. A no-op for anything but a reheat
+    on an approved week, and left alone when the cook night is cooked or
+    gone or any of those lines is already in the cart or bought — the shop
+    has happened. A household-added side's grocery_link_ids are re-pointed
+    at the new rows so its Undo still finds them.
+    """
+    from . import leftovers as _leftovers
+    from . import recipes as _recipes
+    from . import grocery as _grocery
+    from . import weekly_plan as _weekly_plan
+    conn = get_conn()
+    try:
+        fed = _entry_row(conn, fed_entry_id)
+        if fed is None or fed["plan_status"] != "approved" or not fed["weekly_plan_id"]:
+            return
+        plan_id = fed["weekly_plan_id"]
+        chains = _leftovers.plan_leftover_chains(plan_id, conn=conn)
+        info = chains["leftovers"].get(fed_entry_id)
+        if not info:
+            return
+        source_id = int(info["source"]["entry_id"])
+        src = conn.execute(
+            "SELECT mpe.id, mpe.date, mpe.cooked_status, mpe.sides_json, r.ingredients_json, r.default_servings "
+            "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE mpe.id = ? AND mpe.household_id = ?",
+            (source_id, household_id()),
+        ).fetchone()
+        if src is None or src["cooked_status"] == "done" or _weekly_plan.night_has_gone(src["date"]):
+            return
+        groups = [
+            (ings, servings) for ings, servings, on_night in _weekly_plan._entry_side_groups(src) if on_night
+        ]
+        if not groups:
+            return
+        side_keys = {
+            _grocery._merge_key(i["item"]) for ings, _s in groups for i in ings if (i.get("item") or "").strip()
+        }
+        rows = conn.execute(
+            "SELECT l.id, g.item, g.status FROM meal_plan_grocery_links l "
+            "JOIN grocery_items g ON g.id = l.grocery_item_id "
+            "WHERE l.household_id = ? AND l.meal_plan_entry_id = ?",
+            (household_id(), source_id),
+        ).fetchall()
+    finally:
+        conn.close()
+    mine = [r for r in rows if _grocery._merge_key(r["item"]) in side_keys]
+    if any(r["status"] != "needed" for r in mine):
+        return
+    if mine:
+        _grocery._reverse_meal_grocery_contributions(source_id, only_link_ids=[r["id"] for r in mine])
+    kept = _link_ids(source_id)
+    try:
+        recipe_ings = json.loads(src["ingredients_json"] or "[]")
+    except (TypeError, ValueError):
+        recipe_ings = []
+    shared = [
+        i for i in recipe_ings
+        if isinstance(i, dict) and (i.get("item") or "").strip() and _grocery._merge_key(i["item"]) in side_keys
+    ]
+    buffer = _recipes.WeekGroceryBuffer(plan_id)
+    if shared:
+        _recipes._add_recipe_ingredients_for_entries(
+            [source_id], shared, plan_id, default_servings=src["default_servings"], buffer=buffer,
+        )
+    for ings, servings in groups:
+        _recipes._add_recipe_ingredients_for_entries(
+            [source_id], ings, plan_id, default_servings=servings, buffer=buffer, night_side=True,
+        )
+    buffer.flush()
+    new_rows = _link_ids(source_id) - kept
+    added = [s for s in _sides_of(src) if isinstance(s, dict) and s.get("grocery_link_ids")]
+    if not new_rows or not added:
+        return
+    conn = get_conn()
+    try:
+        marks = ",".join("?" * len(new_rows))
+        item_of = {
+            int(r["id"]): _grocery._merge_key(r["item"]) for r in conn.execute(
+                "SELECT l.id, g.item FROM meal_plan_grocery_links l "
+                "JOIN grocery_items g ON g.id = l.grocery_item_id "
+                f"WHERE l.household_id = ? AND l.id IN ({marks})",
+                [household_id(), *new_rows],
+            ).fetchall()
+        }
+    finally:
+        conn.close()
+    for side in added:
+        keys = {_grocery._merge_key(i["item"]) for i in side_ingredients([side]) if (i.get("item") or "").strip()}
+        _set_side_field(
+            source_id, side.get("name") or "", "grocery_link_ids",
+            sorted(i for i, k in item_of.items() if k in keys),
+        )
 
 
 def _link_ids(entry_id: int) -> set[int]:
@@ -1524,6 +1640,13 @@ def remove_component(entry_id: int, name: str, weekly_plan_id: int | None = None
             if (i.get("item") or "").strip() and (i.get("item") or "").strip().lower() not in still_there
         }
         reversal = _grocery._reverse_meal_grocery_contributions(entry_id, only_items=items)
+    if row["plan_status"] == "approved":
+        # A reheat that lost its last side: the cook night's side covers it
+        # again (a side is per night, 2026-11-09).
+        try:
+            resize_feeding_cooks_sides(entry_id)
+        except Exception:
+            logger.exception("Re-sizing the cook night's side after removing %r from %s failed", name, entry_id)
     return {
         "status": "removed", "entry_id": entry_id, "name": gone[0].get("name") or name,
         "grocery_removed": reversal["removed_items"] + reversal["trimmed_items"],
