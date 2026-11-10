@@ -70,7 +70,7 @@ _FOODS = {
     "pork": r"\bpork\b|bacon|\bham\b|(?<!chicken )(?<!turkey )sausages?|chorizo|prosciutto|pancetta|guanciale|lardons?|"
             r"kielbasa|pepperoni|salami|mortadella|andouille|\bspam\b|lap cheong|longaniza|nduja|soppressata|"
             r"\bcarnitas\b|\blechon\b|lardo\b|speck\b|capicola|pork belly|tocino",
-    "lamb": r"\blamb\b|mutton|\bgoat\b",
+    "lamb": r"\blamb\b|mutton|\bgoat\b(?! cheese| milk| yogurt)",
     "fish": r"\bfish\b|salmon|\btuna\b|\bcod\b|tilapia|trout|halibut|\bsole\b|snapper|mackerel|sardines?|anchov|"
             r"haddock|branzino|\bbass\b|mahi|swordfish|catfish|bacalao|\bflounder\b|pollock|smoked fish|\beel\b|\broe\b",
     "shellfish": r"shrimps?|prawns?|scallops?|\bcrabs?\b|lobster|\bclams?\b|mussels?|oysters?(?! mushroom)|"
