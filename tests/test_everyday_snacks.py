@@ -182,3 +182,47 @@ def test_the_list_is_forty_real_snacks_each_two_food_groups():
     assert "nuts" in by["Muhammara with Veg Sticks and Pita"]["allergens"]
     assert not {"nuts", "peanuts"} & set(
         by["Homemade Trail Mix with Seeds, Dried Fruit and Dark Chocolate"]["allergens"])
+
+
+# ---- A snack they rated liked stays (Emily, 2026-11-09) ----
+
+LIKED = OFF_LIST[3]  # "Orange Slices with Pumpkin Seeds", not on the list
+
+
+def _save_liked(name, ingredients, member=None):
+    tools.add_recipe(name=name, default_servings=2, food_groups=["protein", "carb"], ingredients=ingredients)
+    if member:
+        tools.attribute_recipe_feedback(name, member, rating="liked")
+    else:
+        tools.mark_recipe_feedback(name, rating="liked")
+
+
+def test_a_snack_they_liked_stays_off_list(household, monkeypatch):
+    """CATCH: on main a liked off-list snack is swapped for a list one."""
+    _save_liked(LIKED, [{"item": "oranges", "qty": "2"}, {"item": "pumpkin seeds", "qty": "1 bag"}], member="Sam")
+    _save_liked("Granola Bar and Grapes", [{"item": "granola bars", "qty": "1 box"}])
+    names = {m["meal"] for m in _snacks(_plan(monkeypatch, _monday(), _week(_monday())))}
+    assert LIKED in names and "Granola Bar and Grapes" in names, names
+    # The two not rated are still swapped for list snacks.
+    assert "Apple with Peanut Butter" not in names and "Banana with Peanut Butter" not in names, names
+    assert names - {LIKED, "Granola Bar and Grapes"} <= _list_names(), names
+
+
+def test_a_liked_snack_one_person_dislikes_is_swapped(household, monkeypatch):
+    _save_liked(LIKED, [{"item": "oranges", "qty": "2"}], member="Sam")
+    tools.attribute_recipe_feedback(LIKED, "Emily", rating="disliked")
+    names = {m["meal"] for m in _snacks(_plan(monkeypatch, _monday(), _week(_monday())))}
+    assert LIKED not in names and names <= _list_names(), names
+
+
+def test_a_liked_snack_with_their_allergen_is_still_removed(household, monkeypatch):
+    """The model's lines for it are clean, so the draft gate passes it; the
+    saved recipe they liked is made with peanut butter, and Sam has a peanut
+    allergy. Liked never outranks an allergy."""
+    tools.set_member_dietary_restrictions("Sam", ["peanut allergy"])
+    _save_liked(LIKED, [{"item": "oranges", "qty": "2"}, {"item": "peanut butter", "qty": "2 tbsp"}])
+    days = _week(_monday(), extra={LIKED: {"ingredients": [{"item": "oranges", "qty": "2"}]}})
+    snacks = _snacks(_plan(monkeypatch, _monday(), days))
+    names = {m["meal"] for m in snacks}
+    assert LIKED not in names and names <= _list_names(), names
+    assert len(snacks) == 14
