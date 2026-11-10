@@ -193,3 +193,90 @@ def test_the_library_s_dishes_are_not_copied_for_that_household(restriction, key
     tools.set_member_dietary_restrictions("Maya", [restriction])
     copied, clash = _copied(key)
     assert not copied and clash, key
+
+
+# ---------- review, 2026-11-09: the escapes sit right against the food ----------
+
+@pytest.mark.parametrize("label", ["fish allergy", "shellfish"])
+@pytest.mark.parametrize("line", [
+    "Non-vegetarian red curry paste",
+    "Non-vegan kimchi",
+    "Kimchi (not strictly vegan)",
+    "Red curry paste (vegetarian brands are fish-free; most are not)",
+    "Kimchi, or vegan kimchi for vegetarians",
+])
+def test_a_claim_that_is_not_right_against_the_paste_is_not_believed(label, line):
+    """CATCH: the vegan/vegetarian/fish-free escape covered the whole line
+    and only knew "not " as a negation."""
+    assert _held(label, line), f"{line!r} went through {label}"
+
+
+@pytest.mark.parametrize("line", [
+    "Vegan kimchi",
+    "Vegetarian Thai red curry paste",
+    "Vegetarian massaman curry paste",
+    "Red curry paste (vegetarian)",
+    "Kimchi (vegan)",
+])
+def test_the_claim_right_before_or_in_a_bracket_after_is_believed(line):
+    """GUARD: the forms the card means, including the three library lines."""
+    assert not _held("shellfish", line)
+    assert not _held("fish allergy", line)
+
+
+def test_non_vegan_kimchi_is_held_for_a_vegetarian():
+    assert _held("vegetarian", "Non-vegan kimchi")
+    assert not _held("vegetarian", "Vegan kimchi")
+
+
+@pytest.mark.parametrize("line", [
+    "Worcester sauce",
+    "Lea & Perrins",
+    "Chicken base",
+    "Beef base",
+    "1 tsp vegetable base",
+    "Hot pot soup base",
+    "1 Oxo cube",
+])
+def test_the_jars_other_names_are_held_for_gluten(line):
+    """CATCH: Worcester sauce, Lea & Perrins, a bouillon base without the
+    word bouillon, and an Oxo cube all went through a celiac."""
+    assert _held("celiac", line)
+
+
+@pytest.mark.parametrize("line", [
+    "Gluten-free Worcester sauce",
+    "Gluten-free chicken base",
+    "Base layer: rice",
+])
+def test_gluten_free_bases_and_a_bare_base_pass(line):
+    assert not _held("celiac", line)
+
+
+def test_lea_and_perrins_keeps_the_worcestershire_fish_hold():
+    assert _held("fish allergy", "Lea & Perrins")
+
+
+@pytest.mark.parametrize("line", [
+    "Andouille sausage, chicken thighs",
+    "Andouille sausage (chicken thighs on the side)",
+])
+def test_a_separate_meat_after_andouille_is_not_its_meat(line):
+    """CATCH: the meat across a comma read as chicken andouille."""
+    assert _held("pork", line)
+
+
+def test_a_dish_named_chicken_andouille_is_judged_on_its_list():
+    """CATCH: the name "Chicken Andouille Gumbo" passed over a pork
+    andouille line; the exception is for an ingredient line only."""
+    avoid = [{"member": "Sam", "label": "pork", "source": "dietary_restriction", "severity": "hard",
+              "terms": coordination._match_terms(coordination._conflict_phrases("pork"))}]
+    hits = coordination.check_meal_conflicts(
+        "Chicken Andouille Gumbo", ingredients=[{"item": "Okra"}], avoidances=avoid)
+    assert any(h["severity"] == "hard" for h in hits)
+
+
+def test_a_claim_with_plain_descriptors_between_is_believed():
+    """GUARD: the library's "Vegan gluten-free Thai red curry paste"."""
+    assert not _held("shellfish", "Vegan gluten-free Thai red curry paste")
+    assert _held("shellfish", "Vegan-friendly? No: Thai red curry paste")

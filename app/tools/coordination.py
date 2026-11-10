@@ -129,6 +129,10 @@ _FISH_PASTE_WORDS = frozenset({
 _GLUTEN_ONLY_WORDS = frozenset({
     "oat", "oats", "oatmeal", "worcestershire", "bouillon", "stock cube", "stock powder",
     "miso", "tonkatsu sauce",
+    # Review, 2026-11-09: the same jars by their other names. A bouillon
+    # base is often sold as "chicken base"; never "base" alone.
+    "worcester sauce", "lea perrins", "lea and perrins", "oxo", "chicken base", "beef base",
+    "vegetable base", "soup base", "stock base",
 })
 _WHEAT_WORDS = {
     "flour", "bread", "pasta", "noodles", "couscous", "seitan", "barley", "rye", "bulgur",
@@ -234,6 +238,8 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
              "sea bass", "snapper", "pollock", "mahi", "swordfish", "catfish",
              "herring", "flounder", "grouper", "monkfish", "branzino", "carp", "perch",
              "lox", "caviar", "roe", "bonito", "dashi", "worcestershire",
+             # Worcestershire by its other names (2026-11-09): anchovy.
+             "worcester sauce", "lea perrins", "lea and perrins",
              "nam pla", "surimi", "caesar dressing", "puttanesca",
              # Library audit 2026-10-26: Hake fillets went through.
              "hake", "basa", "pangasius", "barramundi", "pomfret", "sablefish",
@@ -313,7 +319,7 @@ _MEAT_ALIASES: dict[str, set[str]] = {
              "lard", "baby back ribs", "lap cheong", "lap chong", "morcilla",
              # Emily, 2026-11-09: andouille is a pork sausage unless the line
              # names another meat (chicken or turkey andouille,
-             # _COMPOUND_EXCEPTIONS).
+             # _LINE_ONLY_EXCEPTIONS).
              "andouille"},
     "beef": {"sirloin", "ribeye", "rib eye", "bresaola", "filet mignon", "ground chuck",
              "chuck roast"},
@@ -589,14 +595,6 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     # That is the failure this whole check exists to prevent, so the false
     # positive matters more here than the rarity of the restriction.
     (frozenset({"olive", "olives"}), re.compile(r"\bolive\s+oils?\b")),
-    # Chicken or turkey andouille is that meat, not pork (2026-11-09):
-    # "chicken andouille", "smoked turkey andouille sausage", or the meat
-    # named in brackets after it, "andouille sausage (chicken)" — folded,
-    # the brackets are spaces.
-    (frozenset({"andouille", "andouilles"}), re.compile(
-        r"\b(?:chicken|turkey)\s+andouilles?\b"
-        r"|\bandouilles?(?:\s+sausages?)?\s+(?:chicken|turkey)\b"
-    )),
     # A court-bouillon is water, wine and aromatics, not a stock cube.
     (frozenset({"bouillon", "bouillons"}), re.compile(r"\bcourt[\s-]bouillons?\b")),
     *_LIBRARY_COMPOUNDS,
@@ -692,10 +690,11 @@ _EGG_FREE_DAIRY = _ALLERGEN_ALIASES["dairy"] - _ALLERGEN_ALIASES["egg"]
 _DAIRY_FREE_EGG = (_ALLERGEN_ALIASES["egg"] | {"egg"}) - _ALLERGEN_ALIASES["dairy"]
 _DIET_PLANT_QUALIFIERS: tuple[tuple, ...] = (
     # "vegan parmesan", "vegan eggs", "plant-based chorizo".
-    (_spellings(_VEGAN_WORDS), re.compile(r"\b(?:vegan|plant[\s-]based)" + _QUALIFIED), _DIET_LABELS),
+    (_spellings(_VEGAN_WORDS), re.compile(r"(?<!non-)(?<!non )(?<!not )\b(?:vegan|plant[\s-]based)" + _QUALIFIED),
+     _DIET_LABELS),
     # "veggie sausage", "meatless crumbles", "vegetarian oyster sauce".
     (_spellings(_VEGETARIAN_WORDS), re.compile(
-        r"\b(?:vegetarian|veggie|meatless|meat[\s-]free)" + _QUALIFIED), _DIET_LABELS),
+        r"(?<!non-)(?<!non )(?<!not )\b(?:vegetarian|veggie|meatless|meat[\s-]free)" + _QUALIFIED), _DIET_LABELS),
     # "dairy-free cheese", "non-dairy whipped topping" — not a custard or a
     # mousse, which still has its eggs.
     (_spellings(_EGG_FREE_DAIRY), re.compile(r"\b(?:dairy[\s-]free|non[\s-]dairy)" + _QUALIFIED),
@@ -710,8 +709,40 @@ _DIET_PLANT_QUALIFIERS: tuple[tuple, ...] = (
 # — is believed for fish and shellfish (Emily, 2026-11-09). The whole line
 # is the span, so the claim covers the paste wherever it sits. Not "not
 # vegan".
+_FISH_PASTE_ALT = "|".join(
+    r"\s+".join(map(re.escape, w.split())) + "s?" for w in sorted(_FISH_PASTE_WORDS, key=len, reverse=True)
+)
+_NOT_A_CLAIM = r"(?<!non-)(?<!non )(?<!not )"
 _FISH_PASTE_CLAIM_RE = re.compile(
-    r"^(?=.*(?<!\bnot\s)\b(?:vegan|vegetarian|fish[\s-]free)\b).*$"
+    _NOT_A_CLAIM + r"\b(?:vegan|vegetarian|fish[\s-]free)\s+"
+    # Only plain descriptors between ("Vegan gluten-free Thai red curry paste").
+    r"(?:(?:gluten[\s-]?free|gf|organic|thai|vegan|vegetarian|fish[\s-]free)\s+){0,3}"
+    r"(?:" + _FISH_PASTE_ALT + r")\b"
+)
+# The claim or the meat said in a bracket straight after the food — "Red
+# curry paste (vegetarian)", "Andouille sausage (chicken)" — is moved in
+# front of it before folding (folding turns brackets into spaces, and a
+# comma's "andouille, chicken thighs" must not read the same). Only a
+# bracket holding nothing but that word; anything longer is held.
+_BRACKET_QUALIFIER_RE = re.compile(
+    r"\b(" + _FISH_PASTE_ALT + r"|andouilles?(?:\s+sausages?)?)\s*\(\s*"
+    r"(vegan|vegetarian|fish[\s-]free|chicken|turkey)\s*\)",
+    re.IGNORECASE,
+)
+
+
+def _bracket_qualifier_first(text: str) -> str:
+    """"Kimchi (vegan)" read as "vegan Kimchi" — ingredient lines only."""
+    return _BRACKET_QUALIFIER_RE.sub(r"\2 \1", text or "")
+
+
+# Read only on an ingredient LINE, never a dish's name (review,
+# 2026-11-09: "Chicken Andouille Gumbo" is a name, not a list).
+_LINE_ONLY_EXCEPTIONS: tuple[tuple, ...] = (
+    # Chicken or turkey andouille is that meat, not pork (2026-11-09):
+    # the meat right before it ("smoked turkey andouille"), or in a
+    # bracket right after it (see _bracket_qualifier_first).
+    (frozenset({"andouille", "andouilles"}), re.compile(r"\b(?:chicken|turkey)\s+andouilles?\b")),
 )
 
 _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
@@ -1246,6 +1277,8 @@ def _discounted(variant: str, match: re.Match, text: str, mode: str = "line", la
     tables = _COMPOUND_EXCEPTIONS + (_PLANT_QUALIFIER_EXCEPTIONS if mode != "strict" else ())
     if mode == "listed" and variant in _FAMILY_WORDS:
         tables = _COMPOUND_EXCEPTIONS
+    if mode == "line":
+        tables = tables + _LINE_ONLY_EXCEPTIONS
     if label in _DIET_LABELS:
         # A diet entry's third element is who it SPEAKS for (the shared
         # tables' third element is who they never speak for).
@@ -1880,8 +1913,10 @@ def check_meal_conflicts(
     else:
         name_kind = "strict"
     raw_segments = [(name, name_kind)]
-    raw_segments += [(text, name_kind if is_note else "line") for text, is_note in lines]
-    raw_segments += [((i.get("item") or ""), "line") for i in _plates.side_ingredients(sides)]
+    raw_segments += [(text, name_kind) if is_note else (_bracket_qualifier_first(text), "line")
+                     for text, is_note in lines]
+    raw_segments += [(_bracket_qualifier_first(i.get("item") or ""), "line")
+                     for i in _plates.side_ingredients(sides)]
     normalised = [(_fold(s), kind) for s, kind in raw_segments]
     normalised = [(s, kind) for s, kind in normalised if s]
     segments = [s for s, _ in normalised]
