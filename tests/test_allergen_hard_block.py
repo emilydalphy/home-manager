@@ -627,34 +627,30 @@ def test_the_gate_holds_on_an_approved_week_too(tropical):
     assert _slot(tropical, DAYS[3], "dinner")["meal"] == "Chili"
 
 
-def test_the_persons_own_do_it_anyway_gets_past(tropical):
-    """The override is an ANSWER (2026-09-30): the dish is refused in one
-    chat turn, the person says "do it anyway" in the next, and only then
-    does it go through. A first-call override is refused like any call."""
-    allergen_gate._RECIPE_REFUSALS.clear()
+def test_the_persons_tap_on_plan_it_anyway_gets_past(tropical, in_chat):
+    """The override is a TAP (Emily, 2026-11-09): the dish is refused, a
+    typed "do it anyway" in the next turn is refused too, and only the tap
+    on the refusal's button — for that exact dish — goes through."""
+    from conftest import tap_anyway
+    with pytest.raises(_wp.SlotRefused) as swap_refused:
+        tools.swap_meal_in_plan_for_chat(tropical, DAYS[3], "Tropical Fruit Cup", slot="dinner", override=True)
+    with pytest.raises(_wp.SlotRefused) as plan_refused:
+        tools.plan_meal_for_chat(DAYS[5], "Tropical Fruit Cup", slot="snack", weekly_plan_id=tropical, override=True)
     allergen_gate.begin_chat_turn()
     with pytest.raises(_wp.SlotRefused):
         tools.swap_meal_in_plan_for_chat(tropical, DAYS[3], "Tropical Fruit Cup", slot="dinner", override=True)
-    with pytest.raises(_wp.SlotRefused):
-        tools.plan_meal_for_chat(DAYS[5], "Tropical Fruit Cup", slot="snack", weekly_plan_id=tropical, override=True)
-    allergen_gate.begin_chat_turn()
-    out = tools.swap_meal_in_plan_for_chat(tropical, DAYS[3], "Tropical Fruit Cup", slot="dinner", override=True)
-    assert out["meal"] == "Tropical Fruit Cup" if "meal" in out else True
+    tap_anyway(swap_refused.value, tools.swap_meal_in_plan_for_chat, tropical, DAYS[3], "Tropical Fruit Cup", slot="dinner")
     assert _slot(tropical, DAYS[3], "dinner")["meal"] == "Tropical Fruit Cup"
-    tools.plan_meal_for_chat(DAYS[5], "Tropical Fruit Cup", slot="snack", weekly_plan_id=tropical, override=True)
+    tap_anyway(plan_refused.value, tools.plan_meal_for_chat, DAYS[5], "Tropical Fruit Cup", slot="snack", weekly_plan_id=tropical)
     assert _slot(tropical, DAYS[5], "snack")["meal"] == "Tropical Fruit Cup"
 
 
-def test_the_agents_tool_table_points_at_the_gated_twins_and_says_what_override_is():
+def test_the_agents_tool_table_points_at_the_gated_twins_and_offers_the_model_no_override():
     assert agent.TOOL_FUNCTIONS["plan_meal"] is tools.plan_meal_for_chat
     assert agent.TOOL_FUNCTIONS["swap_meal_in_plan"] is tools.swap_meal_in_plan_for_chat
-    for name in ("plan_meal", "swap_meal_in_plan"):
+    for name in ("plan_meal", "swap_meal_in_plan", "add_recipe"):
         schema = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == name)
-        override = schema["input_schema"]["properties"]["override"]
-        assert override["type"] == "boolean"
-        assert "in their own words" in override["description"]
-        assert "Never on your own initiative" in override["description"]
-        assert "override" not in schema["input_schema"]["required"]
+        assert "override" not in schema["input_schema"]["properties"]
 
 
 def test_the_chat_prompt_states_the_allergens_as_hard_exclusions():
@@ -664,7 +660,7 @@ def test_the_chat_prompt_states_the_allergens_as_hard_exclusions():
     folded = source.replace("\\\n", "")
     assert "`must_not_contain` — every member's dietary_restrictions and every hard household fact — is absolute" in folded
     assert "want me to pick something else?" in folded
-    assert "pass override=true only if the person then says in their own words to do it anyway" in folded
+    assert "only their tap on it saves it" in folded
     assert "Keep it anyway" not in source
 
 

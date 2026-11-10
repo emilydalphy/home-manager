@@ -830,6 +830,10 @@ class ChatAction(BaseModel):
     # where it shows (Emily, 2026-09-21) — an undo the household has to
     # find on another tab is not one. Only unbatch sets it today.
     undo: dict | None = None
+    # An allergy refusal's button (Emily, 2026-11-09): {token, label,
+    # dish}. The tap is POST /api/chat/save-anyway with the token, and it
+    # is the only thing that saves a dish the gate refused in chat.
+    save_anyway: dict | None = None
 
 
 class ChatResponse(BaseModel):
@@ -936,6 +940,10 @@ class OnboardingAnswersRequest(BaseModel):
     # snacks a day: 1-7, sent only once tapped — left out, the household
     # reads the default (snack_variety.default_snack_dishes: five at two a day).
     snack_dishes_per_week: int | None = None
+    # Sweet, savory or both (Emily, 2026-11-05), the snack step's last
+    # question: 'sweet' | 'savory' | 'both'. Left out, the household reads
+    # 'both' — the same as one that finished setup before it was asked.
+    snack_taste: str | None = None
     # Setup's "This week / Next week" (2026-10-14): 'this_week' |
     # 'next_week', the same words FirstPlanRequest.start takes. Sent here
     # because this post is the one write BOTH answers to sharing with
@@ -1847,6 +1855,13 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         saved_now = tools.get_household_memory()
         memory = dict(memory, snack_dishes_per_week=saved_now["snack_dishes_per_week"],
                       snack_dishes_per_week_set=saved_now["snack_dishes_per_week_set"])
+    if req.snack_taste is not None:
+        # Like the count above: a bad word never costs the rest of the
+        # answers — it is logged and the household reads 'both'.
+        try:
+            memory = dict(memory, **tools.edit_preference("snack_taste", req.snack_taste))
+        except Exception:
+            logger.exception("Onboarding snack taste save failed")
     if req.first_plan_start is not None:
         # Resolved NOW, by the same function the first plan is generated
         # through, and after the rhythm post (finishSetupAndReveal's order)
@@ -8546,6 +8561,8 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             tool_names_by_id[block_id] = (name, agent.read_tool_input(name, args or {}))
 
     by_category: dict[str, ChatAction] = {}
+    # Refusals with a "Save it anyway" button, one per refused call, in order.
+    refused: list[ChatAction] = []
     # Every day/slot a week write touched this turn, in call order — see
     # _whole_week_card below for what more than one of them becomes.
     week_days_touched: list[tuple[str, str]] = []
@@ -8556,7 +8573,15 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
         if not isinstance(content, list):
             continue
         for block in content:
-            if not isinstance(block, dict) or block.get("type") != "tool_result" or block.get("is_error"):
+            if isinstance(block, dict) and block.get("type") == "tool_result" and block.get("is_error"):
+                offer = tools.allergen_gate.offer_for_tool_use(block.get("tool_use_id"))
+                if offer:
+                    refused.append(ChatAction(
+                        kicker="Not saved" if offer["door"] == "recipe" else "Not planned",
+                        change=offer["dish"], save_anyway={k: offer[k] for k in ("token", "label", "dish")},
+                    ))
+                continue
+            if not isinstance(block, dict) or block.get("type") != "tool_result":
                 continue
             name, args = tool_names_by_id.get(block.get("tool_use_id"), (None, None))
             if not name or agent.is_read_only_tool(name):
@@ -8719,7 +8744,13 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
     if whole_week and "week" in by_category and "approved" not in by_category["week"].change.lower():
         by_category["week"] = whole_week
 
-    return list(by_category.values())
+    # One button per refused dish: a model that tried the same dish twice
+    # this turn offers the latest refusal's button, not two.
+    latest: dict[tuple, ChatAction] = {}
+    for card in refused:
+        latest.pop((card.kicker, card.change.lower()), None)
+        latest[(card.kicker, card.change.lower())] = card
+    return list(by_category.values()) + list(latest.values())
 
 
 _SLOT_PLURALS = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinners", "snack": "snacks"}
@@ -8886,6 +8917,7 @@ def chat(req: ChatRequest, request: Request):
     # signed cookie so a caller can't choose whose history they land in.
     _enforce_rate_limit(request, "chat")
     session_id, history, is_new_sitting = _chat_session_state(request)
+    tools.allergen_gate.set_chat_conversation(session_id)
     try:
         reply, updated_history = run_agent_turn(
             history, req.message,
@@ -8941,6 +8973,7 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
     def run():
         token = agent._WEEK_GEN_PROGRESS.set(on_item)
         progress_token = agent._TURN_PROGRESS.set(on_progress)
+        tools.allergen_gate.set_chat_conversation(session_id)
         try:
             reply, updated_history = run_agent_turn(
                 history, message,
@@ -8986,6 +9019,69 @@ def chat_stream(req: ChatRequest, request: Request):
         ),
         what="Chat stream", carries_on="the turn continues",
     )
+
+
+class SaveAnywayRequest(BaseModel):
+    token: str = ""
+
+
+# Said when the tap's token is unknown, spent, from another conversation or
+# household, or past allergen_gate.RECIPE_OVERRIDE_WINDOW_SECONDS. One
+# sentence for all of them, so a token from elsewhere learns nothing.
+SAVE_ANYWAY_GONE = "This one has expired. Ask me again and I’ll check it."
+SAVE_ANYWAY_FAILED = "That didn’t work just now — nothing was saved."
+
+
+@app.post("/api/chat/save-anyway")
+def chat_save_anyway(req: SaveAnywayRequest, request: Request):
+    """
+    The tap on an allergy refusal's "Save it anyway" / "Plan it anyway"
+    button under a chat reply (Emily, 2026-11-09) — the only way a dish the
+    gate refused in chat gets saved. No typed reply arms it.
+
+    The household is the session's and the conversation is the signed
+    cookie's (_chat_session_id); nothing in the body names either, so a
+    token can only be spent in the conversation that was shown it. The
+    refused tool call is replayed exactly as the model made it, with
+    override on, inside allergen_gate.armed_for: the gate still runs, and
+    lets through only the exact dish (name and list) the button was for.
+    """
+    _enforce_rate_limit(request, "chat")
+    from .tools import allergen_gate as _gate
+    session_id = _chat_session_id(request)
+    offer = _gate.take_offer(req.token, session_id)
+    fn = agent.TOOL_FUNCTIONS.get(offer["tool"]) if offer else None
+    if not offer or fn is None:
+        return JSONResponse(status_code=410, content={"status": "gone", "said": SAVE_ANYWAY_GONE})
+    args = dict(agent.read_tool_input(offer["tool"], offer["input"]))
+    args["override"] = True
+    dish = offer["dish"]
+    with _gate.armed_for(offer):
+        try:
+            fn(**args)
+        except tools.SlotRefused as refusal:
+            # Something the button never named (an allergy added since, a
+            # re-checked draft): refused again, with a fresh button for
+            # what it says now when that refusal offers one.
+            token = _gate.record_offer(refusal, offer["tool"], offer["input"], None)
+            body = {"status": "refused", "said": str(refusal)}
+            if token:
+                body["save_anyway"] = {"token": token, "label": offer["label"], "dish": dish}
+            return JSONResponse(status_code=409, content=body)
+        except ValueError as e:
+            return JSONResponse(status_code=409, content={"status": "refused", "said": str(e)})
+        except Exception:
+            # Never a 500 under a button: the replay crashed before (or
+            # instead of) its write. Logged by name only, like the chat's
+            # own tool failures; the person gets one plain sentence.
+            logger.exception("Save it anyway replay of %s failed", offer["tool"])
+            tools.record_error("tool", where=offer["tool"], detail="save_anyway")
+            return JSONResponse(status_code=409, content={"status": "failed", "said": SAVE_ANYWAY_FAILED})
+    verb = "saved" if offer["door"] == "recipe" else "planned"
+    said = f"{dish} was {verb}."
+    _gate.note_tap(session_id, said)
+    _category, tab, href = _categorize_tool(offer["tool"])
+    return {"status": verb, "said": said, "tab": tab, "href": href}
 
 
 @app.post("/api/chat/warm")

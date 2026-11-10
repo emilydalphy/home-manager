@@ -73,7 +73,7 @@ def _overloaded():
 
 @pytest.fixture(autouse=True)
 def _clean_refusals():
-    allergen_gate._RECIPE_REFUSALS.clear()
+    allergen_gate._OFFERS.clear()
     agent._REFUSED_DRAFTS.clear()
     # run_agent_turn sets this ContextVar in the test thread, and it would
     # otherwise outlive the test: a later /api/chat with a stubbed turn
@@ -81,7 +81,7 @@ def _clean_refusals():
     token = agent.LAST_TURN_USAGE.set({})
     yield
     agent.LAST_TURN_USAGE.reset(token)
-    allergen_gate._RECIPE_REFUSALS.clear()
+    allergen_gate._OFFERS.clear()
     agent._REFUSED_DRAFTS.clear()
 
 
@@ -270,30 +270,26 @@ def egg_and_dairy():
     tools.set_member_dietary_restrictions("Sam", ["dairy free"])
 
 
-def test_save_it_anyway_saves_exactly_the_refused_draft(writer, egg_and_dairy):
+def test_save_it_anyway_saves_exactly_the_refused_draft(writer, egg_and_dairy, in_chat):
     writer["recipes"] = [_recipe("Flour", "Buttermilk")]
-    allergen_gate.begin_chat_turn()
-    with pytest.raises(tools.SlotRefused, match="buttermilk"):
+    with pytest.raises(tools.SlotRefused, match="buttermilk") as refused:
         agent.TOOL_FUNCTIONS["add_recipe"](name="Fluffy Pancakes", brief="weekend")
     # Were the dish written again now, this is what would come back.
     writer["recipes"] = [_recipe("Flour", "Buttermilk", "Eggs")]
 
-    allergen_gate.begin_chat_turn()
-    agent.TOOL_FUNCTIONS["add_recipe"](name="Fluffy Pancakes", brief="weekend", override=True)
+    tap_anyway(refused.value, agent.TOOL_FUNCTIONS["add_recipe"], name="Fluffy Pancakes", brief="weekend")
 
     assert len(writer["specs"]) == 2, "the accepted draft is saved, not re-written"
     items = [i["item"] for i in tools.get_recipe("Fluffy Pancakes")["ingredients"]]
     assert "Buttermilk" in items and "Eggs" not in items
 
 
-def test_save_it_anyway_on_a_refused_name_still_checks_every_other_allergy(writer, egg_and_dairy):
-    allergen_gate.begin_chat_turn()
-    with pytest.raises(tools.SlotRefused):
+def test_save_it_anyway_on_a_refused_name_still_checks_every_other_allergy(writer, egg_and_dairy, in_chat):
+    with pytest.raises(tools.SlotRefused) as refused:
         agent.TOOL_FUNCTIONS["add_recipe"](name="Buttermilk Pancakes", brief="weekend")
     writer["recipes"] = [_recipe("Flour", "Buttermilk", "Eggs"), _recipe("Flour", "Buttermilk")]
 
-    allergen_gate.begin_chat_turn()
-    agent.TOOL_FUNCTIONS["add_recipe"](name="Buttermilk Pancakes", brief="weekend", override=True)
+    tap_anyway(refused.value, agent.TOOL_FUNCTIONS["add_recipe"], name="Buttermilk Pancakes", brief="weekend")
 
     told = writer["specs"][0]["must_not_contain"]
     assert any("egg" in str(m).lower() for m in told), "the egg allergy is still told to the writer"
@@ -316,11 +312,10 @@ def test_a_refusal_names_every_food_and_person_it_clashed_on(writer, egg_and_dai
     assert "emily" in said and "sam" in said
 
 
-def test_save_it_anyway_refuses_a_draft_with_a_clash_it_was_not_told(writer):
+def test_save_it_anyway_refuses_a_draft_with_a_clash_it_was_not_told(writer, in_chat):
     tools.add_member("Sam")
     tools.set_member_dietary_restrictions("Sam", ["dairy free"])
     writer["recipes"] = [_recipe("Flour", "Buttermilk", "Eggs")]
-    allergen_gate.begin_chat_turn()
     with pytest.raises(tools.SlotRefused) as first:
         agent.TOOL_FUNCTIONS["add_recipe"](name="Thin Griddle Cakes", brief="thin")
     assert "egg" not in str(first.value).lower(), "nobody here was egg-allergic yet"
@@ -328,9 +323,8 @@ def test_save_it_anyway_refuses_a_draft_with_a_clash_it_was_not_told(writer):
     tools.add_member("Emily")
     tools.set_member_dietary_restrictions("Emily", ["egg allergy"])
 
-    allergen_gate.begin_chat_turn()
     with pytest.raises(tools.SlotRefused) as again:
-        agent.TOOL_FUNCTIONS["add_recipe"](name="Thin Griddle Cakes", brief="thin", override=True)
+        tap_anyway(first.value, agent.TOOL_FUNCTIONS["add_recipe"], name="Thin Griddle Cakes", brief="thin")
 
     assert "egg" in str(again.value).lower()
     assert tools.existing_recipe_named("Thin Griddle Cakes") is None
@@ -412,7 +406,7 @@ def test_writing_steps_for_a_recipe_with_none_carries_the_change_and_the_gate(wr
 # propose_plan_changes — through the card's real gate
 # --------------------------------------------------------------------------
 
-from conftest import household_today  # noqa: E402
+from conftest import household_today, tap_anyway  # noqa: E402
 import datetime as _dt  # noqa: E402
 
 DAY1 = household_today().isoformat()

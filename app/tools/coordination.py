@@ -107,6 +107,33 @@ _CONFLICT_STOPWORDS = frozenset({
 # is soy sauce; satay is peanut). Accents are folded before matching
 # (check_meal_conflicts), so "gruyère" and "crème fraîche" are listed
 # plain.
+# Emily, 2026-11-09 (four food rules): Thai curry pastes are made with
+# shrimp paste and often fish sauce, and kimchi is salted with fish sauce,
+# salted shrimp or anchovy. Held for a fish AND a shellfish avoidance
+# unless the line says vegan, vegetarian or fish-free
+# (_FISH_PASTE_CLAIM_RE). Only the named pastes: "curry powder", "curry
+# leaves" and a korma or Japanese curry paste are not these.
+_FISH_PASTE_WORDS = frozenset({
+    "red curry paste", "green curry paste", "yellow curry paste", "panang curry paste",
+    "penang curry paste", "massaman curry paste", "thai curry paste", "panang paste",
+    "penang paste", "massaman paste", "kimchi", "kimchee",
+})
+# Gluten only, never a wheat allergy (Emily, 2026-11-09): oats are held
+# for a gluten or celiac avoidance because most oats are grown and milled
+# beside wheat, and oat milk is made from them; Worcestershire's malt
+# vinegar is barley; bouillon and stock powders are bound with wheat;
+# barley (mugi) miso; tonkatsu sauce is brewed with soy sauce. A line
+# that says gluten-free is believed (_GLUTEN_FREE_SEGMENT_RE). Their fish
+# and soy holds stay where they are. Court-bouillon is a poaching liquid,
+# not a cube (_COMPOUND_EXCEPTIONS).
+_GLUTEN_ONLY_WORDS = frozenset({
+    "oat", "oats", "oatmeal", "worcestershire", "bouillon", "stock cube", "stock powder",
+    "miso", "tonkatsu sauce",
+    # Review, 2026-11-09: the same jars by their other names. A bouillon
+    # base is often sold as "chicken base"; never "base" alone.
+    "worcester sauce", "lea perrins", "lea and perrins", "oxo", "chicken base", "beef base",
+    "vegetable base", "soup base", "stock base",
+})
 _WHEAT_WORDS = {
     "flour", "bread", "pasta", "noodles", "couscous", "seitan", "barley", "rye", "bulgur",
     "breadcrumb", "soy sauce", "wheat", "spelt", "farro", "freekeh", "semolina", "durum",
@@ -174,6 +201,12 @@ _WHEAT_WORDS = {
     "brownie mix", "cookie mix", "cornbread mix", "stuffing mix", "gravy mix",
     "frozen waffle", "eggo", "chicken nugget", "fish stick", "fish finger", "breaded",
     "pierogi", "pierogy", "perogy", "perogies", "pizza base", "pizza shell", "crumpet",
+    # First-week hunt (2026-11-10): breads and breaded foods by definition.
+    # The approve sweep re-picked a celiac child's lunch onto the library's
+    # Misal Pav ("Pav rolls" is a wheat roll), and chat or a Tweak's
+    # "Something else" put French Toast, Chicken Katsu and a schnitzel on
+    # the week on the name alone. Whole words: "pav" never reaches pavlova.
+    "pav", "french toast", "schnitzel", "katsu", "tonkatsu",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -201,7 +234,7 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
                   # Library audit 2026-10-26: "Frozen seafood mix" is shrimp,
                   # squid and mussels. One word: this family's words are
                   # also plan_quality's title-warning vocabulary.
-                  "seafood"},
+                  "seafood"} | _FISH_PASTE_WORDS,
     # No "sole", "pike" or "bass": ordinary words ("The Sole Survivor",
     # "Pike Place", "Bass-Boosted") that held dishes with no fish in them.
     # "sea bass" is kept whole. No "caesar" in any family: the dressing's
@@ -211,6 +244,8 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
              "sea bass", "snapper", "pollock", "mahi", "swordfish", "catfish",
              "herring", "flounder", "grouper", "monkfish", "branzino", "carp", "perch",
              "lox", "caviar", "roe", "bonito", "dashi", "worcestershire",
+             # Worcestershire by its other names (2026-11-09): anchovy.
+             "worcester sauce", "lea perrins", "lea and perrins",
              "nam pla", "surimi", "caesar dressing", "puttanesca",
              # Library audit 2026-10-26: Hake fillets went through.
              "hake", "basa", "pangasius", "barramundi", "pomfret", "sablefish",
@@ -218,7 +253,7 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
              "bacalao", "bacalhau", "katsuobushi", "kingfish", "arctic char",
              "whitefish", "rockfish", "redfish", "bluefish", "milkfish",
              # Not bare "sole" (see above), but the fillet and the named ones.
-             "sole fillet", "dover sole", "lemon sole"},
+             "sole fillet", "dover sole", "lemon sole"} | _FISH_PASTE_WORDS,
     # "buttermilk" is here rather than left to "butter"/"milk": whole-word
     # matching reaches neither half of it, and it is unambiguously dairy —
     # the opposite call from "peanut butter", which is spelled with a dairy
@@ -242,7 +277,7 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
               # Library audit 2026-10-26: Mexican crema is cream, and
               # cajeta and khoya are milk cooked down.
               "crema", "cajeta", "khoya", "khoa", "mawa"},
-    "gluten": set(_WHEAT_WORDS),
+    "gluten": set(_WHEAT_WORDS) | _GLUTEN_ONLY_WORDS,
     "wheat": set(_WHEAT_WORDS),
     # "whites" is matched as written (see _VERBATIM_ALIASES), never as
     # "white": white wine and white beans are not egg.
@@ -287,7 +322,11 @@ _MEAT_ALIASES: dict[str, set[str]] = {
              "nduja", "soppressata", "capicola", "chicharron", "chicharrones", "tonkatsu",
              "jamon",
              # Library audit 2026-10-26.
-             "lard", "baby back ribs", "lap cheong", "lap chong", "morcilla"},
+             "lard", "baby back ribs", "lap cheong", "lap chong", "morcilla",
+             # Emily, 2026-11-09: andouille is a pork sausage unless the line
+             # names another meat (chicken or turkey andouille,
+             # _LINE_ONLY_EXCEPTIONS).
+             "andouille"},
     "beef": {"sirloin", "ribeye", "rib eye", "bresaola", "filet mignon", "ground chuck",
              "chuck roast"},
 }
@@ -562,6 +601,8 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     # That is the failure this whole check exists to prevent, so the false
     # positive matters more here than the rarity of the restriction.
     (frozenset({"olive", "olives"}), re.compile(r"\bolive\s+oils?\b")),
+    # A court-bouillon is water, wine and aromatics, not a stock cube.
+    (frozenset({"bouillon", "bouillons"}), re.compile(r"\bcourt[\s-]bouillons?\b")),
     *_LIBRARY_COMPOUNDS,
     # Red meat's (2026-10-20): goat's cheese and milk are dairy, not the
     # animal; lamb's lettuce and lamb's quarters are greens. Matched on the
@@ -609,7 +650,8 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     )),
     (frozenset({"pasta", "pastas"}), re.compile(
         r"\b(?:chickpea|lentil|rice)\s+pastas?\b"
-    )),
+    )),    # Pav bhaji masala is the spice blend, not the roll (2026-11-10).
+    (frozenset({"pav", "pavs"}), re.compile(r"\bpav\s+bhaji\s+masala\b")),
 )
 _LIBRARY_PHRASE_ONLY = frozenset((e[0], e[1]) for e in _LIBRARY_COMPOUNDS)
 
@@ -655,10 +697,11 @@ _EGG_FREE_DAIRY = _ALLERGEN_ALIASES["dairy"] - _ALLERGEN_ALIASES["egg"]
 _DAIRY_FREE_EGG = (_ALLERGEN_ALIASES["egg"] | {"egg"}) - _ALLERGEN_ALIASES["dairy"]
 _DIET_PLANT_QUALIFIERS: tuple[tuple, ...] = (
     # "vegan parmesan", "vegan eggs", "plant-based chorizo".
-    (_spellings(_VEGAN_WORDS), re.compile(r"\b(?:vegan|plant[\s-]based)" + _QUALIFIED), _DIET_LABELS),
+    (_spellings(_VEGAN_WORDS), re.compile(r"(?<!non-)(?<!non )(?<!not )\b(?:vegan|plant[\s-]based)" + _QUALIFIED),
+     _DIET_LABELS),
     # "veggie sausage", "meatless crumbles", "vegetarian oyster sauce".
     (_spellings(_VEGETARIAN_WORDS), re.compile(
-        r"\b(?:vegetarian|veggie|meatless|meat[\s-]free)" + _QUALIFIED), _DIET_LABELS),
+        r"(?<!non-)(?<!non )(?<!not )\b(?:vegetarian|veggie|meatless|meat[\s-]free)" + _QUALIFIED), _DIET_LABELS),
     # "dairy-free cheese", "non-dairy whipped topping" — not a custard or a
     # mousse, which still has its eggs.
     (_spellings(_EGG_FREE_DAIRY), re.compile(r"\b(?:dairy[\s-]free|non[\s-]dairy)" + _QUALIFIED),
@@ -668,7 +711,52 @@ _DIET_PLANT_QUALIFIERS: tuple[tuple, ...] = (
 )
 
 
+# A Thai curry paste or kimchi line that says it is vegan, vegetarian or
+# fish-free ANYWHERE on it — "vegan kimchi", "Red curry paste (vegetarian)"
+# — is believed for fish and shellfish (Emily, 2026-11-09). The whole line
+# is the span, so the claim covers the paste wherever it sits. Not "not
+# vegan".
+_FISH_PASTE_ALT = "|".join(
+    r"\s+".join(map(re.escape, w.split())) + "s?" for w in sorted(_FISH_PASTE_WORDS, key=len, reverse=True)
+)
+_NOT_A_CLAIM = r"(?<!non-)(?<!non )(?<!not )"
+_FISH_PASTE_CLAIM_RE = re.compile(
+    _NOT_A_CLAIM + r"\b(?:vegan|vegetarian|fish[\s-]free)\s+"
+    # Only plain descriptors between ("Vegan gluten-free Thai red curry paste").
+    r"(?:(?:gluten[\s-]?free|gf|organic|thai|vegan|vegetarian|fish[\s-]free)\s+){0,3}"
+    r"(?:" + _FISH_PASTE_ALT + r")\b"
+)
+# The claim or the meat said in a bracket straight after the food — "Red
+# curry paste (vegetarian)", "Andouille sausage (chicken)" — is moved in
+# front of it before folding (folding turns brackets into spaces, and a
+# comma's "andouille, chicken thighs" must not read the same). Only a
+# bracket holding nothing but that word; anything longer is held.
+_BRACKET_QUALIFIER_RE = re.compile(
+    r"\b(" + _FISH_PASTE_ALT + r"|andouilles?(?:\s+sausages?)?)\s*\(\s*"
+    r"(vegan|vegetarian|fish[\s-]free|chicken|turkey)\s*\)",
+    re.IGNORECASE,
+)
+
+
+def _bracket_qualifier_first(text: str) -> str:
+    """"Kimchi (vegan)" read as "vegan Kimchi" — ingredient lines only."""
+    return _BRACKET_QUALIFIER_RE.sub(r"\2 \1", text or "")
+
+
+# Read only on an ingredient LINE, never a dish's name (review,
+# 2026-11-09: "Chicken Andouille Gumbo" is a name, not a list).
+_LINE_ONLY_EXCEPTIONS: tuple[tuple, ...] = (
+    # Chicken or turkey andouille is that meat, not pork (2026-11-09):
+    # the meat right before it ("smoked turkey andouille"), or in a
+    # bracket right after it (see _bracket_qualifier_first).
+    (frozenset({"andouille", "andouilles"}), re.compile(r"\b(?:chicken|turkey)\s+andouilles?\b")),
+)
+
 _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
+    (_spellings(_FISH_PASTE_WORDS), _FISH_PASTE_CLAIM_RE),
+    # "fish-free" is not fish: the word a fish avoidance would trip on in
+    # "fish-free red curry paste".
+    (frozenset({"fish", "fishes"}), re.compile(r"\bfish[\s-]free\b")),
     # A dairy word the line or the name itself says is a plant version:
     # "dairy-free butter", "vegan cream cheese", "non-dairy milk". The
     # qualifier has to come FIRST and sit right against the word (one
@@ -1196,6 +1284,8 @@ def _discounted(variant: str, match: re.Match, text: str, mode: str = "line", la
     tables = _COMPOUND_EXCEPTIONS + (_PLANT_QUALIFIER_EXCEPTIONS if mode != "strict" else ())
     if mode == "listed" and variant in _FAMILY_WORDS:
         tables = _COMPOUND_EXCEPTIONS
+    if mode == "line":
+        tables = tables + _LINE_ONLY_EXCEPTIONS
     if label in _DIET_LABELS:
         # A diet entry's third element is who it SPEAKS for (the shared
         # tables' third element is who they never speak for).
@@ -1830,8 +1920,10 @@ def check_meal_conflicts(
     else:
         name_kind = "strict"
     raw_segments = [(name, name_kind)]
-    raw_segments += [(text, name_kind if is_note else "line") for text, is_note in lines]
-    raw_segments += [((i.get("item") or ""), "line") for i in _plates.side_ingredients(sides)]
+    raw_segments += [(text, name_kind) if is_note else (_bracket_qualifier_first(text), "line")
+                     for text, is_note in lines]
+    raw_segments += [(_bracket_qualifier_first(i.get("item") or ""), "line")
+                     for i in _plates.side_ingredients(sides)]
     normalised = [(_fold(s), kind) for s, kind in raw_segments]
     normalised = [(s, kind) for s, kind in normalised if s]
     segments = [s for s, _ in normalised]

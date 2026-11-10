@@ -16,7 +16,7 @@ ARITY = dict(well=1, pool=(2, 3), rice=7, mash=7, band=4, strips=(6, 8), slices=
              cauliflower=(5, 7), calamari=(3, 7), orzo=(5, 6), shortpasta=(5, 7), scallops=(4, 6), fritters=(7, 9),
              sausages=(1, 7), tart=(1, 7), hotdog=(1, 4), avocado=(1, 7), leeks=(1, 6), sardines=(1, 5), porkbelly=(1, 6), volauvent=(1, 8),
              croissant=(1, 8), biscuits=(1, 8), braidbread=(1, 9), danish=(1, 8), banana=(1, 7), tamales=(1, 7), gimbap=(1, 8),
-             pitapocket=(1, 8), kibbeh=(1, 8), lettucecups=(1, 9))
+             pitapocket=(1, 8), kibbeh=(1, 8), lettucecups=(1, 9), dates=(1, 7))
 bad = []
 for r in recs:
     name = r["dish_name"]
@@ -46,7 +46,7 @@ LOCKED = json.load(open(f"{H}/locked.json"))
 MEALS = {d["dish_name"]: d["meal"] for d in json.load(open(f"{os.path.dirname(H)}/data/recipe_library_seed.json"))["dishes"]}
 FOOD = set(ARITY) - {"well", "pool"}
 WHOLE = {"tart", "hotdog", "baguette", "flautas", "phyllo", "loaf", "ringbread", "skewers", "tacos", "sandwiches", "toast", "cups", "omelette", "steak", "bread", "fillet", "chop", "potatoes", "wrap", "pizza", "pancakes", "flatbread", "pastries", "stuffed", "rolls", "patties", "glass", "wedgering", "noodles", "cutlet", "block", "bowl", "dipbowl", "drumstick", "muffin", "quesadilla", "burger", "pretzel", "waffle", "sando", "onigiri", "bao", "spiral", "ribs", "tamagoyaki", "summerroll", "madeleine", "smallfish", "wholefish", "sticks", "teaegg",
-         "croissant", "biscuits", "braidbread", "danish", "tamales", "gimbap", "pitapocket", "kibbeh", "lettucecups"}
+         "croissant", "biscuits", "braidbread", "danish", "tamales", "gimbap", "pitapocket", "kibbeh", "lettucecups", "dates"}
 PASTA = re.compile(r"pasta|spaghetti|penne|rigatoni|bucatini|linguine|fettuccine|pappardelle|tagliatelle|carbonara|tortellini|ravioli|bolognese|macaroni|mac and cheese|ziti|orecchiette|fusilli|cacio|lasagn", re.I)
 SOUPY = re.compile(r"soup|salad|e fagioli|e ceci|e piselli|lasagn|bake", re.I)
 DRINK = re.compile(r"smoothie(?! bowl)|\\blassi|lemonade|horchata|milkshake", re.I)
@@ -158,6 +158,8 @@ for r in recs:
                 ds, dr = (1 if n_ > 2 else 1.05), (14 if n_ > 2 else (12 if n_ > 1 else 0))
             r_ = v(ri_, dr if n_ > 1 else 0)
             reach = (v(ri_ + 1, 50), v(ri_ + 2, 50), r_ * (1.05 if o[0] == "kibbeh" else 1) + one * v(si_, ds))
+        elif o[0] == "dates":
+            reach = (v(5, 50), v(6, 50), v(4, 18 if v(2, 5) > 1 else 0) + 10.6 * v(3, 1))
         elif o[0] == "braidbread":
             bun = v(3, "loaf") == "bun"
             n_ = v(4, 3 if bun else 1); sz_ = v(5, 1 if bun else 1.1)

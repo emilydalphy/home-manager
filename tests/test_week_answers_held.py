@@ -23,7 +23,7 @@ import pytest
 from app import agent, tools
 from app.db import get_conn
 from app.tools import swap_in_place as sip
-from app.tools import typed_requests
+from app.tools import draft_flags, typed_requests
 
 
 def _monday(offset_weeks: int = 1) -> str:
@@ -207,7 +207,7 @@ def test_a_dish_asked_for_on_a_named_night_goes_on_that_night(week):
     assert tools.get_week_menu(plan_id)["draft_opener"][0] == "Tacos Tuesday, as you asked."
 
 
-def test_a_named_night_that_cannot_take_it_is_said_never_as_asked(week):
+def test_two_asks_on_one_named_night_the_first_keeps_it(week):
     tools.add_member("Emily")
     wk = _monday()
     tools.save_week_intake(wk, freeform="Tacos Tuesday please. Chili Tuesday too")
@@ -216,10 +216,15 @@ def test_a_named_night_that_cannot_take_it_is_said_never_as_asked(week):
     plan_id = week(days, report)
     by_date = {d["date"]: d["meal"] for d in _dinners(plan_id)}
     dates = tools._week_dates(wk)
-    assert by_date[dates[1]] == "Beef chili" and by_date[dates[5]] == "Beef tacos", by_date
+    # Snag rule 7 (Emily, 2026-11-09) now owns two asks on one night: no
+    # lunch to share, equally specific, so the one asked for first (tacos)
+    # keeps Tuesday and the chili goes to the nearest night (Monday and
+    # Wednesday tie; later wins) — said in the "Worth knowing" line.
+    assert by_date[dates[1]] == "Beef tacos" and by_date[dates[2]] == "Beef chili", by_date
     opener = " ".join(tools.get_week_menu(plan_id)["draft_opener"])
     assert "Saturday, as you asked" not in opener, opener
-    assert "Beef tacos is on Saturday, not Tuesday" in opener, opener
+    assert [f["text"] for f in draft_flags.plan_flags(plan_id)] == [
+        "You asked for Beef tacos and Beef chili on Tuesday, so Beef chili is Wednesday dinner."]
 
 
 # ---------- pinned: Dinners 0 ----------

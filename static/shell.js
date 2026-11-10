@@ -13027,6 +13027,13 @@
     { key: 'kids_differ', label: 'The children often eat something else' },
     { key: 'plate_your_own', label: 'We put it out and everyone plates their own' }
   ];
+  // Sweet, savory or both (Emily, 2026-11-05) — the snack step's last
+  // question, changeable here under Food. Unset reads as Both.
+  var WWK_SNACK_TASTES = [
+    { key: 'sweet', label: 'Sweet' },
+    { key: 'savory', label: 'Savory' },
+    { key: 'both', label: 'Both' }
+  ];
   // The two time limits, as the same chips setup asks (onboarding.html's
   // WEEKNIGHT_MAX_OPTIONS / LUNCH_MAX_OPTIONS; 0 = no limit). Unset reads as
   // each column's own default: dinner 0 (no cap), lunch 20 (time_caps).
@@ -15222,6 +15229,9 @@
     // it to the planner (meal_preferences.table_style, week_intake).
     html += wwkLead('At the table') + '<div class="wwk-chips">' +
       WWK_TABLE_STYLES.map(function (o) { return wwkChip(o.label, 'data-wwk="table-style" data-value="' + o.key + '"', mem.table_style === o.key ? 'on' : ''); }).join('') + '</div>';
+    var snackTaste = mem.snack_taste || 'both';
+    html += wwkLead('Snacks') + '<div class="wwk-chips">' +
+      WWK_SNACK_TASTES.map(function (o) { return wwkChip(o.label, 'data-wwk="snack-taste" data-value="' + o.key + '"', snackTaste === o.key ? 'on' : ''); }).join('') + '</div>';
     html += wwkLead('Proteins', 'tap once for a favorite, twice to skip it') + '<div class="wwk-chips">' +
       WWK_PROTEINS.map(function (label) {
         return wwkChip(label, 'data-wwk="protein" data-value="' + label.toLowerCase() + '"', wwkProteinState(mem, label.toLowerCase()).state);
@@ -15371,6 +15381,11 @@
   function wwkSetTableStyle(key) {
     if (wwkMem().table_style === key) return;
     wwkSavePreference('taste', 'table_style', key, function () { wwkMem().table_style = key; });
+  }
+
+  function wwkSetSnackTaste(key) {
+    if ((wwkMem().snack_taste || 'both') === key) return;
+    wwkSavePreference('taste', 'snack_taste', key, function () { wwkMem().snack_taste = key; });
   }
 
   function wwkSaveEatingStyle(text) {
@@ -16050,6 +16065,7 @@
         case 'cuisine-remove': return wwkListRemove('taste', 'cuisine_preferences', 'cuisine_preferences', value);
         case 'cuisine': return wwkToggleCuisine(value);
         case 'table-style': return wwkSetTableStyle(value);
+        case 'snack-taste': return wwkSetSnackTaste(value);
         case 'time-limit': return wwkSetTimeLimit(t.getAttribute('data-field'), parseInt(value, 10));
         case 'rhythm': return wwkSetRhythm(t.getAttribute('data-field'), value);
         case 'cooking-who': return wwkSetCookingWho(value);
@@ -17091,7 +17107,7 @@
   }
 
   // ---------- The first-open tour (static/tour.js) ----------
-  // Loop Board "Build the in-app tour (Option A)", Emily 2026-10-18. Six
+  // Loop Board "Build the in-app tour (Option A)", Emily 2026-10-18. Five
   // stops over the real screens, ending back on the draft. tour.js draws
   // it; this is the shell's half: when it starts, the tab switching it
   // borrows, and recording that it's over (GET/POST /api/tour — per adult,
@@ -29531,6 +29547,12 @@
     wrap.appendChild(bubble);
     if (dishTiles) wrap.appendChild(dishTiles);
     (actions || []).forEach(function (action) {
+      // An allergy refusal's button (Emily, 2026-11-09): the tap is the
+      // only thing that saves a dish chat refused — no typed reply does.
+      if (action.save_anyway && action.save_anyway.token) {
+        wrap.appendChild(askSaveAnywayChip(action));
+        return;
+      }
       // A fact the turn remembered ("the kids won't eat shrimp") is shown
       // as what it is — Remembered · Kids: no shrimp — with "Not quite"
       // opening What we know to correct it there (learning etiquette §7:
@@ -29614,6 +29636,54 @@
       wrap.appendChild(card);
     });
     return wrap;
+  }
+
+  // "Not planned · Peanut Noodles · Plan it anyway" under a refusal: the
+  // Remembered chip's shape, its label in the allergy line's ink. The tap
+  // posts only the token — the server knows the household and the
+  // conversation — and is spent either way: the button goes once it has
+  // answered, and a fresh one comes back only if the server offers it.
+  function askSaveAnywayChip(action) {
+    var offer = action.save_anyway;
+    var chip = document.createElement('div');
+    chip.className = 'ask-remembered is-refused';
+    chip.innerHTML =
+      '<span class="ask-remembered-label">' + escapeHtml(action.kicker) + '</span>' +
+      '<span class="ask-remembered-text">' + escapeHtml(action.change) + '</span>' +
+      '<button type="button" class="ask-remembered-fix">' + escapeHtml(offer.label || 'Save it anyway') + '</button>';
+    var btn = chip.querySelector('.ask-remembered-fix');
+    btn.addEventListener('click', async function () {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      try {
+        var res = await Api.fetch('/api/chat/save-anyway', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: offer.token }),
+        });
+        var out = {};
+        try { out = await res.json(); } catch (e) { out = {}; }
+        if (!res.ok) {
+          showToast(out.said || 'That didn’t work just now — nothing changed.');
+          if (out.save_anyway && out.save_anyway.token) {
+            offer = out.save_anyway;
+            btn.disabled = false;
+          } else {
+            btn.remove();
+          }
+          return;
+        }
+        btn.remove();
+        chip.querySelector('.ask-remembered-label').textContent = out.status === 'saved' ? 'Saved' : 'Planned';
+        chip.classList.remove('is-refused');
+        showToast(out.said || 'Done.');
+        if (out.tab || out.href) refreshStaleTabsFromActions([{ tab: out.tab, href: out.href }]);
+      } catch (e) {
+        showToast('No signal — try that once you’re back.');
+        btn.disabled = false;
+      }
+    });
+    return chip;
   }
 
   // The one signal there is for "this turn edited the draft, not approved

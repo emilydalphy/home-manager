@@ -128,7 +128,7 @@ def lines_changed(conn, snap: dict) -> list[dict]:
     return out
 
 
-def _restore_lines(conn, lines) -> None:
+def _restore_lines(conn, lines) -> set[int]:
     """
     Put the grocery lines the answer changed back as they read before it —
     on the household's terms (Emily's option (b), 2026-09-30):
@@ -147,9 +147,21 @@ def _restore_lines(conn, lines) -> None:
     A record written before this existed has no `grocery`, or carries the
     snapshot's raw before-image under it (no "before" key); both put
     nothing back, which is exactly what restore did before.
+
+    Returns the ids of the STANDING-WANT lines (source_weekly_plan_id NULL)
+    it declined to put back. restore re-links nothing to those: a want
+    subtracts the plan's share on the next rescale
+    (grocery._restate_standing_want), so a link to a share the line no
+    longer carries comes out of the household's own amount. The "after"
+    here is recorded before the "−"'s post-commit rescale rewrites the
+    line, so that rewrite also lands here — a salad on both ends of a
+    batch took the household's own head of lettuce on Undo (2026-11-09,
+    Emily: protect the household's number; the Undo's rescale re-ingests
+    the reheat's side anyway).
     """
     hh = household_id()
     known = columns(conn, "grocery_items")
+    declined: set[int] = set()
     for line in lines or []:
         if not isinstance(line, dict) or not isinstance(line.get("before"), dict) \
                 or "id" not in line["before"]:
@@ -161,6 +173,8 @@ def _restore_lines(conn, lines) -> None:
                 reinsert(conn, "grocery_items", [before])
             continue
         if now is None or now != after:
+            if now is not None and now.get("source_weekly_plan_id") is None:
+                declined.add(before["id"])
             continue
         cols = [c for c in before if c in known and c not in ("id", "household_id")]
         if cols:
@@ -169,9 +183,12 @@ def _restore_lines(conn, lines) -> None:
                 "WHERE id = ? AND household_id = ?",
                 (*[before[c] for c in cols], before["id"], hh),
             )
+    return declined
 
 
-FINGERPRINT_COLS = ("date", "slot", "slot_state", "cooked_status", "derived_from_json")
+# sides_json: a side removed between the answer and its Undo would otherwise
+# be put back by the restore — the Undo refuses instead (2026-11-09).
+FINGERPRINT_COLS = ("date", "slot", "slot_state", "cooked_status", "sides_json", "derived_from_json")
 
 
 def fingerprint(conn, entry_ids, holder_id: int) -> list[list]:
@@ -296,7 +313,7 @@ def restore(conn, record: dict, holder_id: int) -> None:
     # Rows put back on their old dates: a "first meal back" suggestion
     # naming one of them must still name a dinner before that meal.
     _weekly_plan._recheck_ready_made_after_redate(conn, sorted(snap_ids))
-    _restore_lines(conn, record.get("grocery"))
+    declined = _restore_lines(conn, record.get("grocery"))
     # A snapshot link comes back only for an entry that holds NO links now.
     # An entry still holding links is either untouched (they ARE the
     # snapshot's rows, and INSERT OR IGNORE would skip them anyway) or was
@@ -319,9 +336,13 @@ def restore(conn, record: dict, holder_id: int) -> None:
                 (hh, *sorted(snap_ids)),
             ).fetchall()
         }
+    # And none to a standing want _restore_lines left as it reads: its
+    # number is the household's, and a link to a share it no longer
+    # carries would be taken off it by the next rescale (2026-11-09).
     links = [
         l for l in record.get("links") or []
         if l.get("meal_plan_entry_id") not in holding
+        and l.get("grocery_item_id") not in declined
         and conn.execute(
             "SELECT 1 FROM grocery_items WHERE id = ? AND household_id = ?", (l["grocery_item_id"], hh),
         ).fetchone()

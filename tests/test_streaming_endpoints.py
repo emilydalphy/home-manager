@@ -287,7 +287,9 @@ def test_chat_stream_generator_delivers_a_reply_that_carries_an_action_card(monk
         # an Undo button on the card posts back. None on every card but
         # un-batching's, and it has to survive serialization like the rest.
         {"kicker": "Grocery list", "change": "Added milk", "tab": "grocery", "href": None,
-         "date": None, "slot": None, "remembered": False, "held": False, "undo": None},
+         "date": None, "slot": None, "remembered": False, "held": False, "undo": None,
+             # "save_anyway" joined on 2026-11-09: an allergy refusal's button.
+             "save_anyway": None},
     ]
 
 

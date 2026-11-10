@@ -138,3 +138,143 @@ def test_everyone_out_twice_moves_the_cook_without_taking_the_pound():
 
     assert _ids(D(4), "dinner") == [source], "the cook moved twice, onto the last night"
     assert _beef() == [("1 lb", True), ("12 oz", False)]
+
+
+# ---------- Shop: the two rows are ONE line (Emily 2026-11-09) ----------
+#
+# "One line, 1¾ lbs": the household's own amount and the plan's amount of
+# the same thing are one Shop row with the combined amount. Display only
+# (app/tools/week_lines.py stamps the pair with one `week_group`; the
+# screen's groCollapseWeeks draws it as one row and every tap goes to both
+# ids). Underneath, the standing want stays its own row — the tests above
+# keep reading rows for exactly that.
+
+import shop_harness  # noqa: E402
+
+
+def _beef_on_shop(client, status: str = "needed") -> list[dict]:
+    if status == "needed":
+        body = client.get("/api/grocery-list/by-store?status=needed").json()
+        items = [it for st in body["stores"] for s in st["sections"] for it in s["items"]]
+    else:
+        body = client.get(f"/api/grocery-list?status={status}").json()
+        items = [it for s in body["sections"] for it in s["items"]]
+    return [it for it in items if it["item"] == "Ground beef"]
+
+
+def _two_moves() -> tuple[int, int]:
+    """The card's state: the pound beside the plan's 12 oz. (plan line id, own line id)"""
+    plan, source = _week()
+    tools.drop_dish_from_day(plan, source)
+    tools.drop_dish_from_day(plan, source)
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, source_weekly_plan_id FROM grocery_items WHERE household_id = ? AND item = 'Ground beef' "
+        "AND status = 'needed' ORDER BY id", (tools.household_id(),)).fetchall()
+    conn.close()
+    own = [r["id"] for r in rows if r["source_weekly_plan_id"] is None]
+    planned = [r["id"] for r in rows if r["source_weekly_plan_id"] is not None]
+    assert len(own) == 1 and len(planned) == 1
+    return planned[0], own[0]
+
+
+def test_shop_shows_one_ground_beef_line_of_one_and_three_quarter_pounds(signed_in):
+    planned, own = _two_moves()
+    lines = _beef_on_shop(signed_in)
+    assert len(lines) == 2, "two rows underneath"
+    group = lines[0]["week_group"]
+    assert lines[1]["week_group"] == group
+    assert group["lead_id"] == planned and group["ids"] == [planned, own]
+    assert group["total"] == "1.75 lbs"
+    assert group["note"] == "", "one plan and the household's own: just the amount"
+    assert [(p["id"], p["quantity"], p["label"]) for p in group["parts"]] == [
+        (planned, "12 oz", "this week"), (own, "1 lb", "your own")]
+    # Whatever counts the list counts it as Shop draws it.
+    from app.tools import week_lines
+    assert len(week_lines.as_shop_rows(lines)) == 1
+    # Display only: the household's own pound is still its own row.
+    assert _beef() == [("1 lb", True), ("12 oz", False)]
+
+
+def test_ticking_the_line_ticks_both_and_unticking_puts_both_back(signed_in):
+    planned, own = _two_moves()
+    for i in (planned, own):  # what the screen sends for one tap (groIdsFor)
+        assert signed_in.post(f"/api/grocery-list/{i}/status", json={"status": "purchased"}).status_code == 200
+    assert _beef_on_shop(signed_in) == []
+    ticked = _beef_on_shop(signed_in, "bought")
+    assert ticked and ticked[0]["week_group"]["ids"] == [planned, own]
+    assert ticked[0]["week_group"]["total"] == "1.75 lbs"
+    for i in (planned, own):
+        assert signed_in.post(f"/api/grocery-list/{i}/status", json={"status": "needed"}).status_code == 200
+    back = _beef_on_shop(signed_in)
+    assert back[0]["week_group"]["ids"] == [planned, own]
+    assert _beef() == [("1 lb", True), ("12 oz", False)]
+
+
+def _raw_line(item: str, qty: str, plan: int | None, staple: int | None = None) -> int:
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, status, staple_id) "
+        "VALUES (?, ?, ?, 'meat', 'Emily', ?, 'needed', ?)",
+        (tools.household_id(), item, qty, plan, staple))
+    conn.commit()
+    conn.close()
+    return cur.lastrowid
+
+
+def test_amounts_that_dont_add_up_stay_two_lines_and_so_does_a_regular(signed_in):
+    plan = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    # "1 bag" beside "12 oz" is two things to buy, never "1 bag + 12 oz".
+    bag = _raw_line("Ground beef", "1 bag", None)
+    oz = _raw_line("Ground beef", "12 oz", plan)
+    # A regular's line stands beside the week's (2026-10-24) — never folded.
+    conn = get_conn()
+    staple = conn.execute(
+        "INSERT INTO staples (household_id, item, category, next_due_at) VALUES (?, 'Chicken thighs', 'meat', '2026-01-01')",
+        (tools.household_id(),)).lastrowid
+    conn.commit()
+    conn.close()
+    regular = _raw_line("Chicken thighs", "1 lb", None, staple=staple)
+    _raw_line("Chicken thighs", "8 oz", plan)
+    body = signed_in.get("/api/grocery-list/by-store?status=needed").json()
+    rows = {it["id"]: it for st in body["stores"] for s in st["sections"] for it in s["items"]}
+    assert "week_group" not in rows[bag] and "week_group" not in rows[oz]
+    assert "week_group" not in rows[regular]
+
+
+_SCREEN = """
+const plan = { id: 21, item: 'Ground beef', quantity: '12 oz', store: '', store_decided: 1, category: 'meat', status: 'needed',
+  source_weekly_plan_id: 1, week_group: { lead_id: 21, ids: [21, 22], total: '1.75 lbs', note: '',
+  parts: [{ id: 21, quantity: '12 oz', label: 'this week' }, { id: 22, quantity: '1 lb', label: 'your own' }] } };
+const own = Object.assign({}, plan, { id: 22, quantity: '1 lb', source_weekly_plan_id: null });
+groceryState.data = { stores: { Unassigned: { sections: [{ section: 'meat', items: groCollapseWeeks([plan, own]) }], purchased: [], inCart: [] } } };
+groceryState.usualStores = [];
+groceryState.storesPromptDismissed = true;
+groceryState.step = 'list';
+"""
+
+
+@shop_harness.needs_node
+def test_the_screen_draws_one_line_and_a_tick_or_an_edit_reaches_the_right_rows():
+    out = shop_harness.run(_SCREEN + """
+const html = screenHtml();
+const shown = {
+  rows: (html.match(/<span class="gro-name">Ground beef<\\/span>/g) || []).length,
+  qty: /gro-name">Ground beef<\\/span><span class="gro-line-qty">([^<]*)</.exec(html)[1],
+  note: html.indexOf('gro-line-weeks') !== -1
+};
+groceryState.openRowId = '21';
+const sheet = screenHtml();
+const boxes = (sheet.match(/gro-rowmenu-week-label">([^<]*)</g) || []).map(function (m) { return m.replace(/.*>/, '').replace('<', ''); });
+clickIfRendered({ gro: 'line-tick', id: '21', bought: '0' });
+settle(function () {
+  console.log(JSON.stringify(Object.assign(shown, { boxes: boxes, ticked: purchases().sort() })));
+});
+""")
+    assert out["rows"] == 1
+    assert out["qty"] == "1.75 lbs"
+    assert out["note"] is False
+    # Editing the line: one box per row, so the household's own amount is
+    # changed only in its own box and the plan's line keeps its ledger.
+    assert out["boxes"] == ["This week", "Your own"]
+    assert out["ticked"] == ["/api/grocery-list/21/status", "/api/grocery-list/22/status"]
