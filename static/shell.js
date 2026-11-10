@@ -13027,6 +13027,13 @@
     { key: 'kids_differ', label: 'The children often eat something else' },
     { key: 'plate_your_own', label: 'We put it out and everyone plates their own' }
   ];
+  // Sweet, savory or both (Emily, 2026-11-05) — the snack step's last
+  // question, changeable here under Food. Unset reads as Both.
+  var WWK_SNACK_TASTES = [
+    { key: 'sweet', label: 'Sweet' },
+    { key: 'savory', label: 'Savory' },
+    { key: 'both', label: 'Both' }
+  ];
   // The two time limits, as the same chips setup asks (onboarding.html's
   // WEEKNIGHT_MAX_OPTIONS / LUNCH_MAX_OPTIONS; 0 = no limit). Unset reads as
   // each column's own default: dinner 0 (no cap), lunch 20 (time_caps).
@@ -15222,6 +15229,9 @@
     // it to the planner (meal_preferences.table_style, week_intake).
     html += wwkLead('At the table') + '<div class="wwk-chips">' +
       WWK_TABLE_STYLES.map(function (o) { return wwkChip(o.label, 'data-wwk="table-style" data-value="' + o.key + '"', mem.table_style === o.key ? 'on' : ''); }).join('') + '</div>';
+    var snackTaste = mem.snack_taste || 'both';
+    html += wwkLead('Snacks') + '<div class="wwk-chips">' +
+      WWK_SNACK_TASTES.map(function (o) { return wwkChip(o.label, 'data-wwk="snack-taste" data-value="' + o.key + '"', snackTaste === o.key ? 'on' : ''); }).join('') + '</div>';
     html += wwkLead('Proteins', 'tap once for a favorite, twice to skip it') + '<div class="wwk-chips">' +
       WWK_PROTEINS.map(function (label) {
         return wwkChip(label, 'data-wwk="protein" data-value="' + label.toLowerCase() + '"', wwkProteinState(mem, label.toLowerCase()).state);
@@ -15371,6 +15381,11 @@
   function wwkSetTableStyle(key) {
     if (wwkMem().table_style === key) return;
     wwkSavePreference('taste', 'table_style', key, function () { wwkMem().table_style = key; });
+  }
+
+  function wwkSetSnackTaste(key) {
+    if ((wwkMem().snack_taste || 'both') === key) return;
+    wwkSavePreference('taste', 'snack_taste', key, function () { wwkMem().snack_taste = key; });
   }
 
   function wwkSaveEatingStyle(text) {
@@ -16050,6 +16065,7 @@
         case 'cuisine-remove': return wwkListRemove('taste', 'cuisine_preferences', 'cuisine_preferences', value);
         case 'cuisine': return wwkToggleCuisine(value);
         case 'table-style': return wwkSetTableStyle(value);
+        case 'snack-taste': return wwkSetSnackTaste(value);
         case 'time-limit': return wwkSetTimeLimit(t.getAttribute('data-field'), parseInt(value, 10));
         case 'rhythm': return wwkSetRhythm(t.getAttribute('data-field'), value);
         case 'cooking-who': return wwkSetCookingWho(value);

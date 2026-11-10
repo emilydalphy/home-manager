@@ -936,6 +936,10 @@ class OnboardingAnswersRequest(BaseModel):
     # snacks a day: 1-7, sent only once tapped — left out, the household
     # reads the default (snack_variety.default_snack_dishes: five at two a day).
     snack_dishes_per_week: int | None = None
+    # Sweet, savory or both (Emily, 2026-11-05), the snack step's last
+    # question: 'sweet' | 'savory' | 'both'. Left out, the household reads
+    # 'both' — the same as one that finished setup before it was asked.
+    snack_taste: str | None = None
     # Setup's "This week / Next week" (2026-10-14): 'this_week' |
     # 'next_week', the same words FirstPlanRequest.start takes. Sent here
     # because this post is the one write BOTH answers to sharing with
@@ -1847,6 +1851,13 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         saved_now = tools.get_household_memory()
         memory = dict(memory, snack_dishes_per_week=saved_now["snack_dishes_per_week"],
                       snack_dishes_per_week_set=saved_now["snack_dishes_per_week_set"])
+    if req.snack_taste is not None:
+        # Like the count above: a bad word never costs the rest of the
+        # answers — it is logged and the household reads 'both'.
+        try:
+            memory = dict(memory, **tools.edit_preference("snack_taste", req.snack_taste))
+        except Exception:
+            logger.exception("Onboarding snack taste save failed")
     if req.first_plan_start is not None:
         # Resolved NOW, by the same function the first plan is generated
         # through, and after the rhythm post (finishSetupAndReveal's order)

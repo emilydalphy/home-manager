@@ -121,6 +121,10 @@ def _variant(raw: dict, base: dict | None = None) -> dict:
         "allergens": allergens,
         "animal": sorted(animal),
         "lines": [tuple(line) for line in (raw.get("lines") or base.get("lines") or [])],
+        # Sweet, savory or both of them (2026-11-05); a swap keeps its
+        # snack's. Untagged reads as either, so a snack added to the file
+        # without one is never silently dropped from a household's list.
+        "taste": list(raw.get("taste") or base.get("taste") or ["sweet", "savory"]),
     }
 
 
@@ -311,21 +315,52 @@ def _fits(variant: dict, avoid_hard: list[dict], excludes: set[str], dislikes: l
 _ELIGIBLE_CACHE: dict = {}
 
 
+def snack_taste(memory: dict) -> str:
+    """'sweet', 'savory' or 'both' — the snack step's answer (Emily,
+    2026-11-05). Anything else, or nothing, is 'both'."""
+    taste = str((memory or {}).get("snack_taste") or "both").lower()
+    return taste if taste in ("sweet", "savory") else "both"
+
+
+def _mixed(variants: list[dict]) -> list[dict]:
+    """Sweet and savory taken in turn, each kind keeping its own order —
+    so "both" plans a mix rather than whichever kind sorts first. A snack
+    that is either kind counts as savory here (the list is mostly savory,
+    so the sweet side is the one that needs its turns kept)."""
+    sweet = [v for v in variants if v["taste"] == ["sweet"]]
+    savory = [v for v in variants if v["taste"] != ["sweet"]]
+    out = []
+    while sweet or savory:
+        if savory:
+            out.append(savory.pop(0))
+        if sweet:
+            out.append(sweet.pop(0))
+    return out
+
+
 def eligible(memory: dict, all_variants: bool = False) -> list[dict]:
     """The list as this household can have it, in the file's order: each
     snack as itself, or as its nut-free swap when only the swap passes, or
     left out. `all_variants` keeps a swap that passes beside its original
-    (both are on the list for a house with no nut rule)."""
+    (both are on the list for a house with no nut rule).
+
+    A sweet-only or savory-only household (snack_taste) keeps only the
+    snacks that carry its word. That filter runs AFTER the allergen, diet
+    and dislike checks and can only take a snack away, never add one —
+    so a preference never puts a snack on the week someone can't eat."""
     from . import allergen_gate as _allergen_gate
     avoid_hard = _allergen_gate.hard_avoidances()
     excludes = diet_excludes(memory)
     dislikes = memory.get("dislikes") or []
+    taste = snack_taste(memory)
     sig = (household_id(), all_variants, json.dumps(avoid_hard, sort_keys=True, default=str),
-           tuple(sorted(excludes)), tuple(dislikes), LIST_PATH.stat().st_mtime)
+           tuple(sorted(excludes)), tuple(dislikes), taste, LIST_PATH.stat().st_mtime)
     if sig in _ELIGIBLE_CACHE:
         return list(_ELIGIBLE_CACHE[sig])
     out = []
     for snack in load_list():
+        if taste != "both" and taste not in snack["taste"]:
+            continue
         for variant in (snack, snack["swap"]):
             if variant and _fits(variant, avoid_hard, excludes, dislikes):
                 out.append(variant)
@@ -374,7 +409,8 @@ def rotation(memory: dict, period_start: str | None, plan_id: int | None = None)
     used = last_used(period_start, plan_id)
     recent = _recent_keys(period_start, plan_id)
     fresh = [v for v in eligible(memory) if _key(v["name"]) not in recent]
-    return sorted(fresh, key=lambda v: (used.get(_key(v["name"]), ""), v["index"]))
+    ordered = sorted(fresh, key=lambda v: (used.get(_key(v["name"]), ""), v["index"]))
+    return _mixed(ordered) if snack_taste(memory) == "both" else ordered
 
 
 def prompt_context(memory: dict, period_start: str | None) -> dict | None:
@@ -385,10 +421,12 @@ def prompt_context(memory: dict, period_start: str | None) -> dict | None:
     except Exception:
         logger.exception("Everyday snack shortlist failed; the draft goes without it")
         return None
+    taste = snack_taste(memory)
     if not picks:
-        return {"pick_from": [], "nothing_fits": True}
+        return {"pick_from": [], "nothing_fits": True, "taste": taste}
     return {"pick_from": [{"name": v["name"], "food_groups": v["food_groups"]}
-                          for v in picks[:SHORTLIST_SIZE]]}
+                          for v in picks[:SHORTLIST_SIZE]],
+            "taste": taste}
 
 
 # ---------- the draft as it comes back ----------
@@ -487,6 +525,10 @@ class _Chooser:
         used = last_used(period_start, plan_id)
         self.candidates = sorted((v for v in eligible(memory) if _key(v["name"]) not in self.recent),
                                  key=lambda v: (used.get(_key(v["name"]), ""), v["index"]))
+        # "Both" is a mix (2026-11-05): replacements take sweet and savory
+        # in turn, as the shortlist does.
+        if snack_taste(memory) == "both":
+            self.candidates = _mixed(self.candidates)
         self.listed = _all_keys()
         self.day_food = _meal_variety._day_food(plan_id, sorted(set(dates)))
         self.on_week: set[int] = set()

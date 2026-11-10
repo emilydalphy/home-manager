@@ -173,6 +173,14 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- snack_variety.default_snack_dishes, because the default 2 at two
     -- snacks a day is every snack on every day.
     snack_dishes_per_week_set INTEGER NOT NULL DEFAULT 0,
+    -- Sweet, savory or both (Emily, 2026-11-05: "ask users during the
+    -- snack question if they usually prefer sweet or savory snacks (or
+    -- both)"). 'sweet' | 'savory' | 'both'. Every household — new, and
+    -- every one that finished setup before the question existed — reads
+    -- 'both' until they choose. everyday_snacks.eligible narrows the list
+    -- to it; allergies and diet are applied first, so it only ever takes
+    -- snacks away.
+    snack_taste TEXT NOT NULL DEFAULT 'both',
     -- Whether dinners/breakfasts/lunches_per_week are ANSWERS or column
     -- defaults (Emily, 2026-09-21: the counts are targets, not caps, and
     -- the pass that re-picks a repeat into a new dish to reach one spends
