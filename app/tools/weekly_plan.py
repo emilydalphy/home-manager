@@ -8139,6 +8139,7 @@ def _ingest_recipe_group_and_sides(
                 # which is which).
                 chain_scale=cooked_on_the_night,
                 reheat_buys_it=cooked_on_the_night,
+                night_side=True,
             )
             added_items.extend(added)
             already_have.extend(have)
@@ -8281,8 +8282,10 @@ def _entry_side_groups(row) -> list[tuple[list[dict], int | None, bool]]:
 
     - on the COOK night, does the batch scale it? A household or plate
       side is cooked alongside the doubled dish and covers the night it
-      feeds, so yes; a stuffing written for the holiday table is already
-      sized for that table, so no.
+      feeds, so yes — but only the fed nights with no side of their own
+      (a side is per night, Emily 2026-11-09; leftovers.
+      side_batch_for_entry); a stuffing written for the holiday table is
+      already sized for that table, so no.
     - on a REHEAT night, is it bought at all? A green salad beside
       Thursday's leftovers is a different dish, cooked that evening, and
       nothing else on the week buys it — so yes, at that night's own
@@ -9068,6 +9071,7 @@ def _settle_weekly_plan_approval(
                         # different dish and nothing else buys it.
                         chain_scale=cooked_on_the_night,
                         reheat_buys_it=cooked_on_the_night,
+                        night_side=True,
                     )
                     added_items.extend(added)
                     already_have.extend(have)

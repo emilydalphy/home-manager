@@ -384,6 +384,58 @@ def batch_for_entry(entry_id: int, chains: dict, conn=None) -> dict | None:
     }
 
 
+def night_has_own_side(sides_json) -> bool:
+    """Does this night carry a side cooked on it — anything but a big-meal
+    dish (plates.is_big_meal_dish: the only side with a `role`), which
+    belongs to the holiday table rather than to the night?"""
+    try:
+        sides = json.loads(sides_json or "[]")
+    except (TypeError, ValueError):
+        return False
+    if not isinstance(sides, list):
+        return False
+    return any(isinstance(s, dict) and not s.get("role") for s in sides)
+
+
+def side_batch_for_entry(entry_id: int, chains: dict, conn=None) -> dict | None:
+    """
+    The batch a cook night's SIDE covers: batch_for_entry less every fed
+    night that has a side of its own.
+
+    A side is per night (Emily, 2026-11-09). The salad beside Monday's
+    double chili covers Thursday's reheat only when Thursday has no side of
+    its own; with one, Thursday's salad is bought for Thursday and Monday's
+    for Monday — two heads for two salads, the same answer as the
+    un-batched week. Before this the cook's salad was scaled for both
+    nights AND Thursday's was bought on top: three heads. The freezer's
+    share stays in.
+    """
+    batch = batch_for_entry(entry_id, chains, conn=conn)
+    if not batch or not batch.get("targets"):
+        return batch
+    ids = [int(t["entry_id"]) for t in batch["targets"]]
+    own_conn = conn is None
+    c = get_conn() if own_conn else conn
+    try:
+        marks = ",".join("?" * len(ids))
+        with_side = {
+            int(r["id"]) for r in c.execute(
+                f"SELECT id, sides_json FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks})",
+                [household_id(), *ids],
+            ).fetchall()
+            if night_has_own_side(r["sides_json"])
+        }
+    finally:
+        if own_conn:
+            c.close()
+    if not with_side:
+        return batch
+    targets = [t for t in batch["targets"] if int(t["entry_id"]) not in with_side]
+    out = dict(batch, targets=targets)
+    out["servings"] = batch["cook_eaters"] + sum(t["eaters"] for t in targets) + int(batch.get("freezer") or 0)
+    return out
+
+
 def _join_days(days: list[str]) -> str:
     if len(days) == 1:
         return days[0]
