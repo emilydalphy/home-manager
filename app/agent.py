@@ -11001,6 +11001,20 @@ CHORES_TOOLS = frozenset({
 # route replays exactly these, so a refusal from any other tool offers none.
 SAVE_ANYWAY_TOOLS = frozenset({"plan_meal", "swap_meal_in_plan", "add_recipe"})
 
+def call_fits_schema(tool_name: str, tool_input) -> bool:
+    """A tool call the tap could replay as it stands: every required field
+    there and nothing the tool's schema doesn't declare (`override` aside,
+    which the replay sets). A call that strays gets no button — the replay
+    would only crash on it."""
+    if not isinstance(tool_input, dict):
+        return False
+    schema = next((t.get("input_schema") or {} for t in TOOL_DEFINITIONS if t.get("name") == tool_name), None)
+    if schema is None:
+        return False
+    props = set((schema.get("properties") or {}).keys()) | {"override"}
+    return set(tool_input) <= props and set(schema.get("required") or []) <= set(tool_input)
+
+
 REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused, tools.MoveOwnerRefused,
                              tools.MemberRefused)
 
@@ -11545,12 +11559,15 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
         if not _clash_keys(clashes) <= _clash_keys(disclosed):
             logger.info("add_recipe from chat: refused draft has a clash the person wasn't told; refusing again")
             _keep_refused_draft(name, detail, clashes)
-            raise _allergen_gate.offer_override(_writer_refusal(name, clashes), "recipe", name, [])
+            raise _allergen_gate.offer_override(_writer_refusal(name, clashes), "recipe", name, [], clashes)
         logger.info("add_recipe from chat: saving the refused draft the person accepted")
     else:
         accepted = _allergen_gate.hard_clashes(name) if armed else []
-        if not armed:
+        # The name is accepted only for the clashes its refusal named: an
+        # allergy the name trips that was added since is refused again.
+        if not armed or not _allergen_gate.override_covers("recipe", name, [], accepted):
             _allergen_gate.refuse_recipe_if_clashing(name, None)
+            accepted = []
         logger.info("add_recipe from chat: recipe writer%s", " (name accepted)" if accepted else "")
         written = _write_dish_for_chat(
             name, brief=brief or kwargs.get("notes") or "", slot=slot,
@@ -11564,7 +11581,7 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
             # it, so that tap saves what they were told about.
             _keep_refused_draft(name, written["detail"], written["clash"])
             raise _allergen_gate.offer_override(
-                _writer_refusal(name, written["clash"]), "recipe", name, [])
+                _writer_refusal(name, written["clash"]), "recipe", name, [], written["clash"])
         if not written["ok"]:
             raise ValueError(CHAT_WRITER_FAILED)
         detail = written["detail"]
@@ -13334,7 +13351,7 @@ def run_agent_turn(
                 # (Emily, 2026-11-09): kept here under this call's id, for
                 # main.summarize_chat_actions to draw and the tap route to
                 # replay. Only the tap arms it — see allergen_gate.
-                if block.name in SAVE_ANYWAY_TOOLS:
+                if block.name in SAVE_ANYWAY_TOOLS and call_fits_schema(block.name, block.input):
                     _allergen_gate.record_offer(refusal, block.name, block.input, block.id)
                 # Byte-identical to what the catch-all produced, so the
                 # model reads exactly the sentence it read before —

@@ -9018,6 +9018,7 @@ class SaveAnywayRequest(BaseModel):
 # household, or past allergen_gate.RECIPE_OVERRIDE_WINDOW_SECONDS. One
 # sentence for all of them, so a token from elsewhere learns nothing.
 SAVE_ANYWAY_GONE = "This one has expired. Ask me again and I’ll check it."
+SAVE_ANYWAY_FAILED = "That didn’t work just now — nothing was saved."
 
 
 @app.post("/api/chat/save-anyway")
@@ -9058,6 +9059,13 @@ def chat_save_anyway(req: SaveAnywayRequest, request: Request):
             return JSONResponse(status_code=409, content=body)
         except ValueError as e:
             return JSONResponse(status_code=409, content={"status": "refused", "said": str(e)})
+        except Exception:
+            # Never a 500 under a button: the replay crashed before (or
+            # instead of) its write. Logged by name only, like the chat's
+            # own tool failures; the person gets one plain sentence.
+            logger.exception("Save it anyway replay of %s failed", offer["tool"])
+            tools.record_error("tool", where=offer["tool"], detail="save_anyway")
+            return JSONResponse(status_code=409, content={"status": "failed", "said": SAVE_ANYWAY_FAILED})
     verb = "saved" if offer["door"] == "recipe" else "planned"
     said = f"{dish} was {verb}."
     _gate.note_tap(session_id, said)

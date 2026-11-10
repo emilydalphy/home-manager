@@ -158,3 +158,66 @@ def test_the_cookie_not_the_body_names_the_conversation():
     """The tap's route reads nothing but the token from the body."""
     assert set(main.SaveAnywayRequest.model_fields) == {"token"}
     assert security.COOKIE_NAME  # the conversation key comes from it (_chat_session_id)
+
+
+# ---------- review round (2026-11-10) ----------
+
+ALFREDO = [{"item": "heavy cream", "qty": "1 cup"}, {"item": "shrimp", "qty": "1 lb"}]
+
+
+def _shellfish_added_since():
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", ["shellfish allergy"])
+
+
+def test_an_allergy_added_after_the_offer_is_refused_again_for_plan_meal(monkeypatch, signed_in, dairy_free):
+    tools.add_recipe("Shrimp Alfredo", ingredients=ALFREDO)
+    day = tools.cooker.household_today().isoformat()
+    _script(monkeypatch, [("plan_meal", {"meal_date": day, "meal": "Shrimp Alfredo", "slot": "dinner"})])
+    token = _button(_chat(signed_in, "shrimp alfredo tonight"))["save_anyway"]["token"]
+    _shellfish_added_since()
+
+    res = signed_in.post("/api/chat/save-anyway", json={"token": token})
+    assert res.status_code == 409, res.text
+    body = res.json()
+    assert body["status"] == "refused" and "Shrimp Alfredo" in body["said"]
+    assert not any(e.get("meal") == "Shrimp Alfredo" for e in tools.get_meal_plan(days_ahead=1) or [])
+    # The fresh button is for what the refusal says now: both clashes.
+    fresh = body["save_anyway"]["token"]
+    assert fresh != token
+    ok = signed_in.post("/api/chat/save-anyway", json={"token": fresh})
+    assert ok.status_code == 200, ok.text
+
+
+def test_an_allergy_added_after_the_offer_is_refused_again_for_a_dictated_recipe(monkeypatch, signed_in):
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["dairy free"])
+    _script(monkeypatch, [("add_recipe", {"name": "Shrimp Alfredo", "ingredients": ALFREDO})])
+    token = _button(_chat(signed_in, "save my shrimp alfredo"))["save_anyway"]["token"]
+    _shellfish_added_since()
+
+    res = signed_in.post("/api/chat/save-anyway", json={"token": token})
+    assert res.status_code == 409, res.text
+    assert "shrimp" in res.json()["said"].lower()
+    assert tools.existing_recipe_named("Shrimp Alfredo") is None
+
+
+def test_a_call_the_tool_could_not_replay_gets_no_button(monkeypatch, signed_in, dairy_free):
+    day = tools.cooker.household_today().isoformat()
+    _script(monkeypatch, [("plan_meal", {"meal_date": day, "meal": "Grilled Cheese", "slot": "dinner",
+                                         "ingredients": [{"item": "cheddar"}]})])
+    body = _chat(signed_in, "grilled cheese tonight")
+    assert not any(a.get("save_anyway") for a in body["actions"])
+
+
+def test_a_replay_that_crashes_answers_a_sentence_not_a_500(monkeypatch, signed_in, dairy_free):
+    _script(monkeypatch, [("add_recipe", CHEESECAKE)])
+    token = _button(_chat(signed_in, "save my cheesecake bars recipe"))["save_anyway"]["token"]
+
+    def boom(**kw):
+        raise TypeError("unexpected keyword")
+    monkeypatch.setitem(agent.TOOL_FUNCTIONS, "add_recipe", boom)
+    res = signed_in.post("/api/chat/save-anyway", json={"token": token})
+    assert res.status_code == 409
+    assert res.json() == {"status": "failed", "said": main.SAVE_ANYWAY_FAILED}
+    assert tools.existing_recipe_named("Cheesecake Bars") is None
