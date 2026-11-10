@@ -1,0 +1,38 @@
+{
+ "dish_name": "Atom",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {"item": "Greek yogurt", "qty": "1 tub (16 oz)", "category": "dairy", "cook_qty": "2 cups"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Dried red chilies", "qty": "1 bag", "category": "pantry", "cook_qty": "4"},
+  {"item": "Unsalted butter", "qty": "1 tbsp", "category": "dairy"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Lavash bread", "qty": "1 package", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the garlic clove and grate or crush it finely.",
+  "In a bowl, stir the garlic and 1/4 tsp salt into the 2 cups yogurt until smooth.",
+  "Spread the yogurt on a shallow plate and press a wide well into the middle with the back of a spoon.",
+  "Snip the 4 dried chilies into small pieces with kitchen scissors. For a milder dip, shake out the seeds and throw them away.",
+  "Melt the 1 tbsp butter with the 1 tbsp olive oil in a small skillet over medium heat.",
+  "When the butter foams, add the chilies and stir them for 1 to 2 minutes, until they darken a shade and smell toasty. Watch them closely. Burnt chilies taste bitter.",
+  "Off the heat, lift the chili pieces out with a spoon into a small bowl.",
+  "Pour the butter from the skillet into the well in the yogurt.",
+  "Serve with the lavash and the bowl of fried chilies."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions spread thick strained yogurt on a plate and pour dried red chilies fried in hot butter over it. Turkish Foodie (the lead) stirs garlic into the yogurt and fries the chilies in butter with olive oil; Turkeys for Life skips the garlic, toasts the chilies dry and adds paprika; Somer Sivrioglu on SBS strains his own yogurt overnight, adds fresh sweet peppers and serves it with simit. This uses half the lead's yogurt for a snack, and the fried chilies go in a bowl on the side instead of on top, so the heat is up to each person. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the plain garlic version from Turkish Foodie leads.",
+ "sources": [
+  {"name": "Turkish Foodie", "title": "Atom Meze (Spicy Turkish Yogurt Dip)", "url": "https://turkishfoodie.com/atom-2", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Turkeys for Life", "title": "Atom Meze Recipe: Turkish Yoghurt Dip With Chilli", "url": "https://www.turkeysforlife.com/2024/12/atom-meze-turkish-yoghurt-chilli.html", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "SBS Food", "title": "Atom yoghurt (Turkish labne with dried chillies and fresh peppers)", "url": "https://www.sbs.com.au/food/recipes/atom-yoghurt-turkish-labne-dried-chillies-and-fresh-peppers", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

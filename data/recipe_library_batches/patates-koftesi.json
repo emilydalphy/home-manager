@@ -1,0 +1,45 @@
+{
+ "dish_name": "Patates Koftesi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {"item": "Yukon Gold potatoes", "qty": "1 lb", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Shredded mozzarella cheese", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Paprika", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Dried basil", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1 cup"}
+ ],
+ "instructions": [
+  "Put the 1 lb potatoes, whole and unpeeled, in a saucepan and cover them with cold water by an inch. Bring it to a boil over high heat, then turn it down to a simmer and cook for 20 to 25 minutes, until a knife slides into the biggest one with no resistance.",
+  "Meanwhile, grate the onion on the large holes of a box grater. Squeeze the pulp in your hands over the sink to get rid of the juice.",
+  "Finely chop the leaves from half the parsley bunch. That should be about 1/2 cup.",
+  "Drain the potatoes and leave them for about 10 minutes, until you can handle them. Peel off the skins with a small knife.",
+  "Mash the potatoes in a large bowl. Add the onion, the egg, the chopped parsley, 1/2 cup of the cheese, 1 tsp paprika, 1 tsp dried basil and 1 tsp salt, and mix with your hands until it's even.",
+  "Cover the bowl and chill it for 30 minutes. Warm mix is too soft to shape.",
+  "Spread the 1/2 cup flour on a plate. With wet hands, shape the mix into plum sized balls and flatten each one into an oval about 3/4 inch thick. That should be about 12 patties.",
+  "Heat the 1/2 cup oil in a large skillet over medium heat until a little flour sizzles when you drop it in.",
+  "Roll half the patties in the flour to coat every side, tap off the extra and lay them in the skillet.",
+  "Fry them for 3 to 4 minutes, until the underside is golden brown. Flip them and cook the other side for 3 to 4 minutes.",
+  "Lift them onto paper towels. Flour and fry the rest of the patties the same way.",
+  "Serve warm with the 1 cup yogurt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions mash or grate boiled potatoes with egg, cheese and parsley and shape them into small patties. Turkish Food and Recipes (the lead) adds grated onion, paprika and basil, chills the mix, dredges the patties in flour and shallow fries them, serving them with yogurt; Banu Atabay's version adds yogurt, olive oil and cumin and bakes them, and the Turkish Ministry of Culture binds them with stale bread and nutmeg and bakes them. This follows the lead, squeezes the juice out of the grated onion so the mix holds, and uses mozzarella in place of Turkish kaşar cheese. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the pan fried version leads.",
+ "sources": [
+  {"name": "Turkish Food and Recipes", "title": "Potato Patties (Patates Koftesi)", "url": "https://www.turkishfoodandrecipes.com/2009/01/potato-patties-patates-koftesi.html", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Mütevazı Lezzetler (Banu Atabay)", "title": "Potato Balls (Patates Köftesi)", "url": "https://en.ml.md/vt1182", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Turkish Ministry of Culture and Tourism", "title": "Potatoes Burger (Patates Köftesi)", "url": "https://www.ktb.gov.tr/EN-98963/potatoes-burger.html", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

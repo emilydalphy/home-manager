@@ -1,0 +1,120 @@
+{
+ "dish_name": "Banh Tieu",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "1 packet",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 1/2 hours before you want to eat: in a large bowl, whisk the 2 cups flour, 1/4 cup sugar, 3/4 tsp instant yeast, 3/4 tsp baking powder and 1/4 tsp salt.",
+  "Pour in the 1/2 cup milk and 1/2 tsp vanilla, and stir with a spoon until it comes together in a shaggy dough.",
+  "Turn it out onto the counter and knead it for 5 to 7 minutes, until it's soft, smooth and a little tacky, like pizza dough.",
+  "Put it back in the bowl, cover it and leave it somewhere warm for about 1 1/2 hours, until it has doubled.",
+  "Press the dough down and cut it into 6 equal pieces. Roll each one into a ball.",
+  "Spread the 1/4 cup sesame seeds on a plate. Press each ball into the seeds on both sides so they stick.",
+  "Roll each ball into a thin round about 5 inches across and 1/8 inch thick. Thin is what makes them puff hollow. Lay them on a tray and leave them for at least 10 minutes. Up to 30 minutes is fine, and they puff more.",
+  "Meanwhile, pour the 3 cups oil into a large, deep skillet and heat it over medium to 350°F. If you have a thermometer, check it there. No thermometer? Dip a wooden chopstick in. Lots of small bubbles should rise around it steadily.",
+  "Slide in one round. It should float and start to puff within a few seconds. Flip it every 5 to 7 seconds with two spatulas, and fry it for about 1 1/2 minutes, until it's puffed and golden on both sides. Stand back a little. The oil can spatter.",
+  "Lift it out onto paper towels. Fry the rest the same way, one at a time. If one takes much longer than 1 1/2 minutes, turn the heat up a little. If it browns in under a minute, turn it down.",
+  "Let them cool for 5 minutes. Serve warm."
+ ],
+ "advance_prep_notes": "Make the dough at least 1 1/2 hours ahead so it can rise.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "Every version rolls a lightly sweet dough in sesame seeds, rolls it very thin and fries it in 350°F oil, flipping often, until it puffs into a hollow shell. Full of Plants (the lead) uses yeast plus a little baking powder and plant milk; Vicky Pham has a quicker baking powder dough with whole milk and a yeast version with water, and I Am A Food Blog rests the shaped rounds 30 minutes so they puff more. This follows Full of Plants with ordinary milk and adds the longer rest as an option. No version had 20 or more ratings and RecipeTin Eats, the trusted cook for this cuisine, has no version of this dish, so it leads with the best version read.",
+ "sources": [
+  {
+   "name": "Full of Plants",
+   "title": "Bánh Tiêu (Vietnamese Hollow Donuts!)",
+   "url": "https://fullofplants.com/super-tender-sesame-donuts/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Hollow Donut (Bánh Tiêu)",
+   "url": "https://vickypham.com/blog/vietnamese-hollow-donut-banh-tieu/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Hollow Donut with Yeast Recipe (Bánh Tiêu)",
+   "url": "https://vickypham.com/blog/vietnamese-hollow-donut-with-yeast-banh-tieu/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "I Am A Food Blog",
+   "title": "Banh Tieu Recipe: The Vietnamese Donuts You Never Knew You Loved",
+   "url": "https://iamafoodblog.com/banh-tieu-recipe-the-vietnamese-donuts-you-never-knew-you-loved/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

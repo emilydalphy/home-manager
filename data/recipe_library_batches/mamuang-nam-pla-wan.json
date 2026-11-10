@@ -1,0 +1,94 @@
+{
+ "dish_name": "Mamuang Nam Pla Wan",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Dried shrimp",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chiles",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Palm sugar",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green mangoes",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Finely chop the 2 tbsp dried shrimp. Thinly slice the shallot.",
+  "Thinly slice the chile and put it in a small dish for the table.",
+  "Chop the palm sugar finely. That should be about 1/2 cup.",
+  "Put the palm sugar and the 1 tbsp fish sauce in a small saucepan over low heat. Stir and break up any lumps until the sugar melts, 3 to 4 minutes.",
+  "Stir in 1 1/2 tbsp water, a spoonful at a time.",
+  "Add the shallot and cook for about 2 minutes, until it softens. Stir in the 1/4 tsp salt.",
+  "Simmer for 5 minutes, stirring now and then, until it's a thick syrup that coats the spoon.",
+  "Stir in the shrimp and cook for 1 minute. Take it off the heat and transfer it to a small bowl to cool. It thickens as it cools.",
+  "While it cools, peel the mangoes with a vegetable peeler. Cut the flesh off the pit in wide slabs, then slice them into 1/4 inch thick sticks. Chill them until you're ready to eat.",
+  "Serve the mango with the sauce on the side and the chile for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions read melt palm sugar with fish sauce and a little water into a thick syrup, cook shallots in it, add dried shrimp and chile, and serve it beside slices of hard, sour green mango. Asian Inspirations (the lead) adds the water a spoonful at a time and seasons it with salt; Hungry in Thailand also cooks in shrimp paste and chili flakes, and ImportFood chills the mango slices and stirs the shrimp and chiles in off the heat. No version had 20 or more ratings and RecipeTin Eats has no version, so this leads with the best version read, at half its sauce amount. The chile is kept out of the sauce and served on the side.",
+ "sources": [
+  {
+   "name": "Asian Inspirations",
+   "title": "Thai Sweet and Spicy Fruit Dipping Sauce (Nam-Pla Wann)",
+   "url": "https://asianinspirations.com.au/recipes/thai-sweet-and-spicy-fruit-dipping-sauce-nam-pla-wann/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Mango Dipping Sauce Recipe (Nam Pla Wan)",
+   "url": "https://hungryinthailand.com/thai-mango-dipping-sauce/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "ImportFood",
+   "title": "Thai Green Mango with Sweet Fish Sauce, 'Mamuang Nampla Wan'",
+   "url": "https://importfood.com/recipes/recipe/20-thai-green-mango-with-sweet-fish-sauce-mamuang-nampla-wan",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

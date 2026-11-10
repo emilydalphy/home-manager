@@ -1,0 +1,41 @@
+{
+ "dish_name": "Piquillos Rellenos de Queso",
+ "cuisine": "Spanish",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {"item": "Piquillo peppers", "qty": "1 jar (10 oz)", "category": "pantry"},
+  {"item": "Goat cheese", "qty": "1 package (4 oz)", "category": "dairy"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Salt", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Baguette", "qty": "1", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the broiler to high with a rack about 6 inches below it. Take the goat cheese out of the fridge so it softens a little.",
+  "Drain the peppers and pat them dry with paper towels. You should have about 12.",
+  "Gently open the stem end of each pepper with your finger, taking care not to tear it.",
+  "Fill each pepper with about 2 tsp of the goat cheese, using a small spoon. Press it in so the pepper is full but still holds its shape.",
+  "Lay the peppers in a single layer in a metal baking pan or an oven-safe ceramic dish.",
+  "Finely chop the garlic. Drizzle 1 tbsp of the olive oil over the peppers, then scatter over the garlic, 1/8 tsp salt and 1/8 tsp pepper.",
+  "Slice the baguette, lay the slices on a baking sheet and drizzle them with the last 1 tbsp olive oil.",
+  "Broil the bread for 1 to 2 minutes, until it's golden at the edges. Watch it closely. It burns fast. Set it aside.",
+  "Broil the peppers for 7 to 10 minutes, until the cheese is soft and bubbling at the openings.",
+  "Meanwhile, chop 2 tbsp of the parsley leaves.",
+  "Scatter the parsley over the peppers and serve warm with the toasted baguette."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions fill whole jarred piquillo peppers with a soft or sliced cheese and warm them until the cheese softens, served as a tapa. Food.com (the lead) fills them with goat cheese, drizzles them with olive oil and garlic and broils them until bubbling; Cookipedia slips in slices of tetilla seasoned with oregano and pimentón and pan-fries them briefly, and Show Me the Yummy mixes goat cheese with manchego and bakes the peppers to serve on toasted bread. This follows the lead with a fuller filling, about 2 tsp per pepper, plus a parsley finish from Cookipedia and toasted baguette alongside. No version read had a rating and RecipeTin Eats (the trusted cook for Spanish) has no version, so this leads with Food.com's, the closest to the usual tapa.",
+ "sources": [
+  {"name": "Food.com", "title": "Goat Cheese Stuffed Piquillo Peppers", "url": "https://www.food.com/recipe/goat-cheese-stuffed-piquillo-peppers-325088", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Cookipedia", "title": "Pimientos de piquillo rellenos de queso", "url": "https://cookipedia.co.uk/recipes_wiki/Pimientos_de_piquillo_rellenos_de_queso", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Show Me the Yummy", "title": "Goat Cheese Stuffed Piquillo Peppers", "url": "https://showmetheyummy.com/goat-cheese-stuffed-piquillo-peppers/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

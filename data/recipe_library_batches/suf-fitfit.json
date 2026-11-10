@@ -1,0 +1,119 @@
+{
+ "dish_name": "Suf Fitfit",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Raw shelled sunflower seeds",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "100% teff injera",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "3 rounds"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or up to 3 days: rinse the 1 cup sunflower seeds in a sieve. Put them in a saucepan with about 2 cups cold water and bring it to a boil over high heat. Turn it to medium and simmer for 15 minutes, until the seeds are soft and have turned grayish.",
+  "Drain them in the sieve and rinse them under cold water until they're cool.",
+  "Put the seeds in a blender with 2 1/2 cups cold water. Blend on high for 2 to 3 minutes, until it's smooth and creamy with no whole seeds left.",
+  "Set the sieve over a large bowl and pour the mixture through. Press the pulp with the back of a spoon to get all the liquid out, then throw the pulp away. That should be about 2 1/2 cups. Cover the bowl and refrigerate it for at least 1 hour, until it's cold.",
+  "When you're ready to eat, finely chop the 2 tomatoes and thinly slice 2 of the green onions.",
+  "Cut the jalapeño in half, scrape out the seeds and finely chop it. Transfer it into a small bowl for the table.",
+  "Squeeze the lemon. Stir the tomatoes, green onions, 1 tbsp lemon juice, 1 tbsp olive oil, 1/4 tsp garlic powder, 1/4 tsp ground ginger, 1/2 tsp salt and the pinch of black pepper into the cold sunflower sauce.",
+  "Tear 3 injera rounds into bite size pieces. Fold them into the bowl a handful at a time, until they're coated but it's still saucy. Let it sit for 2 to 3 minutes, until the injera is soft.",
+  "Taste it. If it's flat, add a squeeze of the lemon.",
+  "Serve cold in bowls, with the jalapeño on the side."
+ ],
+ "advance_prep_notes": "Make the sunflower sauce at least 1 hour ahead so it's cold. It keeps 3 days in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "The versions read all boil shelled sunflower seeds until soft, blend them with cold water and strain out the pulp to make a cold, milky sauce that gets chopped tomato, green chili and onion stirred in, with torn injera. Food.com (the lead) seasons it with lemon, olive oil, garlic and ginger powder, basil, salt and pepper and serves it as a dip; Yummy Ethiopian uses only salt with red onion, and folds the injera straight in. This follows the lead's seasoning without the basil, folds the injera in the way Yummy Ethiopian does so it's fitfit, and puts the chopped jalapeño on the side to keep the base mild. No version had rating data and RecipeTin Eats, the trusted cook for this cuisine, has no version of this dish, so it leads with the best version read.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Ethiopian Sunflower Seeds Dipping Sauce",
+   "url": "https://www.food.com/recipe/ethiopian-sunflower-seeds-dipping-sauce-295916",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yummy Ethiopian",
+   "title": "Sunflower Seed Milk with Injera (YeSuf Fitfit)",
+   "url": "https://yummyethiopian.blogspot.com/2022/03/sunflower-seed-with-injera.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "All About Ethio",
+   "title": "Yesuf Fitfit",
+   "url": "https://allaboutethio.com/ryesuffitfit.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

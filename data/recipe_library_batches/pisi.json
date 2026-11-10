@@ -1,0 +1,45 @@
+{
+ "dish_name": "Pisi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "All-purpose flour", "qty": "3 1/4 cups", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Baking powder", "qty": "1 can", "category": "pantry", "cook_qty": "2 1/4 tsp"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1/4 cup"},
+  {"item": "Milk", "qty": "1/4 cup", "category": "dairy"},
+  {"item": "Vegetable oil", "qty": "6 cups", "category": "pantry"},
+  {"item": "Powdered sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Apricot jam", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "In a large bowl, whisk 3 cups of the flour with the 1 tbsp sugar, 1/4 tsp salt and 2 1/4 tsp baking powder.",
+  "In another bowl, whisk the egg, 1/4 cup yogurt, 1/4 cup milk and 1/2 cup lukewarm water until smooth.",
+  "Pour the wet mix into the flour and stir for 2 to 3 minutes, first with a spoon and then with your hand, until it comes together into a shaggy dough.",
+  "Dust the counter with some of the remaining flour. Knead the dough for 4 to 5 minutes, until it's soft and only a little tacky. Cover it with the upturned bowl and leave it for 15 minutes.",
+  "Knead it for 2 to 3 minutes, until smooth. Cover it again and leave it for 5 minutes.",
+  "Meanwhile, pour the 6 cups oil into a large heavy pot. It should be about 1 1/2 inches deep. Heat it over medium to 350°F. If you have a thermometer, check it there. No thermometer? Drop in a small scrap of dough. It should sizzle straight away, float up within a few seconds and turn golden in about a minute.",
+  "Cut the dough in half and keep one half covered. On the floured counter, roll the other half into a round about 8 inches across and 1/4 inch thick.",
+  "Cut the round into 2 inch squares with a knife.",
+  "Slide 8 to 10 squares into the oil, leaving room between them. Stand back a little. The oil can spatter.",
+  "Fry them for 3 to 4 minutes, turning them with a slotted spoon, until they're puffed and golden on both sides.",
+  "Lift them out onto paper towels. Fry the rest of the squares the same way, then roll, cut and fry the second half of the dough.",
+  "Sprinkle the 2 tbsp powdered sugar over the warm pişi from a spoon, tapping it so it falls evenly.",
+  "Serve warm with the apricot jam."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions make a soft dough of flour, liquid and salt, shape or cut it into pieces and fry them in hot oil until puffed and golden on both sides. The lead, Betül Tunç's Turkuaz Kitchen recipe shared on Tara's Multicultural Table, leavens it with baking powder, enriches it with egg, yogurt and milk, cuts it into squares and serves it with powdered sugar and apricot jam; Lezzet's version is also yeast free with egg and yogurt, while Cooking Gorgeous uses yeast with stretch and folds and a rise, and offers a feta filling. This follows the lead but fries in about 1 1/2 inches of oil instead of 2 1/2. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has gözleme but no pişi, so the quick yeast free version leads.",
+ "sources": [
+  {"name": "Tara's Multicultural Table", "title": "Pişi (Turkish Fried Dough)", "url": "https://tarasmulticulturaltable.com/pisi-turkish-fried-dough/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Cooking Gorgeous", "title": "Pişi: Turkish Fried Dough", "url": "https://cookingorgeous.com/blog/pisi-turkish-fried-dough/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Lezzet", "title": "Turkish Pişi", "url": "https://lezzet.com.tr/en/recipe/turkish-pisi", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

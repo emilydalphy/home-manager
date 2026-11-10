@@ -1,0 +1,43 @@
+{
+ "dish_name": "Rillettes de Thon",
+ "cuisine": "French",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {"item": "Canned tuna", "qty": "2 cans (5 oz each)", "category": "pantry"},
+  {"item": "Cream cheese", "qty": "1 block (8 oz)", "category": "dairy", "cook_qty": "2 tbsp"},
+  {"item": "Shallot", "qty": "1", "category": "produce"},
+  {"item": "Chives", "qty": "1 bunch", "category": "produce"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy", "cook_qty": "2 tbsp"},
+  {"item": "Heavy cream", "qty": "1 carton (1 cup)", "category": "dairy", "cook_qty": "1/4 cup"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Baguette", "qty": "1", "category": "pantry"}
+ ],
+ "instructions": [
+  "Measure 2 tbsp of the cream cheese into a large bowl and leave it on the counter to soften while you work.",
+  "Drain the tuna. Squeeze it in your hands over the sink to get out as much liquid as you can.",
+  "Add the tuna to the bowl next to the cream cheese and mash the tuna with a fork for about 2 minutes, until it breaks into fine shreds.",
+  "Finely chop the shallot. Finely chop the chives. That should be about 4 tbsp.",
+  "Add the shallot, chives, 2 tbsp sour cream, 1/4 cup heavy cream, 1 tbsp olive oil and 1 tsp Dijon mustard to the bowl.",
+  "Mix everything with the fork until it's creamy and even, with no lumps of cream cheese left.",
+  "Stir in the 1/4 tsp salt and 1/4 tsp pepper. Taste it, and add a pinch more salt if it's flat.",
+  "Transfer it to a small bowl or jar, cover it and chill it for 20 minutes, or up to 2 days.",
+  "Meanwhile, slice the baguette and toast the slices in a toaster or under the broiler until golden, about 2 minutes. Watch them under the broiler. They burn fast.",
+  "Serve the rillettes cold with the toasted baguette."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions squeeze canned tuna dry, break it into fine shreds and bind it with something creamy, shallot and chives, then chill it and spread it on bread. Mediterranean Living (the lead) uses a little sour cream, cream cheese, heavy cream, olive oil and mustard; Obviously French goes heavier on cream cheese with crème fraîche and lemon, and Cup of Yum bakes fresh tuna and binds it with crème fraîche and lemon. This follows the lead's ratios doubled to two cans for four, with one shallot rather than two so it doesn't overpower the tuna.",
+ "sources": [
+  {"name": "Mediterranean Living", "title": "Authentic French Tuna Rillettes", "url": "https://www.mediterraneanliving.com/?p=44438", "rating": 4.33, "rating_count": 68, "read": true, "lead": true},
+  {"name": "Obviously French", "title": "Rillettes de thon (Tuna Spread)", "url": "https://obviouslyfrench.com/rillettes-de-thon/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Cup of Yum", "title": "Tuna Rillettes (Tuna Pâté)", "url": "https://cupofyum.com/recipes/tuna-rillettes-tuna-pate", "rating": 5.0, "rating_count": 8, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,40 @@
+{
+ "dish_name": "Tang Yuan",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 50,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Black sesame powder", "qty": "1 bag", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "5 tbsp"},
+  {"item": "Refined coconut oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Glutinous rice flour", "qty": "1 cup", "category": "pantry"},
+  {"item": "Ginger", "qty": "1 piece (2 inch)", "category": "produce"}
+ ],
+ "instructions": [
+  "Soften the 2 tbsp coconut oil until it's spreadable but not runny. If it's hard, warm it for a few seconds in the microwave.",
+  "In a small bowl, mix the 3/4 cup black sesame powder, 2 tbsp of the sugar and the coconut oil into a thick paste. Cover and freeze it for 30 minutes, until it's firm enough to roll.",
+  "Meanwhile, put the 1 cup glutinous rice flour in a medium bowl. Boil a kettle and stir 1/3 cup of the boiling water into the flour with a spoon.",
+  "Stir in 3 tbsp room temperature water. Once it's cool enough to touch, knead it in the bowl for 2 to 3 minutes into a smooth, soft dough like play dough. If it cracks, knead in water 1 tsp at a time.",
+  "Roll the dough into a log, cut it into 16 even pieces. Keep them covered with a damp towel. The dough dries out quickly.",
+  "Take the sesame paste out of the freezer and roll it into 16 small balls, about 2 tsp each.",
+  "Flatten one piece of dough into a small cup in your palm, about 2 inches across. Set a sesame ball in the middle and push the dough up and around it. Pinch it closed and roll it between your palms until it's smooth and round. Keep it under the towel while you make the rest.",
+  "For the syrup, peel the ginger and cut it into thin slices. Add the ginger, the last 3 tbsp sugar and 2 cups water to a small pot and bring it to a boil. Turn it down and simmer for 10 minutes, until the syrup smells strongly of ginger.",
+  "Meanwhile, bring a large pot of water to a gentle boil. Add the rice balls and give them a gentle stir right away. They stick to the bottom if you leave them.",
+  "Cook until they float, about 4 minutes, then cook them for 1 to 2 minutes, until the dough looks slightly see-through and the balls feel soft when you press one with a spoon.",
+  "Lift them out with a slotted spoon and divide them among 4 small bowls, 4 balls in each.",
+  "Ladle the hot ginger syrup over them, leaving the ginger slices behind, and serve warm. The filling is very hot inside, so bite carefully."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All four versions wrap a frozen ball of sweetened ground black sesame and fat in a glutinous rice flour dough, boil the balls until they float and serve them in a ginger syrup. Sift & Simmer leads because it offers refined coconut oil in place of butter and allows ready-ground black sesame powder; Wok and Kin uses lard and Cooking in Chinglish uses butter. Coconut oil keeps this vegan, and the powder means no grinder is needed. No version read had 20 or more ratings and RecipeTin Eats has no tang yuan, so this leads with the version that fit best; Eat Little Bird's peanut butter filling was read but not used, to keep it nut-free.",
+ "sources": [
+  {"name": "Sift & Simmer", "title": "Black Sesame Tang Yuan (Glutinous Rice Balls)", "url": "https://www.siftandsimmer.com/black-sesame-tang-yuan-glutinous-rice-balls/", "rating": 5.0, "rating_count": 4, "read": true, "lead": true},
+  {"name": "Cooking in Chinglish", "title": "Tang Yuan with Black Sesame Filling", "url": "https://cookinginchinglish.com/tang-yuan-with-black-sesame-filling/", "rating": 4.8, "rating_count": 5, "read": true, "lead": false},
+  {"name": "Wok and Kin", "title": "Black Sesame Tang Yuan", "url": "https://www.wokandkin.com/black-sesame-tang-yuan/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Eat Little Bird", "title": "Tang Yuan with Black Sesame (Glutinous Rice Balls)", "url": "https://eatlittlebird.com/tang-yuan-with-black-sesame-glutinous-rice-balls/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
