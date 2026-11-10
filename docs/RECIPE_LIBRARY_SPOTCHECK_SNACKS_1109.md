@@ -39,7 +39,7 @@ Branch `recipe-library-snacks-40-2026-11-09`, from main f1ec75e. The list is now
 2. Researched and written by sub-agents under the writer rules (`library_batch.py rules`). They read 2 to 3 versions of each dish and wrote Pomona's own version for 4 servings.
 3. All 40 pass `library_batch.py check`. One "look" note is correct as written: Eomuk Kkochi's broth is made in the recipe.
 4. Each "why" line was rewritten against the recipe as written.
-5. Plates were drawn in `plates/specs/part-36.json` under all 42 plate rules, then built with `build_plates.py`, giving 2,138 drawings. Existing drawings are unchanged.
+5. Plates were drawn in `plates/specs/part-37.json` (renumbered from 36 when main took part 36 for the yogurt and apple plates) under all 42 plate rules, then built with `build_plates.py`, giving 2,141 drawings with main's three. Existing drawings are unchanged.
 6. The full test suite passed. The run caught: goat cheese bought as "1 log", which the shopping list can't read, so it is now "1 package (4 oz)"; and a plate-matcher bug that read "goat cheese" as goat meat and drew Patzarosalata as Lamb Kleftiko. The matcher is fixed, with a test. Mamuang Nam Pla Wan is filed under shrimp, since dried shrimp is its protein.
 
 **Fallbacks:** 25 of the 40 lead with a version that has fewer than 20 ratings. As before, these are mostly Vietnamese, Turkish, Thai, Spanish and Korean snacks, which are thinly rated online. RecipeTin Eats, the trusted cook for most of those cuisines, has none of them.

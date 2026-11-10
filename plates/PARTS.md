@@ -46,7 +46,7 @@ Newer whole foods (add sides or toppings around them, using the small parts abov
 `["cutlet", colour, crumbColour, cx, cy, rx, ry]` a large breaded or seared piece: schnitzel, parmesan, chicken breast, fish fillet
 `["block", colour, shadeColour, x, y, width, height]` tofu, cheese, bark, cake slab
 `["rolls", colour, shadeColour]` spring rolls, egg rolls, croquettes
-`["wedges", colour, skinColour, count, r]` apple, orange, melon or potato wedges
+`["wedges", colour, skinColour, count, r]` apple, orange, melon or potato wedges. Optional cx, cy place them off-centre; count 1, r 0 puts one slice exactly where you want it. Apple: #F4E7A0, #C9402A.
 
 `["noodles", colour, shadeColour, width, r]` a twirled nest of long strands. Width 2 to 3 for spaghetti and thin noodles, 5 for pappardelle and udon. r about 26.
 `["wedgering", colour, skinColour, count, r]` slices fanned evenly around the plate, leaving the centre clear for a small dip. Use r 25.
@@ -74,6 +74,7 @@ Newest parts. Use these whenever the food is in the recipe, and keep their colou
 `["chip", colour, shadeColour, count, size, r, cx, cy]` tortilla or pita triangles, scattered. Size about 10.
 `["chipring", colour, shadeColour, count, r]` chips around a dip. Draw it after `dipbowl`. Use r 27.
 `["pretzel", colour, shadeColour, saltColour]` one big knot. All values optional. Salt `""` for none.
+`["pretzel", colour, shadeColour, saltColour, count, scale, r, cx, cy]` small pretzel twists, for snack plates where pretzels are one part among several. Scale about .25, count 3, r about 18. Default colours: #A9682A, #7A4A1E, #FFFFFF.
 `["waffle", colour, pocketColour]` a square waffle with a deep grid. Values optional.
 `["shell", "clam" or "mussel", count, size, r, cx, cy]` open shells with the meat showing. Size 7 to 9.
 `["onigiri", riceColour, shadeColour, noriColour, fillingColour]` three triangle rice balls with nori. All values optional.

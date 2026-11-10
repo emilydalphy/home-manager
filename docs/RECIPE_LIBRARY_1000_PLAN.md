@@ -45,7 +45,7 @@ All within the 15 cuisines a household can pick today. New cuisines (Caribbean, 
 
 ## Drawings
 
-Every new recipe gets a drawn plate under the plate rules (plates/PLATE_RULES.md, all 41), built from the shared food parts, in plates/recipes and plates/specs parts 10 onward, then `python3 plates/build_plates.py`. A random sample goes to Emily to review, and her comments become rules.
+Every new recipe gets a drawn plate under the plate rules (plates/PLATE_RULES.md, all 42), built from the shared food parts, in plates/recipes and plates/specs parts 10 onward, then `python3 plates/build_plates.py`. A random sample goes to Emily to review, and her comments become rules.
 
 ## Going live
 

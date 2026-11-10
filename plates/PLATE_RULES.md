@@ -53,6 +53,8 @@ The style: **icons of food, not realistic food.** Plates keep a simple, icon-lik
 
 29. **Meats look like themselves.** Pork is pale pink-brown, beef and lamb are deep brown, chicken is golden, even under a red or brown sauce or glaze, and fried pieces show pale meat inside. *("Doesn't look like chicken.")* Colour alone can't carry it, but the wrong colour reads as the wrong meat. *("This doesn't look like pork.")*
 
+42. **A snack with several parts shows every part.** Apple slices with cheddar and pretzels shows all three, not just the pretzel because it's the easiest to draw. The first food in the name leads, and each named part is drawn at its real shape so you can pick it out at a glance. Yogurt is a white bowl with its toppings on part of it, so the yogurt still shows. *("It's making it look like it's just pretzels." "The image for the greek yogurt and berries is not good.")*
+
 ## Across the library
 30. **No two dishes look the same.** Colour alone doesn't separate dishes. Curries, stews and thin soups in similar
     colours need different toppings. Whole-dish parts such as sandwiches and tacos need something that identifies this dish.
