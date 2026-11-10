@@ -1073,10 +1073,11 @@ dish that has any of it in its ingredients, not in a sauce or a side served with
 under a "-free" name; if what they asked for leaves no safe dish, offer one outside that cuisine \
 and say so. plan_meal and swap_meal_in_plan decline such a dish themselves and hand you the \
 sentence to relay ("X has pineapple, which Emily can't have — want me to pick something else?") \
-— relay it and offer another, and pass override=true only if the person then says in their own \
-words to do it anyway. add_recipe declines the same way before anything is saved ("Not saved: X \
-has buttermilk…"): write the recipe again without that ingredient or pick another dish, and pass \
-its override=true only when the person says in their own words to save it anyway. Never put an \
+— relay it and offer another. add_recipe declines the same way before anything is saved ("Not \
+saved: X has buttermilk…"): write the recipe again without that ingredient or pick another dish. \
+Under your reply the person sees a "Plan it anyway" / "Save it anyway" button for that exact dish, \
+and only their tap on it saves it: if they ask you to do it anyway — even "yes" — tell them to tap \
+the button; you cannot do it for them, so never call the tool again hoping it goes through. Never put an \
 allergen-free label in a dish's name ("Dairy-Free", "Egg-Free", "Nut-Free", "Non-Dairy", \
 "Vegan"): name it by what's in it — "Oat Milk Pancakes", not "Dairy-Free Pancakes". A dish with \
 a label in its name is declined, because the label itself names the allergen.
@@ -1931,10 +1932,6 @@ TOOL_DEFINITIONS = [
                 "source_book": {"type": "string", "description": "The cookbook this came from, when the user names one ('the Ottolenghi book' → 'Ottolenghi Simple' only if they said so; otherwise what they said). The book is credited wherever the recipe shows. Leave out if not from a book."},
                 "source_author": {"type": "string", "description": "The cookbook's author, if the user names one. Leave out otherwise — never guess."},
                 "source_page": {"type": "string", "description": "The page number as the user gives it ('212', '212–213'). Leave out otherwise."},
-                "override": {
-                    "type": "boolean",
-                    "description": "Defaults to false. A recipe with something someone in the household can't have is NOT saved: the call comes back as an error naming the dish and the word ('Not saved: … has buttermilk …') — write it again without that ingredient, or pick a different dish. Set this ONLY when the person said in their own words in this conversation to save it anyway, after the tool declined once and you told them why. Never on your own initiative, never on a first call.",
-                },
             },
             "required": ["name"],
         },
@@ -2071,10 +2068,6 @@ TOOL_DEFINITIONS = [
                     "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]},
                     "description": "Only used for freeform meals not tied to a saved recipe. Leave out if unclear.",
                 },
-                "override": {
-                    "type": "boolean",
-                    "description": "Defaults to false. The person's own \"I know, do it anyway\" for a dish that has something someone in the household can't have — set it ONLY when they said so in their own words in this conversation, after the tool declined once and you relayed why. Never on your own initiative, never on a first call.",
-                },
             },
             "required": ["meal_date", "meal"],
         },
@@ -2140,10 +2133,6 @@ TOOL_DEFINITIONS = [
                     "description": "Defaults to false. Set only when the person asked to have the SAME dish on this day as well as the day it's already on. Without it, a dish still to be cooked on another day is refused — to move a dish, use move_meal_to_day.",
                 },
                 "old_meal": {"type": "string", "description": "The exact name of the entry being replaced. Only needed when the slot holds more than one — a day's two snacks — and required in spirit there: without it both are replaced. Get the exact name from get_weekly_plan/get_week_menu rather than guessing."},
-                "override": {
-                    "type": "boolean",
-                    "description": "Defaults to false. The person's own \"I know, do it anyway\" for a dish that has something someone in the household can't have — set it ONLY when they said so in their own words in this conversation, after the tool declined once and you relayed why. Never on your own initiative, never on a first call.",
-                },
             },
             "required": ["weekly_plan_id", "meal_date", "new_meal"],
         },
@@ -2543,12 +2532,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 0-7, each independent; 0 = none at all — the household's USUAL count, changed only when they say it's how they usually want it, \"from now on\" or \"every week\"; a count said about the week being planned, like \"cut it to four dinners\", is set_week_dish_count instead), 'snacks_per_day' (integer 0-6: how many snacks land on each day), 'snack_dishes_per_week' (integer 1-7: how many DIFFERENT snack dishes the week rotates), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale), 'complete_plates' (true/false — whether I may add a small side to a meal that came out short of a full plate. On by default. Set it false whenever someone says any version of \"stop adding things to my meals\" or \"I don't need you rounding out my dinners\", and say plainly that you've stopped; set it back to true if they change their mind). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 0-7, each independent; 0 = none at all — the household's USUAL count, changed only when they say it's how they usually want it, \"from now on\" or \"every week\"; a count said about the week being planned, like \"cut it to four dinners\", is set_week_dish_count instead), 'snacks_per_day' (integer 0-6: how many snacks land on each day), 'snack_dishes_per_week' (integer 1-7: how many DIFFERENT snack dishes the week rotates), 'snack_taste' ('sweet', 'savory' or 'both': which snacks the week plans — 'both' is a mix; set it when someone says they'd rather have sweet or savory snacks, or either), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale), 'complete_plates' (true/false — whether I may add a small side to a meal that came out short of a full plate. On by default. Set it false whenever someone says any version of \"stop adding things to my meals\" or \"I don't need you rounding out my dinners\", and say plainly that you've stopped; set it back to true if they change their mind). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_day", "snack_dishes_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores", "complete_plates"]},
-                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week/breakfasts_per_week/lunches_per_week/snacks_per_day/snack_dishes_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences, boolean for complete_plates."},
+                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_day", "snack_dishes_per_week", "snack_taste", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores", "complete_plates"]},
+                "value": {"description": "String for notes/cooking_time_preference/eating_style/snack_taste, integer for dinners_per_week/breakfasts_per_week/lunches_per_week/snacks_per_day/snack_dishes_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences, boolean for complete_plates."},
             },
             "required": ["field", "value"],
         },
@@ -3697,7 +3686,7 @@ snacks differ from each other and from that day's meals, two of three food group
 Go off the list ONLY for a snack the household asked for (intake.freeform, notes) — stamp \
 derived_from.freeform on it — or when `everyday_snacks.nothing_fits` is true or nothing on it \
 fits an eating_style. A snack invented instead is replaced after you answer, so it is work \
-thrown away. Absent `everyday_snacks`, plan snacks as below.
+thrown away. `everyday_snacks.taste` is the household's answer to sweet or savory snacks: "sweet" or "savory" means the list holds only those, and an off-list snack follows it too; "both" means mix them across the week, never all one kind. Absent `everyday_snacks`, plan snacks as below.
 - The no-repeat rule against recent_history is about DINNER, LUNCH and SNACK — not \
 breakfast (except under "Something new", below). recent_history covers {_variety_window}, and a \
 dinner, lunch or snack (or a near-identical variant) that appears there is NOT drafted again \
@@ -5359,7 +5348,14 @@ def _rewrite_meal_recipe(entry_id: int, text: str, this_meal_only: bool = False)
         ingredients = tools.complete_ingredient_list(
             ingredients, detail.get("instructions") or [], detail.get("default_servings"),
         )
-        clashes = _allergen_gate.hard_clashes(name, ingredients=ingredients, avoidances=avoidances)
+        # A change that swapped the main protein ("use shrimp instead")
+        # renames the dish the way Tweak's Change the protein row does
+        # (Emily, 2026-11-09) — read off the list that came back, never the
+        # words typed (recipe_change.protein_swap). Every check below judges
+        # the dish under the name it will carry.
+        swap = tools.protein_swap(spec_base, ingredients)
+        dish_name = swap["name"] if swap else name
+        clashes = _allergen_gate.hard_clashes(dish_name, ingredients=ingredients, avoidances=avoidances)
         if clashes:
             food = _allergen_gate._food_word(clashes)
             logger.warning("Recipe rewrite for %r wrote in a must-avoid (%s); %s",
@@ -5376,7 +5372,7 @@ def _rewrite_meal_recipe(entry_id: int, text: str, this_meal_only: bool = False)
         # written from the household's own words, which can name them. The
         # card's tweak variants are a later step.
         if this_meal_only:
-            disliked = tools.wont_eat_added(name, spec_base["ingredients"], ingredients)
+            disliked = tools.wont_eat_added(dish_name, spec_base["ingredients"], ingredients)
             if disliked:
                 # Asked for by name: a second write would only put it back.
                 # Otherwise the writer reached for it on its own — once more.
@@ -5385,7 +5381,22 @@ def _rewrite_meal_recipe(entry_id: int, text: str, this_meal_only: bool = False)
                             "which is on keep_out. Write it again without it."}
                     continue
                 return {"status": "blocked", "said": tools.wont_eat_said(disliked)}
-        return tools.apply_rewrite(spec_base, detail, text, this_meal_only=this_meal_only)
+        # They named a protein ("use shrimp instead") and it isn't in what
+        # came back: once more, saying so, then a plain no — a rewrite that
+        # kept the salmon is not "rewritten" (the card: never silently
+        # nothing). A protein somebody can't have was never going in.
+        left_out = None if swap else tools.protein_left_out(text, spec_base, ingredients)
+        if left_out:
+            if _allergen_gate.hard_clashes(left_out, ingredients=[{"item": left_out}], avoidances=avoidances):
+                return {"status": "blocked",
+                        "said": f"Somebody here can’t have {left_out}, so {name} is as it was."}
+            if attempt == 1:
+                logger.warning("Recipe rewrite for %r left out the %s they asked for; retrying once", name, left_out)
+                spec = {**spec, "note": spec["note"] + f" They asked for {left_out} by name and your previous "
+                        "attempt left it out. Put it in as the dish's main protein if that is what they asked."}
+                continue
+            return {"status": "blocked", "said": tools.protein_left_out_said(left_out, name)}
+        return tools.apply_rewrite(spec_base, detail, text, this_meal_only=this_meal_only, rename=swap)
     # Filed once, by the caller (_file_unanswered_change), not here too.
     raise ValueError("That rewrite didn’t come together — try it again.")
 
@@ -8824,6 +8835,15 @@ def _finish_week_slots(
         plan_id, intake, household_memory, nobody_home, asked_on_nights_out,
         asks=((context or {}).get("constraints_notes"), (intake or {}).get("freeform")), report=report,
     )
+    # Two dishes they asked for on one day (Emily's rule 7, 2026-11-09):
+    # fitted across that day's lunch and dinner, or the more specific keeps
+    # it and the other goes to the nearest meal it fits — after rule 8,
+    # before rule 3, which then leaves both alone. See
+    # cap_enforce.place_two_asks_one_day; it swallows its own failures.
+    _cap_enforce.place_two_asks_one_day(
+        plan_id, intake, household_memory,
+        asks=((context or {}).get("constraints_notes"), (intake or {}).get("freeform")), report=report,
+    )
     # A dinner they named a night for ("Tacos Tuesday") goes on that night
     # when the model put it elsewhere — after rule 8, which owns a named
     # night nobody is home; before every pass that reads it as theirs.
@@ -11015,6 +11035,25 @@ CHORES_TOOLS = frozenset({
 # misheard name would otherwise read as a broken tool in the morning report.
 # MemberRefused (2026-10-24) is the fourth: "Emily is the only adult here"
 # is set_member_age_group keeping the household one adult, as Settings does.
+# The chat tools whose allergy refusal carries a "Save it anyway" button:
+# the three that took an `override` before the button replaced it. The tap
+# route replays exactly these, so a refusal from any other tool offers none.
+SAVE_ANYWAY_TOOLS = frozenset({"plan_meal", "swap_meal_in_plan", "add_recipe"})
+
+def call_fits_schema(tool_name: str, tool_input) -> bool:
+    """A tool call the tap could replay as it stands: every required field
+    there and nothing the tool's schema doesn't declare (`override` aside,
+    which the replay sets). A call that strays gets no button — the replay
+    would only crash on it."""
+    if not isinstance(tool_input, dict):
+        return False
+    schema = next((t.get("input_schema") or {} for t in TOOL_DEFINITIONS if t.get("name") == tool_name), None)
+    if schema is None:
+        return False
+    props = set((schema.get("properties") or {}).keys()) | {"override"}
+    return set(tool_input) <= props and set(schema.get("required") or []) <= set(tool_input)
+
+
 REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused, tools.MoveOwnerRefused,
                              tools.MemberRefused)
 
@@ -11457,7 +11496,7 @@ def _writer_refusal(name: str, clashes: list, *, can_override: bool = True,
         cannot = f"{_spoken_list(people, 'and')} can’t have"
     else:
         cannot = "this house can’t have"
-    tail = tail or ("Pick a different dish, or ask them if it should be saved anyway." if can_override
+    tail = tail or ("Pick a different dish, or tell them they can tap Save it anyway." if can_override
                     else "Pick a different dish.")
     return tools.SlotRefused(f"Not saved: I couldn’t write {name} without {word}, which {cannot}. {tail}")
 
@@ -11483,7 +11522,7 @@ def _clash_keys(clashes: list[dict]) -> set[tuple]:
 
 
 # A draft the writer could only write with a must-avoid, kept for the
-# person's "save it anyway" in a later turn: that answer is to THIS draft
+# person's tap on "Save it anyway": that tap is to THIS draft
 # — the list they were told about — so it is what gets saved, not a fresh
 # write nobody has seen (review, 2026-10-25: a re-write with the check off
 # saved an egg the house had never been told about). Keyed the way the
@@ -11522,8 +11561,8 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
 
     The name is gated before anything is written (a "Buttermilk Pancakes"
     in a dairy-free house costs no writer call), and the written list by
-    the writer's own check. `override` is honoured only as an answer to
-    this door's refusal of this recipe in an earlier turn: a refused DRAFT
+    the writer's own check. `override` is honoured only inside the replay
+    of a tapped "Save it anyway" on this door's refusal: a refused DRAFT
     is then saved exactly as it was refused; a refused NAME is written with
     only the avoidances that name tripped left out, everything else still
     told and checked.
@@ -11558,14 +11597,16 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
         clashes = _allergen_gate.hard_clashes(name, ingredients=detail["ingredients"])
         if not _clash_keys(clashes) <= _clash_keys(disclosed):
             logger.info("add_recipe from chat: refused draft has a clash the person wasn't told; refusing again")
-            _allergen_gate._remember_refusal("recipe", name, [])
             _keep_refused_draft(name, detail, clashes)
-            raise _writer_refusal(name, clashes)
+            raise _allergen_gate.offer_override(_writer_refusal(name, clashes), "recipe", name, [], clashes)
         logger.info("add_recipe from chat: saving the refused draft the person accepted")
     else:
         accepted = _allergen_gate.hard_clashes(name) if armed else []
-        if not armed:
+        # The name is accepted only for the clashes its refusal named: an
+        # allergy the name trips that was added since is refused again.
+        if not armed or not _allergen_gate.override_covers("recipe", name, [], accepted):
             _allergen_gate.refuse_recipe_if_clashing(name, None)
+            accepted = []
         logger.info("add_recipe from chat: recipe writer%s", " (name accepted)" if accepted else "")
         written = _write_dish_for_chat(
             name, brief=brief or kwargs.get("notes") or "", slot=slot,
@@ -11574,12 +11615,12 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
             accepted=accepted,
         )
         if written["clash"]:
-            # Remembered under the name alone, so the person's "save it
-            # anyway" next turn arms the override above — and the draft
-            # beside it, so that answer saves what they were told about.
-            _allergen_gate._remember_refusal("recipe", name, [])
+            # Offered under the name alone, so the person's tap on "Save it
+            # anyway" arms the override above — and the draft kept beside
+            # it, so that tap saves what they were told about.
             _keep_refused_draft(name, written["detail"], written["clash"])
-            raise _writer_refusal(name, written["clash"])
+            raise _allergen_gate.offer_override(
+                _writer_refusal(name, written["clash"]), "recipe", name, [], written["clash"])
         if not written["ok"]:
             raise ValueError(CHAT_WRITER_FAILED)
         detail = written["detail"]
@@ -12955,8 +12996,8 @@ def run_agent_turn(
     """
     client = _client()
     conversation = conversation + [{"role": "user", "content": user_message}]
-    # One person's message = one turn: an allergen override is only ever
-    # honoured in a turn after the refusal it answers (allergen_gate).
+    # One person's message = one turn, counted within this conversation
+    # (the chat routes bind it: allergen_gate.set_chat_conversation).
     _allergen_gate.begin_chat_turn()
     # ...and what they said, so the change card can tell a Won't-eat food
     # they named themselves from one the model suggested (offer_gate).
@@ -12997,6 +13038,13 @@ def run_agent_turn(
             ),
         },
     ]
+    # A dish the person saved with the refusal card's button since the
+    # last reply: said once, so the model never claims it wasn't saved.
+    tapped = _allergen_gate.take_tap_notes(_allergen_gate.chat_conversation())
+    if tapped:
+        system_blocks.append({"type": "text", "text": (
+            "Since your last reply, the person tapped the button under a refusal: "
+            + " ".join(tapped) + " It is done; don't offer it again.")})
     if proactive_check:
         proactive_block = _build_proactive_check_block()
         if proactive_block:
@@ -13338,6 +13386,12 @@ def run_agent_turn(
                 # that starts over-firing shows up before a household
                 # learns to click past it. usage.record_refusal.
                 tools.record_refusal(refusal, block.name)
+                # An allergy refusal carries its "Save it anyway" button
+                # (Emily, 2026-11-09): kept here under this call's id, for
+                # main.summarize_chat_actions to draw and the tap route to
+                # replay. Only the tap arms it — see allergen_gate.
+                if block.name in SAVE_ANYWAY_TOOLS and call_fits_schema(block.name, block.input):
+                    _allergen_gate.record_offer(refusal, block.name, block.input, block.id)
                 # Byte-identical to what the catch-all produced, so the
                 # model reads exactly the sentence it read before —
                 # nothing about what the household sees changes here.

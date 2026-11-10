@@ -663,7 +663,11 @@ def test_the_repair_and_the_opener_read_one_window(last_week, stub_model, picker
     plan = agent.generate_weekly_plan(week)
     seen = draft_opener.recent_dish_names(week, plan["weekly_plan_id"]) or set()
     assert seen, "last week is approved and inside the window"
-    assert {meal_variety.repeat_key(n) for n in seen} >= {n.lower() for n in seen}
+    # Punctuation is folded the way repeat_key folds it ("Roll-Ups" is
+    # "roll ups" — exact name plus punctuation, Emily 2026-09-25): a list
+    # snack with a hyphen reaching last week is not a different window.
+    folded = {" ".join(meal_variety._REPEAT_PUNCT.sub(" ", n.lower()).split()) for n in seen}
+    assert {meal_variety.repeat_key(n) for n in seen} >= folded
 
 
 # ---------- what counts as the same dish ----------

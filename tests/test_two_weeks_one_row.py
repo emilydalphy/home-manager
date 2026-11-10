@@ -74,11 +74,14 @@ def test_two_weeks_of_onions_are_one_row_with_the_total_and_the_note(signed_in, 
 def test_one_weeks_line_and_a_hand_add_look_as_they_always_did(signed_in, two_weeks):
     this_week, next_week = two_weeks
     lone = _line("Carrots", "4", this_week)
-    mine = _line("Milk", "1", None)
+    mine = _line("Milk", "1 bag", None)
     _line("Milk", "2", next_week)
     rows = _needed_rows(signed_in)
     assert "week_group" not in rows[lone]
-    assert "week_group" not in rows[mine], "a household's own want is never folded into a week"
+    # Since 2026-11-09 a household's own amount DOES share the row when the
+    # two add up ("same kind = one line", tests/test_standing_want_survives_two_moves.py);
+    # "1 bag" beside "2" does not add up, so it is still its own row.
+    assert "week_group" not in rows[mine], "amounts that don't add up are never one row"
 
 
 def test_a_week_ticked_and_a_week_not_are_two_rows_again_and_both_ticked_are_one(signed_in, two_weeks):

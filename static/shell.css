@@ -2385,6 +2385,10 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 /* The Holding chip (2026-09-15): the same chip carrying a whole sentence
    of the person's words, so the words wrap and the link doesn't. */
 .ask-remembered.is-held .ask-remembered-fix { white-space: nowrap; }
+/* An allergy refusal's chip (2026-11-09): "Not planned" in the allergy
+   line's ink, and its "Plan it anyway" button never wraps. */
+.ask-remembered.is-refused .ask-remembered-label { color: var(--warn-ink); }
+.ask-remembered.is-refused .ask-remembered-fix { white-space: nowrap; }
 /* The word on a slot card's eyebrow for the eight seconds after a card is
    saved (daySlotCardHtml); the tile itself is shared with Kept above. Its
    placement lives with the Plan root's styles (.wk-slot-eyebrow .wk-changed). */

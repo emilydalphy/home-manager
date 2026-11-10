@@ -10113,8 +10113,8 @@ def swap_meal_in_plan_for_chat(*args, override: bool = False, repeat: bool = Fal
     swap_meal_in_plan with the two refusals a PERSON is owed in front of
     it: a night that has already gone by, and — since 2026-09-21 — a dish
     somebody at the table can't have (allergen_gate.refuse_if_clashing,
-    which `override`, the person's own "do it anyway", is the only way
-    past).
+    which `override`, set by the tap on the refusal's "Plan it anyway"
+    button and nothing else, is the only way past).
 
     agent.TOOL_FUNCTIONS points at this rather than at the function itself,
     the shape grocery.add_grocery_item_for_chat already uses (2026-09-15).

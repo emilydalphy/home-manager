@@ -920,8 +920,11 @@ def test_taking_both_offers_in_a_row_cannot_leave_the_week_worse(signed_in, capp
     _recipe("Lasagna", 60)
     _recipe("Quick Eggs", 10)
     tools.save_week_intake(week, night_tags={dates[1]: ["rush"], dates[2]: ["rush"]})
+    # Moussaka asked for on ITS night, Tuesday: two asks naming one day
+    # are snag rule 7's (2026-11-09), not this test's.
     stub_model(_week(dates, ["Quick Eggs", "Moussaka", "Lasagna"] + ["Quick Eggs"] * 4,
-                     **{dates[1]: _asked_for("Moussaka"), dates[2]: _asked_for("Lasagna")}))
+                     **{dates[1]: {"derived_from": {"freeform": "I want Moussaka on Tuesday"}},
+                        dates[2]: _asked_for("Lasagna")}))
     plan_id, _ = run(week, None)
 
     flags = _flags(plan_id)
