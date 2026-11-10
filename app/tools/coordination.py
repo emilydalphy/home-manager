@@ -201,6 +201,12 @@ _WHEAT_WORDS = {
     "brownie mix", "cookie mix", "cornbread mix", "stuffing mix", "gravy mix",
     "frozen waffle", "eggo", "chicken nugget", "fish stick", "fish finger", "breaded",
     "pierogi", "pierogy", "perogy", "perogies", "pizza base", "pizza shell", "crumpet",
+    # First-week hunt (2026-11-10): breads and breaded foods by definition.
+    # The approve sweep re-picked a celiac child's lunch onto the library's
+    # Misal Pav ("Pav rolls" is a wheat roll), and chat or a Tweak's
+    # "Something else" put French Toast, Chicken Katsu and a schnitzel on
+    # the week on the name alone. Whole words: "pav" never reaches pavlova.
+    "pav", "french toast", "schnitzel", "katsu", "tonkatsu",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -644,7 +650,8 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     )),
     (frozenset({"pasta", "pastas"}), re.compile(
         r"\b(?:chickpea|lentil|rice)\s+pastas?\b"
-    )),
+    )),    # Pav bhaji masala is the spice blend, not the roll (2026-11-10).
+    (frozenset({"pav", "pavs"}), re.compile(r"\bpav\s+bhaji\s+masala\b")),
 )
 _LIBRARY_PHRASE_ONLY = frozenset((e[0], e[1]) for e in _LIBRARY_COMPOUNDS)
 
