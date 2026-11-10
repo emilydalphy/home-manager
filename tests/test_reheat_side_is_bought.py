@@ -306,6 +306,171 @@ def test_dropping_a_fed_night_with_its_own_side_leaves_the_cooks_salad_at_one():
     assert _shares(cook)["Lettuce"] == "1 head"
 
 
+# ---------- after approval, with a dressed salad (review, 2026-11-10) ----------
+# Olive oil is a spice line ('spice' status, not 'needed') and lemon is an
+# item a dish can share — the two things a lettuce-only salad never asked.
+
+DRESSED = {
+    "name": "Green salad",
+    "ingredients": [
+        {"item": "Lettuce", "qty": "1 head", "category": "produce"},
+        {"item": "Lemon", "qty": "1", "category": "produce"},
+        {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+    ],
+    "covers": ["vegetable"],
+}
+
+
+def _lemon_chili():
+    tools.add_recipe(
+        "Turkey Chili",
+        ingredients=[
+            {"item": "Ground turkey", "qty": "1.5 lbs", "category": "meat"},
+            {"item": "Lemon", "qty": "1", "category": "produce"},
+        ],
+        default_servings=2,
+    )
+
+
+def _week(fed_days=(THU,), cook_sides=(), fed_sides=None, standing=()):
+    """A fresh chain Monday -> fed_days, with sides attached BEFORE approval,
+    approved. fed_sides maps a fed day to its sides."""
+    for item, qty in standing:
+        tools.add_grocery_item(item, quantity=qty, category="produce")
+    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    cook = tools.plan_meal(MON, "Turkey Chili", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    fed = {d: tools.plan_meal(d, "Turkey Chili", slot="dinner", weekly_plan_id=plan_id)["entry_id"] for d in fed_days}
+    assert isinstance(tools.set_cook_ahead(cook, list(fed.values())), dict)
+    for side in cook_sides:
+        _attach(cook, side)
+    for d, sides in (fed_sides or {}).items():
+        for side in sides:
+            _attach(fed[d], side)
+    tools.approve_weekly_plan(plan_id)
+    return plan_id, cook, fed
+
+
+def _attach(entry_id, side):
+    if isinstance(side, str):
+        assert _plates.add_component(entry_id, key=side)["status"] == "added"
+    else:
+        _plates.attach_sides(entry_id, [side], list(side.get("covers") or []))
+
+
+def _matches_a_fresh_approval(plan_id, **final):
+    """Every line on the list equals what approving the final shape from
+    scratch reads — the oracle for every post-approval path."""
+    now = _list()
+    tools.clear_weekly_plan(plan_id)
+    # A standing want is still on the list after the clear; not added twice.
+    _week(**{**final, "standing": ()})
+    assert _list() == now
+
+
+@ON_MONDAY
+def test_a_dressed_salad_put_on_the_fed_night_after_approval_reads_like_a_fresh_approval():
+    """CATCH (review repro 1) — the spice line (olive oil) must not stop the
+    resize. Reported on the first cut: Lettuce 3, Lemon 5."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(cook_sides=[DRESSED])
+    lettuce_id = {i["item"]: i["id"] for i in tools.list_grocery_list()}["Lettuce"]
+
+    _plates.carry_sides([DRESSED], fed[THU])
+
+    assert _list()["Lettuce"] == "2 heads"
+    # Resized in place: the line row (and whatever state it carries) stays.
+    assert {i["item"]: i["id"] for i in tools.list_grocery_list()}["Lettuce"] == lettuce_id
+    _matches_a_fresh_approval(plan_id, cook_sides=[DRESSED], fed_sides={THU: [DRESSED]})
+
+
+@ON_MONDAY
+def test_with_standing_lettuce_and_lemon_the_households_own_stay_theirs():
+    """CATCH (review repro 1, standing want) — reported Lettuce 4 / Lemon 7."""
+    _household()
+    _lemon_chili()
+    standing = (("Lettuce", "1 head"), ("Lemon", "1"))
+    plan_id, cook, fed = _week(cook_sides=[DRESSED], standing=standing)
+
+    _plates.carry_sides([DRESSED], fed[THU])
+
+    assert _list()["Lettuce"] == "3 heads"
+    _matches_a_fresh_approval(plan_id, cook_sides=[DRESSED], fed_sides={THU: [DRESSED]}, standing=standing)
+
+
+@ON_MONDAY
+def test_two_fed_nights_and_a_salad_added_to_one_of_them():
+    """CATCH (review repro 1, two fed nights) — Monday's salad covers
+    Monday and Tuesday, Thursday's covers Thursday: 3 heads, reported 4."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(fed_days=(TUE, THU), cook_sides=[DRESSED])
+
+    _plates.carry_sides([DRESSED], fed[THU])
+
+    assert _list()["Lettuce"] == "3 heads"
+    _matches_a_fresh_approval(plan_id, fed_days=(TUE, THU), cook_sides=[DRESSED], fed_sides={THU: [DRESSED]})
+
+
+@ON_MONDAY
+def test_removing_a_fed_nights_approval_time_salad_regrows_the_cooks_without_doubling_the_lemon():
+    """CATCH (review repros 1 and 2) — the side was on Thursday at approval.
+    Taking it off must grow Monday's salad back (reported: a head dropped,
+    Lettuce 1) and must take Thursday's lemon with it even though the
+    reheated dish lists lemon — the dish is never bought on a reheat
+    (reported: Lemon 5)."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(cook_sides=[DRESSED], fed_sides={THU: [DRESSED]})
+
+    assert _plates.remove_component(fed[THU], "Green salad")["status"] == "removed"
+
+    assert _list()["Lettuce"] == "2 heads"
+    _matches_a_fresh_approval(plan_id, cook_sides=[DRESSED])
+
+
+@ON_MONDAY
+def test_undoing_the_cooks_added_salad_leaves_the_dishs_lemons():
+    """CATCH (review repro 3) — catalogue salads added after approval to
+    both nights, then Monday's undone. Its Undo must take back only its own
+    ledger rows; on the first cut the resize merged the dish's lemon into
+    the side's row and the Undo took the dish's lemons too (Lemon 1)."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week()
+    _plates.add_component(cook, key="green-salad")
+    _plates.add_component(fed[THU], key="green-salad")
+    # The dish's 2 + half a lemon for each night's own salad. Monday's
+    # added salad shrinks on its OWN ledger row (4 if it were left covering
+    # Thursday too).
+    assert _list()["Lemon"] == "3"
+
+    assert _plates.remove_component(cook, "Green salad")["status"] == "removed"
+
+    _matches_a_fresh_approval(plan_id, fed_sides={THU: ["green-salad"]})
+
+
+@ON_MONDAY
+def test_a_resize_that_fails_part_way_leaves_the_list_exactly_as_it_was(monkeypatch):
+    """GUARD (review repro 4) — reversal and re-buy are one transaction: a
+    failure in the re-buy rolls the reversal back with it."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(cook_sides=[DRESSED])
+    _plates.attach_sides(fed[THU], [DRESSED], ["vegetable"])
+    before_list, before_cook = _list(), _shares(cook)
+
+    from app.tools import weekly_plan as _wp
+
+    def boom(*a, **k):
+        raise RuntimeError("re-buy failed")
+    monkeypatch.setattr(_wp, "_ingest_recipe_group_and_sides", boom)
+
+    assert _plates.resize_feeding_cooks_sides(fed[THU]) == []
+    assert _list() == before_list
+    assert _shares(cook) == before_cook
+
+
 @ON_MONDAY
 def test_a_standing_lettuce_stays_exactly_the_households_own_head():
     """GUARD — the ledger rule from CLAUDE.md: a household's own "Lettuce
