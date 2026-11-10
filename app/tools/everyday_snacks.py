@@ -359,13 +359,21 @@ def eligible(memory: dict, all_variants: bool = False) -> list[dict]:
         return list(_ELIGIBLE_CACHE[sig])
     out = []
     for snack in load_list():
-        if taste != "both" and taste not in snack["taste"]:
-            continue
         for variant in (snack, snack["swap"]):
             if variant and _fits(variant, avoid_hard, excludes, dislikes):
                 out.append(variant)
                 if not all_variants:
                     break
+    if taste != "both":
+        narrowed = [v for v in out if taste in v["taste"]]
+        # Too few of their kind left for a week of different snacks (a
+        # sweet-only house with nut and dairy allergies keeps three): the
+        # whole safe list instead, rather than the same three on repeat and
+        # the model inventing the rest. Still only snacks that passed the
+        # checks above (review, 2026-11-10).
+        wanted = int(memory.get("snack_dishes_per_week") or 0)
+        if len(narrowed) >= max(wanted, 1):
+            out = narrowed
     if len(_ELIGIBLE_CACHE) > 64:
         _ELIGIBLE_CACHE.clear()
     _ELIGIBLE_CACHE[sig] = tuple(out)
@@ -572,13 +580,16 @@ class _Chooser:
                 return False
         return True
 
-    def choose(self, name: str, dates: list[str], leaving: str = "") -> dict | None:
+    def choose(self, name: str, dates: list[str], leaving: str = "", kind: str | None = None) -> dict | None:
         own = self.listed.get(_key(name))
         # The list's own snack this house can't have as written: its
         # nut-free swap first, so the snack is kept rather than lost.
         first = [v for v in ((own, own["swap"]) if own else ())
                  if v and _key(v["name"]) in self.ok and _key(v["name"]) not in self.recent]
-        return next((v for v in first + self.candidates if self.fits(v, dates, leaving)), None)
+        if kind:  # "both" asking for the kind the week is missing
+            first = []
+        return next((v for v in first + self.candidates
+                     if (not kind or kind in v["taste"]) and self.fits(v, dates, leaving)), None)
 
     def landed(self, variant: dict, dates: list[str], leaving: str = "") -> None:
         self.on_week.add(variant["index"])
@@ -635,6 +646,35 @@ def fill_held_snacks(plan_id: int, held: list[dict], memory: dict, period_start:
     return rest
 
 
+def _want_the_missing_kind(dishes: dict, todo: list[dict], chooser, memory: dict) -> None:
+    """ "Both" is a mix (Emily, 2026-11-05), checked rather than only asked
+    for (review, 2026-11-10): a week of two or more snacks that came back
+    all one kind has its last replaceable list snack swapped for the other
+    kind. Snacks being replaced anyway are judged by what they become, so
+    only snacks that stay are counted."""
+    if snack_taste(memory) != "both" or len(dishes) < 2:
+        return
+    staying = [d for d in dishes.values() if d not in todo]
+    kinds = []
+    for d in staying:
+        own = chooser.listed.get(_key(d["name"]))
+        kinds.append(own["taste"] if own else ["sweet", "savory"])
+    has_sweet = any("sweet" in k for k in kinds)
+    has_savory = any("savory" in k for k in kinds)
+    if (has_sweet and has_savory) or (len(todo) >= 2 and not kinds):
+        # Two or more replacements with nothing staying: they alternate.
+        return
+    missing = "sweet" if not has_sweet else "savory"
+    if todo:
+        todo[0]["kind"] = missing
+        return
+    for d in reversed(staying):
+        if not d["protected"] and chooser.listed.get(_key(d["name"])):
+            d["kind"] = missing
+            todo.append(d)
+            return
+
+
 def enforce_snacks_from_list(plan_id: int, dates: list[str], memory: dict, period_start: str | None = None,
                              asks: tuple[str | None, ...] = ()) -> dict:
     """See the module docstring. Returns what it replaced and what it left."""
@@ -669,6 +709,7 @@ def enforce_snacks_from_list(plan_id: int, dates: list[str], memory: dict, perio
 
         chooser = _Chooser(plan_id, memory, period_start, sorted(in_scope))
         todo = [d for d in dishes.values() if not d["protected"] and chooser.needs_replacing(d["name"])]
+        _want_the_missing_kind(dishes, todo, chooser, memory)
         if not todo:
             return out
         for d in dishes.values():
@@ -679,7 +720,11 @@ def enforce_snacks_from_list(plan_id: int, dates: list[str], memory: dict, perio
         for dish in todo:
             leaving = dish["name"].lower()
             days = [e["date"] for e in dish["entries"]]
-            pick = chooser.choose(dish["name"], days, leaving)
+            pick = chooser.choose(dish["name"], days, leaving, kind=dish.get("kind"))
+            if pick is None and dish.get("kind"):
+                if not chooser.needs_replacing(dish["name"]):
+                    continue  # nothing of the missing kind fits: the week stands
+                pick = chooser.choose(dish["name"], days, leaving)
             if pick is None:
                 out["left"].append(dish["name"])
                 continue

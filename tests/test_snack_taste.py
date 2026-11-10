@@ -108,3 +108,25 @@ def test_setup_and_settings_save_it(signed_in):
     assert res.status_code == 200, res.text
     assert res.json()["snack_taste"] == "both"
     assert signed_in.post("/api/memory/edit", json={"field": "snack_taste", "value": "crunchy"}).status_code == 400
+
+
+def test_both_turns_an_all_savory_week_into_a_mix(household, monkeypatch):
+    """Review, 2026-11-10: four savory list snacks all stay on the list,
+    so only the mix check changes one of them to a sweet snack."""
+    savory = ["Roasted Chickpeas", "Edamame with Sea Salt", "Mini Quiche Cups", "Elote Cups"]
+    names = {m["meal"] for m in _snacks(_plan(monkeypatch, _monday(), _week(_monday(), snacks=savory)))}
+    assert len(names) == 4, names
+    assert any(_taste_of(n) == ["sweet"] for n in names), names
+    assert sum(n in savory for n in names) == 3, names
+
+
+def test_too_few_of_their_kind_falls_back_to_the_whole_safe_list(household):
+    """A sweet-only house with nut and dairy allergies keeps three sweet
+    snacks, fewer than the four a week it plans: it gets the whole list
+    that is safe for it, and still nothing with nuts or dairy."""
+    tools.edit_preference("snack_taste", "sweet")
+    tools.set_member_dietary_restrictions("Sam", ["tree nut allergy", "peanut allergy", "dairy allergy"])
+    allowed = everyday_snacks.eligible(tools.get_household_memory())
+    assert len(allowed) >= 4
+    assert any("savory" in v["taste"] for v in allowed)
+    assert not any({"nuts", "peanuts", "dairy"} & set(v["allergens"]) for v in allowed), allowed
