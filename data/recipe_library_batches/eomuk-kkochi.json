@@ -1,0 +1,48 @@
+{
+ "dish_name": "Eomuk Kkochi",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Korean fish cake sheets", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Dried anchovies, heads removed", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 oz (about 15)"},
+  {"item": "Kombu", "qty": "1 package", "category": "pantry", "cook_qty": "1 piece (4 by 4 inches)"},
+  {"item": "Korean radish", "qty": "4 oz", "category": "produce"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Soup soy sauce (guk ganjang)", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Gochugaru (Korean chili flakes)", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"},
+  {"item": "Black pepper", "qty": "to taste", "category": "pantry"},
+  {"item": "Bamboo skewers", "qty": "1 package", "category": "other", "cook_qty": "8"}
+ ],
+ "instructions": [
+  "Put 6 cups water, the anchovies and the piece of kombu in a medium pot. Bring it to a boil over high heat, then turn it down to a gentle simmer.",
+  "Meanwhile, peel the radish and cut it into thin squares about 1 inch across.",
+  "After the broth has simmered for 10 minutes, lift out the kombu and throw it away. Simmer the anchovies for 5 minutes, then scoop them out with a slotted spoon and throw them away.",
+  "Add the radish and cook at a steady simmer for 5 to 7 minutes, until the squares are soft and see-through at the edges.",
+  "Meanwhile, cut the fish cake sheets into strips about 1 1/2 inches wide. Thread each strip onto a skewer in a zigzag, folding it back and forth as you go. That should be about 8 skewers.",
+  "Set the skewers in a colander in the sink and pour a kettle of boiling water over them. It rinses off the frying oil.",
+  "Mince the garlic and add it to the broth with the 1 tbsp soup soy sauce.",
+  "Make the dipping sauce. Finely chop 1 green onion. In a small bowl, stir together the 3 tbsp soy sauce, 1 tbsp rice vinegar, 1 tbsp water and the chopped green onion. Put the 1/2 tsp gochugaru in its own little dish for anyone who wants heat.",
+  "Lay the skewers in the pot with the handles sticking out. Simmer for 4 to 5 minutes, spooning broth over any fish cake above the surface, until they puff up and soften.",
+  "Taste the broth. If it's flat, add a pinch of salt and a grind of black pepper.",
+  "Turn off the heat. Thinly slice the last green onion and scatter it over the pot.",
+  "Serve each skewer in a cup or bowl with a ladle of broth and radish, with the dipping sauce and the gochugaru on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version simmers fish cakes in a light anchovy and kelp broth with Korean radish, seasons it with soy sauce and serves it hot, and Korean Bapsang (the lead) says the street version comes on long skewers with the broth in a cup. This follows Korean Bapsang's radish, garlic and soup soy sauce and its quick rinse of the fish cakes, makes the broth from scratch like Went Here 8 This, and threads the strips onto skewers the way Went Here 8 This and Beyond Kimchee do. The dipping sauce follows Beyond Kimchee with the chili flakes moved to their own dish so the sauce stays mild. No version had 20 or more ratings and RecipeTin Eats has no version of this dish, so this leads with the best version read.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Eomuk Guk (Fish Cake Soup)", "url": "https://www.koreanbapsang.com/eomuk-guk-fish-cake-soup", "rating": 4.9, "rating_count": 13, "read": true, "lead": true},
+  {"name": "Went Here 8 This", "title": "Korean Fish Cake Soup (Odeng)", "url": "https://www.wenthere8this.com/odeng/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Beyond Kimchee", "title": "Korean Fish Cake Soup (Eomuk Guk / Odeng Guk)", "url": "https://www.beyondkimchee.com/korean-fish-cake-soup", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Kimchimari", "title": "Fish Cake Soup (Odeng Soup aka Eomuk Guk)", "url": "https://kimchimari.com/fish-cake-soup-odeng-soup/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

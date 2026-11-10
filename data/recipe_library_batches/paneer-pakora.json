@@ -1,0 +1,124 @@
+{
+ "dish_name": "Paneer Pakora",
+ "cuisine": "Indian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Paneer",
+   "qty": "7 oz (200 g)",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ajwain (carom seeds)",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Besan (chickpea flour)",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger garlic paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free asafoetida (hing)",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Cut the paneer into slices 1/2 inch thick, then into pieces about 1 1/2 inches across. Pat them dry with paper towels.",
+  "Chop 2 tbsp of the cilantro. Crush the 1/4 tsp ajwain between your palms.",
+  "In a large bowl, mix the 1 cup besan, 2 tbsp rice flour, 1/4 tsp turmeric, 1/2 tsp chili powder, the ajwain, 1 tsp ginger garlic paste, 1/2 tsp salt, the pinch of asafoetida and the cilantro.",
+  "Whisk in 1/2 cup water, then add more 1 tbsp at a time until the batter is smooth and thick, like pancake batter, and coats the back of a spoon.",
+  "Pour the 3 cups oil into a heavy saucepan and heat it over medium to 350°F. If you have a thermometer, check it there. No thermometer? Drop in a little batter. It should sizzle and rise to the top straight away.",
+  "Stir the 1/2 tsp baking powder into the batter.",
+  "Dip a piece of paneer in the batter, let the extra drip off and slide it into the oil. Add 5 or 6 pieces this way and leave them alone for 1 minute, until the coating sets.",
+  "Turn them and fry, turning now and then, for 3 to 4 minutes, until they're golden and crisp all over.",
+  "Lift them out with a slotted spoon onto paper towels. Fry the rest the same way.",
+  "Serve hot with the green chutney."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions dip pieces of paneer in a thick besan batter with a little rice flour for crispness, spiced with ajwain and chili, and deep fry them until golden. Hebbar's Kitchen (the lead) puts ginger garlic paste, turmeric, asafoetida and cilantro in the batter and adds baking powder just before frying; Swasthi's Recipes rubs the paneer with chaat masala and garam masala first, and Piping Pot Curry rests the batter for 10 minutes. This follows Hebbar's batter with mild Kashmiri chili powder, served with green chutney as all three suggest. The asafoetida is the gluten-free kind.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Paneer Pakora Recipe | Masala Stuffed Crispy Paneer Pakoda",
+   "url": "https://hebbarskitchen.com/paneer-pakora-recipe-paneer-pakoda/",
+   "rating": 5.0,
+   "rating_count": 230,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Paneer Pakora Recipe",
+   "url": "https://www.indianhealthyrecipes.com/paneer-pakora-recipe-paneer-pakoda/",
+   "rating": 4.98,
+   "rating_count": 42,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Piping Pot Curry",
+   "title": "Easy Paneer Pakora",
+   "url": "https://pipingpotcurry.com/easy-paneer-pakora/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

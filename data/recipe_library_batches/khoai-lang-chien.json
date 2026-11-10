@@ -1,0 +1,91 @@
+{
+ "dish_name": "Khoai Lang Chien",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Sweet potatoes",
+   "qty": "2 (about 1 1/2 lbs)",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the sweet potatoes and cut them into sticks about 3 inches long and 1/2 inch thick.",
+  "Stir 1 tsp of the salt into a large bowl of cold water. Add the sweet potato sticks and leave them to soak for 15 minutes.",
+  "Meanwhile, whisk the 1/2 cup rice flour, 1/4 cup all-purpose flour, 1/4 cup cornstarch and the last 1/4 tsp salt in another bowl. Whisk in about 2/3 cup cold water a little at a time, until the batter is thick and smooth like pancake batter, with no lumps.",
+  "Pour the 4 cups oil into a heavy pot and heat it over medium to 350°F. If you have a thermometer, check it there. No thermometer? Drop in a little batter. It should sizzle and float straight away.",
+  "Drain the sweet potatoes and pat them very dry with a clean towel. Wet sticks make the oil spatter and the batter slide off.",
+  "Add a third of the sticks to the batter and turn them until they're coated. Lift them out one at a time and let the extra drip off.",
+  "Lower them into the oil one by one so they don't stick together. Fry them for 4 to 5 minutes, turning them now and then, until the coating is golden and crisp on every side. Stand back a little. The oil can spatter.",
+  "Lift them out with a slotted spoon onto paper towels. Batter and fry the rest in two batches the same way, letting the oil heat back up between batches.",
+  "Serve hot with the sriracha."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The versions read all cut peeled sweet potato into thick sticks, coat them in a flour batter and fry them golden. VOH (the lead) soaks the sticks in salted water, uses a thick batter of rice flour, wheat flour and packaged crispy frying mix, and serves them with chili sauce; VnExpress blanches the sticks with turmeric and fries them twice, and Cooking with a Foreigner sweetens the batter with sugar. Cornstarch stands in here for the packaged frying mix, the batter is scaled up so every stick is well coated, and sriracha is the chili sauce. No version carried recipe rating data (VOH's 4.6 from 20 is an article rating, not a recipe one) and RecipeTin Eats, the trusted cook for this cuisine, has no version of this dish, so it leads with the best version read.",
+ "sources": [
+  {
+   "name": "VOH",
+   "title": "Cách làm khoai lang chiên bột giòn ngon khó cưỡng",
+   "url": "https://voh.com.vn/nau-nuong/3-cach-lam-khoai-lang-chien-gion-an-vat-that-bat-mieng-334204.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "VnExpress",
+   "title": "Cách làm khoai lang chiên giòn",
+   "url": "https://vnexpress.net/khoai-lang-chien-gion-4682187.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking with a Foreigner",
+   "title": "How to make Vietnamese fried sweet potato (khoai lang chien)",
+   "url": "https://cookingwithaforeigner.blogspot.com/2020/03/how-to-make-vietnamese-fried-sweet.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

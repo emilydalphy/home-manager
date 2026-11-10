@@ -1,0 +1,110 @@
+{
+ "dish_name": "Broccoli Cheddar Tots",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Broccoli florets",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cheddar cheese",
+   "qty": "2 oz",
+   "category": "dairy",
+   "cook_qty": "1/2 cup shredded"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Egg",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Italian breadcrumbs",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Line a baking sheet with parchment.",
+  "Bring a medium pot of water to a boil. Meanwhile, fill a large bowl with cold water.",
+  "Add the broccoli to the boiling water and cook it for 1 minute, until it's bright green.",
+  "Drain the broccoli and transfer it into the cold water for 1 minute. Drain it well and pat it very dry with a clean towel. Wet broccoli makes soft tots that fall apart.",
+  "Chop the broccoli finely, into pieces no bigger than 1/4 inch. Stop before it turns to mush.",
+  "Dice a quarter of the onion finely. That should be about 1/4 cup.",
+  "Shred the cheddar and chop 2 tbsp of the parsley.",
+  "Beat the egg in a large bowl. Add the broccoli, onion, cheddar, parsley, 1/3 cup panko, 1/3 cup Italian breadcrumbs, 1/2 tsp salt and 1/4 tsp pepper. Mix until it holds together when you squeeze a little in your hand.",
+  "Scoop about 1 1/2 tbsp of the mixture, squeeze it firmly into a ball and shape it into a little log. Set it on the baking sheet. Make the rest the same way. That should be about 20. Rinse your hands every few tots if the mixture sticks.",
+  "Bake the tots for 10 minutes. Flip them and bake the other side for 10 to 12 minutes, until they're golden brown and crisp.",
+  "Let them sit on the sheet for 2 minutes. Serve hot with the ketchup."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions briefly blanch the broccoli, chop it fine, bind it with an egg, cheddar and breadcrumbs, shape small tots and bake them at 400°F, turning them halfway. Gimme Delicious (the lead) uses both panko and Italian breadcrumbs with onion and parsley; Chef Savvy adds parmesan, garlic powder and onion powder, and Skinnytaste adds scallions and an extra egg white. This follows the lead with a little more cheddar, 1/2 cup instead of 1/3, and ketchup on the side as all three serve it.",
+ "sources": [
+  {
+   "name": "Gimme Delicious",
+   "title": "Healthy Baked Broccoli Tots",
+   "url": "https://gimmedelicious.com/?p=5781",
+   "rating": 4.7,
+   "rating_count": 73,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chef Savvy",
+   "title": "Broccoli Cheddar Tots",
+   "url": "https://chefsavvy.com/broccoli-cheddar-tots/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Skinnytaste",
+   "title": "Broccoli and Cheese Tots",
+   "url": "https://www.skinnytaste.com/broccoli-and-cheese-tots/",
+   "rating": 4.5,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

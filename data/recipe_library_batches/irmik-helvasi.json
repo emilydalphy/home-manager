@@ -1,0 +1,36 @@
+{
+ "dish_name": "Irmik Helvasi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Milk", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2/3 cup"},
+  {"item": "Unsalted butter", "qty": "4 tbsp", "category": "dairy"},
+  {"item": "Semolina", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Ground cinnamon", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "In a small saucepan, stir the 1/2 cup milk, 1/2 cup water and 2/3 cup sugar over medium heat for about 3 minutes, until the sugar dissolves. Take it off the heat and keep it by the stove.",
+  "Melt the 4 tbsp butter in a wide nonstick skillet over medium low heat.",
+  "Add the 1/2 cup semolina and turn the heat down to low. Stir it often for about 15 minutes, until it's an even golden brown and smells toasty. Stay with it. Burnt semolina makes the whole pan bitter.",
+  "Pour in the warm milk syrup. Stand back a little. It bubbles and spits when it hits the pan.",
+  "Stir right away and keep stirring over low heat for 3 to 5 minutes, until the liquid is absorbed and the mix pulls together and thickens.",
+  "Take it off the heat, cover the pan and leave it for 10 minutes.",
+  "Fluff it with a spoon and scoop it into 4 small bowls, or shape it into ovals with two spoons.",
+  "Dust the 1/4 tsp cinnamon over the top.",
+  "Serve warm or at room temperature with tea."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions toast semolina slowly in butter for 10 to 15 minutes until golden, then pour in a hot sweet liquid and cook it until it's absorbed. Cooking Gorgeous (the lead) uses equal milk and water and dusts it with cinnamon; Havoc in the Kitchen uses water only with a pinch of salt and rests it covered, and J Cooking Odyssey uses twice as much water as milk. This is half the lead's amount, and the pine nuts all three versions toast in the butter are left out to keep it nut free. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the version with the most ratings leads.",
+ "sources": [
+  {"name": "Cooking Gorgeous", "title": "Irmik Helvasi (Turkish Semolina Halva)", "url": "https://cookingorgeous.com/blog/irmik-helvasi-turkish-semolina-halva/", "rating": 5.0, "rating_count": 10, "read": true, "lead": true},
+  {"name": "J Cooking Odyssey", "title": "Turkish Semolina Halva (Irmik Helvasi)", "url": "https://www.jcookingodyssey.com/irmik-helvasi-turkish-semolina-halva", "rating": 5.0, "rating_count": 7, "read": true, "lead": false},
+  {"name": "Havoc in the Kitchen", "title": "Turkish Semolina Halva (Irmik Helvası)", "url": "https://www.havocinthekitchen.com/?p=29811", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

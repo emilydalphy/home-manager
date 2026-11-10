@@ -1,0 +1,43 @@
+{
+ "dish_name": "Potato Skins",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 80,
+ "ingredients": [
+  {"item": "Small russet potatoes", "qty": "4", "category": "produce"},
+  {"item": "Bacon", "qty": "1 package", "category": "meat/seafood", "cook_qty": "3 slices"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Unsalted butter", "qty": "1 package", "category": "dairy", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Dried parsley", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Shredded cheddar cheese", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "3/4 cup"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy", "cook_qty": "1/2 cup"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Scrub the 4 potatoes, dry them, and poke each one a few times with a fork.",
+  "Put them on a baking sheet and bake for 40 to 50 minutes, until a fork slides into the middle with no resistance.",
+  "Meanwhile, lay 3 slices of bacon in a cold skillet and set it over medium heat. Cook them for 8 to 10 minutes, turning them now and then, until they're crisp and deep golden.",
+  "Transfer the bacon to a paper towel. Once it's cool, crumble it.",
+  "Thinly slice 2 green onions. That should be about 2 tbsp.",
+  "Melt 1 1/2 tbsp butter in a small bowl in the microwave, about 30 seconds. Stir in the 1/4 tsp dried parsley, 1/4 tsp salt and 1/4 tsp garlic powder.",
+  "Take the potatoes out and let them cool for about 10 minutes, until you can hold them. Leave the oven on. Cut each potato in half lengthwise.",
+  "Scoop out the flesh with a spoon, leaving a shell about 1/4 inch thick. Go gently near the skin so it doesn't tear. Keep the scooped potato in the fridge for mashed potatoes or soup.",
+  "Brush the butter mixture over the inside and outside of each skin. Set them cut side down on the baking sheet.",
+  "Bake them for 15 minutes. Turn them cut side up and bake for 5 minutes, until the edges are golden and crisp.",
+  "Fill the skins with the 3/4 cup cheddar and the crumbled bacon. Bake for 5 to 7 minutes, until the cheese is melted and bubbling.",
+  "Top each skin with a spoonful of sour cream, about 1/2 cup in all, and scatter the green onion over them. Serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions bake small russets whole, scoop them out leaving about a 1/4 inch shell, crisp the skins with melted butter, then melt cheddar and bacon on top and finish with sour cream and green onion. Spend With Pennies seasons the butter with parsley, seasoned salt and garlic powder and bakes the skins face down then face up; Downshiftology and Well Plated broil them instead, and Well Plated swaps the sour cream for Greek yogurt with smoked paprika. This follows Spend With Pennies at two thirds the amount, with plain salt in place of seasoned salt and the bacon cooked in a skillet while the potatoes bake.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Crispy Oven Baked Potato Skins", "url": "https://www.spendwithpennies.com/crispy-oven-baked-potato-skins/", "rating": 4.99, "rating_count": 202, "read": true, "lead": true},
+  {"name": "Well Plated", "title": "Potato Skins Recipe", "url": "https://www.wellplated.com/potato-skins/", "rating": 5.0, "rating_count": 10, "read": true, "lead": false},
+  {"name": "Downshiftology", "title": "Ultimate Potato Skins", "url": "https://downshiftology.com/recipes/potato-skins/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
