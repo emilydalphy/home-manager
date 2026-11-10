@@ -43,6 +43,7 @@ for r in recs:
 import re, collections
 EX = json.load(open(f"{H}/examples.json"))
 LOCKED = json.load(open(f"{H}/locked.json"))
+MEALS = {d["dish_name"]: d["meal"] for d in json.load(open(f"{os.path.dirname(H)}/data/recipe_library_seed.json"))["dishes"]}
 FOOD = set(ARITY) - {"well", "pool"}
 WHOLE = {"tart", "hotdog", "baguette", "flautas", "phyllo", "loaf", "ringbread", "skewers", "tacos", "sandwiches", "toast", "cups", "omelette", "steak", "bread", "fillet", "chop", "potatoes", "wrap", "pizza", "pancakes", "flatbread", "pastries", "stuffed", "rolls", "patties", "glass", "wedgering", "noodles", "cutlet", "block", "bowl", "dipbowl", "drumstick", "muffin", "quesadilla", "burger", "pretzel", "waffle", "sando", "onigiri", "bao", "spiral", "ribs", "tamagoyaki", "summerroll", "madeleine", "smallfish", "wholefish", "sticks", "teaegg",
          "croissant", "biscuits", "braidbread", "danish", "tamales", "gimbap", "pitapocket", "kibbeh", "lettucecups"}
@@ -181,6 +182,12 @@ for r in recs:
             bad.append(f"{name}: {o[0]} spills past the plate; make it smaller or move it in")
         if o[0] == "orzo" and ((o[1] - 50) ** 2 + (o[2] - 50) ** 2) ** 0.5 + max(o[3], o[4]) * 1.08 > 37:
             bad.append(f"{name}: orzo spills past the plate; make it smaller or move it in")
+    # rule 42: a snack with several parts shows every part
+    if MEALS.get(name) == "snack":
+        named = [x for x in re.split(r",|\band\b|&|\bplus\b|\bwith\b|\bon\b", name, flags=re.I) if x.strip()]
+        foods = [k_ for k_ in kinds if k_ not in ("well", "pool")]
+        if len(named) >= 2 and len(foods) < len(named):
+            bad.append(f"{name}: the name lists {len(named)} foods but the plate draws {len(foods)}; show every part (rule 42)")
     if "band" in kinds:
         bad.append(f"{name}: stripes look rigid; pile toppings on rice with soft edges")
     # rule 18: stir-fries are long strips
