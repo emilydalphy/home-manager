@@ -315,3 +315,65 @@ clicks[0]();
 console.log(JSON.stringify({ continuous: log.recognitions[0].continuous }));
 """)
     assert out == {"continuous": False}
+
+
+# --- second review (2026-11-09): a late start() answer is per tap ----------
+
+STAGED_PLUGIN = """
+var listeners = {};
+var nativeCalls = [];
+var starts = [];
+window.Capacitor = {
+  isNativePlatform: function () { return true; },
+  isPluginAvailable: function (n) { return n === 'PomonaSpeech'; },
+  Plugins: { PomonaSpeech: {
+    isAvailable: function () { return Promise.resolve({ available: true }); },
+    start: function () { return new Promise(function (res) { starts.push(res); }); },
+    stop: function (o) { nativeCalls.push('stop:' + (o && o.session)); return Promise.resolve({ session: o && o.session, text: '' }); },
+    addListener: function (name, fn) { listeners[name] = fn; return Promise.resolve({ remove: function () {} }); }
+  } }
+};
+"""
+
+
+@_needs_node
+def test_send_then_tap_again_keeps_the_new_listen():
+    # Tap, Send while the model downloads, tap again. The first start's late
+    # answer must stop only its own listen, and the box keeps the second.
+    out = _run(IPHONE_APP_UA, """
+var h = window.setupDictation(input, micBtn, {});
+setTimeout(function () {
+  clicks[0]();           // start #1, still on its way
+  h.cancel();            // Send
+  clicks[0]();           // start #2
+  starts[0]({ session: 1 });
+  starts[1]({ session: 2 });
+  setTimeout(function () {
+    listeners.partial({ session: 2, text: 'second' });
+    console.log(JSON.stringify({ calls: nativeCalls, value: input.value, active: !!micBtn.classes.active }));
+  }, 10);
+}, 10);
+""", capacitor=STAGED_PLUGIN)
+    assert out == {"calls": ["stop:1"], "value": "second", "active": True}
+
+
+@_needs_node
+def test_a_thrown_away_box_never_stops_the_new_boxs_listen():
+    out = _run(IPHONE_APP_UA, """
+var oldBox = window.setupDictation(input, micBtn, {});
+var input2 = { value: '', placeholder: '', focus: function () {} };
+var btn2 = { dataset: {}, classes: {}, classList: { add: function (c) { btn2.classes[c] = true; }, remove: function (c) { delete btn2.classes[c]; } },
+  addEventListener: function (ev, fn) { clicks.push(fn); } };
+var newBox = window.setupDictation(input2, btn2, {});
+setTimeout(function () {
+  clicks[0]();           // old box starts
+  oldBox.dispose();      // the sheet redraws
+  clicks[1]();           // the new box starts
+  starts[0]({ session: 1 });
+  starts[1]({ session: 2 });
+  setTimeout(function () {
+    console.log(JSON.stringify({ calls: nativeCalls, newActive: !!btn2.classes.active }));
+  }, 10);
+}, 10);
+""", capacitor=STAGED_PLUGIN)
+    assert out == {"calls": ["stop:1"], "newActive": True}

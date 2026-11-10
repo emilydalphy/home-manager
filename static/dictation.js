@@ -134,14 +134,28 @@
     // events carry the number, so words from an earlier listen (another
     // box, or one this box gave up on) are never written here.
     var session = null;
+    // The tap whose start() is still on its way back. Each tap gets its own
+    // token, so a late answer to an earlier tap is recognised as stale.
+    var pendingStart = null;
+    var disposed = false;
 
     function keep(h) {
-      Promise.resolve(h).then(function (x) { if (x) handles.push(x); }).catch(function () {});
+      Promise.resolve(h).then(function (x) {
+        if (!x) return;
+        // Thrown away before the listener came back: let go at once.
+        if (disposed) { if (typeof x.remove === 'function') x.remove(); return; }
+        handles.push(x);
+      }).catch(function () {});
+    }
+
+    // Stops only the named listen, never one another box has started since.
+    function stopSession(s) {
+      return Promise.resolve(plugin.stop({ session: s }));
     }
 
     if (plugin) {
       nativeAvailable(plugin).then(function (ok) {
-        if (!ok) return;
+        if (!ok || disposed) return;
         mode = 'native';
         // The plugin sends the whole text so far each time, never a piece.
         keep(plugin.addListener('partial', function (data) {
@@ -165,7 +179,13 @@
         var mine = session;
         session = null;
         showListening(false);
-        Promise.resolve(plugin.stop())
+        if (mine == null) {
+          // Tapped again before it got going: its start() answer is now
+          // stale and stops that listen when it arrives.
+          pendingStart = null;
+          return;
+        }
+        stopSession(mine)
           .then(function (res) {
             if (res && res.session === mine && typeof res.text === 'string' && !boxIsGone()) writeSpoken(res.text);
           })
@@ -176,16 +196,22 @@
       baseValue = input.value.trim();
       onStart();
       showListening(true);
-      session = 'starting';
+      session = null;
+      var token = {};
+      pendingStart = token;
       Promise.resolve(plugin.start()).then(function (res) {
-        if (session !== 'starting') {
-          // Cancelled (Send, the sheet closed) before it got going.
-          Promise.resolve(plugin.stop()).catch(function () {});
+        var started = res && res.session;
+        if (pendingStart !== token) {
+          // Cancelled (Send, the sheet closed, or tapped again) before it
+          // got going: stop exactly this listen, nobody else's.
+          if (started != null) stopSession(started).catch(function () {});
           return;
         }
-        session = res && res.session;
+        pendingStart = null;
+        session = started;
       }).catch(function (err) {
-        if (session !== 'starting') return; // already cancelled
+        if (pendingStart !== token) return; // already cancelled
+        pendingStart = null;
         session = null;
         showListening(false);
         var code = err && (err.code || err.message);
@@ -202,15 +228,19 @@
     }
 
     // ---- 3. web: the browser's Web Speech API ----
+    // A cancelled recognizer is dropped, and every handler checks it is
+    // still the current one, so a tap right after Send starts a fresh one
+    // instead of tripping over the old one still shutting down.
     var recognition = null;
     function webRecognition() {
       if (recognition) return recognition;
-      recognition = new SpeechRecognitionCtor();
-      recognition.continuous = continuousIsSafe();
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-      recognition.onresult = function (e) {
-        if (!listening) return; // cancelled: the rest is thrown away
+      var rec = new SpeechRecognitionCtor();
+      recognition = rec;
+      rec.continuous = continuousIsSafe();
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+      rec.onresult = function (e) {
+        if (recognition !== rec || !listening) return; // cancelled: the rest is thrown away
         var finalText = '';
         var interimText = '';
         for (var i = 0; i < e.results.length; i++) {
@@ -220,7 +250,8 @@
         }
         writeSpoken(finalText + interimText);
       };
-      recognition.onerror = function (e) {
+      rec.onerror = function (e) {
+        if (recognition !== rec) return;
         var wasListening = listening;
         showListening(false);
         if (e.error === 'aborted' || !wasListening) return; // stopped on purpose, not a real error
@@ -233,12 +264,13 @@
         };
         showMessage(messages[e.error] || ('Voice dictation error: ' + e.error));
       };
-      recognition.onend = function () {
+      rec.onend = function () {
+        if (recognition !== rec) return;
         var wasListening = listening;
         showListening(false);
         if (wasListening && !boxIsGone()) input.focus();
       };
-      return recognition;
+      return rec;
     }
 
     function webTap() {
@@ -263,14 +295,17 @@
       if (!listening) return;
       showListening(false);
       if (mode === 'native') {
-        var wasStarting = session === 'starting';
+        var mine = session;
         session = null;
-        // A listen still starting is stopped when start() comes back.
-        if (!wasStarting) Promise.resolve(plugin.stop()).catch(function () {});
+        // A listen still starting is stopped when its start() comes back.
+        pendingStart = null;
+        if (mine != null) stopSession(mine).catch(function () {});
       } else if (mode === 'web' && recognition) {
+        var rec = recognition;
+        recognition = null;
         try {
-          if (typeof recognition.abort === 'function') recognition.abort();
-          else recognition.stop();
+          if (typeof rec.abort === 'function') rec.abort();
+          else rec.stop();
         } catch (err) { /* already stopped */ }
       }
     }
@@ -286,6 +321,7 @@
       cancel: cancel,
       dispose: function () {
         cancel();
+        disposed = true;
         handles.forEach(function (h) { if (h && typeof h.remove === 'function') h.remove(); });
         handles = [];
       }

@@ -67,16 +67,20 @@ public class PomonaSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         Task { @MainActor in
-            // An older listen nobody stopped (its box went away): end it.
-            if let old = self.current as? PomonaDictation {
+            guard await Self.microphoneAllowed() else {
+                call.reject("The microphone is off for Pomona", "denied")
+                return
+            }
+            // An older listen nobody stopped (its box went away, or another
+            // start got here first while this one waited): end it. Checked
+            // again after every wait, and nothing awaits between the last
+            // check and taking over `current`, so two listens can never both
+            // hold the microphone.
+            while let old = self.current as? PomonaDictation {
                 let oldSession = self.currentSession
                 self.current = nil
                 let text = await old.stop()
                 self.notifyListeners("ended", data: ["session": oldSession, "text": text, "reason": "replaced"])
-            }
-            guard await Self.microphoneAllowed() else {
-                call.reject("The microphone is off for Pomona", "denied")
-                return
             }
             self.lastSession += 1
             let session = self.lastSession
@@ -110,8 +114,12 @@ public class PomonaSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve(["text": ""])
             return
         }
+        // The page names the listen it means; a newer listen (another box's)
+        // is left alone. No number given: stop whatever is running.
+        let wanted = call.getInt("session")
         Task { @MainActor in
-            guard let dictation = self.current as? PomonaDictation else {
+            guard let dictation = self.current as? PomonaDictation,
+                  wanted == nil || wanted == self.currentSession else {
                 call.resolve(["text": ""])
                 return
             }
@@ -255,9 +263,11 @@ final class PomonaDictation {
         previousCategory = audio.category
         previousMode = audio.mode
         previousOptions = audio.categoryOptions
+        // Marked before the calls that can fail, so a failure part way
+        // still puts the old category back.
+        sessionActivated = true
         try audio.setCategory(.playAndRecord, mode: .measurement, options: [.duckOthers, .defaultToSpeaker])
         try audio.setActive(true)
-        sessionActivated = true
 
         let (stream, continuation) = AsyncStream<AnalyzerInput>.makeStream()
         input = continuation
@@ -318,19 +328,26 @@ final class PomonaDictation {
         removeObservers()
         teardownAudio()
         input?.finish()
-        do {
-            try await analyzer?.finalizeAndFinishThroughEndOfInput()
-        } catch {
-            await analyzer?.cancelAndFinishNow()
+        // Finishing and the last words each get a few seconds at most: a
+        // stuck analyzer must never leave the tap on the mic unanswered.
+        if let analyzer {
+            let finalizing = Task { @MainActor in
+                do {
+                    try await analyzer.finalizeAndFinishThroughEndOfInput()
+                } catch {
+                    await analyzer.cancelAndFinishNow()
+                }
+            }
+            await PomonaDictation.wait(for: finalizing)
         }
-        await waitForLastWords()
+        if let task = resultsTask {
+            await PomonaDictation.wait(for: task)
+            task.cancel()
+        }
     }
 
-    // The results stream ends once the analyzer has finished. Wait for that
-    // so the last words make it in, but never forever: if it hasn't ended
-    // in a few seconds, keep what we have.
-    private func waitForLastWords() async {
-        guard let task = resultsTask else { return }
+    // Waits for a task to end, but never longer than finishSeconds.
+    private static func wait(for task: Task<Void, Never>) async {
         let gate = OneShot()
         await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
             Task { @MainActor in
