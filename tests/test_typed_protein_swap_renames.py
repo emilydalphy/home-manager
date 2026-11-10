@@ -158,3 +158,83 @@ def test_a_protein_somebody_cannot_have_is_named_plainly(signed_in, monkeypatch)
     body = res.json()
     assert body["status"] == "blocked", body
     assert _dish(entry) == (SALMON, "salmon")
+
+
+# ---------- review round (2026-11-10): main protein only; no refusing ordinary asks ----------
+
+from app.tools import recipe_change  # noqa: E402
+
+
+def test_swapping_a_side_protein_keeps_the_name_and_the_main_protein(signed_in, monkeypatch):
+    plan = tools.create_weekly_plan(MON, content_start_date=MON, day_count=3)["weekly_plan_id"]
+    tools.add_recipe("Chicken with Black Beans",
+                     [{"item": i, "qty": q, "category": "other"} for i, q in
+                      [("Chicken thighs", "1.5 lb"), ("Black beans", "2 cans"), ("Rice", "1 cup")]],
+                     instructions=["Cook.", "Serve."], default_servings=4, main_protein="chicken")
+    entry = tools.plan_meal(TUE, "Chicken with Black Beans", slot="dinner", weekly_plan_id=plan)["entry_id"]
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _writer({
+        "ingredients": [{"item": "Chicken thighs", "qty": "1.5 lb"}, {"item": "Chickpeas", "qty": "2 cans"},
+                        {"item": "Rice", "qty": "1 cup"}],
+        "instructions": ["Cook.", "Serve."], "default_servings": 4}))
+
+    res = signed_in.post("/api/meal-recipe/rewrite",
+                         json={"entry_id": entry, "text": "swap the beans for chickpeas"})
+
+    assert res.json()["status"] == "rewritten" and res.json()["renamed"] is False, res.text
+    assert _dish(entry) == ("Chicken with Black Beans", "chicken")
+
+
+def _I(*items):
+    return [{"item": i} for i in items]
+
+
+def test_a_main_bean_swap_takes_its_colour_word_with_it_and_reads_singular():
+    spec = {"name": "Black Bean Tacos", "main_protein": "black beans", "ingredients": _I("Black beans", "Tortillas")}
+    assert recipe_change.protein_swap(spec, _I("Chickpeas", "Tortillas"))["name"] == "Chickpea Tacos"
+
+
+def test_a_vegetarian_caesar_is_never_eggs_caesar():
+    spec = {"name": "Chicken Caesar Salad", "main_protein": "chicken",
+            "ingredients": _I("Chicken breast", "Romaine", "Parmesan")}
+    assert recipe_change.protein_swap(spec, _I("Hard-boiled eggs", "Romaine", "Parmesan")) is None
+
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize("text", [
+    "use chicken stock instead of water",
+    "add a splash of fish sauce",
+    "make it like the shrimp version but keep salmon",
+    "shrimp is too expensive, keep salmon",
+    "less salt — the kids don't like it like the chicken one",
+    "what goes with chicken?",
+])
+def test_an_ordinary_ask_that_mentions_a_protein_is_not_refused(signed_in, monkeypatch, text):
+    entry = _setup("draft")
+    writer = _writer(_SALMON_DETAIL)
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", writer)
+
+    res = signed_in.post("/api/meal-recipe/rewrite", json={"entry_id": entry, "text": text})
+
+    assert res.json()["status"] == "rewritten", res.text
+    assert len(writer.calls) == 1
+    assert _dish(entry) == (SALMON, "salmon")
+
+
+def test_a_second_fork_gets_a_clean_unique_name(signed_in, monkeypatch):
+    plan = tools.create_weekly_plan(MON, content_start_date=MON, day_count=7)["weekly_plan_id"]
+    tools.add_recipe(SALMON, [{"item": i, "qty": q, "category": "other"} for i, q in _SALMON_ITEMS],
+                     instructions=["Roast.", "Sear.", "Serve."], default_servings=4, main_protein="salmon")
+    nights = [tools.plan_meal(household_date(n), SALMON, slot="dinner", weekly_plan_id=plan)["entry_id"]
+              for n in (1, 3, 5)]
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _writer(_SHRIMP_DETAIL))
+
+    for entry in nights[:2]:
+        res = signed_in.post("/api/meal-recipe/rewrite",
+                             json={"entry_id": entry, "text": "use shrimp instead", "this_meal_only": True})
+        assert res.json()["status"] == "rewritten", res.text
+
+    assert _dish(nights[0])[0] == SHRIMP
+    assert _dish(nights[1])[0] == f"{SHRIMP} (your way)"
+    assert _dish(nights[2]) == (SALMON, "salmon")

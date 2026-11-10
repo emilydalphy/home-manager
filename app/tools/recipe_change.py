@@ -1014,69 +1014,130 @@ def _ingredient_proteins(ingredients) -> dict[str, str]:
     return found
 
 
+# Words that belong to the protein in a title and go with it when it is
+# swapped: "Black Bean Tacos" -> "Chickpea Tacos", not "Black Chickpea
+# Tacos"; "Lemon Chicken Thighs" -> "Lemon Shrimp", not "Lemon Shrimp Thighs".
+_PROTEIN_LEAD = {"black", "white", "red", "kidney", "pinto", "navy", "cannellini", "ground", "minced", "pulled"}
+_PROTEIN_CUT = {"thigh", "breast", "fillet", "filet", "wing", "drumstick", "tenderloin", "loin", "chop",
+                "cutlet", "strip", "tender", "leg", "shank"}
+
+
+def _title_word(word: str) -> str:
+    """The protein as a title says it: singular, capitalised ("Chickpea", "Shrimp")."""
+    from . import meal_variety as _meal_variety
+    w = _meal_variety._stem(word.lower())
+    return w[:1].upper() + w[1:]
+
+
+def _swap_in_title(title: str, gone: set, new_word: str) -> str:
+    from . import meal_variety as _meal_variety
+    tokens = re.split(r"(\s+)", title)
+    words = [i for i, t in enumerate(tokens) if t.strip()]
+    drop: set[int] = set()
+    for pos, i in enumerate(words):
+        if _protein_key(re.sub(r"[^A-Za-zÀ-ÿ]", "", tokens[i])) not in gone:
+            continue
+        j = pos - 1
+        while j >= 0 and tokens[words[j]].lower() in _PROTEIN_LEAD:
+            drop.add(words[j])
+            j -= 1
+        j = pos + 1
+        while j < len(words) and _meal_variety._stem(tokens[words[j]].lower()) in _PROTEIN_CUT:
+            drop.add(words[j])
+            j += 1
+        tokens[i] = new_word
+    out = "".join(t for k, t in enumerate(tokens) if k not in drop)
+    return re.sub(r"\s+", " ", out).strip()
+
+
 def protein_swap(spec: dict, new_ingredients) -> dict | None:
     """
     {"name", "protein", "was"} when a rewrite of `spec`'s recipe swapped its
-    main protein, else None. See the block above for why the ingredients
+    MAIN protein, else None. See the block above for why the ingredients
     decide and not the words typed.
+
+    The main protein is the recipe's main_protein; with none saved, the one
+    protein its title names (two in the title and nothing saved: not sure,
+    no rename). A side protein changing ("swap the beans for chickpeas" on
+    Chicken with Black Beans) is not this and keeps the name. An egg is
+    never taken as the new main: a vegetarian Chicken Caesar Salad is not
+    "Eggs Caesar Salad".
 
     "Seared Salmon with Lemon-Dill Potatoes and Asparagus" + a list with
     shrimp and no salmon -> "Seared Shrimp with Lemon-Dill Potatoes and
     Asparagus". A title that never named the protein ("Chili") gets
-    _variant_name's "Chili with turkey", as the Change the protein row does.
+    plate_parts._variant_name's "Chili with turkey", as the Change the
+    protein row does. Whether the new name is already another recipe's is
+    apply_rewrite's to settle, inside its transaction.
     """
     current = str(spec.get("name") or "").strip()
     if not current:
         return None
-    said = {**_proteins_in(current), **_proteins_in(spec.get("main_protein") or "")}
-    if not said:
-        return None
+    main = _proteins_in(spec.get("main_protein") or "")
+    if not main:
+        in_title = _proteins_in(current)
+        if len(in_title) != 1:
+            return None
+        main = in_title
     before = _ingredient_proteins(spec.get("ingredients"))
     after = _ingredient_proteins(new_ingredients)
-    gone = {k for k in said if k not in after}
+    gone = {k for k in main if k not in after}
     if not gone:
         return None
-    added = {k: w for k, w in after.items() if k not in before and k not in said}
-    # An egg beside another new protein is an egg wash or a garnish.
-    if len(added) > 1:
-        added.pop("egg", None)
+    title_has = _proteins_in(current)
+    added = {k: w for k, w in after.items()
+             if k not in before and k not in main and k not in title_has and k != "egg"}
     if len(added) != 1:
         return None
     word = next(iter(added.values()))
-    new_word = word[:1].upper() + word[1:].lower()
-    proposed = re.sub(
-        r"[A-Za-zÀ-ÿ]+",
-        lambda m: new_word if _protein_key(m.group(0)) in gone else m.group(0),
-        current,
-    )
-    from . import plate_parts as _plate_parts
+    new_word = _title_word(word)
+    proposed = _swap_in_title(current, gone, new_word)
+    if name_key(proposed) == name_key(current):
+        from . import plate_parts as _plate_parts
+        proposed = _plate_parts._variant_name(current, current, new_word.lower())
     return {
-        "name": _plate_parts._variant_name(proposed, current, word.lower()),
-        "protein": word.lower(),
-        "was": ", ".join(sorted(said[k].lower() for k in gone)),
+        "name": proposed,
+        "protein": new_word.lower(),
+        "was": ", ".join(sorted(main[k].lower() for k in gone)),
     }
 
 
 _NEGATED_BEFORE = re.compile(
     r"\b(no|not|without|never|less|skip|hold|minus|instead\s+of|rather\s+than|don'?t|dont|"
-    r"leave\s+out|drop|swap\s+out|replace)\s+(the\s+)?(\w+\s+)?$", re.I)
+    r"leave\s+out|drop|swap\s+out|replace|like\s+the)\s+(the\s+)?(\w+\s+)?$", re.I)
+# Only a sentence that asks for a swap is held to one (review, 2026-11-10):
+# "what goes with chicken?" and "less salt, like the chicken one" ask for
+# nothing to go in.
+_ASKS_FOR_A_SWAP = re.compile(r"\b(instead|swap|switch|replace|substitute|rather\s+than)\b", re.I)
+_USE_BEFORE = re.compile(r"\b(use|using|try|make\s+it\s+with|do\s+it\s+with)\s+(some\s+)?$", re.I)
 
 
 def protein_left_out(text: str, spec: dict, new_ingredients) -> str | None:
     """
-    The protein the household typed ("use shrimp instead") when the rewrite
-    came back without it — the one place their words are read, because a
-    recipe can't show what it failed to do. Only a single protein the dish
-    didn't already have, and never one they said to leave out ("no shrimp",
-    "instead of chicken"). None otherwise.
+    The protein the household asked to swap in ("use shrimp instead") when
+    the rewrite came back without it — the one place their words are read,
+    because a recipe can't show what it failed to do. When in doubt, None:
+    the rewrite stands, and a rename still only comes from the ingredients.
+
+    Fires only for a sentence that asks for a swap ("instead", "swap",
+    "replace", "use X") and never says "keep"; for a single protein the
+    dish doesn't have, not negated ("no shrimp", "instead of chicken"), and
+    not a flavour ("chicken stock", "fish sauce").
     """
     text = re.sub("[’‘]", "'", str(text or ""))
+    if re.search(r"\bkeep\b", text, re.I):
+        return None
     have = {**_proteins_in(spec.get("name") or ""), **_proteins_in(spec.get("main_protein") or ""),
             **_ingredient_proteins(spec.get("ingredients"))}
+    swap_words = bool(_ASKS_FOR_A_SWAP.search(text))
     asked: dict[str, str] = {}
     for m in re.finditer(r"[A-Za-zÀ-ÿ]+", text):
         key = _protein_key(m.group(0))
-        if not key or key in have or _NEGATED_BEFORE.search(text[:m.start()]):
+        if not key or key in have:
+            continue
+        if _NOT_THE_PROTEIN_AFTER.match(text[m.end():]) or _NEGATED_BEFORE.search(text[:m.start()]):
+            continue
+        if not (swap_words or _USE_BEFORE.search(text[:m.start()])):
             continue
         asked.setdefault(key, m.group(0).lower())
     if len(asked) != 1:
@@ -1283,15 +1344,19 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
             (target_id, hid),
         ).fetchone())
         list_before = snapshot["ingredients_json"]
+        # The new name, made unique here, under the write lock: another
+        # recipe may already carry it (the night before's Tweak forked
+        # "Seared Shrimp…" off the same salmon) — then "(your way)", the
+        # fork's own mark, never "… with shrimp" tacked on.
+        renamed_to = (rename or {}).get("name") or ""
+        if renamed_to and _name_taken(conn, renamed_to):
+            renamed_to = _fork_name(conn, renamed_to)
         if shared_elsewhere:
             # Only this chain's nights still ahead have shopping to move.
             users = {plan_id: _live_ids(conn, ids)} if approved else {}
             users = {k: v for k, v in users.items() if v}
             before = _needed_lines(conn) if approved else {}
-            fork_name = (rename or {}).get("name") or ""
-            if not fork_name or _name_taken(conn, fork_name):
-                fork_name = _fork_name(conn, fork_name or spec.get("name") or "")
-            target_id = _fork_recipe(conn, target_id, fork_name)
+            target_id = _fork_recipe(conn, target_id, renamed_to or _fork_name(conn, spec.get("name") or ""))
             conn.execute(
                 "UPDATE meal_plan_entries SET recipe_id = ? "
                 f"WHERE id IN ({','.join('?' * len(ids))}) AND household_id = ?",
@@ -1321,10 +1386,10 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
              json.dumps(detail.get("advance_prep_step_indices") or []),
              target_id, hid),
         )
-        if rename and rename.get("name"):
+        if renamed_to:
             conn.execute(
                 "UPDATE recipes SET name = ?, main_protein = ? WHERE id = ? AND household_id = ?",
-                (rename["name"], rename.get("protein") or "", target_id, hid),
+                (renamed_to, rename.get("protein") or "", target_id, hid),
             )
         _plate_drawings.settle(conn, target_id, list_before or "[]")
         after = _resync_users(conn, users) if users else before
@@ -1343,8 +1408,8 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
     )
     if request_id:
         _store_snapshot(request_id, snapshot)
-    new_name = (rename or {}).get("name") or spec.get("name") or ""
-    if rename and rename.get("name"):
+    new_name = renamed_to or spec.get("name") or ""
+    if renamed_to:
         said = f"{spec.get('name') or 'That one'} is now {new_name}."
     else:
         said = (spec.get("name") or "That one") + " is rewritten."
@@ -1352,7 +1417,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
         said += f" {changed} thing{'' if changed == 1 else 's'} changed on the list."
     return {
         "status": "rewritten", "said": said, "request_id": request_id,
-        "recipe_id": target_id, "name": new_name, "renamed": bool(rename and rename.get("name")),
+        "recipe_id": target_id, "name": new_name, "renamed": bool(renamed_to),
         "previous_name": spec.get("name") or "",
         "entry_ids": ids, "forked": bool(shared_elsewhere), "lines_changed": changed, "approved": approved,
     }
