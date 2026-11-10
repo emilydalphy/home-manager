@@ -33,6 +33,9 @@ _LIST_PREFERENCE_FIELDS = ("cuisine_preferences", "dislikes", "usual_stores", "k
 # The ceiling on a time limit (weeknight / weekday lunch): past a day it caps nothing.
 MINUTES_IN_A_DAY = 24 * 60
 
+# The snack step's sweet / savory / both (Emily, 2026-11-05).
+SNACK_TASTES = ("sweet", "savory", "both")
+
 
 def _coerce_str_list(field: str, value) -> list[str]:
     """
@@ -549,6 +552,9 @@ def get_household_memory() -> dict:
             or (prefs["snack_dishes_per_week"] if prefs else 2)
         ),
         "snack_dishes_per_week_set": bool(prefs["snack_dishes_per_week_set"]) if prefs else False,
+        # Sweet, savory or both (Emily, 2026-11-05): the snack step's third
+        # question. 'both' for every household that hasn't chosen.
+        "snack_taste": (prefs["snack_taste"] if prefs and prefs["snack_taste"] in SNACK_TASTES else "both"),
         # Whether the three per-week counts are the household's answers
         # (Emily, 2026-09-21) — what lets generation treat them as targets
         # to reach, not only ceilings. See schema.sql on meal_counts_set.
@@ -748,7 +754,9 @@ def edit_preference(field: str, value) -> dict:
     lunch COOKED THAT DAY; 0 means no cap, and a lunch that reheats an
     earlier cook or lands on a prep day has never had one),
     'snack_dishes_per_week' (int, 1-7 — how many DIFFERENT snack dishes
-    a week; snacks_per_day still says how many land on each day), 'table_style' (str), 'complete_plates' (bool — whether the app may
+    a week; snacks_per_day still says how many land on each day),
+    'snack_taste' (str: 'sweet', 'savory' or 'both' — which snacks the
+    week plans; 'both' is a mix), 'table_style' (str), 'complete_plates' (bool — whether the app may
     add a small side to a meal that came out short of a full plate: protein
     + vegetable, plus a carb unless their eating style is low-carb. On by
     default. Set it False when someone says any version of "stop adding
@@ -769,6 +777,7 @@ def edit_preference(field: str, value) -> dict:
     simple_text_columns = {
         "repeats_tolerance": "repeats_tolerance",
         "table_style": "table_style",
+        "snack_taste": "snack_taste",
         "typical_week": "typical_week",
         "next_week_notes": "next_week_notes",
     }
@@ -816,6 +825,13 @@ def edit_preference(field: str, value) -> dict:
                 "a day would eat the same snack twice."
             )
         value = dishes
+    # Sweet, savory or both (2026-11-05): one of three words, never free
+    # text — everyday_snacks.eligible filters on it exactly.
+    if field == "snack_taste":
+        value = str(value or "").strip().lower()
+        value = {"savoury": "savory", "mix": "both", "mixed": "both"}.get(value, value)
+        if value not in SNACK_TASTES:
+            raise ValueError("snack_taste must be 'sweet', 'savory' or 'both'.")
     # Both time limits, validated the same way because they mean the same
     # thing: whole minutes, never negative, 0 for no cap (Loop Board "Time
     # limits", 2026-10-05 — one convention for the pair, not two).
