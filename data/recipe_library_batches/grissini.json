@@ -1,0 +1,86 @@
+{
+ "dish_name": "Grissini",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups (250 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead: whisk the 2 cups flour, 3/4 tsp yeast and 3/4 tsp salt together in a large bowl.",
+  "Add 1/2 cup plus 1 tbsp warm water and 4 tbsp of the olive oil. Stir with a spoon until it comes together into a shaggy dough.",
+  "Transfer the dough to the counter and knead it for 8 minutes, until it's smooth and soft. It has oil in it, so you won't need flour on the counter.",
+  "Return the dough to the bowl, cover it and leave it at room temperature for 1 hour. It puffs up a little but doesn't fully double.",
+  "Heat the oven to 375°F with racks in the upper and lower thirds. Line two baking sheets with parchment.",
+  "Cut the dough into 16 even pieces, about 1 oz each.",
+  "Roll each piece under your palms into a thin rope about 10 inches long and as thick as a pencil. Start in the middle and work out to the ends. Keep them even, or the thin spots burn.",
+  "Lay them on the baking sheets about 1 inch apart. Brush them with the last 1 tbsp olive oil and sprinkle the 1 tbsp sesame seeds over them.",
+  "Bake both sheets for 20 to 25 minutes, swapping them top to bottom halfway, until the grissini are light golden all over and crisp.",
+  "Let them cool completely on the sheets. They get crunchier as they cool. Keep any left over in an airtight container for up to 5 days."
+ ],
+ "advance_prep_notes": "make the dough at least 1 hour ahead so it can rest and puff",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "All three versions make a soft yeasted dough with flour, warm water, a good amount of olive oil and salt, rest it about an hour, then roll or stretch thin sticks and bake them until golden and crisp. Pretty Simple Sweet (the lead) rolls each stick from its own small piece of dough and bakes at 375°F; The Clever Meal cuts strips from a flattened sheet and stretches them, and Pasta Grammar rises the dough twice in a pan before twisting the strips. The lead's butter is swapped for olive oil, which its author says works, to keep these vegan, and the recipe is cut to about two thirds for 16 sticks with sesame seeds on top.",
+ "sources": [
+  {
+   "name": "Pretty Simple Sweet",
+   "title": "Best Crispy Italian Breadsticks (Grissini)",
+   "url": "https://prettysimplesweet.com/crispy-breadsticks-grissini/",
+   "rating": 4.7,
+   "rating_count": 30,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Clever Meal",
+   "title": "Breadsticks (aka Grissini)",
+   "url": "https://theclevermeal.com/breadstick-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pasta Grammar",
+   "title": "Grissini | Italian Breadstick Recipe",
+   "url": "https://pastagrammar.com/blogs/recipes/grissini-italian-breadstick-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

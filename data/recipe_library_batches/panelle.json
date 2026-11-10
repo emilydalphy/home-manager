@@ -1,0 +1,40 @@
+{
+ "dish_name": "Panelle",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Chickpea flour", "qty": "1 1/4 cups (150 g)", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1 tbsp chopped"},
+  {"item": "Vegetable oil", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Line a large baking sheet with parchment paper.",
+  "Finely chop enough parsley leaves to make 1 tbsp.",
+  "In a medium saucepan off the heat, whisk the 1 1/4 cups chickpea flour and 1/2 tsp of the salt into 2 cups cold water until there are no lumps.",
+  "Set the pan over medium heat and stir constantly with a wooden spoon for 10 to 12 minutes, until it's very thick and stiff and pulls away from the sides. Keep stirring. It catches on the bottom quickly.",
+  "Take the pan off the heat and stir in the parsley.",
+  "Scrape it onto the parchment and spread it about 1/4 inch thick with a spatula. Work fast. It stiffens as it cools.",
+  "Leave it for about 30 minutes, until it's cool and firm. The fridge speeds this up if you have room.",
+  "Meanwhile, cut the lemon into wedges.",
+  "Cut the chickpea sheet into rectangles about 2 by 3 inches.",
+  "Pour the 1 1/2 cups oil into a large skillet. That should be about 1/2 inch deep. Heat it over medium high to 350°F. If you have a thermometer, check it there. No thermometer? Drop in a scrap. It should sizzle right away and float up.",
+  "Add a few pieces, leaving room between them. Stand back a little. They can spatter. Fry them for 2 to 3 minutes, until the underside is golden. Flip them and cook the other side for 2 to 3 minutes.",
+  "Lift them out with a slotted spoon onto paper towels and sprinkle a little of the remaining 1/4 tsp salt over them while they're hot. Fry and salt the rest the same way.",
+  "Serve hot with the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions cook chickpea flour and water like polenta, stirring until it pulls away from the pan, spread it thin to set, cut it into rectangles and fry them until golden with lemon to squeeze over. The Petite Cook (the lead) uses about 1 part flour to 3 parts water with parsley and fries in a deep pan; Recipes from Italy adds the water in two goes and deep fries without flipping, and Coley Cooks leaves out the parsley and shallow fries in a skillet. This follows The Petite Cook's ratio at half the amount and shallow fries in a skillet the way Coley Cooks does, so it needs less oil. No version read had 20 or more ratings and RecipeTin Eats has no version of this dish, so this leads with the best version read.",
+ "sources": [
+  {"name": "The Petite Cook", "title": "Panelle - Chickpea Fritters", "url": "https://www.thepetitecook.com/?p=20306", "rating": 5.0, "rating_count": 2, "read": true, "lead": true},
+  {"name": "Recipes from Italy", "title": "Panelle Recipe (Sicilian Chickpea Fritters)", "url": "https://www.recipesfromitaly.com/panelle-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Coley Cooks", "title": "Sicilian Chickpea Fritters (Panelle)", "url": "https://coleycooks.com/panelle/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

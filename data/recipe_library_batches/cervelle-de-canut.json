@@ -1,0 +1,42 @@
+{
+ "dish_name": "Cervelle de Canut",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Fromage blanc", "qty": "2 tubs (7.5 oz each)", "category": "dairy"},
+  {"item": "Shallots", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Chives", "qty": "1 bunch", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Fresh tarragon", "qty": "1 package", "category": "produce"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "White wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Baguette", "qty": "1", "category": "pantry"}
+ ],
+ "instructions": [
+  "At least 2 and a half hours ahead, or the day before: set a fine sieve over a bowl, spoon in the fromage blanc and put it in the fridge for 30 minutes to drain.",
+  "Meanwhile, finely chop the 2 shallots and the 2 garlic cloves.",
+  "Finely chop the chives. That should be about 3 tbsp. Finely chop 3 tbsp of the parsley leaves and 1 tbsp of the tarragon leaves.",
+  "Transfer the drained fromage blanc into a bowl and pour away the liquid. Beat it with a fork for about 1 minute, until it's smooth.",
+  "Add the shallots, garlic, chives, parsley and tarragon, and stir until they're spread all through.",
+  "Stir in the 2 tbsp olive oil, 1 tbsp white wine vinegar, 1/2 tsp salt and 1/4 tsp pepper. Taste it, and add a pinch more salt if it's flat.",
+  "Cover the bowl and chill it for at least 2 hours, or overnight.",
+  "When you're ready to eat, slice the baguette.",
+  "Serve the cervelle de canut cold with the baguette. It keeps covered in the fridge for up to 3 days."
+ ],
+ "advance_prep_notes": "Make it at least 2 1/2 hours ahead or the day before: it drains 30 minutes and chills at least 2 hours.",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5, 6, 7],
+ "method_notes": "All three versions beat drained fromage blanc smooth with finely chopped shallot and soft herbs (chives, parsley, tarragon or chervil), season it well and chill it before serving with bread. Obviously French (the lead) keeps it to cheese, shallot, garlic, herbs and walnut oil with a long chill; The French Cooking Academy and Mad About Macarons loosen it with crème fraîche or whipped cream and add vinegar. Walnut oil is swapped for olive oil to keep this nut-free, and a spoonful of white wine vinegar from the other two versions goes in. No version read had a rating and RecipeTin Eats (the trusted cook for French) has no version, so this leads with Obviously French, the most traditional of the three; whole-milk ricotta works if fromage blanc is hard to find.",
+ "sources": [
+  {"name": "Obviously French", "title": "Cervelle de Canut", "url": "https://obviouslyfrench.com/cervelle-de-canut/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "The French Cooking Academy", "title": "Cervelle de canut (fresh cheese dip)", "url": "https://www.thefrenchcookingacademy.com/recipes/cervelle-de-canut", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Mad About Macarons", "title": "Cheese Spread Recipe: Cervelle de Canut", "url": "https://www.madaboutmacarons.com/?p=168654", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -60,7 +60,7 @@ def test_every_library_recipe_has_a_plate():
     batches = [json.loads(p.read_text())["dish_name"] for p in (ROOT / "data" / "recipe_library_batches").glob("*.json")]
     samples = [d["dish_name"] for d in json.loads((ROOT / "data" / "recipe_library_samples.json").read_text())["samples"]]
     names = {d["dish_name"] for d in seed} | set(batches) | set(samples)
-    assert len(names) == 2097
+    assert len(names) == 2137
     for name in names:
         key = drawings.key_for_name(name)
         assert key, name
@@ -433,3 +433,10 @@ def test_the_six_reviewed_samples_have_their_own_specs():
     so the first plate pass missed them. They live in part-09."""
     specs = json.loads((ROOT / "plates" / "specs" / "part-09.json").read_text())
     assert set(specs) == {"Meatloaf", "Chicken Piccata", "Chana Masala", "Chicken Tinga", "Thai Basil Chicken", "Misir Wat"}
+
+
+def test_goat_cheese_is_cheese_not_goat_meat():
+    # 2026-11-09 snacks round: "Goat cheese" read as goat, so Patzarosalata
+    # (beets, yogurt, goat cheese) lost its own plate to Lamb Kleftiko.
+    assert "lamb" not in drawings._foods_on_list(drawings._items(["Goat cheese", "Goat milk yogurt"]))
+    assert "lamb" in drawings._foods_on_list(drawings._items(["Goat shoulder"]))

@@ -1,0 +1,133 @@
+{
+ "dish_name": "Patzarosalata",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Beets",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Goat cheese",
+   "qty": "1 package (4 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "4"
+  }
+ ],
+ "instructions": [
+  "At least 4 hours ahead, or the day before: trim the beet stems to about 1 inch and scrub the beets. Put them in a saucepan, cover them with cold water by an inch and bring it to a boil over high heat.",
+  "Turn the heat down to medium and simmer the beets for 40 to 50 minutes, until a knife slides easily into the biggest one.",
+  "While the beets simmer, squeeze 2 tbsp juice from the lemon. Thinly slice 3 of the green onions. Finely chop 2 tbsp of the parsley and 2 tsp of the mint.",
+  "Drain the beets and cover them with cold water. Once they're cool enough to handle, about 10 minutes, rub the skins off with your fingers and trim the ends.",
+  "Cut the beets into 1/2 inch cubes and put them in a large bowl. Sprinkle 1/4 tsp of the salt over them.",
+  "In a medium bowl, mash the goat cheese with a fork. Stir in 1 cup of the yogurt, the lemon juice, the 3 tbsp olive oil, the 1 tbsp red wine vinegar and the remaining 1/4 tsp salt until it's smooth.",
+  "Add the yogurt mixture, green onions, parsley and mint to the beets and fold gently until every cube is coated.",
+  "Cover the bowl and chill it for at least 3 hours, or overnight.",
+  "When you're ready to eat, taste it. If it's flat, add a pinch more salt.",
+  "Heat a dry skillet over medium. Warm the 4 pitas one at a time for about 30 seconds a side, until they're soft and have a few toasted spots. Cut each one into 6 wedges.",
+  "Serve the patzarosalata cold with the warm pita."
+ ],
+ "advance_prep_notes": "Cook the beets and make the dip at least 4 hours ahead, or the day before, so it can chill for 3 hours.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8
+ ],
+ "method_notes": "All the versions read pair cooked beets with Greek yogurt, olive oil and an acid. Real Greek Recipes (the lead) boils the beets, cubes them, blends the yogurt with goat cheese, lemon, oil and red wine vinegar, adds green onion, parsley and mint, and chills it for 3 to 4 hours. Olive & Mango roasts the beets and adds garlic and toasted walnuts, and Dimitra's Dishes dresses roasted beets in balsamic and spreads them over a garlic mint yogurt with walnuts. This follows the lead at about one and a half times the amount, mashes the goat cheese with a fork in place of a blender, adds a little salt, leaves out the optional walnuts to keep it nut-free, and serves it with warm pita.",
+ "sources": [
+  {
+   "name": "Real Greek Recipes",
+   "title": "Beetroot Salad Dip With Greek Yogurt (Patzarosalata)",
+   "url": "https://realgreekrecipes.com/?p=3317",
+   "rating": 4.1,
+   "rating_count": 43,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Olive & Mango",
+   "title": "Beetroot Salad With Greek Yogurt (Patzarosalata)",
+   "url": "https://oliveandmango.com/beetroot-salad-with-greek-yogurt-patzarosalata",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Greek Beet and Yogurt Salad (Pantzarosalata)",
+   "url": "https://www.dimitrasdishes.com/greek-beet-yogurt-salad-pantzarosalata/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food.com",
+   "title": "Pantzarosalata",
+   "url": "https://www.food.com/recipe/pantzarosalata-427725",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

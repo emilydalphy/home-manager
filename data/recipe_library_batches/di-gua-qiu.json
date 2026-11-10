@@ -1,0 +1,87 @@
+{
+ "dish_name": "Di Gua Qiu",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Sweet potato",
+   "qty": "1 large (about 1 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tapioca flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup (120 g)"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the sweet potato and cut it into 1 inch cubes.",
+  "Pour 1 inch of water into a large pot and set a metal colander inside, above the water. Bring the water to a boil over high heat.",
+  "Add the sweet potato to the colander, cover the pot and steam over medium for 12 to 15 minutes, until a fork slides through the cubes.",
+  "Transfer the sweet potato to a large bowl and mash it smooth with a fork while it's hot. That should be about 1 1/2 cups.",
+  "Stir in the 1/4 cup + 1 tbsp sugar and the 1/8 tsp salt until they melt into the mash.",
+  "Add 3/4 cup of the tapioca flour and knead it in with your hand until a soft dough forms.",
+  "If the dough is sticky, knead in the last 1/4 cup tapioca flour, a spoonful at a time, until it feels like play dough and no longer sticks to your hand. If it cracks, knead in water 1 tsp at a time.",
+  "Roll the dough into balls about the size of a marble. That should make about 40.",
+  "Pour the 3 cups oil into a heavy saucepan and heat it over medium low to 250°F. If you have a thermometer, check it there. No thermometer? Drop in one ball. It should sink with a few small bubbles around it, without sizzling hard.",
+  "Add half the balls and leave them for 1 to 2 minutes, then stir gently so they don't stick together. After about 2 minutes they'll float.",
+  "Once they float, press each ball gently against the side of the pan with the back of a slotted spoon and let it go so it springs back. Keep pressing and stirring for 3 to 4 minutes, until they puff to about twice their size and turn light golden.",
+  "Turn the heat up to medium high and fry for 1 minute, until they're deep golden and crisp.",
+  "Lift them out with the slotted spoon onto paper towels. Turn the heat back to medium low and let the oil cool to 250°F, or until a test ball sinks quietly again, then fry the rest the same way.",
+  "Serve warm. They go chewy and soft as they cool."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The fried versions agree on steamed, mashed sweet potato kneaded while hot with sugar and tapioca flour, rolled into small balls and fried slowly in oil that starts around 250°F, then finished hotter so they're crisp, not greasy. My Kitchen 101 (the lead) uses a 6:2:1 ratio of sweet potato to tapioca to sugar and presses the balls as they fry so they puff hollow; Nyonya Cooking adds a little cornstarch and presses them against the side of the pan, and BBC Good Food uses more tapioca and turns them without pressing. No version read had 20 or more ratings and RecipeTin Eats, the trusted cook for this cuisine, has no version, so this leads with My Kitchen 101, the one that is clearly the Taiwanese night market snack. A colander set in a covered pot stands in for a steamer.",
+ "sources": [
+  {
+   "name": "My Kitchen 101",
+   "title": "How to Make Taiwan Signature Sweet Potato Ball",
+   "url": "https://mykitchen101en.com/how-to-make-taiwan-signature-sweet-potato-ball/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nyonya Cooking",
+   "title": "Sweet Potato Balls",
+   "url": "https://www.nyonyacooking.com/recipes/sweet-potato-balls~8by-0Zng",
+   "rating": 4.57,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "BBC Good Food Middle East",
+   "title": "Sweet potato balls",
+   "url": "https://www.bbcgoodfoodme.com/recipes/sweet-potato-balls/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

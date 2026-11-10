@@ -1,0 +1,92 @@
+{
+ "dish_name": "Feta me Meli",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Phyllo dough",
+   "qty": "1 package (16 oz)",
+   "category": "frozen",
+   "cook_qty": "4 sheets"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "1 block (12 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before: move the phyllo from the freezer to the fridge to thaw.",
+  "Take 4 sheets of phyllo out of the package and cover them with a damp kitchen towel so they don't dry out. Wrap the rest of the package tightly and put it back in the freezer.",
+  "Pat the feta dry with paper towels and cut it into 4 even rectangles.",
+  "Lay 1 phyllo sheet on the counter and cut it in half crosswise. Brush one half with a little of the olive oil, lay the other half on top and brush that too.",
+  "Set a piece of feta in the middle. Fold the edges over it to make a neat parcel, and brush the outside with a little oil. Make the other 3 parcels the same way.",
+  "Put the 1/4 cup honey, the 1 tbsp red wine vinegar and 1 tbsp water in a small saucepan. Bring it to a boil over medium heat, stirring, then take it off the heat.",
+  "Pour the rest of the olive oil into a large skillet. It should be about 1/2 inch deep. Heat it over medium high until a corner of phyllo sizzles as soon as it touches the oil.",
+  "Add 2 parcels, seam side down, and fry them for about 2 minutes, until the bottom is deep golden. Flip them and fry the other side for 2 minutes.",
+  "Lift them onto paper towels. Fry the other 2 parcels the same way.",
+  "Put the parcels on a plate, spoon the warm honey over them and sprinkle them with the 2 tbsp sesame seeds.",
+  "Serve right away, one parcel each."
+ ],
+ "advance_prep_notes": "Move the phyllo from the freezer to the fridge the night before.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "My Greek Dish (the lead) wraps blocks of feta in two oiled half sheets of phyllo, fries the parcels in olive oil until golden and pours over honey simmered with red wine vinegar and water, then adds sesame seeds. Greek Boston uses the same honey mixture but bakes the parcels at 350°F, and Olive Tomato bakes a single parcel and finishes it with plain honey and toasted sesame. This follows the lead's fried version in a skillet. To bake instead, brush the parcels with oil and bake them seam side down at 350°F for about 20 minutes.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Phyllo-Wrapped Feta Cheese with Honey and Sesame Seeds",
+   "url": "https://www.mygreekdish.com/?p=224",
+   "rating": 4.8,
+   "rating_count": 812,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Greek Boston",
+   "title": "Recipe for Greek Style Feta Cheese with Honey",
+   "url": "https://www.greekboston.com/food/feta-me-meli-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Olive Tomato",
+   "title": "Greek Baked Feta Cheese in Phyllo with Honey",
+   "url": "https://www.olivetomato.com/?p=4196",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

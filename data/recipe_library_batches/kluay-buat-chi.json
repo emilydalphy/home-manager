@@ -1,0 +1,75 @@
+{
+ "dish_name": "Kluay Buat Chi",
+ "cuisine": "Thai",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Bananas",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Palm sugar",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a medium saucepan of water to a boil. Add the bananas in their skins and simmer them over medium heat for 5 minutes, until the skins darken.",
+  "Drain them and let them cool for about 10 minutes, until you can handle them.",
+  "Meanwhile, chop the palm sugar finely. That should be about 1/4 cup.",
+  "Peel the bananas and pull off any stringy bits. Cut each one in half lengthwise, then into 1 inch pieces.",
+  "Rinse out the saucepan. Shake the can of coconut milk and pour it in. Add the palm sugar and the 1/2 tsp salt.",
+  "Heat it over medium, stirring, until the sugar dissolves and it's steaming, about 3 minutes. Don't let it boil hard, or the coconut milk can split.",
+  "Add the bananas and stir gently. Warm them for 2 minutes, until they're heated through.",
+  "Serve warm in small bowls with the coconut milk spooned over. If you'd like it cold, chill it for a couple of hours first."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version read simmers bananas in coconut milk sweetened with sugar and seasoned with salt, and serves it warm or chilled. Hungry in Thailand (the lead) boils firm Thai bananas in their skins first so they hold their shape, then warms the pieces in coconut milk with palm sugar, salt and pandan; Nyonya Cooking thins the coconut milk with water and adds the sugar after the bananas soften, and ThingsAsian simmers raw banana pieces for 5 minutes. No version had 20 or more ratings and RecipeTin Eats has no version, so this leads with the best version read. It uses ordinary firm, just ripe bananas boiled for 5 minutes rather than 10, a full can of coconut milk with less salt than the lead, and leaves out the optional pandan leaves.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Banana in Coconut Milk (Kluai Buat Chi)",
+   "url": "https://hungryinthailand.com/recipe/thai-bananas-in-coconut-milk/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nyonya Cooking",
+   "title": "Kluai Buat Chi (Bananas in Coconut Milk)",
+   "url": "https://www.nyonyacooking.com/recipes/kluai-buat-chi-bananas-in-coconut-milk~oqvIG25O2J",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "ThingsAsian",
+   "title": "Recipe: Klai Buad Chi (Bananas in Coconut Milk)",
+   "url": "https://www.thingsasian.com/node/1306.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

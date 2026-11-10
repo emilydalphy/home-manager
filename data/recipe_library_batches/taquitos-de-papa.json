@@ -1,0 +1,108 @@
+{
+ "dish_name": "Taquitos de Papa",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Red potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Queso fresco",
+   "qty": "1 package (10 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup crumbled"
+  },
+  {
+   "item": "Salsa verde",
+   "qty": "1 jar (16 oz)",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the potatoes in half, or in quarters if they're large. Put them in a saucepan and cover them with cold water by an inch.",
+  "Bring the water to a boil over high heat. Turn it down to medium high and boil the potatoes for 10 to 12 minutes, until a knife slides into them easily.",
+  "Meanwhile, dice a quarter of the onion small. That should be about 1/4 cup.",
+  "Drain the potatoes and return them to the pan, off the heat. Add the 1 tbsp butter, 1 tsp salt, 1/4 tsp pepper and 1/2 tsp oregano, and mash it all together with the skins on.",
+  "Stir in the onion. The filling should be thick enough to hold its shape on a spoon.",
+  "Stack the tortillas, wrap them in a damp paper towel and microwave them for 1 minute. Flip the stack and microwave it for 30 seconds, until the tortillas are soft and bendy. Keep them wrapped while you roll. Cold corn tortillas crack.",
+  "Spoon an eighth of the filling, about 1/4 cup, in a line along one edge of a tortilla. Roll it up tightly and set it seam side down on a plate. Push a toothpick through if it won't stay closed. Roll the rest the same way.",
+  "Pour the 1 cup oil into a large skillet and heat it over medium high to 350°F. If you have a thermometer, check it there. No thermometer? Dip the end of a taquito in. It should sizzle hard right away.",
+  "Lay in 4 taquitos, seam side down, and fry them for 1 to 2 minutes, until golden and crisp underneath. Stand back a little. They'll spatter.",
+  "Turn them and fry the other side for 1 to 2 minutes, until golden all over. Transfer them to paper towels and fry the other 4 the same way. Pull out any toothpicks.",
+  "Crumble 1/2 cup of the queso fresco over the taquitos. Serve hot with the salsa verde."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions fill warmed corn tortillas with mashed potato, roll them tight (with a toothpick if needed) and shallow fry them until golden, then serve them with salsa. Hilah Cooking (the lead) mashes red potatoes with their skins on with butter, onion, oregano, salt and pepper and serves a green salsa; Mamá Maggie's Kitchen adds Monterey Jack to the filling and tops them with cabbage and cilantro, and Pinch My Salt uses leftover mashed potatoes. The lead's optional bacon is left out to keep these vegetarian, and a jar of salsa verde and crumbled queso fresco go on the side. No version read had 20 or more ratings and RecipeTin Eats, the trusted cook for this cuisine, has no potato taquitos, so this leads with the best rated version read.",
+ "sources": [
+  {
+   "name": "Hilah Cooking",
+   "title": "Potato Taquitos | Tacos Dorados de Papa",
+   "url": "https://hilahcooking.com/?p=10917",
+   "rating": 4.9,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mamá Maggie's Kitchen",
+   "title": "Potato Taquitos",
+   "url": "https://inmamamaggieskitchen.com/potato-cheese-taquitos-recipe/",
+   "rating": 4.9,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pinch My Salt",
+   "title": "Potato Taquitos or Taquitos de Papa",
+   "url": "https://pinchmysalt.com/?p=5917",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

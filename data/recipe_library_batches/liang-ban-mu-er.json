@@ -1,0 +1,41 @@
+{
+ "dish_name": "Liang Ban Mu Er",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Dried wood ear mushrooms", "qty": "1 bag (2 oz)", "category": "pantry", "cook_qty": "1 oz"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Fresh red chili", "qty": "1", "category": "produce"},
+  {"item": "Chinese black vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Light soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Toasted sesame oil", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"}
+ ],
+ "instructions": [
+  "Put the 1 oz dried wood ears in a large bowl and cover them with plenty of warm water. Soak for 30 minutes. They'll swell to about four times their size and turn soft and floppy.",
+  "Meanwhile, bring a medium pot of water to a boil.",
+  "Drain the wood ears and rinse them well, rubbing off any grit. Cut off the hard knobs where they grew on the log and tear any big pieces into bite-size ones. That should be about 4 cups.",
+  "Add the wood ears to the boiling water and cook for 3 to 4 minutes, until they're tender but still have a crunch.",
+  "Drain them and rinse under cold running water until they're cool. Let them drain well, then pat them dry with a clean towel.",
+  "Finely chop the 3 garlic cloves.",
+  "In a large bowl, stir the garlic, 1 1/2 tbsp black vinegar, 1 tbsp light soy sauce, 1 tsp sugar and 1 tsp sesame oil until the sugar dissolves.",
+  "Add the wood ears and toss until every piece is coated. Cover and refrigerate for 30 minutes.",
+  "Meanwhile, thinly slice 2 of the green onions.",
+  "Seed the red chili, chop it finely and put it in a small bowl.",
+  "Stir the salad again to bring up the dressing from the bottom. Transfer it to a plate and scatter the green onions over the top.",
+  "Serve cold with the chopped chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Woks of Life (the lead) and Omnivore's Cookbook both soak dried wood ears, boil them 3 to 4 minutes, cool them in cold water and dress them with garlic, black vinegar, light soy sauce and a little sugar. The Woks of Life finishes with sesame oil and chills the salad 30 minutes; Omnivore's Cookbook pours hot Sichuan peppercorn oil over the dressing instead, so this follows the lead. Both add fresh red chili to the bowl; here it's served on the side so the salad stays mild. Cilantro, an optional garnish in both, is left out.",
+ "sources": [
+  {"name": "The Woks of Life", "title": "Wood Ear Mushroom Salad", "url": "https://thewoksoflife.com/wood-ear-mushroom-salad/", "rating": 4.86, "rating_count": 27, "read": true, "lead": true},
+  {"name": "Omnivore's Cookbook", "title": "Wood Ear Mushroom Salad", "url": "https://omnivorescookbook.com/wood-ear-mushroom-salad/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,81 @@
+{
+ "dish_name": "Ham and Cheese Pinwheels",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Frozen puff pastry",
+   "qty": "1 box (2 sheets)",
+   "category": "frozen",
+   "cook_qty": "1 sheet"
+  },
+  {
+   "item": "Gruyère cheese",
+   "qty": "3 oz",
+   "category": "dairy",
+   "cook_qty": "1 cup grated"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Deli ham",
+   "qty": "5 oz (about 6 thin slices)",
+   "category": "meat/seafood"
+  }
+ ],
+ "instructions": [
+  "The night before: move 1 sheet of the puff pastry from the freezer to the fridge to thaw. Keep the other sheet frozen for another day.",
+  "Grate the Gruyère. That should be about 1 cup.",
+  "Unfold the pastry onto a sheet of plastic wrap and roll it out into a 10 by 12 inch rectangle.",
+  "Spread the 1 1/2 tbsp mustard over it, leaving a 1/2 inch strip bare along the long edge farthest from you.",
+  "Lay the ham over the mustard in an even layer, then sprinkle the Gruyère over the ham.",
+  "Starting from the long edge closest to you, roll it up tightly into a log and trim the ragged ends. Wrap it in the plastic wrap and chill it for 20 minutes. A soft log squashes when you slice it.",
+  "Meanwhile, heat the oven to 375°F with racks in the upper and lower thirds. Line two baking sheets with parchment.",
+  "Cut the log into 1/2 inch slices with a serrated knife. That should be about 24. Lay them flat on the sheets about 1 inch apart.",
+  "Bake for about 18 minutes, swapping the sheets top to bottom halfway, until the pastry is light golden and the cheese is bubbling.",
+  "Let them cool on the sheets for 5 minutes. Serve warm or at room temperature."
+ ],
+ "advance_prep_notes": "thaw the puff pastry in the fridge the night before",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All three versions spread mustard over a sheet of puff pastry, layer on deli ham and a melty cheese, roll it into a log, slice it and bake until golden. Well Plated (the lead) chills the log for 20 minutes before slicing it thin and bakes at 375°F; Lena's Kitchen brushes the slices with egg wash and seeds at 400°F, and Sustainable Cooks cuts thick rolls and bakes them close together in a dish under a seasoned butter. This is the lead at half the amount, one sheet for about 24 pinwheels, made with Gruyère and without the optional herbs.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Ham and Cheese Pinwheels",
+   "url": "https://www.wellplated.com/ham-and-cheese-pinwheels/",
+   "rating": 4.9,
+   "rating_count": 152,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lena's Kitchen",
+   "title": "Ham and Cheese Puff Pastry Pinwheels",
+   "url": "https://lenaskitchenblog.com/ham-and-cheese-pinwheels/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sustainable Cooks",
+   "title": "Puff Pastry Ham and Cheese Pinwheels",
+   "url": "https://www.sustainablecooks.com/ham-and-cheese-pinwheels/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

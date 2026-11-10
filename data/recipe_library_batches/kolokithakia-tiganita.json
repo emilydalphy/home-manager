@@ -1,0 +1,116 @@
+{
+ "dish_name": "Kolokithakia Tiganita",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "1 hour ahead: trim the ends off the zucchini and slice them into rounds about 1/4 inch thick. Toss the slices with 1 tsp of the salt in a colander set in the sink and leave them for 1 hour to drain.",
+  "Meanwhile, make the tzatziki. Grate the cucumber on the coarse side of a box grater. That should be about 1/2 cup.",
+  "Pile it in the middle of a clean kitchen towel, gather the towel up and squeeze out as much water as you can, or the tzatziki will be runny.",
+  "Cut the lemon in half. Squeeze 1 tbsp juice from one half and cut the other half into wedges. Grate the garlic clove and chop 1 tbsp of the dill.",
+  "Put 1 cup of the yogurt in a bowl. Stir in the cucumber, lemon juice, garlic, dill, the 1 1/2 tsp olive oil and 1/4 tsp of the salt. Cover it and chill it until you're ready to eat.",
+  "Spread the zucchini slices on paper towels and pat them dry on both sides.",
+  "Mix the 1 cup flour and 1/4 tsp pepper in a shallow bowl. Set a bowl of cold water next to it and line a tray with paper towels.",
+  "Pour the vegetable oil into a large skillet. It should be about 1/2 inch deep. Heat it over medium high to 350°F. If you have a thermometer, check it there. No thermometer? Drop in a floured slice. It should sizzle straight away.",
+  "Dip a few slices in the water, then in the flour, and shake off the extra. Lay them in the oil in a single layer with room between them. Stand back a little. They'll spatter.",
+  "Fry them for about 1 minute, until the underside is golden. Flip them and fry the other side for 1 minute.",
+  "Lift them onto the paper towels and sprinkle them with a little of the remaining 1/4 tsp salt while they're hot. Fry the rest in batches the same way.",
+  "Serve hot with the tzatziki and the lemon wedges."
+ ],
+ "advance_prep_notes": "Slice and salt the zucchini 1 hour ahead.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "My Greek Dish (the lead) salts thin zucchini rounds in a colander for an hour, dredges them in flour, dips them in water and fries them in batches until golden, serving them hot with tzatziki. Real Greek Recipes and Lemon & Olives use a soda water batter in place of the plain flour coat, and Real Greek Recipes cuts the zucchini lengthwise and finishes it with grated cheese. This follows the lead's quick dip in water rather than chilling the floured slices for hours, shallow fries them in a skillet, and makes the tzatziki while the zucchini drains.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Crispy Fried Zucchini (Kolokithakia Tiganita)",
+   "url": "https://www.mygreekdish.com/?p=7245",
+   "rating": 4.9,
+   "rating_count": 681,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Real Greek Recipes",
+   "title": "Crispy Fried Zucchini (+ 2 Ingredient Batter)",
+   "url": "https://realgreekrecipes.com/fried-zucchini/",
+   "rating": 3.6,
+   "rating_count": 35,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Lemon & Olives",
+   "title": "Sliced Zucchini Fried In Batter (Kolokythakia Tiganita)",
+   "url": "https://www.lemonandolives.com/sliced-zucchini-fried-batter-kolokythakia-tiganita",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
