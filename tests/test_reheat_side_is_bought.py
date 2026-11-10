@@ -1104,3 +1104,119 @@ def test_on_the_minus_door_the_households_edit_on_a_side_line_stands():
     # is 4 of theirs; the undo brings the cook's head back: 2 + 4.
     assert _list()["Lettuce"] == "6 heads", "the household's extra stands"
     assert _lettuce_links() == 2
+
+
+# ---------- second review (desktop, 2026-11-10) ----------
+# Bug A: a drop/move rescale rebuilds the cook night's ledger under new ids,
+# so a side added after approval named rows that no longer existed.
+# Gap B: one ticked line (the turkey) froze the whole resize.
+
+def _id_of(item):
+    return {i["item"]: i["id"] for i in tools.list_grocery_list()}[item]
+
+
+@ON_MONDAY
+def test_a_dropped_fed_night_then_a_salad_on_another_reads_like_a_fresh_approval():
+    """CATCH (Bug A) — cook's salad added after approval, Thursday dropped,
+    then a salad on Tuesday. Reported: Lemon 3, Lettuce 3 heads; a fresh
+    build of that week says Lemon 4, Lettuce 2 heads."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(fed_days=(TUE, THU))
+    _plates.carry_sides([DRESSED], cook)
+    tools.clear_plan_slot(plan_id, THU, "dinner")
+
+    _plates.carry_sides([DRESSED], fed[TUE])
+
+    assert _list()["Lettuce"] == "2 heads"
+    assert _list()["Lemon"] == "4"
+    _matches_a_fresh_approval(plan_id, fed_days=(TUE,), cook_sides=[DRESSED], fed_sides={TUE: [DRESSED]})
+
+
+@ON_MONDAY
+def test_undoing_the_cooks_salad_after_a_drop_still_takes_its_lettuce():
+    """CATCH (Bug A follow-on) — after the drop the salad's saved ids were
+    stale and Undo took nothing off: Lettuce stayed 3 heads where 1 is right
+    (only Tuesday's salad is left). It now goes by item name, which never
+    takes the dish's own lemon."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(fed_days=(TUE, THU))
+    _plates.carry_sides([DRESSED], cook)
+    tools.clear_plan_slot(plan_id, THU, "dinner")
+    _plates.carry_sides([DRESSED], fed[TUE])
+
+    assert _plates.remove_component(cook, "Green salad")["status"] == "removed"
+
+    assert _list()["Lettuce"] == "1 head"
+    # The dish's lemon (2 servings x 2 nights) is never taken.
+    assert float(_list()["Lemon"]) >= 2
+
+
+@ON_MONDAY
+def test_a_bought_turkey_does_not_freeze_the_salad_when_thursdays_comes_off():
+    """CATCH (Gap B) — turkey ticked bought, Thursday's approval-time salad
+    removed: Monday's salad must cover Thursday again. Reported 1 head."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(cook_sides=[DRESSED], fed_sides={THU: [DRESSED]})
+    tools.mark_grocery_item(_id_of("Ground turkey"), "purchased")
+
+    assert _plates.remove_component(fed[THU], "Green salad")["status"] == "removed"
+
+    assert _list()["Lettuce"] == "2 heads"
+
+
+@ON_MONDAY
+def test_a_bought_turkey_does_not_bring_back_the_over_buy_when_thursday_gains_a_salad():
+    """CATCH (Gap B) — turkey ticked bought, salad added to Thursday.
+    Reported Lettuce 3 / Lemon 5, the over-buy this card removed."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(cook_sides=[DRESSED])
+    tools.mark_grocery_item(_id_of("Ground turkey"), "purchased")
+
+    _plates.carry_sides([DRESSED], fed[THU])
+
+    assert _list()["Lettuce"] == "2 heads"
+    assert _list()["Lemon"] == "4"
+
+
+@ON_MONDAY
+def test_a_lettuce_already_in_the_cart_is_left_as_it_is():
+    """GUARD — the shop has started on the lettuce itself: that line keeps
+    its amount, and Thursday's salad buys its own head beside it."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(cook_sides=[DRESSED])
+    lettuce = _id_of("Lettuce")
+    tools.mark_grocery_item(lettuce, "in_cart")
+
+    _plates.carry_sides([DRESSED], fed[THU])
+
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, quantity, status FROM grocery_items WHERE item = 'Lettuce' ORDER BY id"
+    ).fetchall()
+    conn.close()
+    assert [(r["id"], r["quantity"], r["status"]) for r in rows][0] == (lettuce, "2 heads", "in_cart")
+    assert [(r["quantity"], r["status"]) for r in rows[1:]] == [("1 head", "needed")]
+    # The cook night's share of that line stays what the line was bought at,
+    # so the line and its ledger still agree.
+    assert _shares(cook)["Lettuce"] == "2 heads"
+
+
+@ON_MONDAY
+def test_undoing_the_cooks_salad_straight_after_a_drop_takes_its_lettuce():
+    """CATCH (Bug A follow-on, no resize in between) — Thursday dropped, then
+    Undo on Monday's salad: its saved ids are stale, so it goes by name."""
+    _household()
+    _lemon_chili()
+    plan_id, cook, fed = _week(fed_days=(TUE, THU))
+    _plates.carry_sides([DRESSED], cook)
+    tools.clear_plan_slot(plan_id, THU, "dinner")
+
+    assert _plates.remove_component(cook, "Green salad")["status"] == "removed"
+
+    assert "Lettuce" not in _list()
+    assert float(_list()["Lemon"]) >= 2

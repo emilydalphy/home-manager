@@ -1334,15 +1334,15 @@ def resize_feeding_cooks_sides(fed_entry_id: int) -> list[int]:
     (grocery._restate_lines_for_new_shares). So grocery_items rows and
     their state never change, a standing want is restated rather than
     crept, and a household-added side keeps its own ledger rows (its
-    grocery_link_ids stay right, so its Undo takes back only its own
-    lemon). The re-buy is replayed in the same two shapes the file holds:
+    grocery_link_ids, so its Undo takes back only its own lemon) until a
+    rebuild of the cook night merges them, when it joins the dish's group. The re-buy is replayed in the same two shapes the file holds:
     the dish with its approval-time sides through one buffer (approval's
     rows), and each side added after approval through its own
     (_buy_side_now's rows). One transaction: all of it or none.
 
     Left alone (returns []): not a reheat on an approved week; the cook
-    night past, cooked or being cooked; any of its lines in a cart or
-    bought; a row whose simulated share can't be paired with the file's
+    night past, cooked or being cooked. A line in a cart or bought is
+    left as it is (only that line); a row whose simulated share can't be paired with the file's
     (left at what it was bought at). A spice line ('spice') is live.
     Never raises — the side has already been added or taken off.
     """
@@ -1390,9 +1390,30 @@ def _resize_cooks_sides_on(conn, fed_entry_id, _attendance, _grocery, _leftovers
         "WHERE l.household_id = ? AND l.meal_plan_entry_id = ? ORDER BY l.id",
         (hid, cook_id),
     ).fetchall()
-    if not links or any(l["status"] in ("in_cart", "purchased") for l in links):
+    if not links:
         return []
+    ticked = {int(l["id"]) for l in links if l["status"] in ("in_cart", "purchased")}
     sides = [s for s in _sides_of(cook) if isinstance(s, dict)]
+    # A side added after approval names the ledger rows it wrote
+    # (grocery_link_ids). Any rebuild of the cook night since — a dropped
+    # or moved fed night, a headcount change, a recipe edit — reverses the
+    # whole entry and buys it again WITH that side, as one merged group
+    # under new ids, so the names point at nothing (review, 2026-11-10).
+    # Such a side is now part of the approval-shaped group: it is replayed
+    # with the dish, and its stale ids are dropped so its Undo goes by
+    # item name, the safe way (remove_component).
+    live = {int(l["id"]) for l in links}
+    stale = [
+        s for s in sides
+        if s.get("grocery_link_ids") and not set(int(i) for i in s["grocery_link_ids"]) <= live
+    ]
+    if stale:
+        for s in stale:
+            s.pop("grocery_link_ids", None)
+        conn.execute(
+            "UPDATE meal_plan_entries SET sides_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps(sides), cook_id, hid),
+        )
     added = [s for s in sides if s.get("grocery_link_ids")]
     group_of = {int(i): n for n, s in enumerate(added, 1) for i in s.get("grocery_link_ids") or []}
 
@@ -1456,6 +1477,11 @@ def _resize_cooks_sides_on(conn, fed_entry_id, _attendance, _grocery, _leftovers
             logger.info("Side resize left %s on entry %s as it was (ledger no longer lines up)", key[1], cook_id)
             continue
         for old, new in zip(old_rows, new_rows):
+            if int(old["id"]) in ticked:
+                # In the cart or bought: the shop has started on this line,
+                # so it stays what it was. Only this line — a bought turkey
+                # no longer freezes the salad's lettuce (review, 2026-11-10).
+                continue
             share = _attendance._share_in_unit(new["quantity"] or "", old["quantity"] or "")
             if share is None:
                 continue
@@ -1686,6 +1712,11 @@ def remove_component(entry_id: int, name: str, weekly_plan_id: int | None = None
     conn.commit()
     conn.close()
     link_ids = [i for s in gone for i in (s.get("grocery_link_ids") or [])]
+    if link_ids and not set(int(i) for i in link_ids) <= _link_ids(entry_id):
+        # The entry's shopping was rebuilt since this side was bought (a
+        # drop, move or headcount change re-buys it under new ids): the
+        # names point at nothing, so go by item name instead.
+        link_ids = []
     if link_ids:
         reversal = _grocery._reverse_meal_grocery_contributions(entry_id, only_link_ids=link_ids)
     else:
