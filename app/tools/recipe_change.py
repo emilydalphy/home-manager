@@ -52,7 +52,7 @@ import json
 import logging
 import re
 
-from ..db import get_conn
+from ..db import get_conn, name_key
 from . import coordination as _coordination
 from . import grocery as _grocery
 from . import leftovers as _leftovers
@@ -952,6 +952,143 @@ def reads_as_lasting(text: str) -> bool:
     return any(re.search(r"(?<![a-z])" + re.escape(w) + r"(?![a-z])", low) for w in _LASTING_WORDS)
 
 
+# ---------- a typed change that swaps the main protein (2026-11-10) ----------
+#
+# Emily, 2026-11-09: "use shrimp instead" typed into Change recipe or
+# Tweak's "Something else" box changed the ingredients and kept the title
+# "Seared Salmon…", which read as nothing having happened. Tweak's "Change
+# the protein" row already renames. Decided from the INGREDIENTS the rewrite
+# came back with, never from the words typed: the recipe is what gets saved
+# and shopped, so it is the one thing that can't disagree with the title.
+# The dish's main protein (its main_protein, or a protein its title names)
+# gone from the list AND exactly one protein the dish didn't have on it =
+# a swap. Anything else (less spicy, no onions, a second protein added, a
+# protein dropped with nothing in its place) keeps the name. The name goes
+# through plate_parts._variant_name, the Change the protein row's own
+# helper, so both doors name a dish alike.
+
+# meal_variety's protein words, narrowed where a rename has to tell apart
+# two that a variety check calls one ("cod" vs "halibut"), plus proteins its
+# smaller vocabulary has no reason to know.
+_RENAME_PROTEIN_EXTRA = {
+    "cod": "cod", "tilapia": "tilapia", "halibut": "halibut", "haddock": "haddock", "fish": "fish",
+    "trout": "trout", "snapper": "snapper", "mahi": "mahi", "scallop": "scallop", "crab": "crab",
+    "lobster": "lobster", "mussel": "mussel", "clam": "clam", "squid": "squid", "calamari": "squid",
+    "duck": "duck", "bison": "bison", "venison": "venison", "seitan": "seitan",
+}
+# The protein word is a flavour, not the protein, when one of these follows
+# it: "chicken stock", "fish sauce", "egg noodles", "bean sprouts".
+_NOT_THE_PROTEIN_AFTER = re.compile(
+    r"^[\s-]*(stock|broth|bouillon|sauce|paste|powder|sprouts?|noodles?|fat|drippings|base|gravy|"
+    r"seasoning|flavou?r(ed)?|wash)\b", re.I)
+
+
+def _protein_key(word: str) -> str | None:
+    from . import meal_variety as _meal_variety
+    stem = _meal_variety._stem(word.lower())
+    if stem in _RENAME_PROTEIN_EXTRA:
+        return _RENAME_PROTEIN_EXTRA[stem]
+    return _meal_variety._PROTEINS.get(stem)
+
+
+def _proteins_in(text: str, skip_flavours: bool = False) -> dict[str, str]:
+    """{protein key: the word as written} for every protein word in `text`."""
+    found: dict[str, str] = {}
+    text = str(text or "")
+    for m in re.finditer(r"[A-Za-zÀ-ÿ]+", text):
+        key = _protein_key(m.group(0))
+        if not key:
+            continue
+        if skip_flavours and _NOT_THE_PROTEIN_AFTER.match(text[m.end():]):
+            continue
+        found.setdefault(key, m.group(0))
+    return found
+
+
+def _ingredient_proteins(ingredients) -> dict[str, str]:
+    found: dict[str, str] = {}
+    for i in ingredients or []:
+        item = i.get("item") if isinstance(i, dict) else i
+        for key, word in _proteins_in(str(item or ""), skip_flavours=True).items():
+            found.setdefault(key, word)
+    return found
+
+
+def protein_swap(spec: dict, new_ingredients) -> dict | None:
+    """
+    {"name", "protein", "was"} when a rewrite of `spec`'s recipe swapped its
+    main protein, else None. See the block above for why the ingredients
+    decide and not the words typed.
+
+    "Seared Salmon with Lemon-Dill Potatoes and Asparagus" + a list with
+    shrimp and no salmon -> "Seared Shrimp with Lemon-Dill Potatoes and
+    Asparagus". A title that never named the protein ("Chili") gets
+    _variant_name's "Chili with turkey", as the Change the protein row does.
+    """
+    current = str(spec.get("name") or "").strip()
+    if not current:
+        return None
+    said = {**_proteins_in(current), **_proteins_in(spec.get("main_protein") or "")}
+    if not said:
+        return None
+    before = _ingredient_proteins(spec.get("ingredients"))
+    after = _ingredient_proteins(new_ingredients)
+    gone = {k for k in said if k not in after}
+    if not gone:
+        return None
+    added = {k: w for k, w in after.items() if k not in before and k not in said}
+    # An egg beside another new protein is an egg wash or a garnish.
+    if len(added) > 1:
+        added.pop("egg", None)
+    if len(added) != 1:
+        return None
+    word = next(iter(added.values()))
+    new_word = word[:1].upper() + word[1:].lower()
+    proposed = re.sub(
+        r"[A-Za-zÀ-ÿ]+",
+        lambda m: new_word if _protein_key(m.group(0)) in gone else m.group(0),
+        current,
+    )
+    from . import plate_parts as _plate_parts
+    return {
+        "name": _plate_parts._variant_name(proposed, current, word.lower()),
+        "protein": word.lower(),
+        "was": ", ".join(sorted(said[k].lower() for k in gone)),
+    }
+
+
+_NEGATED_BEFORE = re.compile(
+    r"\b(no|not|without|never|less|skip|hold|minus|instead\s+of|rather\s+than|don'?t|dont|"
+    r"leave\s+out|drop|swap\s+out|replace)\s+(the\s+)?(\w+\s+)?$", re.I)
+
+
+def protein_left_out(text: str, spec: dict, new_ingredients) -> str | None:
+    """
+    The protein the household typed ("use shrimp instead") when the rewrite
+    came back without it — the one place their words are read, because a
+    recipe can't show what it failed to do. Only a single protein the dish
+    didn't already have, and never one they said to leave out ("no shrimp",
+    "instead of chicken"). None otherwise.
+    """
+    text = re.sub("[’‘]", "'", str(text or ""))
+    have = {**_proteins_in(spec.get("name") or ""), **_proteins_in(spec.get("main_protein") or ""),
+            **_ingredient_proteins(spec.get("ingredients"))}
+    asked: dict[str, str] = {}
+    for m in re.finditer(r"[A-Za-zÀ-ÿ]+", text):
+        key = _protein_key(m.group(0))
+        if not key or key in have or _NEGATED_BEFORE.search(text[:m.start()]):
+            continue
+        asked.setdefault(key, m.group(0).lower())
+    if len(asked) != 1:
+        return None
+    key, word = next(iter(asked.items()))
+    return None if key in _ingredient_proteins(new_ingredients) else word
+
+
+def protein_left_out_said(word: str, dish: str) -> str:
+    return f"I couldn’t work {word} into {dish or 'that one'}, so it’s as it was. Try saying it another way."
+
+
 def rewrite_spec(entry_id: int) -> dict:
     """
     What the recipe writer is given for a rewrite: the dish as it stands,
@@ -1016,6 +1153,10 @@ _SNAPSHOT_COLUMNS = (
     "name", "ingredients_json", "instructions_json", "default_servings",
     "prep_time_minutes", "cook_time_minutes", "advance_prep_notes",
     "advance_prep_step_indices_json", "plate_key",
+    # A protein swap renames the dish and re-labels its protein (2026-11-10).
+    # A snapshot taken before then has no main_protein, and the undo puts
+    # back only the columns its snapshot holds.
+    "main_protein",
 )
 
 
@@ -1041,6 +1182,11 @@ def _fork_name(conn, name: str) -> str:
     return candidate
 
 
+def _name_taken(conn, name: str) -> bool:
+    return any(name_key(r["name"]) == name_key(name) for r in conn.execute(
+        "SELECT name FROM recipes WHERE household_id = ?", (household_id(),)))
+
+
 def _fork_recipe(conn, recipe_id: int, name: str) -> int:
     """A copy of the recipe row under `name`, history reset (it has never
     been cooked), for apply_rewrite's this-meal-only change."""
@@ -1058,7 +1204,8 @@ def _fork_recipe(conn, recipe_id: int, name: str) -> int:
     return int(cur.lastrowid)
 
 
-def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: bool = False) -> dict:
+def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: bool = False,
+                  rename: dict | None = None) -> dict:
     """
     Save a rewrite of one meal's recipe IN PLACE, keeping the dish's name,
     and redo its shopping.
@@ -1086,6 +1233,12 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
     only this chain's shopping is redone. The others keep theirs. Change
     recipe's own rewrite still edits the row in place (every night on it),
     which is that sheet's established answer.
+
+    `rename` (protein_swap's answer, 2026-11-10): the change swapped the
+    dish's main protein, so the row takes the new name and main_protein in
+    the same write — the one exception to "keeping the dish's name". A
+    fork takes the new name instead of "(your way)". The snapshot holds
+    the old name, so Put it back restores it.
     """
     ingredients = [
         i for i in (detail.get("ingredients") or [])
@@ -1135,7 +1288,10 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
             users = {plan_id: _live_ids(conn, ids)} if approved else {}
             users = {k: v for k, v in users.items() if v}
             before = _needed_lines(conn) if approved else {}
-            target_id = _fork_recipe(conn, target_id, _fork_name(conn, spec.get("name") or ""))
+            fork_name = (rename or {}).get("name") or ""
+            if not fork_name or _name_taken(conn, fork_name):
+                fork_name = _fork_name(conn, fork_name or spec.get("name") or "")
+            target_id = _fork_recipe(conn, target_id, fork_name)
             conn.execute(
                 "UPDATE meal_plan_entries SET recipe_id = ? "
                 f"WHERE id IN ({','.join('?' * len(ids))}) AND household_id = ?",
@@ -1165,6 +1321,11 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
              json.dumps(detail.get("advance_prep_step_indices") or []),
              target_id, hid),
         )
+        if rename and rename.get("name"):
+            conn.execute(
+                "UPDATE recipes SET name = ?, main_protein = ? WHERE id = ? AND household_id = ?",
+                (rename["name"], rename.get("protein") or "", target_id, hid),
+            )
         _plate_drawings.settle(conn, target_id, list_before or "[]")
         after = _resync_users(conn, users) if users else before
         conn.commit()
@@ -1182,12 +1343,17 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
     )
     if request_id:
         _store_snapshot(request_id, snapshot)
-    said = (spec.get("name") or "That one") + " is rewritten."
+    new_name = (rename or {}).get("name") or spec.get("name") or ""
+    if rename and rename.get("name"):
+        said = f"{spec.get('name') or 'That one'} is now {new_name}."
+    else:
+        said = (spec.get("name") or "That one") + " is rewritten."
     if approved and changed:
         said += f" {changed} thing{'' if changed == 1 else 's'} changed on the list."
     return {
         "status": "rewritten", "said": said, "request_id": request_id,
-        "recipe_id": target_id, "name": spec.get("name") or "",
+        "recipe_id": target_id, "name": new_name, "renamed": bool(rename and rename.get("name")),
+        "previous_name": spec.get("name") or "",
         "entry_ids": ids, "forked": bool(shared_elsewhere), "lines_changed": changed, "approved": approved,
     }
 
@@ -1438,10 +1604,11 @@ def undo_recipe_change(request_id: int) -> dict:
         users = _approved_users_of(conn, req["recipe_id"])
         approved = bool(users)
         before = _needed_lines(conn) if approved else {}
+        held = [c for c in _SNAPSHOT_COLUMNS if c in snapshot]
         conn.execute(
-            "UPDATE recipes SET " + ", ".join(f"{c} = ?" for c in _SNAPSHOT_COLUMNS) +
+            "UPDATE recipes SET " + ", ".join(f"{c} = ?" for c in held) +
             " WHERE id = ? AND household_id = ?",
-            [snapshot.get(c) for c in _SNAPSHOT_COLUMNS] + [int(req["recipe_id"]), hid],
+            [snapshot.get(c) for c in held] + [int(req["recipe_id"]), hid],
         )
         after = _resync_users(conn, users) if users else before
         conn.execute(
