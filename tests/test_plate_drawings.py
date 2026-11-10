@@ -252,6 +252,39 @@ def test_a_dishs_own_drawing_replaces_a_borrowed_plate_stored_before_it(name, in
     assert drawings.plate_for(name, "", ingredients, stored=borrowed) == own
 
 
+# Everyday snacks whose borrowed plate already shows every part (rule 42).
+_SNACKS_ON_A_LIBRARY_PLATE = {
+    "Turkey and Cheese Roll-Ups with Cucumber Spears", "Edamame with Sea Salt", "Egg Muffins with Spinach and Feta",
+    "Oat and Banana Breakfast Cookies", "Roasted Chickpeas", "Black Bean and Corn Salsa with Tortilla Chips",
+    "Frozen Yogurt Bark with Berries", "Bean and Cheese Nachos with Tomato", "Spanakopita Triangles",
+    "Ants on a Log with Almond Butter and Dried Cherries",
+}
+
+
+def _everyday_snacks():
+    data = json.loads((ROOT / "data" / "everyday_snacks.json").read_text())
+    rows = data if isinstance(data, list) else data.get("snacks", data)
+    for row in rows:
+        yield row
+        if row.get("nut_free_swap"):
+            yield row["nut_free_swap"]
+
+
+def test_every_everyday_snack_has_a_plate_that_shows_it():
+    # Emily, 2026-11-10: rice cakes drew as fried rice, pear as cinnamon rolls.
+    for snack in _everyday_snacks():
+        name = snack["name"]
+        if name in _SNACKS_ON_A_LIBRARY_PLATE:
+            continue
+        key = drawings.plate_for(name, "", [line[0] for line in snack["lines"]])
+        assert key == drawings.key_for_name(name), f"{name} borrows {key}"
+
+
+def test_goat_cheese_is_cheese_not_goat_meat():
+    assert drawings.plate_for("Dates Stuffed with Goat Cheese", "", ["medjool dates", "goat cheese"]) \
+        == "dates-stuffed-with-goat-cheese"
+
+
 def test_an_own_drawing_that_no_longer_fits_leaves_the_stored_plate():
     # Rule 33: the edit moved the plate because the main food changed.
     assert drawings.plate_for("Chicken Piccata", "tofu", ["tofu", "capers"], stored="crispy-tofu-bites") == "crispy-tofu-bites"

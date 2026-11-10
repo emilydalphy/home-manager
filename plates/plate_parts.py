@@ -1529,6 +1529,24 @@ NEWER = dict(cauliflower=cauliflower, calamari=calamari, orzo=orzo, shortpasta=s
              croissant=croissant, biscuits=biscuits, braidbread=braidbread, danish=danish, banana=banana, tamales=tamales, gimbap=gimbap,
              pitapocket=pitapocket, kibbeh=kibbeh, lettucecups=lettucecups)
 
+# Snack-plate parts (2026-11-10), kept out of the NEWER line above so branches adding parts don't collide.
+def dates(rng, o):  # whole dates split open with a filling heaped in the slit: stuffed dates
+    fill = at(o, 1, "#C98F4A"); n = at(o, 2, 5); sz = at(o, 3, 1); r = at(o, 4, 18 if n > 1 else 0)
+    cx = at(o, 5, 50); cy = at(o, 6, 50)
+    skin, dark, shine = "#6E3418", "#4A200E", "#A8603A"
+    fs = mix(fill, "#2A1206", .25)
+    out = ""
+    for x, y, a in _ring(n, r, cx, cy, -1.2):
+        out += f'<g transform="translate({x:.1f} {y:.1f}) rotate({a+90:.0f}) scale({sz})">'
+        out += (f'<ellipse cx="0" cy=".8" rx="10.4" ry="6.2" fill="{dark}"/><ellipse cx="0" cy="0" rx="10" ry="5.8" fill="{skin}"/>'
+                '<path d="M-7 -3.2Q-2 -1.6 3 -3.6M-5 3.4Q1 1.8 6 3.6" fill="none" stroke="#4A200E" stroke-width=".7" stroke-linecap="round" opacity=".6"/>'
+                f'<path d="{blob(rng,0,.6,6.8,2.9,10,.12)}" fill="{fs}"/><path d="{blob(rng,0,0,6.4,2.5,10,.14)}" fill="{fill}"/>'
+                f'<path d="M-7.4 -3.6Q-4 -5.4 1 -5.2" fill="none" stroke="{shine}" stroke-width="1.1" stroke-linecap="round" opacity=".8"/></g>')
+    return out
+
+
+NEWER.update(dates=dates)
+
 
 
 def plate_svg(name, parts):
