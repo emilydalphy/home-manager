@@ -21,8 +21,13 @@ What groups, and what never does:
   * only lines a plan put there (source_weekly_plan_id set), from two or
     more DIFFERENT plans, one line each — two lines of one plan are a
     duplicate, which the list's own "Merge" handles;
-  * never a staple's line or a hand/chat add: those are the household's
-    own wants, not a week's;
+  * never a staple's line (a regular stands beside the week's, 2026-10-24);
+  * a hand/chat add (a standing want, source_weekly_plan_id NULL) joins
+    the row only as "your own" amount, beside the plan's line(s), and only
+    when every amount adds up in one unit family (Emily 2026-11-09, "same
+    kind = one line": "Ground beef 1.75 lbs", not "1 lb" and "12 oz") —
+    see _own_want_joining. Still display only: it stays its own row, so a
+    plan change never eats into it;
   * only lines that read the same way on the screen right now — same
     store, same aisle, same status, both on or both off the list, set
     aside for the same reason — so one row never hides two different
@@ -99,6 +104,37 @@ def _grouped_flag(members: list[dict], total: str) -> dict | None:
     return {**lead, "sentence": sentence, "wantedLabel": wanted}
 
 
+OWN_LABEL = "your own"
+
+
+def _own_want_joining(own_lines: list[dict], members: list[dict]) -> dict | None:
+    """
+    The household's own line (a hand/chat/scan add: source_weekly_plan_id
+    NULL, no staple) that shares the row with the plan's line(s) for the
+    same thing, or None. Emily 2026-11-09, "same kind = one line": the
+    household's 1 lb and the plan's 12 oz of ground beef are one Shop row,
+    "Ground beef 1.75 lbs". Display only — the standing want stays its own
+    row, so a plan change never eats into it (CLAUDE.md, "Grocery quantity
+    merging/display").
+
+    Only when it is unambiguous and honest: exactly one own line (two are a
+    duplicate, which the list's Merge handles), and every amount stated and
+    in ONE unit family that adds up (lb/oz, g/kg, cups/tbsp, bare counts).
+    "1 bag" beside "12 oz" stays two rows — a total of "1 bag + 12 oz" is
+    two things to buy, not one.
+    """
+    if len(own_lines) != 1:
+        return None
+    quantities = [(m["item"].get("quantity") or "").strip() for m in members]
+    quantities.append((own_lines[0].get("quantity") or "").strip())
+    if not all(quantities):
+        return None
+    buckets = _quantities._ledger_buckets(quantities)
+    if not buckets or len(buckets) != 1:
+        return None
+    return own_lines[0]
+
+
 def stamp_week_groups(items: list[dict]) -> list[dict]:
     """
     Put `week_group` on every line in `items` that shares one Shop row with
@@ -134,15 +170,16 @@ def stamp_week_groups(items: list[dict]) -> list[dict]:
         conn.close()
 
     groups: dict[tuple, list[dict]] = {}
+    wants: dict[tuple, list[dict]] = {}
     for it in items:
         try:
             row = meta.get(int(it.get("id")))
         except (TypeError, ValueError):
             continue
-        if (
-            row is None or row["source_weekly_plan_id"] is None or row["staple_id"] is not None
-            or row["status"] in _STATUSES_NEVER_GROUPED or row["source_weekly_plan_id"] not in plans
-        ):
+        if row is None or row["staple_id"] is not None or row["status"] in _STATUSES_NEVER_GROUPED:
+            continue
+        standing = row["source_weekly_plan_id"] is None
+        if not standing and row["source_weekly_plan_id"] not in plans:
             continue
         category = row["category"] or "other"
         key = (
@@ -153,11 +190,17 @@ def stamp_week_groups(items: list[dict]) -> list[dict]:
             int(row["excluded_from_list"] or 0),
             row["removed_by"] or "",
         )
-        groups.setdefault(key, []).append({"item": it, "plan": row["source_weekly_plan_id"]})
+        if standing:
+            wants.setdefault(key, []).append(it)
+        else:
+            groups.setdefault(key, []).append({"item": it, "plan": row["source_weekly_plan_id"]})
 
-    for members in groups.values():
+    for key, members in groups.items():
         plan_ids = [m["plan"] for m in members]
-        if len(members) < 2 or len(set(plan_ids)) != len(plan_ids):
+        if len(set(plan_ids)) != len(plan_ids):
+            continue
+        own = _own_want_joining(wants.get(key) or [], members)
+        if len(members) < 2 and own is None:
             continue
         spans = {}
         for pid in plan_ids:
@@ -169,13 +212,25 @@ def stamp_week_groups(items: list[dict]) -> list[dict]:
             # Two weeks that would both read "next week": name them by date.
             labels = [_week_label(*spans[m["plan"]], today, by_date=True) for m in members]
         quantities = [(m["item"].get("quantity") or "").strip() for m in members]
-        total = _total(quantities)
         lines = [m["item"] for m in members]
+        if own is not None:
+            # The household's own amount joins last, so the plan's line
+            # leads (its freezing offer and name are the row's) and the
+            # sheet's amount boxes read "This week" then "Your own".
+            quantities.append((own.get("quantity") or "").strip())
+            lines.append(own)
+            labels.append(OWN_LABEL)
+        total = _total(quantities)
+        # One plan's line and the household's own: just the one amount
+        # ("Ground beef 1.75 lbs", Emily 2026-11-09). Two weeks keep their
+        # note, the own amount named in it.
+        note = "" if len(members) < 2 else " · ".join(
+            f"{q or 'some'} {label}" for q, label in zip(quantities, labels))
         group = {
             "lead_id": lines[0]["id"],
             "ids": [it["id"] for it in lines],
             "total": total,
-            "note": " · ".join(f"{q or 'some'} {label}" for q, label in zip(quantities, labels)),
+            "note": note,
             "parts": [
                 {"id": it["id"], "quantity": q, "label": label}
                 for it, q, label in zip(lines, quantities, labels)
