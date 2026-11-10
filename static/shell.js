@@ -29531,6 +29531,12 @@
     wrap.appendChild(bubble);
     if (dishTiles) wrap.appendChild(dishTiles);
     (actions || []).forEach(function (action) {
+      // An allergy refusal's button (Emily, 2026-11-09): the tap is the
+      // only thing that saves a dish chat refused — no typed reply does.
+      if (action.save_anyway && action.save_anyway.token) {
+        wrap.appendChild(askSaveAnywayChip(action));
+        return;
+      }
       // A fact the turn remembered ("the kids won't eat shrimp") is shown
       // as what it is — Remembered · Kids: no shrimp — with "Not quite"
       // opening What we know to correct it there (learning etiquette §7:
@@ -29614,6 +29620,54 @@
       wrap.appendChild(card);
     });
     return wrap;
+  }
+
+  // "Not planned · Peanut Noodles · Plan it anyway" under a refusal: the
+  // Remembered chip's shape, its label in the allergy line's ink. The tap
+  // posts only the token — the server knows the household and the
+  // conversation — and is spent either way: the button goes once it has
+  // answered, and a fresh one comes back only if the server offers it.
+  function askSaveAnywayChip(action) {
+    var offer = action.save_anyway;
+    var chip = document.createElement('div');
+    chip.className = 'ask-remembered is-refused';
+    chip.innerHTML =
+      '<span class="ask-remembered-label">' + escapeHtml(action.kicker) + '</span>' +
+      '<span class="ask-remembered-text">' + escapeHtml(action.change) + '</span>' +
+      '<button type="button" class="ask-remembered-fix">' + escapeHtml(offer.label || 'Save it anyway') + '</button>';
+    var btn = chip.querySelector('.ask-remembered-fix');
+    btn.addEventListener('click', async function () {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      try {
+        var res = await Api.fetch('/api/chat/save-anyway', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: offer.token }),
+        });
+        var out = {};
+        try { out = await res.json(); } catch (e) { out = {}; }
+        if (!res.ok) {
+          showToast(out.said || 'That didn’t work just now — nothing changed.');
+          if (out.save_anyway && out.save_anyway.token) {
+            offer = out.save_anyway;
+            btn.disabled = false;
+          } else {
+            btn.remove();
+          }
+          return;
+        }
+        btn.remove();
+        chip.querySelector('.ask-remembered-label').textContent = out.status === 'saved' ? 'Saved' : 'Planned';
+        chip.classList.remove('is-refused');
+        showToast(out.said || 'Done.');
+        if (out.tab || out.href) refreshStaleTabsFromActions([{ tab: out.tab, href: out.href }]);
+      } catch (e) {
+        showToast('No signal — try that once you’re back.');
+        btn.disabled = false;
+      }
+    });
+    return chip;
   }
 
   // The one signal there is for "this turn edited the draft, not approved

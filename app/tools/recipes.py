@@ -109,8 +109,8 @@ def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
     at this; everything else (the week's own saves, imports, the recipe
     pass) calls add_recipe itself, the shape plan_meal_for_chat has.
 
-    `override` is the person's own "save it anyway" (a recipe kept for
-    guests, say) — never the model's call. See
+    `override` is the person's tap on the refusal's "Save it anyway"
+    button (a recipe kept for guests, say) — never the model's call. See
     allergen_gate.refuse_recipe_if_clashing for why this raises.
     """
     from . import allergen_gate as _allergen_gate

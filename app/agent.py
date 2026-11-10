@@ -1070,10 +1070,11 @@ dish that has any of it in its ingredients, not in a sauce or a side served with
 under a "-free" name; if what they asked for leaves no safe dish, offer one outside that cuisine \
 and say so. plan_meal and swap_meal_in_plan decline such a dish themselves and hand you the \
 sentence to relay ("X has pineapple, which Emily can't have — want me to pick something else?") \
-— relay it and offer another, and pass override=true only if the person then says in their own \
-words to do it anyway. add_recipe declines the same way before anything is saved ("Not saved: X \
-has buttermilk…"): write the recipe again without that ingredient or pick another dish, and pass \
-its override=true only when the person says in their own words to save it anyway. Never put an \
+— relay it and offer another. add_recipe declines the same way before anything is saved ("Not \
+saved: X has buttermilk…"): write the recipe again without that ingredient or pick another dish. \
+Under your reply the person sees a "Plan it anyway" / "Save it anyway" button for that exact dish, \
+and only their tap on it saves it: if they ask you to do it anyway — even "yes" — tell them to tap \
+the button; you cannot do it for them, so never call the tool again hoping it goes through. Never put an \
 allergen-free label in a dish's name ("Dairy-Free", "Egg-Free", "Nut-Free", "Non-Dairy", \
 "Vegan"): name it by what's in it — "Oat Milk Pancakes", not "Dairy-Free Pancakes". A dish with \
 a label in its name is declined, because the label itself names the allergen.
@@ -1928,10 +1929,6 @@ TOOL_DEFINITIONS = [
                 "source_book": {"type": "string", "description": "The cookbook this came from, when the user names one ('the Ottolenghi book' → 'Ottolenghi Simple' only if they said so; otherwise what they said). The book is credited wherever the recipe shows. Leave out if not from a book."},
                 "source_author": {"type": "string", "description": "The cookbook's author, if the user names one. Leave out otherwise — never guess."},
                 "source_page": {"type": "string", "description": "The page number as the user gives it ('212', '212–213'). Leave out otherwise."},
-                "override": {
-                    "type": "boolean",
-                    "description": "Defaults to false. A recipe with something someone in the household can't have is NOT saved: the call comes back as an error naming the dish and the word ('Not saved: … has buttermilk …') — write it again without that ingredient, or pick a different dish. Set this ONLY when the person said in their own words in this conversation to save it anyway, after the tool declined once and you told them why. Never on your own initiative, never on a first call.",
-                },
             },
             "required": ["name"],
         },
@@ -2068,10 +2065,6 @@ TOOL_DEFINITIONS = [
                     "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]},
                     "description": "Only used for freeform meals not tied to a saved recipe. Leave out if unclear.",
                 },
-                "override": {
-                    "type": "boolean",
-                    "description": "Defaults to false. The person's own \"I know, do it anyway\" for a dish that has something someone in the household can't have — set it ONLY when they said so in their own words in this conversation, after the tool declined once and you relayed why. Never on your own initiative, never on a first call.",
-                },
             },
             "required": ["meal_date", "meal"],
         },
@@ -2137,10 +2130,6 @@ TOOL_DEFINITIONS = [
                     "description": "Defaults to false. Set only when the person asked to have the SAME dish on this day as well as the day it's already on. Without it, a dish still to be cooked on another day is refused — to move a dish, use move_meal_to_day.",
                 },
                 "old_meal": {"type": "string", "description": "The exact name of the entry being replaced. Only needed when the slot holds more than one — a day's two snacks — and required in spirit there: without it both are replaced. Get the exact name from get_weekly_plan/get_week_menu rather than guessing."},
-                "override": {
-                    "type": "boolean",
-                    "description": "Defaults to false. The person's own \"I know, do it anyway\" for a dish that has something someone in the household can't have — set it ONLY when they said so in their own words in this conversation, after the tool declined once and you relayed why. Never on your own initiative, never on a first call.",
-                },
             },
             "required": ["weekly_plan_id", "meal_date", "new_meal"],
         },
@@ -11007,6 +10996,11 @@ CHORES_TOOLS = frozenset({
 # misheard name would otherwise read as a broken tool in the morning report.
 # MemberRefused (2026-10-24) is the fourth: "Emily is the only adult here"
 # is set_member_age_group keeping the household one adult, as Settings does.
+# The chat tools whose allergy refusal carries a "Save it anyway" button:
+# the three that took an `override` before the button replaced it. The tap
+# route replays exactly these, so a refusal from any other tool offers none.
+SAVE_ANYWAY_TOOLS = frozenset({"plan_meal", "swap_meal_in_plan", "add_recipe"})
+
 REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused, tools.MoveOwnerRefused,
                              tools.MemberRefused)
 
@@ -11449,7 +11443,7 @@ def _writer_refusal(name: str, clashes: list, *, can_override: bool = True,
         cannot = f"{_spoken_list(people, 'and')} can’t have"
     else:
         cannot = "this house can’t have"
-    tail = tail or ("Pick a different dish, or ask them if it should be saved anyway." if can_override
+    tail = tail or ("Pick a different dish, or tell them they can tap Save it anyway." if can_override
                     else "Pick a different dish.")
     return tools.SlotRefused(f"Not saved: I couldn’t write {name} without {word}, which {cannot}. {tail}")
 
@@ -11475,7 +11469,7 @@ def _clash_keys(clashes: list[dict]) -> set[tuple]:
 
 
 # A draft the writer could only write with a must-avoid, kept for the
-# person's "save it anyway" in a later turn: that answer is to THIS draft
+# person's tap on "Save it anyway": that tap is to THIS draft
 # — the list they were told about — so it is what gets saved, not a fresh
 # write nobody has seen (review, 2026-10-25: a re-write with the check off
 # saved an egg the house had never been told about). Keyed the way the
@@ -11514,8 +11508,8 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
 
     The name is gated before anything is written (a "Buttermilk Pancakes"
     in a dairy-free house costs no writer call), and the written list by
-    the writer's own check. `override` is honoured only as an answer to
-    this door's refusal of this recipe in an earlier turn: a refused DRAFT
+    the writer's own check. `override` is honoured only inside the replay
+    of a tapped "Save it anyway" on this door's refusal: a refused DRAFT
     is then saved exactly as it was refused; a refused NAME is written with
     only the avoidances that name tripped left out, everything else still
     told and checked.
@@ -11550,9 +11544,8 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
         clashes = _allergen_gate.hard_clashes(name, ingredients=detail["ingredients"])
         if not _clash_keys(clashes) <= _clash_keys(disclosed):
             logger.info("add_recipe from chat: refused draft has a clash the person wasn't told; refusing again")
-            _allergen_gate._remember_refusal("recipe", name, [])
             _keep_refused_draft(name, detail, clashes)
-            raise _writer_refusal(name, clashes)
+            raise _allergen_gate.offer_override(_writer_refusal(name, clashes), "recipe", name, [])
         logger.info("add_recipe from chat: saving the refused draft the person accepted")
     else:
         accepted = _allergen_gate.hard_clashes(name) if armed else []
@@ -11566,12 +11559,12 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
             accepted=accepted,
         )
         if written["clash"]:
-            # Remembered under the name alone, so the person's "save it
-            # anyway" next turn arms the override above — and the draft
-            # beside it, so that answer saves what they were told about.
-            _allergen_gate._remember_refusal("recipe", name, [])
+            # Offered under the name alone, so the person's tap on "Save it
+            # anyway" arms the override above — and the draft kept beside
+            # it, so that tap saves what they were told about.
             _keep_refused_draft(name, written["detail"], written["clash"])
-            raise _writer_refusal(name, written["clash"])
+            raise _allergen_gate.offer_override(
+                _writer_refusal(name, written["clash"]), "recipe", name, [])
         if not written["ok"]:
             raise ValueError(CHAT_WRITER_FAILED)
         detail = written["detail"]
@@ -12947,8 +12940,8 @@ def run_agent_turn(
     """
     client = _client()
     conversation = conversation + [{"role": "user", "content": user_message}]
-    # One person's message = one turn: an allergen override is only ever
-    # honoured in a turn after the refusal it answers (allergen_gate).
+    # One person's message = one turn, counted within this conversation
+    # (the chat routes bind it: allergen_gate.set_chat_conversation).
     _allergen_gate.begin_chat_turn()
     # ...and what they said, so the change card can tell a Won't-eat food
     # they named themselves from one the model suggested (offer_gate).
@@ -12989,6 +12982,13 @@ def run_agent_turn(
             ),
         },
     ]
+    # A dish the person saved with the refusal card's button since the
+    # last reply: said once, so the model never claims it wasn't saved.
+    tapped = _allergen_gate.take_tap_notes(_allergen_gate.chat_conversation())
+    if tapped:
+        system_blocks.append({"type": "text", "text": (
+            "Since your last reply, the person tapped the button under a refusal: "
+            + " ".join(tapped) + " It is done; don't offer it again.")})
     if proactive_check:
         proactive_block = _build_proactive_check_block()
         if proactive_block:
@@ -13330,6 +13330,12 @@ def run_agent_turn(
                 # that starts over-firing shows up before a household
                 # learns to click past it. usage.record_refusal.
                 tools.record_refusal(refusal, block.name)
+                # An allergy refusal carries its "Save it anyway" button
+                # (Emily, 2026-11-09): kept here under this call's id, for
+                # main.summarize_chat_actions to draw and the tap route to
+                # replay. Only the tap arms it — see allergen_gate.
+                if block.name in SAVE_ANYWAY_TOOLS:
+                    _allergen_gate.record_offer(refusal, block.name, block.input, block.id)
                 # Byte-identical to what the catch-all produced, so the
                 # model reads exactly the sentence it read before —
                 # nothing about what the household sees changes here.
