@@ -37,7 +37,10 @@ like any clashing dish. A held snack is re-picked from the list first
 (fill_held_snacks), with no model call, rather than left open.
 
 What stays off-list: a snack they asked for (their words for the week or a
-standing note name it, or the model stamped derived_from.freeform), a
+standing note name it, or the model stamped derived_from.freeform), a snack
+they rated liked that nobody rated disliked and that passes the allergen
+match on its saved list (Emily, 2026-11-09; like an asked-for snack it also
+stays through the no-repeat window), a
 cooked one, and any snack when nothing on the list fits — better their
 snack than an empty slot. A household with an eating style the list can't
 be judged against (keto, a list of allowed foods) is told about the list
@@ -473,6 +476,28 @@ def _save(variant: dict, serves: int) -> None:
                                             _recipes.saved_ingredients(variant["name"]), serves)
 
 
+def _liked_names() -> set[str]:
+    """Recipe names (lowercased) this household rated liked, as a house
+    (recipes.rating) or by anyone (member_recipe_feedback), that nobody has
+    rated disliked. One dislike is the standing veto (taste_verdict), so a
+    snack one person loves and another hates is not kept on its say-so."""
+    from . import taste_verdict as _taste_verdict
+    conn = get_conn()
+    try:
+        rows = conn.execute("SELECT name, rating FROM recipes WHERE household_id = ? AND rating IN ('liked', 'disliked')",
+                            (household_id(),)).fetchall()
+    finally:
+        conn.close()
+    liked = {r["name"].lower() for r in rows if r["rating"] == "liked"}
+    vetoed = {r["name"].lower() for r in rows if r["rating"] == "disliked"}
+    for name, by_person in _taste_verdict.per_person_feedback().items():
+        if "disliked" in by_person.values():
+            vetoed.add(name)
+        elif "liked" in by_person.values():
+            liked.add(name)
+    return liked - vetoed
+
+
 class _Chooser:
     """Picks a list snack for a dish's days in one plan: this household's
     eligible list, least recently used first, outside the no-repeat window,
@@ -623,6 +648,22 @@ def enforce_snacks_from_list(plan_id: int, dates: list[str], memory: dict, perio
                 dish["protected"] = True
         for dish in dishes.values():
             if not dish["protected"] and _meal_variety.asked_for_by_name(dish["name"], words):
+                dish["protected"] = True
+        # A snack they rated liked counts as asked for (Emily, 2026-11-09),
+        # but only while it is safe for this house: its saved list and its
+        # name go past the allergen match first.
+        liked = _liked_names()
+        if liked:
+            from . import allergen_gate as _allergen_gate
+            from . import recipes as _recipes
+            avoid_hard = _allergen_gate.hard_avoidances()
+            for dish in dishes.values():
+                if dish["protected"] or dish["name"].lower() not in liked:
+                    continue
+                if avoid_hard and _allergen_gate.hard_clashes(
+                        dish["name"], ingredients=_recipes.saved_ingredients(dish["name"]) or None,
+                        avoidances=avoid_hard):
+                    continue
                 dish["protected"] = True
 
         chooser = _Chooser(plan_id, memory, period_start, sorted(in_scope))
