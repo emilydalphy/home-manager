@@ -39,7 +39,7 @@ def _live_rules(css: str):
 
 
 @pytest.mark.parametrize("token, value", [
-    ("--cream", "#FFFAF3"), ("--dusk", "#1B4392"), ("--night-ink", "#14264A"), ("--apricot", "#FFA45C"),
+    ("--cream", "#FFFAF3"), ("--dusk", "#18356E"), ("--night-ink", "#14264A"), ("--apricot", "#FFA45C"),
     ("--soft-apricot", "#FFC08F"), ("--blush", "#FBE9D9"), ("--slate", "#55607A"), ("--clay", "#A8461A"),
 ])
 def test_the_approved_palette(token, value):

@@ -5,7 +5,7 @@ Emily approved this look on 2026-11-05. The boards here are the source of truth 
 `N-Rules.dc.html` holds the design rules and `R-Palette.dc.html` the colours. Both replace The Inn.
 
 ## Decisions
-- Colours: Dusk Blue #1B4392, Night Ink #14264A, Ripe Apricot #FFA45C, Soft Apricot #FFC08F, Warm Cream #FFFAF3, Blush #FBE9D9, Slate #55607A, Baked Clay #A8461A, White. Green stays in the food. Purple never leads.
+- Colours: Dusk Blue #18356E, Night Ink #14264A, Ripe Apricot #FFA45C, Soft Apricot #FFC08F, Warm Cream #FFFAF3, Blush #FBE9D9, Slate #55607A, Baked Clay #A8461A, White. Green stays in the food. Purple never leads.
 - Light mode only for now. Remove Settings > Appearance. Do not delete dark tokens that a later dark mode would need unless they get in the way.
 - One font, Figtree, at six sizes: 32, 26, 16, 14, 13, 11. Four corner sizes: 13 controls, 16 buttons, 22 tiles, 26 sheets. Round buttons and pills are fully round.
 - No band at the top of screens. Title and one line on cream.

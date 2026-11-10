@@ -40,7 +40,7 @@
   /* --- The palette --- */
   --cream:        #FFFAF3;  /* Warm Cream: the page */
   --white:        #FFFFFF;  /* tiles and cards */
-  --dusk:         #1B4392;  /* Dusk Blue: tab bar, Use soon, timers, welcome */
+  --dusk:         #18356E;  /* Dusk Blue: tab bar, Use soon, timers, welcome */
   --night-ink:    #14264A;  /* Night Ink: main text, the toast */
   --apricot:      #FFA45C;  /* Ripe Apricot: the one main button and Ask */
   --soft-apricot: #FFC08F;  /* Soft Apricot: small labels on dusk */
@@ -108,8 +108,8 @@
   /* ===================== LEGACY: The Inn's names =====================
      Forwards only. See the note at the top of this file. */
   --spruce:          var(--dusk);
-  --spruce-raised:   #3F61A3;  /* rgba(255,255,255,.16) over dusk, solid */
-  --spruce-hover:    #4A6BAC;
+  --spruce-raised:   #3D5585;  /* rgba(255,255,255,.16) over dusk, solid */
+  --spruce-hover:    #485F8C;
   --spruce-edge:     transparent;
   --ink-strong:      var(--night-ink);
   --celadon:         var(--apricot);
@@ -120,7 +120,7 @@
   --ivory-ink:       var(--on-dusk);
   --ivory-ink-muted: var(--on-dusk);
   --on-spruce-ink:   var(--white);
-  --on-spruce-edge:  #3F61A3;
+  --on-spruce-edge:  #3D5585;
   --ink-muted:       var(--slate);
   --ink-placeholder: var(--slate);
   --ink-inactive:    var(--slate);

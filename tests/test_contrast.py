@@ -83,7 +83,7 @@ def token(name: str) -> str:
     ("--night-ink", "#FFA45C", 7.6),
     ("--slate", GROUND, 6.0), ("--slate", SURFACE, 6.2), ("--slate", BLUSH, 5.3),
     ("--clay", GROUND, 5.6), ("--clay", SURFACE, 5.9), ("--clay", BLUSH, 4.9),
-    ("--on-dusk", "#1B4392", 8.6), ("--on-dusk-soft", "#1B4392", 6.0), ("--soft-apricot", "#1B4392", 5.8),
+    ("--on-dusk", "#18356E", 11.0), ("--on-dusk-soft", "#18356E", 7.7), ("--soft-apricot", "#18356E", 7.4),
     ("--soft-apricot", "#14264A", 9.3), ("--on-dusk", "#14264A", 13.9),
 ])
 def test_every_bright_dusk_pair_clears_aa(text, backdrop, floor):

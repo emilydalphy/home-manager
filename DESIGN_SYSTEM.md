@@ -26,7 +26,7 @@ All in `static/theme.css`. New work uses the canonical names below and nothing e
 |---|---|---|---|
 | `--cream` | `#FFFAF3` | Warm Cream | The page. |
 | `--white` | `#FFFFFF` | White | Tiles and cards. |
-| `--dusk` | `#1B4392` | Dusk Blue | The tab bar, Use soon, timers, the welcome. Nothing else. |
+| `--dusk` | `#18356E` | Dusk Blue | The tab bar, Use soon, timers, the welcome. Nothing else. (Darkened from `#1B4392` on 2026-11-09, Emily's pick: halfway between the old Dusk Blue and Night Ink.) |
 | `--night-ink` | `#14264A` | Night Ink | Main text, the toast. |
 | `--apricot` | `#FFA45C` | Ripe Apricot | The one main button and Ask. Always dark text. |
 | `--soft-apricot` | `#FFC08F` | Soft Apricot | Small labels on dusk, Undo on the toast. |
@@ -77,11 +77,11 @@ Measured pairs (WCAG 2.1):
 | Night Ink | cream / white / blush / apricot | 14.38 / 14.94 / 12.63 / 7.62 |
 | Slate | cream / white / blush | 6.05 / 6.29 / 5.32 |
 | Clay | cream / white / blush | 5.69 / 5.91 / 4.99 |
-| `--on-dusk`, white | dusk | 8.67, 9.27 |
-| `--on-dusk-soft` | dusk | 6.09 |
-| Soft Apricot | dusk / Night Ink | 5.82 / 9.38 |
+| `--on-dusk`, white | dusk | 11.07, 11.84 |
+| `--on-dusk-soft` | dusk | 7.77 |
+| Soft Apricot | dusk / Night Ink | 7.44 / 9.38 |
 | `--on-dusk` | Night Ink / clay | 13.96 / 5.52 |
-| White | the current tab's pill on dusk | 6.09 |
+| White | the current tab's pill on dusk | 7.40 |
 
 ---
 
