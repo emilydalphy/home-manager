@@ -1,0 +1,109 @@
+{
+ "dish_name": "Che Bap",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Glutinous rice",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn on the cob",
+   "qty": "2 ears",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp + 1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 1 tbsp"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 1/3 cup glutinous rice in a sieve and rinse it under cold water, rubbing it with your fingers, until the water runs almost clear. Let it drain.",
+  "Husk the corn and pull off the silk. Stand each ear upright in a wide bowl and slice straight down the cob to cut off the kernels. That should be about 2 cups.",
+  "Put the rice in a medium saucepan with 2 cups water and 1/4 tsp of the salt. Bring it to a boil over high heat.",
+  "Turn the heat to medium low, cover and keep it at a gentle boil for 15 to 20 minutes. Stir it once about halfway. It's ready when the grains are soft all the way through with no chalky center, but not mushy.",
+  "Shake the can of coconut milk well and open it. Add the corn, 1/4 cup sugar, half the coconut milk and 1/2 tsp of the vanilla to the rice.",
+  "Bring it back to a boil over high heat, then turn it to medium and cook at a gentle boil for about 10 minutes, stirring now and then so the bottom doesn't stick, until the corn is tender.",
+  "In a small cup, stir 1 1/2 tsp of the cornstarch into 1 tbsp water until smooth. Pour it into the pot and stir constantly over high heat. Take it off the heat as soon as it bubbles. It thickens more as it cools.",
+  "For the coconut sauce, put the rest of the coconut milk in a small saucepan off the heat. Whisk in 1 tbsp sugar, the last 1/8 tsp salt, the last 1/2 tsp cornstarch and the last 1/4 tsp vanilla until smooth.",
+  "Set it over medium heat and stir constantly for 2 to 3 minutes, until it bubbles and thickens a little. Take it off the heat.",
+  "Toast the 1 tbsp sesame seeds in a dry small skillet over low heat for 2 to 3 minutes, shaking the pan, until they're golden and smell toasty. Transfer them into a small bowl.",
+  "Spoon the pudding into 4 bowls and pour the coconut sauce over the top. Scatter on the sesame seeds. Serve warm, at room temperature or chilled."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions read simmer fresh corn kernels into a lightly sweet pudding and finish it with a salted coconut sauce. Hungry Huy (the lead) cooks glutinous rice first, then adds the corn, sugar and coconut cream with an optional starch thickener; Delightful Plate makes a corn cob stock flavored with pandan, and Vicky Pham thickens hers with sago instead of rice and tops it with toasted sesame. Pandan leaves are hard to find, so this uses the vanilla Hungry Huy names as the stand-in, at half the lead's amounts, with a can of coconut milk split between the pudding and the sauce and Vicky Pham's toasted sesame on top. No version had 20 or more ratings and RecipeTin Eats, the trusted cook for this cuisine, has no version of this dish, so it leads with the best version read.",
+ "sources": [
+  {
+   "name": "Hungry Huy",
+   "title": "Chè Bắp Recipe (Vietnamese Corn Pudding Dessert)",
+   "url": "https://www.hungryhuy.com/che-bap-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Delightful Plate",
+   "title": "Vietnamese Sweet Corn Pudding (Chè Bắp/Chè Ngô)",
+   "url": "https://delightfulplate.com/vietnamese-sweet-corn-pudding/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Chè Bắp (Vietnamese Corn Pudding with Sago)",
+   "url": "https://vickypham.com/blog/che-bap-coconut-milk/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Grantourismo",
+   "title": "Vietnamese Sweet Corn Pudding Recipe for Che Bap",
+   "url": "https://grantourismotravels.com/vietnamese-sweet-corn-pudding-recipe-che-bap/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

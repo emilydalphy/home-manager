@@ -1,0 +1,104 @@
+{
+ "dish_name": "Masala Papad",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {
+   "item": "Urad dal papad",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sev",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion. That should be about 1/2 cup.",
+  "Cut the tomato in half, scoop out the seeds with a spoon and finely chop the rest. That should be about 1/2 cup.",
+  "Finely chop 2 tbsp of the cilantro.",
+  "Finely chop the green chili and transfer it to a small bowl for the table.",
+  "In a bowl, mix the onion, tomato and cilantro. Keep it to one side until the papads are fried.",
+  "Pour the 2 cups oil into a large skillet and heat it over medium high to 350°F. If you have a thermometer, check it there. No thermometer? Break a small corner off one papad and drop it in. It should bubble and puff within 2 seconds.",
+  "Slide in one papad. Within about 5 seconds it will bubble all over and turn pale. Flip it with tongs and fry the other side for 3 seconds, pressing it flat with a spatula if it curls.",
+  "Lift it out, hold it over the pan for a moment to drip, then stand it on paper towels. Fry the rest the same way.",
+  "Set each papad on a plate and spread a quarter of the onion and tomato mix over each one.",
+  "Scatter 2 tbsp of the sev over each papad, then sprinkle the 1/4 tsp chili powder and the 1/2 tsp chaat masala over all four.",
+  "Serve right away with the green chili on the side. The papads go soft within a few minutes of being topped."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions crisp a store-bought urad dal papad, then top it with finely chopped onion and tomato, cilantro, chili powder and chaat masala just before eating. Hebbar's Kitchen (the lead) deep fries the papads and adds sev and green chili; Jeyashri's Kitchen and Profusion Curry roast them in the microwave and add a squeeze of lemon. This follows Hebbar's classic version, fried in a large skillet, with the green chili moved to a bowl on the side so the base stays mild. Store papads often contain asafoetida, so check the label if anyone avoids gluten.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "masala papad recipe | homemade masala papadums - 4 ways | papad masala varieties",
+   "url": "https://hebbarskitchen.com/masala-papad-recipe/",
+   "rating": 5.0,
+   "rating_count": 81,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jeyashri's Kitchen",
+   "title": "Masala papad recipe",
+   "url": "https://www.jeyashriskitchen.com/masala-papad-masala-papad-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Profusion Curry",
+   "title": "Masala Papad Recipe",
+   "url": "https://profusioncurry.com/masala-papad-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

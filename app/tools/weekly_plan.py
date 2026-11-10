@@ -3283,6 +3283,9 @@ def _nearest_cook(rows: list, keys: dict, meal_date: str, slot: str, exclude=(),
             continue
         if _leftovers.too_many_in_a_row(keys, meal_date, slot, c["meal"]):
             continue
+        # An egg dish that doesn't hold for reheating feeds nothing (2026-11-09).
+        if not _leftovers.egg_dish_keeps(c["meal"], c):
+            continue
         found.append(c)
     if not found:
         return None
@@ -3374,7 +3377,8 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
     conn = get_conn()
     rows = conn.execute(
         "SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.recipe_id, mpe.freeform_meal, "
-        "       mpe.derived_from_json, mpe.food_groups_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        "       mpe.derived_from_json, mpe.food_groups_json, COALESCE(r.name, mpe.freeform_meal) AS meal, "
+        "       r.notes AS notes, r.advance_prep_notes AS advance_prep_notes, r.main_protein AS main_protein "
         "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
         "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL "
         f"ORDER BY mpe.date ASC, {slot_order_sql('mpe.slot')} ASC, mpe.id ASC",
@@ -3430,6 +3434,11 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             source_derived = json.loads(source["derived_from_json"] or "{}")
             if (source_derived.get("links_to") or "").strip():
                 issue = "another leftovers night, not an actual cook"
+            elif not _leftovers.egg_dish_keeps(source["meal"], source):
+                # Emily, 2026-11-09: an egg dish mostly doesn't hold for
+                # reheating (a scramble, oyakodon) — only the ones made
+                # ahead on purpose, or whose recipe says so, feed leftovers.
+                issue = "an egg dish that doesn’t keep"
 
         too_many = issue is None and _leftovers.ends_too_long_a_run(
             keys, r["date"], r["slot"], source["meal"],
@@ -8130,6 +8139,7 @@ def _ingest_recipe_group_and_sides(
                 # which is which).
                 chain_scale=cooked_on_the_night,
                 reheat_buys_it=cooked_on_the_night,
+                night_side=True,
             )
             added_items.extend(added)
             already_have.extend(have)
@@ -8272,8 +8282,10 @@ def _entry_side_groups(row) -> list[tuple[list[dict], int | None, bool]]:
 
     - on the COOK night, does the batch scale it? A household or plate
       side is cooked alongside the doubled dish and covers the night it
-      feeds, so yes; a stuffing written for the holiday table is already
-      sized for that table, so no.
+      feeds, so yes — but only the fed nights with no side of their own
+      (a side is per night, Emily 2026-11-09; leftovers.
+      side_batch_for_entry); a stuffing written for the holiday table is
+      already sized for that table, so no.
     - on a REHEAT night, is it bought at all? A green salad beside
       Thursday's leftovers is a different dish, cooked that evening, and
       nothing else on the week buys it — so yes, at that night's own
@@ -9059,6 +9071,7 @@ def _settle_weekly_plan_approval(
                         # different dish and nothing else buys it.
                         chain_scale=cooked_on_the_night,
                         reheat_buys_it=cooked_on_the_night,
+                        night_side=True,
                     )
                     added_items.extend(added)
                     already_have.extend(have)

@@ -431,6 +431,7 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         + _extract("kitchenNextCookLine", src) + "\n" + _extract("kitchenNextCook", src) + "\n" + _extract("kitchenNextWhen", src) + "\n"
         + _extract("daysBetweenLocal", src) + "\n"
         + _extract("tileHtml", src) + "\n"
+        + _extract("headsUpRowHtml", src) + "\n" + _extract("headsUpHtml", src) + "\n"
         # Cook's root as Option A draws it (2026-11-01): the rows and the
         # root block, run whole through cookRootParts.
         + src[src.index("  function kitchenTodayRows("):src.index("  function cookBandEyebrow(")]

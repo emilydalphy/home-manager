@@ -1,0 +1,122 @@
+{
+ "dish_name": "Khandvi",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Besan (chickpea flour)",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free asafoetida (hing)",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "10 leaves"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Unsweetened shredded coconut",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Set out the backs of 2 large baking sheets, or wipe a clean stretch of countertop. Don't grease them. The batter spreads more easily on a dry surface.",
+  "In a large bowl, whisk the 1 cup besan, 1/4 tsp chili powder, 1/2 tsp salt, the pinch of asafoetida and the 1 cup yogurt until there are no lumps.",
+  "Whisk in 2 cups water. It will look very thin and watery. That's right.",
+  "Pour the batter into a large nonstick pan, off the heat. Set it over medium low and stir constantly, scraping the bottom and sides, for 10 to 12 minutes, until it's thick and glossy and starts to pull away from the sides of the pan.",
+  "Test it. Spread a spoonful thinly on a plate, wait 1 minute and try to roll it up. If it rolls without tearing, it's ready. If it's sticky or breaks, stir it over the heat for 1 to 2 minutes and test again.",
+  "Take it off the heat and work quickly. Spoon the batter onto the baking sheets and spread it as thinly as you can with a flat spatula. It sets as it cools, so it gets harder to spread.",
+  "Leave it for 10 minutes to cool and set.",
+  "Meanwhile, finely chop the green chili and transfer it to a small bowl for the table. Chop 2 tbsp of the cilantro.",
+  "Cut the sheets into strips 2 inches wide, then cut the strips into 4 inch lengths.",
+  "Roll each piece up tightly from a short end and set the rolls seam side down on a serving plate.",
+  "Heat the 2 tbsp oil in a small pan over medium. Add the 1 tsp mustard seeds. When they pop, after about 30 seconds, add the 1 tsp sesame seeds and the 10 curry leaves. Stand back a little. They'll spatter.",
+  "After 10 seconds, when the sesame is golden, take the pan off the heat and spoon the hot oil and seeds evenly over the rolls.",
+  "Scatter the 2 tbsp coconut and the cilantro over the top. Serve with the green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version whisks besan with yogurt and water into a thin batter, stirs it in a pan until thick, spreads it thin to set, then rolls it into strips and spoons over a tempering of mustard seeds and sesame. Hebbar's Kitchen (the lead) uses 1 cup each of besan and yogurt to 2 cups of water and adds curry leaves; Piping Pot Curry and Ranveer Brar add ginger and turmeric, and Ranveer Brar adds the asafoetida to the tempering instead. This follows Hebbar's ratio, with mild Kashmiri chili powder in the batter and the green chili served on the side instead of in the tempering. The asafoetida is the gluten-free kind.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Khandvi Recipe | Best Gujarati Khandvi",
+   "url": "https://hebbarskitchen.com/?p=23973",
+   "rating": 5.0,
+   "rating_count": 206,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ranveer Brar",
+   "title": "Khandvi Recipe",
+   "url": "https://ranveerbrar.com/?p=3529",
+   "rating": 4.9,
+   "rating_count": 54,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Piping Pot Curry",
+   "title": "Gujarati Khandvi Recipe",
+   "url": "https://pipingpotcurry.com/gujarati-khandvi-recipe/",
+   "rating": 4.88,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

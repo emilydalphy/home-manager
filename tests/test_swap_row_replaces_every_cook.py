@@ -44,7 +44,7 @@ START = (TODAY - datetime.timedelta(days=1)).isoformat()
 MON = (TODAY + datetime.timedelta(days=1)).isoformat()
 WED = (TODAY + datetime.timedelta(days=3)).isoformat()
 FRI = (TODAY + datetime.timedelta(days=5)).isoformat()
-OLD = "Veggie and Feta Scrambled Eggs"
+OLD = "Veggie and Feta Frittata"  # an egg dish that keeps (2026-11-09 egg rule)
 NEW = "Boiled Eggs with Multigrain Toast"
 
 
@@ -53,7 +53,7 @@ def eggs(home):
     """Monday's batch, Wednesday made ahead from it, Friday its own cook."""
     tools.add_recipe(OLD, ingredients=[{"item": "Feta", "qty": "4 oz", "category": "dairy"}],
                      food_groups=["protein", "vegetable"], default_servings=2,
-                     prep_time_minutes=5, cook_time_minutes=10, instructions=["Scramble."])
+                     prep_time_minutes=5, cook_time_minutes=10, instructions=["Bake."])
     tools.plan_meal(MON, OLD, slot="breakfast", weekly_plan_id=home)
     tools.plan_meal(WED, OLD, slot="breakfast", weekly_plan_id=home,
                     derived_from={"links_to": f"{MON}:breakfast", "cook_ahead": True})

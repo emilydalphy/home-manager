@@ -207,6 +207,19 @@ run rather than a vibe. They apply to every screen, mockup or built.*
   have these?" now has you tap what's still there (untapped = gone), and the Kitchen
   freezer's tap-what's-gone card asks "Any of these gone?". **Test:** read the heading,
   then tap one thing — does the tap say "yes" to the heading's question, or "no"?
+- **S14 · Nothing is stranded.** *(Emily, 2026-11-09, Tier 2 — looking at the week
+  draft on her phone: "the random pieces of small text look out of place and don't look
+  polished… make sure nothing looks stranded"; she picked the one Heads up card on the
+  [Plan notes, polished](https://claude.ai/artifact/SKd1ceAsjcv6MxrsBoZjTg) canvas and asked
+  for it across the whole app.)* Every sentence on a screen sits inside something: a tile,
+  a card, a sheet, the head's one line, or the **Heads up** card (section 5). A screen's
+  small notes — something going off, a flag on the draft, where a short plan ends, the
+  night before, no signal — are never loose grey lines on the cream between sections or
+  above a dock. They are said once, together, as rows of one Heads up card: under the head
+  when they are about the screen, or under the last tiles when they are what comes after
+  them (Cook's prep done, before bed, next prep). A fact the head can carry goes in the
+  head's line instead ("Ends Saturday · your turn"). **Test:** cover every card, tile and
+  the head — is any text left on the cream?
 
 ---
 
@@ -249,6 +262,7 @@ One of each, used the same way on every screen. The CSS is in the SHARED COMPONE
 | Section heading | `.section-head` | `sectionHeadHtml(text)` | 16/700 over a group of tiles. |
 | Tile | `.tiles`, `.tile`, `.tile-row`, `.tile-text`, `.tile-plates`, `.tile-name`, `.tile-sub` | `tileHtml({ attrs, art, name, sub, kind, cls, extra, label })` | The base of the whole app: two across, one thing each, with a plate where there is a dish. With `attrs` it is a button, without them a thing to read. `kind: 'row'` is the 68px small tile (snacks), `'text'` words only (a menu). No art means a text tile: no filler pictures. `.is-wide` spans both columns, `.is-quiet` is the slate name. |
 | Note card | `.note-card` | | One plain line, and one button when there is a next step. Empty and error states (Z-EmptyPlan, Z-Error). No icons. |
+| Heads up | `.heads-up`, `.heads-up-eyebrow`, `.heads-up-item`, `.heads-up-row`, `.heads-up-dot`, `.heads-up-chev` | `headsUpRowHtml(o)`, `headsUpHtml(rows, o)` | A screen's small notes in one white card (S14): the "Heads up" eyebrow (`o.eyebrow` names it otherwise, e.g. "Already on the list"), then one row each — a small slate dot, the words in ink, a hairline between rows. A row you can tap is a button with a chevron (`o.attrs`, `o.open` turns it down); a row's buttons or the rows it opens go under its words (`o.after`). A builder returns rows; the screen wraps them, so nothing to say draws nothing. Never apricot, dusk or urgent. |
 | Main button | `.btn-main`, `.btn-quiet` | | 52px, radius 16. Apricot with dark text, one per screen; blush for the quiet one. `.btn-primary`, `.dock-primary` and `.btn-gold` are older names that look the same. |
 | Field | `.field` | | 52px, white, the card shadow. |
 | Tick box | `.tick-ring`, `.is-ticked` | | 22px, `--tick-ring`, an apricot circle when done. |
@@ -263,6 +277,7 @@ One of each, used the same way on every screen. The CSS is in the SHARED COMPONE
 `planWeekHtml` is one screen for a draft and an approved week: approving changes the chip and the dock, never the layout.
 
 - **The head:** "This week" on All, the weekday and "Today · Nov 4" on a day (`planDayBandParts`). A draft's title is "Here's your week." with its dates, "your turn" and the Draft chip. No counts under titles.
+- **Heads up** (S14): every note on Plan — something going off and its Freeze it / Let it go rows, what turns before it is eaten, the draft's flags with their fixes, a dislike or allergy in the steps, a freezer portion past its date, the plates note, a day's tags — is a row of one Heads up card under the day bar (`planWeekHtml`), never a loose line, and nothing waits above Approve. Where a short plan ends is the head's line: "Ends Saturday · your turn" (`planEndsWords`, in `weekBandParts`).
 - **The day bar** (`planDayBarHtml`): All, then one segment per day. Past days are hidden. It scrolls past seven days and into the plans either side, with All pinned.
 - **All** is a menu: Breakfast, Lunch, Dinner, Snacks, each a section heading over tiles. A repeat shows once with its days ("Wed, Fri"), from `wkMenuGroups`. A night eating a batch made earlier says "Leftovers". Snacks are the small tile. A dish whose days have all gone by leaves the menu.
 - **A day** is one grid in order: breakfast, lunch, dinner ("Dinner · 35 min"), then one Snacks tile with its plates and how many. One snack opens its sheet; several open a sheet to choose from.
@@ -279,6 +294,7 @@ One of each, used the same way on every screen. The CSS is in the SHARED COMPONE
 - **The foot** (`groListFootHtml`) is tiles too: what's set aside and what's home go full width, and Spices, Sauces and Pantry staples are two across until opened.
 - **The add sheet** is the field with the camera inside it, the store switcher and one Add. All stores there means no particular store.
 - **Empty** is a note card, with Go to Plan under the line.
+- **Notes** (S14): two rows of the same thing ("Two rows of spinach", Merge) are a Heads up card above the store cards; no signal is a one-row card under the head; Before you go's "Already on the list" is a Heads up card named for it, and "Only 4 things left to sort" a one-row card under the tiles.
 
 ### Kitchen (Z-Kitchen)
 
@@ -298,11 +314,11 @@ A question before an action is a sheet, not a centred dialog: `openConfirmSheet(
 
 These parts of older screens keep their behaviour through the rebuild. The stage that reaches them changes their look, not what they do.
 
-- **Draft flag** (`weekFlagsHtml`): what the draft had to bend, one line at the top with Pomona's own fixes. Never urgent, no apricot. Every word is the server's.
+- **Draft flag** (`weekFlagsHtml`): what the draft had to bend, one row of the Heads up card with Pomona's own fixes under it. Never urgent, no apricot. Every word is the server's.
 - **Change card** (`mountChangeCard`): what the chat proposes, one row per slot, nothing written until Save, then a toast with Undo and **Changed** on the row for eight seconds.
 - **Meal sheet** (`planRowSheetHtml`): Swap, Tweak and Move only where they can do something, then See the recipe.
 - **Plate parts and Tweak** (`plateRowHtml`, `openTweakSheet`): the plate as its parts, with a Save and one quiet way out.
-- **Cook's day** (`cookRootParts`): today's prep tile, then today's meals in eating order as equal tiles, then next up (Z-CookDay). One big plain card only when a single meal is left (Z-Cook). No meal is marked, and no clock, ever.
+- **Cook's day** (`cookRootParts`): today's prep tile, then today's meals in eating order as equal tiles, then next up (Z-CookDay). Prep done, Before bed and the next prep day are rows of one Heads up card under the meals (S14). One big plain card only when a single meal is left (Z-Cook). No meal is marked, and no clock, ever.
 - **Prep** (`cookSessionHtml`): the server's sections as tiles with tick boxes, two columns, all open, each folds on its head and stays folded through a redraw (Z-Prep). Made on the night at the foot.
 - **Recipe** (`recipeTopHtml`, `recipeTabsHtml`): round Back and ···, plate at 216, name, Ingredients and Steps (Z-Recipe, Z-Steps). No tab bar. What a cook needs before starting stays above the tiles; everything else is under the ··· (`recipeMoreRowsHtml`).
 - **Cooking** (`cookCookerHtml`): one step, its timers in dusk, what it needs, Next step (Z-CookMode). No tab bar.

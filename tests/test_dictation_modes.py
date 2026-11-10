@@ -377,3 +377,16 @@ setTimeout(function () {
 }, 10);
 """, capacitor=STAGED_PLUGIN)
     assert out == {"calls": ["stop:1"], "newActive": True}
+
+
+def test_the_app_window_uses_the_screen_that_registers_the_speech_plugin():
+    # SceneDelegate builds the window in code, so the storyboard's class is
+    # never what reaches the screen. If it builds Capacitor's plain screen,
+    # MainViewController.capacitorDidLoad never runs, PomonaSpeech is never
+    # registered, and every iPhone quietly falls back to the keyboard mic.
+    app = ROOT / "ios-app" / "ios" / "App" / "App"
+    scene = (app / "SceneDelegate.swift").read_text()
+    assert "rootViewController = MainViewController()" in scene
+    assert "CAPBridgeViewController()" not in scene
+    main = (app / "MainViewController.swift").read_text()
+    assert "registerPluginInstance(PomonaSpeechPlugin())" in main

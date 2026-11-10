@@ -423,6 +423,46 @@
     '</div>';
   }
 
+  // ---------- Heads up (Emily, 2026-11-09: "nothing looks stranded") ----------
+  // A screen's small notes, said once in one white card under its head,
+  // never as loose grey lines between the tiles or above a dock. Each
+  // builder that has something to say returns rows (headsUpRowHtml); the
+  // screen wraps whatever came back in the card (headsUpHtml), so a screen
+  // with nothing to say draws nothing.
+  //   text / html: the words (html when they carry their own markup)
+  //   attrs:       makes the row a button, with a chevron at its right
+  //   open:        that chevron turned down (a row that opens rows under it)
+  //   after:       anything under the row's words, inside the card (buttons)
+  //   cls:         extra classes on the row
+  function headsUpRowHtml(o) {
+    var tag = o.attrs ? 'button' : 'div';
+    return '<div class="heads-up-item' + (o.cls ? ' ' + o.cls : '') + '">' +
+      '<' + tag + (o.attrs ? ' type="button"' + o.attrs : '') + ' class="heads-up-row">' +
+        '<span class="heads-up-dot" aria-hidden="true"></span>' +
+        '<span class="heads-up-text">' + (o.html != null ? o.html : escapeHtml(o.text)) + '</span>' +
+        (o.attrs
+          ? '<span class="heads-up-chev' + (o.open ? ' is-open' : '') + '" aria-hidden="true">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+              'stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>'
+          : '') +
+      '</' + tag + '>' +
+      (o.after || '') +
+    '</div>';
+  }
+
+  // The card around the rows. `o.eyebrow` names it ("Heads up" unless
+  // said otherwise); `o.cls` adds a class for the screen's own spacing.
+  function headsUpHtml(rows, o) {
+    if (!rows) return '';
+    o = o || {};
+    var eyebrow = o.eyebrow == null ? 'Heads up' : o.eyebrow;
+    return '<section class="heads-up' + (o.cls ? ' ' + o.cls : '') + '"' +
+        (eyebrow ? ' aria-label="' + escapeHtml(eyebrow) + '"' : '') + '>' +
+      (eyebrow ? '<span class="heads-up-eyebrow" aria-hidden="true">' + escapeHtml(eyebrow) + '</span>' : '') +
+      rows +
+    '</section>';
+  }
+
   // One tile. With `attrs` it is a button, without them a thing to read.
   //   art:   the plate (Plates.html), or a .tile-plates pair
   //   name:  the one thing it is
@@ -7205,31 +7245,30 @@
     } catch (err) { groceryState.bsData = null; }
   }
 
-  // "Already on the list" — the quiet section at the foot of each step.
-  // Plain rows, no box, ink-secondary; hidden when empty. A tap opens the
-  // one question, in the row, rather than a dialog over the step.
+  // "Already on the list" — the section at the foot of each step: a Heads
+  // up card named for it (Emily, 2026-11-09 — it was plain grey rows on the
+  // cream); hidden when empty. A tap opens the one question, under the
+  // row, rather than a dialog over the step.
   function bsOnListHtml(rows, kind) {
     if (!rows || !rows.length) return '';
-    return '<div class="gro-bs-onlist">' +
-      '<p class="gro-bs-eyebrow">Already on the list</p>' +
+    return headsUpHtml(
       rows.map(function (r) {
         var id = String(r.item_id);
         var asking = groceryState.bsConfirmOff === id;
-        return '<div class="gro-bs-onrow-wrap">' +
-          '<button type="button" class="gro-bs-onrow" data-gro="bs-off" data-id="' + id + '" ' +
-            'aria-expanded="' + (asking ? 'true' : 'false') + '">' +
-            escapeHtml(r.name) + (r.who ? ' <span class="gro-bs-why">· ' + escapeHtml(r.who) + '</span>' : '') +
-          '</button>' +
-          (asking
+        return headsUpRowHtml({
+          cls: 'gro-bs-onrow-wrap', open: asking,
+          attrs: ' data-gro="bs-off" data-id="' + id + '" aria-expanded="' + (asking ? 'true' : 'false') + '"',
+          html: '<span class="gro-bs-onrow">' + escapeHtml(r.name) + '</span>' +
+            (r.who ? ' <span class="gro-bs-why">· ' + escapeHtml(r.who) + '</span>' : ''),
+          after: asking
             ? '<div class="gro-bs-confirm" role="group" aria-label="' + escapeHtml('Take ' + r.name + ' off the list?') + '">' +
                 '<span class="gro-bs-confirm-q">Take ' + escapeHtml(bsLower(r.name)) + ' off the list?</span>' +
                 '<button type="button" class="gro-bs-confirm-yes" data-gro="bs-off-yes" data-id="' + id + '" data-kind="' + kind + '">Take it off</button>' +
                 '<button type="button" class="gro-bs-confirm-no" data-gro="bs-off-no">Keep it</button>' +
               '</div>'
-            : '') +
-        '</div>';
-      }).join('') +
-    '</div>';
+            : ''
+        });
+      }).join(''), { eyebrow: 'Already on the list', cls: 'gro-heads-up' });
   }
   // "Take milk off the list?" — a name said mid-sentence, unless it is a
   // proper noun the household typed in capitals throughout ("BBQ sauce").
@@ -7328,10 +7367,12 @@
     var leaving = {};
     bsHaveTicked().forEach(function (r) { leaving[String(r.item_id)] = true; });
     var after = groUnsorted(data).filter(function (it) { return !leaving[String(it.id)]; }).length;
+    // Under the tiles, as one Heads up row rather than a loose line above
+    // the dock (Emily, 2026-11-09).
     var foot = after < before
-      ? '<p class="gro-bs-foot">' + (after
+      ? headsUpHtml(headsUpRowHtml({ html: '<span class="gro-bs-foot">' + (after
           ? 'Only ' + groPlural(after, 'thing', 'things') + ' left to sort, down from ' + before + '.'
-          : 'Nothing left to sort.') + '</p>'
+          : 'Nothing left to sort.') + '</span>' }), { cls: 'gro-heads-up' })
       : '';
     return '<div class="tiles gro-bs-card">' + rows + '</div>' + foot;
   }
@@ -7841,21 +7882,22 @@
     return months <= 1 ? 'about a month' : 'about ' + months + ' months';
   }
 
-  // One quiet line at the top of the list per duplicated thing, with the
-  // Merge the Review card had. A line, not a card: it is a small thing to
-  // notice on the way past, not a question the screen is about.
+  // One row at the top of the list per duplicated thing, with the Merge
+  // the Review card had: rows of one Heads up card (Emily, 2026-11-09 —
+  // they were loose lines on the cream), a small thing to notice on the
+  // way past, not a question the screen is about.
   function groDuplicatesHtml(data) {
     var groups = groDuplicateGroups(data);
     if (!groups.length) return '';
-    return groups.map(function (g) {
-      return '<p class="gro-dupe">' +
-        '<span class="gro-dupe-text">' + groCountWord(g.length) + ' rows of ' +
-          escapeHtml(g[0].item) + '</span>' +
-        '<span class="gro-dupe-dot">·</span>' +
-        '<button type="button" class="gro-dupe-merge" data-gro="merge" data-ids="' +
-          g.map(function (it) { return it.id; }).join(',') + '">Merge</button>' +
-      '</p>';
-    }).join('');
+    return headsUpHtml(groups.map(function (g) {
+      return headsUpRowHtml({
+        cls: 'gro-dupe',
+        html: '<span class="gro-dupe-text">' + groCountWord(g.length) + ' rows of ' +
+            escapeHtml(g[0].item) + '</span>' +
+          '<button type="button" class="gro-dupe-merge" data-gro="merge" data-ids="' +
+            g.map(function (it) { return it.id; }).join(',') + '">Merge</button>'
+      });
+    }).join(''), { cls: 'gro-heads-up' });
   }
 
   // ---------- The cards: the list as the checklist ----------
@@ -12292,8 +12334,6 @@
   // A tile's plate, the tick on a done one.
   var COOK_ROW_CHECK =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
-  var COOK_ROW_CHEV =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
 
   // Whose turn, said only where the household takes turns: there the
   // household has no standing cook (cook_name is null by design) and only
@@ -12418,9 +12458,8 @@
     var words = left
       ? 'Before bed: ' + left + (left === 1 ? ' thing' : ' things') + ' for ' + day
       : 'All set for ' + day;
-    return '<button type="button" class="cook-quiet-line is-link' + (left ? '' : ' is-set') + '" id="kit-get-ready" data-cook="bed-open">' +
-      '<span>' + escapeHtml(words) + '</span>' + COOK_ROW_CHEV +
-    '</button>';
+    return headsUpRowHtml({ text: words, cls: 'cook-quiet-line' + (left ? '' : ' is-set'),
+      attrs: ' id="kit-get-ready" data-cook="bed-open"' });
   }
 
   // The checklist: one plain card, a tick box per job.
@@ -12514,10 +12553,8 @@
 
   // Prep done: one line, still the way back to the list.
   function cookPrepDoneLineHtml(session) {
-    return '<button type="button" class="cook-quiet-line is-link is-set" data-cook="session" data-date="' + escapeHtml(session.date) + '">' +
-      '<span>' + escapeHtml(session.weekday + ' prep is done · ' + session.items_done + ' of ' + session.items_total) + '</span>' +
-      COOK_ROW_CHEV +
-    '</button>';
+    return headsUpRowHtml({ text: session.weekday + ' prep is done · ' + session.items_done + ' of ' + session.items_total,
+      cls: 'cook-quiet-line is-set', attrs: ' data-cook="session" data-date="' + escapeHtml(session.date) + '"' });
   }
 
   // The next prep day still ahead, as one quiet line — the way to look
@@ -12527,10 +12564,8 @@
       return s.date > todayIso && s.items_total > 0 && s.items_done < s.items_total;
     }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })[0];
     if (!next) return '';
-    return '<button type="button" class="cook-quiet-line is-link" data-cook="session" data-date="' + escapeHtml(next.date) + '">' +
-      '<span>' + escapeHtml(next.weekday + ' prep · ' + next.items_total + (next.items_total === 1 ? ' thing' : ' things')) + '</span>' +
-      COOK_ROW_CHEV +
-    '</button>';
+    return headsUpRowHtml({ text: next.weekday + ' prep · ' + next.items_total + (next.items_total === 1 ? ' thing' : ' things'),
+      cls: 'cook-quiet-line', attrs: ' data-cook="session" data-date="' + escapeHtml(next.date) + '"' });
   }
 
   // The next meal's action: "Make lunch", "Start cooking" for dinner, "Keep
@@ -12603,9 +12638,13 @@
           ? (oneLeft ? cookOneLeftHtml(next, ordered, data)
             : cookTodayListHtml(ordered, next, data, cookNextUpTileHtml(meals, todayIso)))
           : cookNightOffHtml(meals, todayIso)) +
-        (session && !prepLeads && session.items_total > 0 ? cookPrepDoneLineHtml(session) : '') +
-        (bed.length && !bedLeads ? (bedOpen ? cookBedCardHtml(bed, todayIso) : cookBedLineHtml(bed, todayIso)) : '') +
-        cookNextPrepLineHtml(data, todayIso),
+        (bed.length && !bedLeads && bedOpen ? cookBedCardHtml(bed, todayIso) : '') +
+        // The lines under the meals, said together in one Heads up card
+        // (Emily, 2026-11-09: nothing stranded at the foot of a screen).
+        headsUpHtml(
+          (session && !prepLeads && session.items_total > 0 ? cookPrepDoneLineHtml(session) : '') +
+          (bed.length && !bedLeads && !bedOpen ? cookBedLineHtml(bed, todayIso) : '') +
+          cookNextPrepLineHtml(data, todayIso)),
       dock: cookRootDockHtml(next, {
         session: prepLeads ? session : null,
         oneLeft: oneLeft,
@@ -17664,6 +17703,13 @@
     // 2026-09-21 it is "your turn" alone: the chip already says Draft,
     // and a line that said "a draft, your turn" under it said it twice.
     if (state === 'draft') sub.push('your turn');
+    // Where a short plan ends (planEndsWords): in place of "5 days", which
+    // the dates in the title already say, or ahead of the line otherwise.
+    var ends = typeof planEndsWords === 'function' && state !== 'none' ? planEndsWords(data) : '';
+    if (ends) {
+      if (!eyebrow || eyebrow === dayCount + ' days') eyebrow = ends;
+      else sub.unshift(ends.charAt(0).toLowerCase() + ends.slice(1));
+    }
     return {
       id: 'week-band',
       eyebrow: eyebrow,
@@ -17753,7 +17799,7 @@
   // arrangement as a schedule. Under the band, above the card.
   function weekSuggestedNoteHtml(data) {
     return data.menu_is_suggested
-      ? '<div class="week-suggested-note">One way to put it together — take what you like.</div>'
+      ? headsUpRowHtml({ text: 'One way to put it together — take what you like.', cls: 'week-suggested-note' })
       : '';
   }
 
@@ -17775,7 +17821,6 @@
   // job (a quiet thing to read with two answers beside it). No apricot —
   // the draft's one primary is Approve (rule 5), and a flag is never
   // urgent (rule 3): nothing is wrong, the week just bent.
-  var FLAG_EYEBROW = 'Worth knowing';
   var FLAG_BUSY = 'Just a moment…';
   var FLAG_TROUBLE = 'That didn’t work just now — nothing changed.';
   // Which flag is mid-tap, and any sentence the server sent back instead
@@ -17790,7 +17835,7 @@
   function weekFlagsHtml(data) {
     var flags = (data && data.draft_flags) || [];
     if (!flags.length) return '';
-    return '<div class="wk-flags">' + flags.map(function (flag) {
+    return flags.map(function (flag) {
       var state = weekFlagStateFor(flag.entry_id) || {};
       var fixes = (flag.fixes || []).filter(function (fix) { return fix && fix.label; });
       var acts = state.busy
@@ -17800,13 +17845,19 @@
               escapeHtml(String(flag.entry_id)) + '" data-wk-flag-fix="' + escapeHtml(fix.action) + '">' +
               escapeHtml(fix.label) + '</button>';
           }).join('');
-      return '<div class="wk-flag">' +
-        '<span class="gro-eyebrow wk-flag-eyebrow">' + escapeHtml(FLAG_EYEBROW) + '</span>' +
-        '<p class="wk-flag-text">' + escapeHtml(flag.text) + '</p>' +
-        (state.message ? '<p class="wk-flag-text wk-flag-trouble">' + escapeHtml(state.message) + '</p>' : '') +
-        (acts ? '<div class="wk-flag-acts">' + acts + '</div>' : '') +
-      '</div>';
-    }).join('') + '</div>';
+      // A row of the Heads up card (2026-11-09): the card's eyebrow says
+      // what the "Worth knowing" eyebrow on each flag used to, once for all.
+      return headsUpRowHtml({
+        cls: 'wk-flag',
+        html: '<span class="wk-flag-text">' + escapeHtml(flag.text) + '</span>',
+        after: (state.message || acts)
+          ? '<div class="wk-flag-under">' +
+              (state.message ? '<p class="wk-flag-text wk-flag-trouble">' + escapeHtml(state.message) + '</p>' : '') +
+              (acts ? '<div class="wk-flag-acts">' + acts + '</div>' : '') +
+            '</div>'
+          : ''
+      });
+    }).join('');
   }
 
   // One tap on one of Pomona's own fixes. Both land on the same route,
@@ -17980,8 +18031,8 @@
   function planNextLabel(next) {
     next = next || {};
     // A plan that stops before its week does: the button names the day it
-    // plans from ("Plan from Saturday"), the line above it says where this
-    // plan ends (planEndsLineHtml). Same stretch, same tap.
+    // plans from ("Plan from Saturday"), the head's line says where this
+    // plan ends (planEndsWords). Same stretch, same tap.
     if (next.after_short_plan && next.start_date && !next.is_planned && !next.draft_plan_id) {
       // On the plan's last day the next day is tomorrow, said as such.
       if (next.start_date === addDaysLocal(todayLocalStr(), 1)) return 'Plan from tomorrow';
@@ -18005,17 +18056,17 @@
       !next.is_planned && !next.draft_plan_id);
   }
 
-  // "This plan ends Friday." — one quiet line on the Plan root when the
-  // plan stops before its week does, so the empty days after it are
-  // explained. Its next step is More's "Plan the week after", which
-  // planNextLabel names "Plan from Saturday" in this state.
-  function planEndsLineHtml(data) {
+  // "Ends Friday" — said in the Plan head's line when the plan stops
+  // before its week does, so the empty days after it are explained. It
+  // was a loose sentence under the day bar until
+  // Emily's 2026-11-09 Heads up pick folded it into the head. Its next
+  // step is More's "Plan the week after", which planNextLabel names
+  // "Plan from Saturday" in this state.
+  function planEndsWords(data) {
     var next = nextPeriodFor(data || {}, (data || {}).days);
     if (!planEndsEarly(next)) return '';
     var last = addDaysLocal(next.start_date, -1);
-    var when = last === todayLocalStr() ? 'today' : dayName(last, { weekday: 'long' });
-    return '<div class="wk-notes wk-draft-notes wk-plan-ends"><div class="wk-note">This plan ends ' +
-      escapeHtml(when) + '.</div></div>';
+    return 'Ends ' + (last === todayLocalStr() ? 'today' : dayName(last, { weekday: 'long' }));
   }
 
   function planNextWeek() {
@@ -18095,9 +18146,7 @@
     // is the one place it is mentioned while the week is being planned).
     var notes = [data.soft_note, data.freezer_toss_note].filter(function (n) { return !!n; });
     if (!notes.length) return '';
-    return '<div class="wk-notes wk-draft-notes">' + notes.map(function (n) {
-      return '<div class="wk-note">' + escapeHtml(n) + '</div>';
-    }).join('') + '</div>';
+    return notes.map(function (n) { return headsUpRowHtml({ text: n, cls: 'wk-note' }); }).join('');
   }
 
   function weekNotesHtml(data, day) {
@@ -18108,10 +18157,7 @@
     // horizon (weekly_plan.next_period_after, 2026-09-21), so there is no
     // "Sep 17–20 is already planned" note here any more: the intake's own
     // warning says what re-planning held days costs, on the way in.
-    if (!notes.length) return '';
-    return '<div class="wk-notes">' + notes.map(function (n) {
-      return '<div class="wk-note">' + escapeHtml(n) + '</div>';
-    }).join('') + '</div>';
+    return notes.map(function (n) { return headsUpRowHtml({ text: n, cls: 'wk-note' }); }).join('');
   }
 
   // The approved root's dock (Emily, 2026-09-18, board 19): no apricot —
@@ -18819,14 +18865,13 @@
     var u = data && data.use_up;
     if (!u || !u.line) return '';
     var rows = u.couldnt_fit || [];
-    if (!rows.length) return '<p class="wk-use-up-line">' + escapeHtml(u.line) + '</p>';
+    if (!rows.length) return headsUpRowHtml({ text: u.line, cls: 'wk-use-up-line' });
     var open = !!weekState.useUpOpen;
-    return '<button type="button" class="wk-use-up-line is-tap" data-wk-useup-open="1" ' +
-        'aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="wk-unfit">' +
-        '<span class="wk-use-up-text">' + escapeHtml(u.line) + '</span>' +
-        '<span class="wk-qrow-chev wk-use-up-chev' + (open ? ' is-open' : '') + '" aria-hidden="true">' + WK_ICONS.chev + '</span>' +
-      '</button>' +
-      (open ? wkUnfitRowsHtml(rows) : '');
+    return headsUpRowHtml({
+      text: u.line, cls: 'wk-use-up-line', open: open,
+      attrs: ' data-wk-useup-open="1" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="wk-unfit"',
+      after: open ? wkUnfitRowsHtml(rows) : ''
+    });
   }
 
   var USE_UP_ACTIONS = { freeze: 'Freeze it', side: 'Add as a side' };
@@ -18837,12 +18882,12 @@
   function wkCouldntFitHtml(data) {
     var u = data && data.use_up;
     return ((u && u.past_date) || []).map(function (line) {
-      return '<p class="wk-use-up-past">' + escapeHtml(line) + '</p>';
+      return headsUpRowHtml({ text: line, cls: 'wk-use-up-past' });
     }).join('');
   }
 
   function wkUnfitRowsHtml(rows) {
-    return '<div class="shell-card wk-unfit" id="wk-unfit">' +
+    return '<div class="wk-unfit" id="wk-unfit">' +
       rows.map(function (r) {
         var primary = r.primary && USE_UP_ACTIONS[r.primary]
           ? '<button type="button" class="wk-unfit-act is-' + r.primary + '" data-wk-useup="' + r.primary + '" ' +
@@ -19379,7 +19424,7 @@
   function planDayTagsHtml(day) {
     var tags = reviewTileTags(day);
     if (!tags.length) return '';
-    return '<p class="wk-pday-tags">' + escapeHtml(tags.join(' · ')) + '</p>';
+    return headsUpRowHtml({ text: tags.join(' · '), cls: 'wk-pday-tags' });
   }
 
   // The notes above the cards, said once: on a draft the flags and the
@@ -19425,11 +19470,14 @@
     var empty = '<div class="note-card rv-empty">Nothing planned yet.</div>';
     return '<div class="wk-plan">' +
       planDayBarHtml(days, sel, data.adjacent_plans) +
-      (day ? planDayTagsHtml(day) : '') +
-      weekSuggestedNoteHtml(data) + planEndsLineHtml(data) + planNotesHtml(data, days, sel) +
+      // Every note, said once in the Heads up card under the day bar
+      // (Emily, 2026-11-09) — the "turns before" lines used to sit loose
+      // above Approve, the rest loose between the bar and the tiles.
+      headsUpHtml((day ? planDayTagsHtml(day) : '') +
+        weekSuggestedNoteHtml(data) + planNotesHtml(data, days, sel) +
+        (!approved && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '')) +
       '<div class="wk-pcards">' +
         (cards ? (day ? '<div class="tiles">' + cards + '</div>' : cards) : empty) +
-        (!approved && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
       '</div>' +
     '</div>' + planDockHtml(data);
   }
@@ -19687,8 +19735,9 @@
     // approved week, which is what makes this one expression safe on the
     // deeper, approved-week form of this screen too.
     var head = root
-      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data) +
-        (typeof wkUseUpLineHtml === 'function' ? wkUseUpLineHtml(data) : '')
+      ? headsUpHtml(weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) +
+          (typeof wkUseUpLineHtml === 'function' ? wkUseUpLineHtml(data) : '') +
+          (typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : ''))
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
@@ -19701,8 +19750,7 @@
       return head + '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>' + reviewDecideHtml(data);
     }
     if (root && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
-      return head + wkMenuHtml(days) + (root && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
-        reviewDecideHtml(data);
+      return head + wkMenuHtml(days) + reviewDecideHtml(data);
     }
     return head +
       wkDayTabsHtml(days, selected) +
@@ -19710,7 +19758,6 @@
         days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap' }); }).join('') +
       '</div>' +
       wkDotsHtml(days.length, selected) +
-      (root && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
       // weekReplacesNote's "Once it's approved, I'd replace…" sentence
       // used to sit here, above the dock (declutter, 2026-09-25: Emily
       // asked it off the draft screen). data.replaces is still computed

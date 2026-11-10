@@ -1,0 +1,43 @@
+{
+ "dish_name": "Tteok Kkochi",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Korean rice cakes (garaetteok)", "qty": "1 lb", "category": "other"},
+  {"item": "Bamboo skewers", "qty": "1 package", "category": "other", "cook_qty": "8"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Gochujang", "qty": "1 tub", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Ketchup", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Strawberry jam", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Black pepper", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "Sesame seeds", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Bring a medium pot of water to a boil over high heat.",
+  "Add the rice cakes and cook them for 1 to 2 minutes, until they're soft and bend without cracking. Fresh, soft rice cakes only need about 30 seconds.",
+  "Drain them and pat them dry with paper towels. Wet rice cakes spatter in the oil.",
+  "Thread 3 or 4 rice cakes onto each skewer, side by side through their middles, leaving a handle at one end. That should be about 8 skewers.",
+  "Mince the garlic. In a small saucepan off the heat, stir together the 2 tbsp gochujang, 3 tbsp ketchup, the garlic, 1 tbsp jam, 1 tbsp brown sugar, 1/8 tsp black pepper and 1 tbsp water.",
+  "Set the saucepan over medium heat and stir for about 1 minute, until the sauce bubbles and turns glossy and a little thicker. Take it off the heat.",
+  "Heat 1 tbsp of the oil in a large skillet over medium heat until it shimmers. Add half the skewers in one layer.",
+  "Cook them for 2 to 3 minutes, until the underside is crisp and puffed in spots. Flip them and cook the other side for 2 to 3 minutes.",
+  "Transfer them to a plate. Add the remaining 1 tbsp oil and cook the rest the same way.",
+  "Brush or spoon the sauce over both sides of every skewer.",
+  "Sprinkle the 1 tsp sesame seeds over the top and serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version softens the rice cakes, threads them onto skewers, crisps them in a little oil and brushes on a sweet gochujang sauce. Beyond Kimchee (the lead) uses gochujang, ketchup, garlic, strawberry jam and honey; Food Network adds cocktail franks and corn syrup and Sift & Simmer adds soy sauce and rice vinegar. This follows Beyond Kimchee with brown sugar from Sift & Simmer in place of the honey to keep it vegan, a little less gochujang and a little more ketchup so it stays mild, and sesame seeds in place of the chopped nuts to keep it nut-free. No version had 20 or more ratings and RecipeTin Eats has no version of this dish, so this leads with the best version read.",
+ "sources": [
+  {"name": "Beyond Kimchee", "title": "Rice Cake Skewers (Tteok-kkochi)", "url": "https://www.beyondkimchee.com/rice-cake-skewers-tteok-kkochi/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Food Network", "title": "Tteok Kkochi", "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/tteok-kkochi-12706813", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Sift & Simmer", "title": "Tteokkochi (Skewered Korean Rice Cakes with Spicy Gochujang Glaze)", "url": "https://www.siftandsimmer.com/tteokkochi-skewered-korean-rice-cakes-with-spicy-gochujang-glaze", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

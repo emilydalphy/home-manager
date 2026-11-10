@@ -287,6 +287,9 @@ def add_recipe(
     # held and every later write in the app failed "database is locked"
     # until the server restarted.
     try:
+        # An egg dish that keeps says so on its recipe (Emily, 2026-11-09).
+        from .leftovers import with_make_ahead_note as _with_make_ahead_note
+        notes = _with_make_ahead_note(name, notes, {"main_protein": main_protein, "advance_prep_notes": advance_prep_notes})
         cur = conn.execute(
             "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
             "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
@@ -756,6 +759,23 @@ def fill_recipe_details(
                 (new_name.strip(), row["id"], household_id()),
             )
             recipe_name = new_name.strip()
+        # An egg dish that keeps says so on its recipe (Emily, 2026-11-09):
+        # a library copy or a written recipe gets the make-ahead line here.
+        noted = conn.execute(
+            "SELECT notes, main_protein FROM recipes WHERE id = ? AND household_id = ?",
+            (row["id"], household_id()),
+        ).fetchone()
+        if noted is not None:
+            from .leftovers import with_make_ahead_note as _with_make_ahead_note
+            new_notes = _with_make_ahead_note(
+                recipe_name, noted["notes"],
+                {"main_protein": noted["main_protein"], "advance_prep_notes": advance_prep_notes},
+            )
+            if new_notes != (noted["notes"] or "").strip():
+                conn.execute(
+                    "UPDATE recipes SET notes = ? WHERE id = ? AND household_id = ?",
+                    (new_notes, row["id"], household_id()),
+                )
         conn.execute(
             "UPDATE recipes SET ingredients_json = ?, instructions_json = ?, default_servings = ?, "
             "prep_time_minutes = COALESCE(?, prep_time_minutes), "
@@ -5825,6 +5845,7 @@ def _add_recipe_ingredients_for_entries(
     entry_ids: list[int], recipe_ingredients: list[dict], weekly_plan_id: int | None,
     default_servings: int | None = None, buffer: "WeekGroceryBuffer | None" = None,
     conn=None, chain_scale: bool = True, reheat_buys_it: bool = False,
+    night_side: bool = False,
 ) -> tuple[list[str], list[str]]:
     """
     Put ONE RECIPE's ingredients onto the grocery list for every meal in
@@ -6081,7 +6102,17 @@ def _add_recipe_ingredients_for_entries(
             # cooked fresh on the reheat night, so it could cover a later
             # one) and narrowing it on a review pass would be deciding that
             # unmeasured.
-            batch = _leftovers.batch_for_entry(entry_id, chains, conn=entry_conn) if chain_scale else None
+            # `night_side`: these are a cooked-on-the-night SIDE, and a side
+            # is per night (Emily, 2026-11-09) — the cook's salad covers only
+            # the fed nights with no side of their own
+            # (leftovers.side_batch_for_entry). The dish itself still covers
+            # every night it feeds.
+            if not chain_scale:
+                batch = None
+            elif night_side:
+                batch = _leftovers.side_batch_for_entry(entry_id, chains, conn=entry_conn)
+            else:
+                batch = _leftovers.batch_for_entry(entry_id, chains, conn=entry_conn)
             if batch:
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
                     # Both factors, because a batch really is more food: a

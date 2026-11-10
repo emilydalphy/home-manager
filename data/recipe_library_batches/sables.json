@@ -1,0 +1,41 @@
+{
+ "dish_name": "Sables",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Salted butter", "qty": "1 lb", "category": "dairy", "cook_qty": "13 tbsp"},
+  {"item": "Granulated sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup + 1 tbsp"},
+  {"item": "Eggs", "qty": "3", "category": "dairy"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "All-purpose flour", "qty": "1 bag", "category": "pantry", "cook_qty": "2 1/4 cups"}
+ ],
+ "instructions": [
+  "About 1 hour before you start, take 13 tbsp of the butter out of the fridge so it softens. It's ready when it dents easily under your finger.",
+  "Heat the oven to 375°F and line a baking sheet with parchment paper.",
+  "Separate the 3 eggs. Put 2 of the yolks in a small bowl for the dough and the third yolk in another small bowl. Keep the whites for another day.",
+  "In a large bowl, beat the 13 tbsp softened butter and the 1/2 cup + 1 tbsp sugar with a hand mixer on medium for about 1 minute, until it's pale and fluffy. No mixer? Beat it hard with a wooden spoon for 3 to 4 minutes.",
+  "Beat in the 2 yolks and the 1 tsp vanilla until smooth. Scrape down the sides of the bowl.",
+  "Add 2 cups + 2 tbsp of the flour and mix on low, or stir with the spoon, until the dough starts to clump together.",
+  "Dust the counter with a little of the remaining 2 tbsp flour. Turn the dough out and press it into a ball.",
+  "Roll it out with a rolling pin to about 1/4 inch thick, dusting with more of the 2 tbsp flour if it sticks.",
+  "Cut out rounds with a 2 1/4 inch cookie cutter or the rim of a glass, and set them on the baking sheet about 1 inch apart. Press the scraps together, roll them out again and cut more rounds. You should get about 20.",
+  "Beat the third yolk with a fork. Brush it over the tops with a pastry brush, or spread it thinly with the back of a spoon.",
+  "Drag a fork across each cookie in one direction, then across the other way, to make a crosshatch.",
+  "Bake for 12 to 15 minutes, until the cookies are deep golden all over. If they don't all fit on the sheet, bake them in two batches.",
+  "Transfer them to a wire rack or a plate and let them cool completely. They crisp up as they cool.",
+  "Serve at room temperature. Keep the rest in an airtight container for up to 1 week."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions make a rich butter dough with sugar and egg yolk, shape it into small rounds about 1/4 to 1/2 inch thick and bake them until golden. Mon Petit Four (the lead) creams salted butter and sugar, adds two yolks and vanilla, rolls and cuts the dough with no chilling, and brushes the tops with a third yolk and a fork crosshatch; Eat Little Bird uses powdered sugar and slices chilled logs, and Joy of Baking adds a whole egg and baking powder and chills the dough. This follows the lead for a batch of about 20 cookies, enough for four with some to keep, with a glass rim in place of a cookie cutter and a wooden spoon if there's no mixer.",
+ "sources": [
+  {"name": "Mon Petit Four", "title": "French Butter Cookies (Sablé Breton)", "url": "https://www.monpetitfour.com/french-butter-cookies/", "rating": 4.5, "rating_count": 336, "read": true, "lead": true},
+  {"name": "Eat Little Bird", "title": "French Sablé Cookies", "url": "https://eatlittlebird.com/french-sable-cookies/", "rating": 5.0, "rating_count": 5, "read": true, "lead": false},
+  {"name": "Joy of Baking", "title": "Sablés (French Butter Cookies)", "url": "https://m.joyofbaking.com/cookierecipes/Sables.html", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

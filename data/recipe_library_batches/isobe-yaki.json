@@ -1,0 +1,32 @@
+{
+ "dish_name": "Isobe Yaki",
+ "cuisine": "Japanese",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Kiri mochi", "qty": "1 package", "category": "pantry", "cook_qty": "8 pieces"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Nori sheets", "qty": "1 package", "category": "pantry", "cook_qty": "2 sheets"}
+ ],
+ "instructions": [
+  "In a shallow bowl, stir the 3 tbsp soy sauce and 1 1/2 tbsp sugar until the sugar dissolves. If it's slow, warm it in the microwave for 10 seconds and stir again.",
+  "Cut the 2 nori sheets into quarters, so you have 8 strips.",
+  "Lay the 8 mochi in a large nonstick skillet with space between them. They puff up as they cook. If your skillet isn't nonstick, line it with parchment paper first.",
+  "Cover the pan, put it on medium low heat and cook for 5 minutes, until the underside is golden in spots.",
+  "Flip them, cover again and cook the other side for 5 to 6 minutes, until they've puffed up and feel soft all the way through when you press one.",
+  "Press each mochi flat with the back of a spatula, then dip it in the sweet soy sauce and turn it until it's coated on both sides.",
+  "Wrap a nori strip around each one and serve hot. Mochi turns hard as it cools, so eat them right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook (the lead) and Chef JA Cooks both brown store-bought kiri mochi in a pan until puffed and soft, coat it in soy sauce sweetened with sugar and wrap it in nori. Just One Cookbook cooks the whole pieces covered over medium low heat and dips them in the sauce, while Chef JA Cooks halves them and adds the sauce to the pan off the heat. Just One Cookbook's optional cheese is left out to keep this vegan. No version read had 20 or more ratings and RecipeTin Eats has no isobe yaki, so this leads with the best rated version read.",
+ "sources": [
+  {"name": "Just One Cookbook", "title": "Isobeyaki Mochi", "url": "https://www.justonecookbook.com/isobeyaki-mochi/", "rating": 5.0, "rating_count": 7, "read": true, "lead": true},
+  {"name": "Chef JA Cooks", "title": "Isobeyaki Mochi (Grilled Mochi Recipe)", "url": "https://chefjacooks.com/en/isobeyaki", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

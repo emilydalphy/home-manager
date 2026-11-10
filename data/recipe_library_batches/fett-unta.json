@@ -1,0 +1,33 @@
+{
+ "dish_name": "Fett'unta",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 6,
+ "ingredients": [
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other", "cook_qty": "4 large slices"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Extra virgin olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Set an oven rack about 4 inches below the broiler and turn the broiler on high.",
+  "Cut 4 large slices of the crusty bread, each about 3/4 inch thick.",
+  "Peel the 2 garlic cloves and cut them in half.",
+  "Lay the slices on a baking sheet and broil them for 2 to 3 minutes, until golden with a few dark edges. Flip them and broil the other side for 2 to 3 minutes. Keep watching. They go from golden to burnt quickly.",
+  "While the toast is hot, rub the cut side of a garlic half over the top of each slice. Use more or less garlic as you like.",
+  "Drizzle 1 tbsp of the olive oil over each slice.",
+  "Sprinkle the 1/2 tsp salt over them and serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions toast thick slices of crusty Tuscan bread, rub them with a cut clove of garlic while they're hot, then pour on plenty of olive oil and add salt. David Rocco (the lead) grills 4 large slices on a barbecue and is the most generous with the oil; Cape Cod Life grills 1/2 inch slices until marked, and Italy Segreta prefers the grill but says a pan or oven works too. This follows David Rocco for four with the oven broiler in place of the barbecue and 1 tbsp of oil per slice. Use the best olive oil you have, ideally freshly pressed. No version read had any ratings and RecipeTin Eats has no version of this dish, so this leads with the best version read.",
+ "sources": [
+  {"name": "Food Network (David Rocco)", "title": "Tuscan Fettunta", "url": "https://www.foodnetwork.com/recipes/tuscan-fettunta-1959131", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Cape Cod Life", "title": "Fettunta", "url": "https://capecodlife.com/fettunta/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Italy Segreta", "title": "In Cucina: Fettunta", "url": "https://italysegreta.com/in-cucina-fettunta/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

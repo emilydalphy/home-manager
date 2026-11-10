@@ -1,0 +1,40 @@
+{
+ "dish_name": "Berenjenas con Miel",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Eggplants", "qty": "2", "category": "produce"},
+  {"item": "Milk", "qty": "1 quart (4 cups)", "category": "dairy"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "1 bag", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Extra virgin olive oil", "qty": "1 cup", "category": "pantry"},
+  {"item": "Honey", "qty": "1 jar", "category": "pantry", "cook_qty": "3 tbsp"}
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the morning of: cut the 2 eggplants into rounds a little under 1/2 inch thick.",
+  "Lay the slices in a large bowl, sprinkle them with 1/4 tsp of the salt and pour in the 4 cups milk. Set a plate on top to keep them under, and put the bowl in the fridge for at least 1 hour.",
+  "When you're ready to cook, mix the 3/4 cup flour, 1/2 tsp of the salt and the 1/4 tsp pepper in a shallow dish.",
+  "Drain the eggplant and pour away the milk. Pat the slices dry with paper towels.",
+  "Pour the 1 cup olive oil into a large skillet. That should be about 1/4 inch deep. Heat it over medium high. You're aiming for 350°F, so if you have a thermometer, check it there. No thermometer? Drop in a pinch of the flour. It should sizzle straight away.",
+  "Coat a few slices in the flour on both sides and shake off the extra. Coat each batch only as it's about to go in the pan.",
+  "Lay them in the hot oil in a single layer with room between them, and fry for 2 to 3 minutes, until the underside is golden brown. Stand back a little. They'll spatter.",
+  "Flip them and fry the other side for 2 to 3 minutes, until it's golden brown too.",
+  "Lift them out onto a plate lined with paper towels. Coat and fry the rest the same way.",
+  "Sprinkle the last 1/4 tsp salt over the hot slices.",
+  "Drizzle the 3 tbsp honey over them and serve right away, while they're hot."
+ ],
+ "advance_prep_notes": "Soak the eggplant slices in milk at least 1 hour ahead.",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "All three versions cut eggplant into thin rounds, soak them first, coat them and fry them in hot oil until golden, then finish with salt and a drizzle of honey and eat them hot. Spanish Food Guide (the lead) soaks the rounds in salted milk for an hour, dredges them in seasoned flour and fries them in olive oil; Food Drink Destinations soaks them in sparkling water instead, and MarocMama uses a spiced batter and an orange blossom honey sauce, which were left out. Andalusian bars often use miel de caña (cane syrup) in place of bee honey, and either works. No version read had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so this leads with Spanish Food Guide, the best rated of those read.",
+ "sources": [
+  {"name": "Spanish Food Guide", "title": "Delicious Berenjenas Fritas con Miel Recipe (Spanish Crispy Fried Eggplant with Honey)", "url": "https://www.spanishfoodguide.com/recipes/berenjenas-fritas-con-miel-recipe-fried-eggplant/", "rating": 4.3, "rating_count": 12, "read": true, "lead": true},
+  {"name": "Food Drink Destinations", "title": "Berenjenas Con Miel Recipe (Spanish Fried Eggplant With Honey)", "url": "https://fooddrinkdestinations.com/berenjenas-con-miel-recipe-spanish-fried-eggplant", "rating": 4.5, "rating_count": 2, "read": true, "lead": false},
+  {"name": "MarocMama", "title": "Fried Eggplant with Honey (Berenjenas con Miel)", "url": "https://marocmama.com/fried-eggplant-with-honey-berenjenas-con-miel/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

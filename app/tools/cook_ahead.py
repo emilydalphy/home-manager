@@ -418,6 +418,12 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
             if item["slot"] == "breakfast" and not _breakfast_prep.may_batch_breakfast(item["dish"], breakfast_prep):
                 declined.append({"kind": "fresh_breakfast", "dish": item["dish"]})
                 continue
+            # An egg dish that doesn't hold for reheating is cooked each day
+            # it's on (Emily, 2026-11-09: "an egg scramble or oyakodon can't"
+            # be prepped) — leftovers.egg_dish_keeps.
+            if item["slot"] != "breakfast" and not _leftovers.egg_dish_keeps(item["dish"]):
+                declined.append({"kind": "fresh_egg", "dish": item["dish"]})
+                continue
             # A day the household un-batched cooks fresh, so it leaves the
             # dish's leftover days BEFORE they are cut into three-day
             # batches (both rules, merged 2026-09-24).

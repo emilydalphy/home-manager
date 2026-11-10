@@ -82,7 +82,9 @@ def test_undo_after_the_minus_on_the_cook_puts_every_line_back():
     """CATCH — the card's repro: the lettuce read one head short after Undo."""
     plan, cook, _reheat = _week()
     before = _lines()
-    assert ("Lettuce", "4 heads", False) in before, "2 for the batch + 1 reheat + the household's 1"
+    # A side is per night (Emily, 2026-11-09): Monday's salad covers Monday
+    # only, since Thursday has its own — 1 + 1 + the household's 1.
+    assert ("Lettuce", "3 heads", False) in before, "1 cook night + 1 reheat + the household's 1"
     out = tools.drop_dish_from_day(plan, cook)
     assert out["status"] == "dropped" and out.get("can_undo"), out
     assert ("Lettuce", "2 heads", False) in _lines(), "the '−' has to change the line"

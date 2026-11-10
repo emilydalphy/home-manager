@@ -1,0 +1,115 @@
+{
+ "dish_name": "Shakarkandi Chaat",
+ "cuisine": "Indian",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Sweet potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Papdi",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "10"
+  },
+  {
+   "item": "Pomegranate arils",
+   "qty": "1 small container",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Green chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Tamarind chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sev",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F.",
+  "Peel the sweet potatoes and cut them into 1 inch cubes.",
+  "In a large bowl, toss the cubes with the 2 tbsp oil, 1/2 tsp of the chaat masala and the 1/2 tsp salt, using your hands, until every piece is coated.",
+  "Spread them on a large rimmed baking sheet in a single layer with room between the pieces. Use two sheets if they're crowded.",
+  "Roast for 15 to 20 minutes, turning them once halfway, until a knife slides in easily and the edges are browned. Take them out while they still hold their shape.",
+  "Meanwhile, chop 1/4 cup of the cilantro and squeeze the lime. That should be about 2 tbsp juice.",
+  "Transfer the sweet potatoes to a large bowl. Crush the 10 papdi over them in rough pieces and add 2 tbsp of the pomegranate and 2 tbsp of the cilantro.",
+  "Add 2 tbsp of the green chutney, the 2 tsp tamarind chutney and the lime juice, and toss gently so the cubes stay whole.",
+  "Divide it among 4 bowls. Sprinkle with the remaining 1/2 tsp chaat masala, then top with the 1/4 cup sev, the remaining 2 tbsp pomegranate, the remaining 2 tbsp cilantro and the remaining 2 tbsp green chutney. Serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The versions agree on cooked sweet potato cubes tossed with chaat masala, lime or lemon and cilantro, but differ on the cooking: Vidhya's Home Cooking steams then pan roasts the cubes, Sinfully Spicy roasts them whole and browns them in ghee, and Cook with Manali roasts the cubes in oil at 425°F. No version read had 20 or more ratings (Swasthi's and Hebbar's don't have one), so this falls back to Cook with Manali, the next trusted cook for Indian food, and follows her version with papdi, pomegranate and both chutneys. Her roasted peanuts are left out to keep it nut-free, and the jarred chutneys are usually vegan, so check the labels.",
+ "sources": [
+  {
+   "name": "Cook with Manali",
+   "title": "Sweet Potato Chaat",
+   "url": "https://www.cookwithmanali.com/sweet-potato-chaat/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vidhya's Home Cooking",
+   "title": "Sweet Potato Chaat | Shakarkandi ki Chaat",
+   "url": "https://www.vidhyashomecooking.com/?p=7150",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sinfully Spicy",
+   "title": "Delhi-Style Sweet Potato Chaat (Shakarkandi Ki Chaat)",
+   "url": "https://sinfullyspicy.com/shakarkandi-chaat/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

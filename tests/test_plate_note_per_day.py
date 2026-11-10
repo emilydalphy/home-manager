@@ -37,7 +37,7 @@ _needs_node = pytest.mark.skipif(
 )
 
 _PRELUDE = (
-    _extract("escapeHtml", SHELL_JS) + "\n"
+    _extract("escapeHtml", SHELL_JS) + "\n" + _extract("headsUpRowHtml", SHELL_JS) + "\n" + _extract("headsUpHtml", SHELL_JS) + "\n"
     + _extract_var("WEEK_SLOTS", SHELL_JS) + "\n"
     + _extract("weekPlanState", SHELL_JS) + "\n"
     + _extract("_dayHasPlateSides", SHELL_JS) + "\n"
