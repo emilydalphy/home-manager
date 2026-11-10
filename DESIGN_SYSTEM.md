@@ -27,9 +27,10 @@ All in `static/theme.css`. New work uses the canonical names below and nothing e
 | `--cream` | `#FFFAF3` | Warm Cream | The page. |
 | `--white` | `#FFFFFF` | White | Tiles and cards. |
 | `--dusk` | `#18356E` | Dusk Blue | The tab bar, Use soon, timers, the welcome. Nothing else. (Darkened from `#1B4392` on 2026-11-09, Emily's pick: halfway between the old Dusk Blue and Night Ink.) |
-| `--night-ink` | `#14264A` | Night Ink | Main text, the toast. |
-| `--apricot` | `#FFA45C` | Ripe Apricot | The one main button and Ask. Always dark text. |
+| `--night-ink` | `#0F1F3D` | Night Ink | Main text, the toast. (Deepened from `#14264A` on 2026-11-10, Emily's pick "Deep Dusk", for crisper text on cream.) |
+| `--apricot` | `#FFAC52` | Ripe Apricot | The one main button and Ask. Always dark text. (Richer than `#FFA45C` from 2026-11-10, Deep Dusk: more contrast with the ink, reads as ripe apricot rather than peach. Hover is `--apricot-deep` `#F59A3A`.) |
 | `--soft-apricot` | `#FFC08F` | Soft Apricot | Small labels on dusk, Undo on the toast. |
+| `--leaf-blue` | `#3F6AAE` | Leaf Blue | The leaf of the Pomona fruit on the app icon, and nothing else (Deep Dusk, 2026-11-10). In the brand blue the leaf blurred into the Night Ink fruit at 1.26:1; Leaf Blue is 3.03:1 against the fruit and 2.90:1 against the apricot tile. Never text, never a fill in the app. |
 | `--blush` | `#FBE9D9` | Blush | Quiet tints: the switcher's track, round buttons, quiet buttons. |
 | `--slate` | `#55607A` | Slate | Second lines and small details. |
 | `--clay` | `#A8461A` | Baked Clay | Today on the day bar, and problems. |
@@ -45,13 +46,24 @@ Green stays in the food. No teal, no pale blue. Purple never leads.
 
 `--ground` (the page), `--surface` and `--surface-raised` (a tile), `--ink` (text), `--ink-secondary` (second lines), `--hairline` (a thin line), `--field` (the room the phone sits in at 768px and up), `--scrim`, `--toast-bg`, `--toast-ink`, `--plate-shadow`.
 
+### The app icon (Deep Dusk, 2026-11-10)
+
+Emily's pick after the designer review: **the refined Solid fruit**. A solid Night Ink fruit with a Leaf Blue leaf on an apricot tile. The leaf is 15% bigger than the in-app mark's and set a little off the stem so it reads as its own shape; the crease is 1.5 on the 24-unit grid; the fruit sits centred at y=48 of 100. It is filled, not an outline, because Apple's icon guidance favours filled shapes and the iOS 26 glass treatment does not apply to thin lines.
+
+- **Light:** `#FFAC52` tile, `#0F1F3D` fruit, `#3F6AAE` leaf, crease cut in the tile colour.
+- **Dark:** `#0E1729` tile, `#FFAC52` fruit, `#3F6AAE` leaf (fruit 9.61:1, leaf 3.31:1 on the tile).
+- **Tinted:** black tile, white fruit, `#B3B3B3` leaf, crease cut through.
+- **Launch screen:** the light icon as a rounded tile on Warm Cream, the colour the first screen opens on.
+
+One script draws them all: `make_app_icons.py` at the repo root writes `static/icons/` (web icons and the three source SVGs), the iOS `AppIcon.appiconset` (light, dark, tinted) and the launch splash, with no alpha channel. Change the drawing there, never by hand in the PNGs. `tests/test_app_icon.py` checks the sizes, the missing alpha and the colours. The small in-app mark (the band, the welcome, the chat button) stays the outline drawing at its own weight (rule 7). The iOS icon and launch screen reach phones only with the next native build.
+
 ### Legacy names
 
 `theme.css` still defines The Inn's names (`--spruce`, `--celadon-tint`, `--sand`, `--apricot-label` and so on) in a marked LEGACY block, forwarding to Bright Dusk, because shell.css and Chores still say them. The rebuild moved each screen's look, not every name, so the block stays until those rules are renamed. **Never add a new use of a legacy name.**
 
 ### Light mode only
 
-Emily, 2026-11-05: light mode only for now, dark mode comes later. Settings → Appearance is gone. Every page's `<html>` carries `data-theme="light"`, which switches off every dark rule, because they are all guarded with `:root:not([data-theme="light"])`. The dark blocks are left in `theme.css` and `shell.css`, dormant, with The Inn's values. To bring dark back: give them Bright Dusk values, then take the attribute off the pages. `tests/test_appearance.py` keeps the guards honest.
+Emily, 2026-11-05: light mode only for now, dark mode comes later. Settings → Appearance is gone. Every page's `<html>` carries `data-theme="light"`, which switches off every dark rule, because they are all guarded with `:root:not([data-theme="light"])`. The dark blocks are left in `theme.css` and `shell.css`, dormant, with The Inn's values. To bring dark back: give them Bright Dusk values, then take the attribute off the pages. **The values are already chosen** (Deep Dusk designer review, 2026-11-10; waiting to be built): page `#0E1729`, card `#17233D`, raised `#1F2E4E`, text `#F6EFE4` (15.67:1 on the page), second lines `#A7B1C6` (8.31:1), tab bar `#223F7A` with `--on-dusk` text (9.53:1) and soft apricot (6.4:1), main button stays `#FFAC52` with `#0E1729` text (9.61:1), clay becomes `#F08A5D` (7.24:1). The dark app icon: `#0E1729` tile, `#FFAC52` fruit, Leaf Blue leaf. `tests/test_appearance.py` keeps the guards honest.
 
 ---
 
@@ -59,7 +71,7 @@ Emily, 2026-11-05: light mode only for now, dark mode comes later. Settings → 
 
 Each one is checkable.
 
-1. **Dark text on apricot, always.** Night Ink on `--apricot` is 7.62:1. Nothing light ever sits on it, icon strokes included.
+1. **Dark text on apricot, always.** Night Ink on `--apricot` is 8.78:1 (7.45:1 on the hover, `--apricot-deep`). Nothing light ever sits on it, icon strokes included.
 2. **Purple never leads.** It is never a primary surface, focal point or brand colour.
 3. **`--clay` means a problem or today, nothing else.** It is not a second apricot for "something to look at".
 4. **Dinner is never highlighted.** Every meal is an equal tile. There is no Tonight card and no dark hero on a meal.
@@ -74,13 +86,13 @@ Measured pairs (WCAG 2.1):
 
 | Text | On | Ratio |
 |---|---|---|
-| Night Ink | cream / white / blush / apricot | 14.38 / 14.94 / 12.63 / 7.62 |
+| Night Ink | cream / white / blush / apricot / apricot-deep | 15.75 / 16.36 / 13.83 / 8.78 / 7.45 |
 | Slate | cream / white / blush | 6.05 / 6.29 / 5.32 |
 | Clay | cream / white / blush | 5.69 / 5.91 / 4.99 |
 | `--on-dusk`, white | dusk | 11.07, 11.84 |
 | `--on-dusk-soft` | dusk | 7.77 |
-| Soft Apricot | dusk / Night Ink | 7.44 / 9.38 |
-| `--on-dusk` | Night Ink / clay | 13.96 / 5.52 |
+| Soft Apricot | dusk / Night Ink | 7.44 / 10.27 |
+| `--on-dusk` | Night Ink / clay | 15.29 / 5.52 |
 | White | the current tab's pill on dusk | 7.40 |
 
 ---
@@ -218,7 +230,7 @@ Weights are 400, 500, 600 and 700. No uppercase eyebrows, no tracking under 26px
 ## 4. Shape and space
 
 - **Four corner sizes:** 13 controls (`--radius-control`), 16 buttons (`--radius-button`), 22 tiles (`--radius-card`), 26 sheets (`--radius-sheet`). Round buttons and pills are fully round (`--radius-pill`).
-- **One card shadow:** `--shadow-card`, `0 1px 2px rgba(20,38,74,.05), 0 10px 28px rgba(20,38,74,.07)`. The switcher's chosen segment has `--shadow-seg`. Dusk cards and the toast have `--shadow-float`.
+- **One card shadow:** `--shadow-card`, `0 1px 2px rgba(15,31,61,.05), 0 10px 28px rgba(15,31,61,.07)`. The switcher's chosen segment has `--shadow-seg`. Dusk cards and the toast have `--shadow-float`.
 - **Plates on cream and white** get `--plate-shadow`, from the app, not the drawing. On dusk, none.
 - **Space:** a 20px gutter for words, 16px for tiles, 10px between tiles, 14px above the first thing under a head, 18px above a section heading and 6px under it.
 - **Motion**: small, quick motion on every press, tab change, sheet and tick, and always off for people who turn motion off (`prefers-reduced-motion`, which also zeroes the tokens). A press scales to .98 over `--motion-press` (120ms). Sheets slide up over `--motion-base` (240ms) on a scrim that fades in, through `openSheet()`/`closeSheet()` in `shell.js`. Tab panels crossfade (`activateTab`). A tick eases to done. Toasts rise in. On Shop, a row on Shop's "Sort them all" screen collapses out when it gets a store (`groSortAllLeave`), and a finished store rolls up (`groRollUp`). Nothing moves to get attention.

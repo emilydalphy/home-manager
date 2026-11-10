@@ -14,7 +14,7 @@
 body{margin:0}
 </style>
 </helmet>
-<div style="width: 1320px; height: 1920px; box-sizing: border-box; background: #FFFAF3; color: #14264A; font-family: Figtree, system-ui, sans-serif; -webkit-font-smoothing: antialiased; padding: 44px 48px; display: flex; flex-direction: column; gap: 22px">
+<div style="width: 1320px; height: 1920px; box-sizing: border-box; background: #FFFAF3; color: #0F1F3D; font-family: Figtree, system-ui, sans-serif; -webkit-font-smoothing: antialiased; padding: 44px 48px; display: flex; flex-direction: column; gap: 22px">
 
   <div style="display: flex; flex-direction: column; gap: 4px">
     <h1 style="margin: 0; font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -0.03em">Bright Dusk</h1>
@@ -24,14 +24,14 @@ body{margin:0}
   <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
     <sc-for list="{{colours}}" as="s" hint-placeholder-count="5">
       <div style="display: flex; flex-direction: column; gap: 6px">
-        <span style="height: 58px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(20, 38, 74, 0.1); background: {{s.c}}"></span>
+        <span style="height: 58px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(15,31,61, 0.1); background: {{s.c}}"></span>
         <span style="font-size: 15px; font-weight: 700">{{s.n}}</span>
         <span style="font-size: 13px; line-height: 18px; color: #55607A">{{s.j}}</span>
       </div>
     </sc-for>
   </div>
 
-  <div style="background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 2px rgba(20, 38, 74, 0.05), 0 10px 28px rgba(20, 38, 74, 0.07); padding: 6px 24px; display: flex; flex-direction: column">
+  <div style="background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 2px rgba(15,31,61, 0.05), 0 10px 28px rgba(15,31,61, 0.07); padding: 6px 24px; display: flex; flex-direction: column">
     <div style="display: grid; grid-template-columns: 170px 1fr 1.5fr; gap: 24px; height: 38px; align-items: center; font-size: 13px; font-weight: 600; color: #55607A">
       <span>What</span><span>The rule today</span><span>The new rule</span>
     </div>
@@ -44,7 +44,7 @@ body{margin:0}
     </sc-for>
   </div>
 
-  <div style="background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 2px rgba(20, 38, 74, 0.05), 0 10px 28px rgba(20, 38, 74, 0.07); padding: 14px 24px 16px 24px; display: flex; flex-direction: column; gap: 8px">
+  <div style="background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 2px rgba(15,31,61, 0.05), 0 10px 28px rgba(15,31,61, 0.07); padding: 14px 24px 16px 24px; display: flex; flex-direction: column; gap: 8px">
     <h2 style="margin: 0; font-size: 16px; line-height: 22px; font-weight: 700">Plates: cover the name, could you still tell what the dish is?</h2>
     <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 32px; font-size: 14px; line-height: 20px">
       <sc-for list="{{plateRules}}" as="p" hint-placeholder-count="32"><span>{{p}}</span></sc-for>
@@ -56,7 +56,7 @@ body{margin:0}
       <h2 style="margin: 0; font-size: 16px; line-height: 22px; font-weight: 700">Staying the same</h2>
       <p style="margin: 0; font-size: 15px; line-height: 22px">Pomona's voice and all the copy rules. The apricot mark. One main button per screen. Buttons big enough to tap. Purple never leads. Every colour pair measured for contrast.</p>
     </div>
-    <div style="background: #14264A; color: #FFF6EA; border-radius: 22px; padding: 16px 22px; display: flex; flex-direction: column; gap: 5px">
+    <div style="background: #0F1F3D; color: #FFF6EA; border-radius: 22px; padding: 16px 22px; display: flex; flex-direction: column; gap: 5px">
       <h2 style="margin: 0; font-size: 16px; line-height: 22px; font-weight: 700; color: #FFC08F">Still to design</h2>
       <p style="margin: 0; font-size: 15px; line-height: 22px">The app icon on dusk. App Store screenshots. Light mode only for now, dark mode comes later.</p>
     </div>
@@ -69,8 +69,8 @@ class Component extends DCLogic {
     return {
       colours: [
         { n: 'Warm Cream', c: '#FFFAF3', j: 'The page. Cards are a touch lighter.' },
-        { n: 'Dusk Blue', c: '#18356E', j: 'The tab bar, use soon and timers.' }, { n: 'Night Ink', c: '#14264A', j: 'Main text.' },
-        { n: 'Ripe Apricot', c: '#FFA45C', j: 'The one main button and Ask.' },
+        { n: 'Dusk Blue', c: '#18356E', j: 'The tab bar, use soon and timers.' }, { n: 'Night Ink', c: '#0F1F3D', j: 'Main text.' },
+        { n: 'Ripe Apricot', c: '#FFAC52', j: 'The one main button and Ask.' },
         { n: 'Blush', c: '#FBE9D9', j: 'Quiet tints: day bar, small tiles.' },
         { n: 'Slate', c: '#55607A', j: 'Second lines and small details.' }
       ],

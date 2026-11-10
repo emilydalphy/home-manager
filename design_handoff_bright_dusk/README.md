@@ -5,7 +5,7 @@ Emily approved this look on 2026-11-05. The boards here are the source of truth 
 `N-Rules.dc.html` holds the design rules and `R-Palette.dc.html` the colours. Both replace The Inn.
 
 ## Decisions
-- Colours: Dusk Blue #18356E, Night Ink #14264A, Ripe Apricot #FFA45C, Soft Apricot #FFC08F, Warm Cream #FFFAF3, Blush #FBE9D9, Slate #55607A, Baked Clay #A8461A, White. Green stays in the food. Purple never leads.
+- Colours: Dusk Blue #18356E, Night Ink #0F1F3D, Ripe Apricot #FFAC52, Soft Apricot #FFC08F, Warm Cream #FFFAF3, Blush #FBE9D9, Slate #55607A, Baked Clay #A8461A, White. Green stays in the food. Purple never leads.
 - Light mode only for now. Remove Settings > Appearance. Do not delete dark tokens that a later dark mode would need unless they get in the way.
 - One font, Figtree, at six sizes: 32, 26, 16, 14, 13, 11. Four corner sizes: 13 controls, 16 buttons, 22 tiles, 26 sheets. Round buttons and pills are fully round.
 - No band at the top of screens. Title and one line on cream.
@@ -21,7 +21,7 @@ Emily approved this look on 2026-11-05. The boards here are the source of truth 
 - Ask: the sheet from the prototype, dusk bubbles for the person, white for Pomona.
 - Empty and error screens: one plain line, one button when there is a next step, no filler pictures.
 - Sheets slide up. Toasts are one dark bar above the tab bar, naming the thing, with Undo.
-- Plates on cream and white get a soft shadow: drop-shadow(0 2px 5px rgba(20, 38, 74, .18)), from the app, not the drawing.
+- Plates on cream and white get a soft shadow: drop-shadow(0 2px 5px rgba(15,31,61, .18)), from the app, not the drawing.
 - Copy: no fluff. Every line has a job. Copy rules in DESIGN_SYSTEM.md still apply.
 - Welcome: Z-WelcomeD, revolving tile, her wording exactly.
 

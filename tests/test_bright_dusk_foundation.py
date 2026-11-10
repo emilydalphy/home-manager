@@ -39,7 +39,7 @@ def _live_rules(css: str):
 
 
 @pytest.mark.parametrize("token, value", [
-    ("--cream", "#FFFAF3"), ("--dusk", "#18356E"), ("--night-ink", "#14264A"), ("--apricot", "#FFA45C"),
+    ("--cream", "#FFFAF3"), ("--dusk", "#18356E"), ("--night-ink", "#0F1F3D"), ("--apricot", "#FFAC52"),
     ("--soft-apricot", "#FFC08F"), ("--blush", "#FBE9D9"), ("--slate", "#55607A"), ("--clay", "#A8461A"),
 ])
 def test_the_approved_palette(token, value):
@@ -88,7 +88,7 @@ def test_no_beige_outlines():
 
 
 def test_one_card_shadow():
-    assert "--shadow-card:   0 1px 2px rgba(20, 38, 74, .05), 0 10px 28px rgba(20, 38, 74, .07);" in THEME
+    assert "--shadow-card:   0 1px 2px rgba(15, 31, 61, .05), 0 10px 28px rgba(15, 31, 61, .07);" in THEME
 
 
 def test_the_shared_components_live_in_theme_css_for_every_page():

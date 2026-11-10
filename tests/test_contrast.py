@@ -79,12 +79,12 @@ def token(name: str) -> str:
 
 
 @pytest.mark.parametrize("text, backdrop, floor", [
-    ("--night-ink", GROUND, 14.3), ("--night-ink", SURFACE, 14.9), ("--night-ink", BLUSH, 12.6),
-    ("--night-ink", "#FFA45C", 7.6),
+    ("--night-ink", GROUND, 15.7), ("--night-ink", SURFACE, 16.3), ("--night-ink", BLUSH, 13.8),
+    ("--night-ink", "#FFAC52", 8.7), ("--night-ink", "#F59A3A", 7.4),
     ("--slate", GROUND, 6.0), ("--slate", SURFACE, 6.2), ("--slate", BLUSH, 5.3),
     ("--clay", GROUND, 5.6), ("--clay", SURFACE, 5.9), ("--clay", BLUSH, 4.9),
     ("--on-dusk", "#18356E", 11.0), ("--on-dusk-soft", "#18356E", 7.7), ("--soft-apricot", "#18356E", 7.4),
-    ("--soft-apricot", "#14264A", 9.3), ("--on-dusk", "#14264A", 13.9),
+    ("--soft-apricot", "#0F1F3D", 10.2), ("--on-dusk", "#0F1F3D", 15.2),
 ])
 def test_every_bright_dusk_pair_clears_aa(text, backdrop, floor):
     """The pairs DESIGN_SYSTEM.md records, measured against the live tokens."""

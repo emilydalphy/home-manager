@@ -41,9 +41,10 @@
   --cream:        #FFFAF3;  /* Warm Cream: the page */
   --white:        #FFFFFF;  /* tiles and cards */
   --dusk:         #18356E;  /* Dusk Blue: tab bar, Use soon, timers, welcome */
-  --night-ink:    #14264A;  /* Night Ink: main text, the toast */
-  --apricot:      #FFA45C;  /* Ripe Apricot: the one main button and Ask */
+  --night-ink:    #0F1F3D;  /* Night Ink: main text, the toast */
+  --apricot:      #FFAC52;  /* Ripe Apricot: the one main button and Ask */
   --soft-apricot: #FFC08F;  /* Soft Apricot: small labels on dusk */
+  --leaf-blue:    #3F6AAE;  /* Leaf Blue: the logo's leaf on the app icon only (Deep Dusk, 2026-11-10) */
   --blush:        #FBE9D9;  /* Blush: switcher track, round buttons, quiet tints */
   --slate:        #55607A;  /* Slate: second lines and small details */
   --clay:         #A8461A;  /* Baked Clay: today's day, problems */
@@ -61,7 +62,7 @@
   --ink-secondary:  var(--slate);
   --hairline:       var(--line);
   --field:          #E9E6E0;  /* the room the phone sits in at >=768px */
-  --plate-shadow:   drop-shadow(0 2px 5px rgba(20, 38, 74, .18));
+  --plate-shadow:   drop-shadow(0 2px 5px rgba(15, 31, 61, .18));
 
   /* --- Type: one face, six sizes ---
      32 title, 26 feature, 16 row, 14 support, 13 small, 11 tiny. */
@@ -83,14 +84,14 @@
   --radius-pill:    999px;  /* round buttons and pills */
 
   /* --- Depth: one soft shadow for cards --- */
-  --shadow-card:   0 1px 2px rgba(20, 38, 74, .05), 0 10px 28px rgba(20, 38, 74, .07);
-  --shadow-float:  0 12px 30px rgba(20, 38, 74, .2);  /* dusk cards, the toast */
-  --shadow-seg:    0 1px 3px rgba(20, 38, 74, .14);   /* the switcher's chosen segment */
-  --shadow-sheet:  0 -8px 30px rgba(20, 38, 74, .2);
-  --shadow-dialog: 0 18px 44px rgba(20, 38, 74, .28);
-  --shadow-panel:  0 12px 32px rgba(20, 38, 74, .22);
+  --shadow-card:   0 1px 2px rgba(15, 31, 61, .05), 0 10px 28px rgba(15, 31, 61, .07);
+  --shadow-float:  0 12px 30px rgba(15, 31, 61, .2);  /* dusk cards, the toast */
+  --shadow-seg:    0 1px 3px rgba(15, 31, 61, .14);   /* the switcher's chosen segment */
+  --shadow-sheet:  0 -8px 30px rgba(15, 31, 61, .2);
+  --shadow-dialog: 0 18px 44px rgba(15, 31, 61, .28);
+  --shadow-panel:  0 12px 32px rgba(15, 31, 61, .22);
   --shadow-toast:  var(--shadow-float);
-  --scrim: rgba(20, 38, 74, .45);
+  --scrim: rgba(15, 31, 61, .45);
   --toast-bg:  var(--night-ink);
   --toast-ink: var(--on-dusk);
 
@@ -127,7 +128,7 @@
   --ink-done:        var(--slate);
   --ink-done-soft:   var(--slate);
   --apricot-light:   var(--soft-apricot);
-  --apricot-deep:    #F08C3E;  /* hover on an apricot fill; dark text still reads */
+  --apricot-deep:    #F59A3A;  /* hover on an apricot fill; dark text still reads */
   --apricot-label:   var(--clay);
   --apricot-label-hover: #8A3813;
   --apricot-rule:    rgba(255, 192, 143, .34);
@@ -144,7 +145,7 @@
   --good-ink:        var(--slate);
   --warn:            var(--apricot);
   --warn-ink:        var(--clay);
-  --store-1: #FFA45C;
+  --store-1: #FFAC52;
   --store-2: #FFC08F;
   --store-3: #FBE9D9;
   --store-4: #F7DFCB;

@@ -17,25 +17,25 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 </helmet>
 <div style="width: 1160px; height: 924px; box-sizing: border-box; background: #EFEDE8; padding: 40px; display: grid; grid-template-columns: 252px 390px 390px; gap: 24px; font-family: Figtree, system-ui, sans-serif; -webkit-font-smoothing: antialiased">
 
-  <div style="display: flex; flex-direction: column; gap: 14px; color: #14264A">
+  <div style="display: flex; flex-direction: column; gap: 14px; color: #0F1F3D">
     <h1 style="margin: 0; font-size: 28px; line-height: 33px; font-weight: 700; letter-spacing: -0.025em">Bright Dusk</h1>
     <div style="display: flex; flex-direction: column; gap: 9px">
       <sc-for list="{{colours}}" as="c" hint-placeholder-count="9">
         <div style="display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center">
-          <span style="height: 54px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(20, 38, 74, 0.1); background: {{c.hex}}"></span>
+          <span style="height: 54px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(15,31,61, 0.1); background: {{c.hex}}"></span>
           <span style="display: flex; flex-direction: column"><span style="font-size: 15px; line-height: 19px; font-weight: 700">{{c.name}}</span><span style="font-size: 13px; line-height: 17px; color: #55607A">{{c.hex}}</span><span style="font-size: 13px; line-height: 17px; color: #55607A">{{c.use}}</span></span>
         </div>
       </sc-for>
     </div>
   </div>
 
-  <div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; border-radius: 30px; background: #FFFAF3; color: #14264A">
+  <div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; border-radius: 30px; background: #FFFAF3; color: #0F1F3D">
     <div style="padding: 58px 20px 14px 20px; display: flex; flex-direction: column; gap: 14px">
       <div style="display: flex; flex-direction: column; gap: 3px">
         <h2 style="margin: 0; font-size: 32px; line-height: 38px; font-weight: 700; letter-spacing: -0.03em">This week</h2>
       </div>
       <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 2px; height: 52px; background: #FBE9D9; border-radius: 16px; padding: 3px; box-sizing: border-box">
-        <button style="border-radius: 13px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(20, 38, 74, 0.14); font-size: 13px; font-weight: 600">All</button>
+        <button style="border-radius: 13px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(15,31,61, 0.14); font-size: 13px; font-weight: 600">All</button>
         <button style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #55607A"><span style="font-size: 11px; font-weight: 500">Mon</span><span style="font-size: 14px; font-weight: 500">2</span></button>
         <button style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #55607A"><span style="font-size: 11px; font-weight: 500">Tue</span><span style="font-size: 14px; font-weight: 500">3</span></button>
         <button style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #A8461A"><span style="font-size: 11px; font-weight: 700">Wed</span><span style="font-size: 14px; font-weight: 700">4</span></button>
@@ -46,25 +46,25 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
       </div>
     </div>
 
-    <div style="margin: 0 16px; background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 2px rgba(20, 38, 74, 0.05), 0 10px 28px rgba(20, 38, 74, 0.07); padding: 4px 14px; display: flex; flex-direction: column">
+    <div style="margin: 0 16px; background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 2px rgba(15,31,61, 0.05), 0 10px 28px rgba(15,31,61, 0.07); padding: 4px 14px; display: flex; flex-direction: column">
       <button style="height: 84px; margin: 0 -10px; padding: 0 12px; border-radius: 16px; background: #18356E; color: #FFF6EA; display: grid; grid-template-columns: 60px 1fr; gap: 12px; align-items: center; text-align: left">
         <svg width="60" height="60" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#8A3220"></circle><ellipse cx="36" cy="40" rx="5" ry="3.4" fill="#5E1F13"></ellipse><ellipse cx="62" cy="34" rx="5" ry="3.4" fill="#5E1F13"></ellipse><ellipse cx="68" cy="60" rx="5" ry="3.4" fill="#5E1F13"></ellipse><ellipse cx="40" cy="66" rx="5" ry="3.4" fill="#5E1F13"></ellipse><circle cx="30" cy="54" r="2.6" fill="#D8A94A"></circle><circle cx="52" cy="48" r="10" fill="#FFF7EA"></circle></svg>
         <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 700">Weeknight Chili</span><span style="font-size: 13px; font-weight: 600; color: #FFC08F">Tonight · 35 min</span></span>
       </button>
       <button style="height: 60px; display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; text-align: left">
-        <svg style="filter: drop-shadow(0 2px 5px rgba(20, 38, 74, 0.18))" width="44" height="44" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#F4F1EA"></circle><circle cx="50" cy="50" r="21" fill="#8A3220"></circle><ellipse cx="42" cy="46" rx="4" ry="2.8" fill="#5E1F13"></ellipse><ellipse cx="58" cy="58" rx="4" ry="2.8" fill="#5E1F13"></ellipse></svg>
+        <svg style="filter: drop-shadow(0 2px 5px rgba(15,31,61, 0.18))" width="44" height="44" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#F4F1EA"></circle><circle cx="50" cy="50" r="21" fill="#8A3220"></circle><ellipse cx="42" cy="46" rx="4" ry="2.8" fill="#5E1F13"></ellipse><ellipse cx="58" cy="58" rx="4" ry="2.8" fill="#5E1F13"></ellipse></svg>
         <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 500">Leftovers</span><span style="font-size: 13px; color: #55607A">Thu</span></span>
       </button>
       <button style="height: 60px; display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; text-align: left; border-top: 1px solid #F4ECE2">
-        <svg style="filter: drop-shadow(0 2px 5px rgba(20, 38, 74, 0.18))" width="44" height="44" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#F4F1EA"></circle><circle cx="50" cy="50" r="29" fill="#7E9B4A"></circle><path d="M30 44c8-11 20-7 28-1s14 3 13-5M28 56c11-9 22-1 31 1s13-2 13-8M34 67c9-7 17-3 24-1s10-1 11-5" fill="none" stroke="#B4C678" stroke-width="5" stroke-linecap="round"></path></svg>
+        <svg style="filter: drop-shadow(0 2px 5px rgba(15,31,61, 0.18))" width="44" height="44" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#F4F1EA"></circle><circle cx="50" cy="50" r="29" fill="#7E9B4A"></circle><path d="M30 44c8-11 20-7 28-1s14 3 13-5M28 56c11-9 22-1 31 1s13-2 13-8M34 67c9-7 17-3 24-1s10-1 11-5" fill="none" stroke="#B4C678" stroke-width="5" stroke-linecap="round"></path></svg>
         <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 500">Pesto Pasta</span><span style="font-size: 13px; color: #55607A">Fri · 20 min</span></span>
       </button>
       <button style="height: 60px; display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; text-align: left; border-top: 1px solid #F4ECE2">
-        <svg style="filter: drop-shadow(0 2px 5px rgba(20, 38, 74, 0.18))" width="44" height="44" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#C9944E"></circle><circle cx="50" cy="50" r="31" fill="#EFCF85"></circle><circle cx="40" cy="38" r="6.5" fill="#B5472C"></circle><circle cx="63" cy="42" r="6.5" fill="#B5472C"></circle><circle cx="46" cy="62" r="6.5" fill="#B5472C"></circle></svg>
+        <svg style="filter: drop-shadow(0 2px 5px rgba(15,31,61, 0.18))" width="44" height="44" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#C9944E"></circle><circle cx="50" cy="50" r="31" fill="#EFCF85"></circle><circle cx="40" cy="38" r="6.5" fill="#B5472C"></circle><circle cx="63" cy="42" r="6.5" fill="#B5472C"></circle><circle cx="46" cy="62" r="6.5" fill="#B5472C"></circle></svg>
         <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 500">Pizza night</span><span style="font-size: 13px; color: #55607A">Sat</span></span>
       </button>
       <button style="height: 60px; display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; text-align: left; border-top: 1px solid #F4ECE2">
-        <svg style="filter: drop-shadow(0 2px 5px rgba(20, 38, 74, 0.18))" width="44" height="44" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#F4F1EA"></circle><circle cx="36" cy="60" r="16" fill="#F7EBCB" stroke="#E6DDC8"></circle><rect x="42" y="28" width="32" height="22" rx="9" fill="#F0825A" transform="rotate(12 58 39)"></rect><circle cx="62" cy="64" r="6" fill="#6E9150"></circle></svg>
+        <svg style="filter: drop-shadow(0 2px 5px rgba(15,31,61, 0.18))" width="44" height="44" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#F4F1EA"></circle><circle cx="36" cy="60" r="16" fill="#F7EBCB" stroke="#E6DDC8"></circle><rect x="42" y="28" width="32" height="22" rx="9" fill="#F0825A" transform="rotate(12 58 39)"></rect><circle cx="62" cy="64" r="6" fill="#6E9150"></circle></svg>
         <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 500">Grilled salmon with rice</span><span style="font-size: 13px; color: #55607A">Sun</span></span>
       </button>
     </div>
@@ -82,23 +82,23 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     <button style="height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 500; color: #C6D2E8">
       <span style="height: 26px; display: flex; align-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10h14v4a7 7 0 0 1-14 0z"></path><path d="M12 6.5V4M3 10h2M19 10h2"></path></svg></span>Cook
     </button>
-    <button style="margin: 3px 0 0 6px; width: 58px; height: 44px; border-radius: 22px; background: #FFA45C; color: #14264A; font-size: 14px; font-weight: 700">Ask</button>
+    <button style="margin: 3px 0 0 6px; width: 58px; height: 44px; border-radius: 22px; background: #FFAC52; color: #0F1F3D; font-size: 14px; font-weight: 700">Ask</button>
   </div>
   </div>
 
-  <div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; border-radius: 30px; background: #FFFAF3; color: #14264A">
+  <div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; border-radius: 30px; background: #FFFAF3; color: #0F1F3D">
     <div style="padding: 58px 20px 14px 20px; display: flex; align-items: flex-start; justify-content: space-between">
       <div style="display: flex; flex-direction: column; gap: 3px"><h2 style="margin: 0; font-size: 32px; line-height: 38px; font-weight: 700; letter-spacing: -0.03em">Wednesday</h2><span style="font-size: 14px; font-weight: 500; color: #55607A">Today · Nov 4</span></div>
       <button aria-label="More" style="width: 44px; height: 44px; border-radius: 22px; background: #FBE9D9; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg></button>
     </div>
-    <div style="margin: 0 16px; background: #18356E; color: #FFF6EA; border-radius: 26px; box-shadow: 0 12px 30px rgba(20, 38, 74, 0.2); padding: 26px 18px 18px 18px; display: flex; flex-direction: column; align-items: center; gap: 18px">
+    <div style="margin: 0 16px; background: #18356E; color: #FFF6EA; border-radius: 26px; box-shadow: 0 12px 30px rgba(15,31,61, 0.2); padding: 26px 18px 18px 18px; display: flex; flex-direction: column; align-items: center; gap: 18px">
       <svg style="filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.3))" width="216" height="216" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#E6E3DB"></circle><circle cx="50" cy="50" r="37" fill="#8A3220"></circle><ellipse cx="36" cy="40" rx="5" ry="3.4" fill="#5E1F13" transform="rotate(30 36 40)"></ellipse><ellipse cx="62" cy="34" rx="5" ry="3.4" fill="#5E1F13" transform="rotate(-20 62 34)"></ellipse><ellipse cx="68" cy="60" rx="5" ry="3.4" fill="#5E1F13" transform="rotate(50 68 60)"></ellipse><ellipse cx="40" cy="66" rx="5" ry="3.4" fill="#5E1F13"></ellipse><circle cx="30" cy="54" r="2.6" fill="#D8A94A"></circle><circle cx="52" cy="72" r="2.6" fill="#D8A94A"></circle><circle cx="52" cy="48" r="10" fill="#FFF7EA"></circle><circle cx="50" cy="46" r="1.9" fill="#6E9150"></circle><circle cx="55" cy="50" r="1.6" fill="#6E9150"></circle></svg>
       <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center">
         <span style="font-size: 13px; font-weight: 600; color: #FFC08F">Tonight's dinner</span>
         <h3 style="margin: 0; font-size: 26px; line-height: 30px; font-weight: 700; letter-spacing: -0.025em">Weeknight Chili</h3>
         <span style="font-size: 14px">35 min</span>
       </div>
-      <button style="align-self: stretch; height: 52px; border-radius: 16px; background: #FFA45C; color: #14264A; font-size: 16px; font-weight: 700">See the recipe</button>
+      <button style="align-self: stretch; height: 52px; border-radius: 16px; background: #FFAC52; color: #0F1F3D; font-size: 16px; font-weight: 700">See the recipe</button>
     </div>
   <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 88px; background: #18356E; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 72px; align-items: start; padding: 6px 8px 0 8px; box-sizing: border-box">
     <button style="height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 700; color: #FFFFFF">
@@ -113,7 +113,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     <button style="height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 500; color: #C6D2E8">
       <span style="height: 26px; display: flex; align-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10h14v4a7 7 0 0 1-14 0z"></path><path d="M12 6.5V4M3 10h2M19 10h2"></path></svg></span>Cook
     </button>
-    <button style="margin: 3px 0 0 6px; width: 58px; height: 44px; border-radius: 22px; background: #FFA45C; color: #14264A; font-size: 14px; font-weight: 700">Ask</button>
+    <button style="margin: 3px 0 0 6px; width: 58px; height: 44px; border-radius: 22px; background: #FFAC52; color: #0F1F3D; font-size: 14px; font-weight: 700">Ask</button>
   </div>
   </div>
 </div>
@@ -124,8 +124,8 @@ class Component extends DCLogic {
     return {
       colours: [
         { name: 'Dusk Blue', hex: '#18356E', use: 'Tab bar, use soon' },
-        { name: 'Night Ink', hex: '#14264A', use: 'Main text' },
-        { name: 'Ripe Apricot', hex: '#FFA45C', use: 'Main button, Ask' },
+        { name: 'Night Ink', hex: '#0F1F3D', use: 'Main text' },
+        { name: 'Ripe Apricot', hex: '#FFAC52', use: 'Main button, Ask' },
         { name: 'Soft Apricot', hex: '#FFC08F', use: 'Labels on blue' },
         { name: 'Warm Cream', hex: '#FFFAF3', use: 'Page background' },
         { name: 'Blush', hex: '#FBE9D9', use: 'Quiet tints' },
