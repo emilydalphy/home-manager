@@ -54,12 +54,13 @@ uses, so what counts as a clash is decided in one place.
 from __future__ import annotations
 
 import concurrent.futures
+import contextlib
 import contextvars
 import hashlib
-import itertools
 import json
 import logging
 import re
+import secrets
 import threading
 import time
 
@@ -563,50 +564,72 @@ def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, overrid
     returned dict would let the model say "planned it" over a slot that
     never changed.
 
-    `override` is the person's own "I know, do it anyway", said in their
-    words in this conversation (the tool description says so, and the model
-    may not set it on its own). It is the only way a clashing dish goes on
-    the week from chat, and it is a decision the person made, not a card
-    the app offered — so it is honoured only as an ANSWER: after this same
-    dish (same name, same list) was refused, in a later chat turn (see
-    _override_armed).
+    `override` is honoured only while the person's own tap on this
+    refusal's "Plan it anyway" button is being carried out (Emily,
+    2026-11-09): the tap arms it for this exact dish (same name, same
+    list), in this household's conversation, for that one replay — see
+    _override_armed. No typed reply arms it, not even "yes".
     """
     name = (name or "").strip()
     if not name:
         return
     own = _lines(ingredients)
     checked = own or _recipes.saved_ingredients(name)
-    if override and _override_armed("plan", name, checked):
-        return
     clashes = hard_clashes(name, ingredients=checked)
-    if clashes:
-        _remember_refusal("plan", name, checked)
-        raise _weekly_plan.SlotRefused(refusal_sentence(name, clashes), reason=refusal_reason_for(clashes))
+    # Checked even when the tap armed it: the tap agreed to the clashes the
+    # refusal named, and nothing else (an allergy added since is refused).
+    if clashes and not (override and override_covers("plan", name, checked, clashes)):
+        raise offer_override(
+            _weekly_plan.SlotRefused(refusal_sentence(name, clashes), reason=refusal_reason_for(clashes)),
+            "plan", name, checked, clashes,
+        )
 
 
-# The refusals chat's gated doors have handed out, so an override can be
-# checked as an ANSWER to one. Keyed by (door, household, the dish's name
-# with case and spacing folded, a hash of its folded ingredient list) ->
-# (when, which chat turn). An override is honoured only when:
-#   - this exact dish was refused — same name AND same list, so "butter
-#     pancakes" refused over butter does not cover the same name with
-#     shrimp added;
-#   - within RECIPE_OVERRIDE_WINDOW_SECONDS;
-#   - in a LATER chat turn than the refusal: a new message from the person
-#     has to have arrived in between, which is the only place their "do it
-#     anyway" can come from. A model that sets override on its first call,
-#     or retries with it in the same turn, gets the refusal again.
-# In memory on purpose: a restart (or another worker) forgets them, which
-# costs one extra refusal and never a silent write.
+# "Save it anyway" is a BUTTON (Emily, 2026-11-09): "Only a tap on that
+# button arms the override, for that exact dish and that exact list, in
+# that conversation. No typed reply arms it, not even 'yes'."
+#
+# How it works, end to end:
+#   1. A gated door refuses a dish in a chat turn and raises its refusal
+#      through offer_override, which pins the exact dish to the exception
+#      (door, household, conversation, folded name, hash of the folded
+#      list) — nothing is stored yet.
+#   2. agent.run_agent_turn's refusal arm hands that exception, the tool's
+#      name, its arguments and its tool_use_id to record_offer, which keeps
+#      them under a random token. main.summarize_chat_actions finds the
+#      token by tool_use_id and draws the refusal card with the button.
+#   3. The tap is POST /api/chat/save-anyway {token}. The route reads the
+#      household from the session and the conversation from the signed
+#      cookie — never from the body — and take_offer hands the offer back
+#      only when both match, inside RECIPE_OVERRIDE_WINDOW_SECONDS, once.
+#   4. The route replays the SAME tool call with override=True inside
+#      armed_for(offer), which sets _ARMED for that call alone. The gate
+#      still runs and is still the only door: _override_armed is true only
+#      when the dish it is checking now has the key the tap armed — so a
+#      changed list, another dish, another conversation or another
+#      household is refused again.
+# Nothing a model sends can arm anything: `override` without _ARMED is
+# ignored, and _ARMED is set only by the tap route. In memory on purpose: a
+# restart forgets the offers, which costs a re-ask and never a silent write.
 RECIPE_OVERRIDE_WINDOW_SECONDS = 30 * 60
-_RECIPE_REFUSALS: dict[tuple, tuple[float, int | None]] = {}
-_RECIPE_REFUSALS_LOCK = threading.Lock()
+_OFFERS: dict[str, dict] = {}
+_OFFERS_LOCK = threading.Lock()
+# Dish keys the current tap replay may let through; None everywhere else.
+# Maps each armed dish key to the clashes its refusal NAMED (clash_keys):
+# the tap agreed to those and nothing more.
+_ARMED: contextvars.ContextVar[dict | None] = contextvars.ContextVar("allergen_override_armed", default=None)
 
-# Which chat turn is running: set once per turn by agent.run_agent_turn
-# (begin_chat_turn), None outside a chat turn — where an override can
-# never be honoured, since there is no person's message to answer.
+# Which conversation this chat turn belongs to (main._chat_session_id: the
+# household's prefix and the signed session id), set by the chat routes
+# before run_agent_turn; None outside one. The turn counter is PER
+# CONVERSATION (Emily, 2026-11-09), not process-wide.
+_CHAT_CONVERSATION: contextvars.ContextVar[str | None] = contextvars.ContextVar("allergen_chat_conversation", default=None)
 _CHAT_TURN: contextvars.ContextVar[int | None] = contextvars.ContextVar("allergen_chat_turn", default=None)
-_TURN_COUNTER = itertools.count(1)
+_TURN_COUNTS: dict[str, int] = {}
+_TURN_COUNTS_LOCK = threading.Lock()
+# What a tap saved since the conversation's last reply, told to the model
+# at the start of its next turn so it never says the dish wasn't saved.
+_TAP_NOTES: dict[str, list[str]] = {}
 
 
 # The person's own words this turn, for the one reader that needs them:
@@ -615,9 +638,22 @@ _TURN_COUNTER = itertools.count(1)
 _CHAT_MESSAGE: contextvars.ContextVar[str] = contextvars.ContextVar("allergen_chat_message", default="")
 
 
+def set_chat_conversation(conversation: str | None) -> None:
+    """Bind the conversation this request's chat turn belongs to."""
+    _CHAT_CONVERSATION.set(conversation or None)
+
+
+def chat_conversation() -> str | None:
+    return _CHAT_CONVERSATION.get()
+
+
 def begin_chat_turn() -> int:
-    """Mark the start of one chat turn (one message from the person)."""
-    turn = next(_TURN_COUNTER)
+    """Mark the start of one chat turn (one message from the person),
+    counted within this conversation."""
+    conversation = _CHAT_CONVERSATION.get() or ""
+    with _TURN_COUNTS_LOCK:
+        turn = _TURN_COUNTS.get(conversation, 0) + 1
+        _TURN_COUNTS[conversation] = turn
     _CHAT_TURN.set(turn)
     _CHAT_MESSAGE.set("")
     return turn
@@ -648,25 +684,128 @@ def _lines(ingredients) -> list[dict]:
 def _refusal_key(door: str, name: str, ingredients: list[dict] | None = None) -> tuple:
     folded = sorted(_coordination._fold(i.get("item") or "") for i in _lines(ingredients))
     digest = hashlib.sha256("\n".join(folded).encode()).hexdigest()[:16]
-    return (door, _shared.household_id(), _coordination._fold(name), digest)
+    return (door, _shared.household_id(), _CHAT_CONVERSATION.get(), _coordination._fold(name), digest)
 
 
 def _override_armed(door: str, name: str, ingredients) -> bool:
-    turn = _CHAT_TURN.get()
-    if turn is None:
-        return False
+    """True only inside the replay of a tapped "Save it anyway", and only
+    for the exact dish that was tapped (see the block comment above)."""
+    armed = _ARMED.get()
+    return bool(armed) and _refusal_key(door, name, ingredients) in armed
+
+
+def clash_keys(clashes) -> frozenset:
+    """Who and which restriction, per clash — what a refusal disclosed."""
+    return frozenset(((c.get("member") or "").lower(), (c.get("restriction") or "").lower(),
+                      c.get("source") == "check_failed") for c in clashes or [])
+
+
+def override_covers(door: str, name: str, ingredients, clashes) -> bool:
+    """True only inside the tap's replay, for the exact dish tapped, and
+    only when every clash it has NOW was named by the refusal the button
+    was under. An allergy added since (or a matcher that failed) refuses."""
+    armed = _ARMED.get()
+    disclosed = (armed or {}).get(_refusal_key(door, name, ingredients))
+    return disclosed is not None and clash_keys(clashes) <= disclosed
+
+
+# Which button a door's refusal carries: the button says the action.
+_OFFER_LABELS = {"plan": "Plan it anyway", "recipe": "Save it anyway"}
+
+
+def offer_override(exc: Exception, door: str, name: str, ingredients, clashes) -> Exception:
+    """Pin the refused dish — and the clashes the refusal names — to the
+    refusal, so the chat can offer the button for exactly this. Returns
+    `exc` to raise. Outside a chat conversation there is nobody to tap, so
+    nothing is pinned. A refusal whose matcher could not run offers none."""
+    if any((c or {}).get("source") == "check_failed" for c in clashes or []):
+        return exc
+    if _CHAT_CONVERSATION.get():
+        keys = dict(getattr(exc, "override_keys", None) or {})
+        keys[_refusal_key(door, name, ingredients)] = clash_keys(clashes)
+        exc.override_keys = keys
+        exc.override_door = door
+        exc.override_name = (name or "").strip()
+    return exc
+
+
+def record_offer(exc: Exception, tool_name: str, tool_input, tool_use_id: str | None) -> str | None:
+    """Keep a refusal's button for the tap (agent.run_agent_turn's refusal
+    arm). Returns the token, or None when the refusal offers no override."""
+    keys = getattr(exc, "override_keys", None)
+    conversation = _CHAT_CONVERSATION.get()
+    if not keys or not conversation:
+        return None
+    token = secrets.token_urlsafe(18)
     now = time.monotonic()
-    with _RECIPE_REFUSALS_LOCK:
-        for key, (at, _t) in list(_RECIPE_REFUSALS.items()):
-            if now - at > RECIPE_OVERRIDE_WINDOW_SECONDS:
-                del _RECIPE_REFUSALS[key]
-        found = _RECIPE_REFUSALS.get(_refusal_key(door, name, ingredients))
-    return bool(found) and found[1] is not None and turn > found[1]
+    with _OFFERS_LOCK:
+        for t, o in list(_OFFERS.items()):
+            if now - o["at"] > RECIPE_OVERRIDE_WINDOW_SECONDS:
+                del _OFFERS[t]
+        _OFFERS[token] = {
+            "token": token, "at": now, "household": _shared.household_id(),
+            "conversation": conversation, "turn": _CHAT_TURN.get(), "keys": dict(keys),
+            "tool": tool_name, "input": dict(tool_input) if isinstance(tool_input, dict) else {},
+            "tool_use_id": tool_use_id, "dish": getattr(exc, "override_name", ""),
+            "label": _OFFER_LABELS.get(getattr(exc, "override_door", ""), "Save it anyway"),
+            "door": getattr(exc, "override_door", ""),
+        }
+    return token
 
 
-def _remember_refusal(door: str, name: str, ingredients) -> None:
-    with _RECIPE_REFUSALS_LOCK:
-        _RECIPE_REFUSALS[_refusal_key(door, name, ingredients)] = (time.monotonic(), _CHAT_TURN.get())
+def offer_for_tool_use(tool_use_id: str | None) -> dict | None:
+    """The live button for one refused tool call in this household's
+    conversation, as the chat card needs it, or None."""
+    if not tool_use_id:
+        return None
+    hid, conversation, now = _shared.household_id(), _CHAT_CONVERSATION.get(), time.monotonic()
+    with _OFFERS_LOCK:
+        for o in _OFFERS.values():
+            if (o["tool_use_id"] == tool_use_id and o["household"] == hid
+                    and o["conversation"] == conversation
+                    and now - o["at"] <= RECIPE_OVERRIDE_WINDOW_SECONDS):
+                return {"token": o["token"], "label": o["label"], "dish": o["dish"], "door": o["door"]}
+    return None
+
+
+def take_offer(token: str, conversation: str | None) -> dict | None:
+    """The tapped offer, spent — only for the household bound to this
+    request AND the conversation its cookie names, inside the window.
+    A token from anywhere else is not found (and is left alone)."""
+    if not isinstance(token, str) or not token or not conversation:
+        return None
+    hid, now = _shared.household_id(), time.monotonic()
+    with _OFFERS_LOCK:
+        o = _OFFERS.get(token)
+        if not o or o["household"] != hid or o["conversation"] != conversation:
+            return None
+        del _OFFERS[token]
+    return o if now - o["at"] <= RECIPE_OVERRIDE_WINDOW_SECONDS else None
+
+
+@contextlib.contextmanager
+def armed_for(offer: dict):
+    """Run the tap's replay: the offer's conversation bound and its exact
+    dish keys armed, for this block only."""
+    conv_token = _CHAT_CONVERSATION.set(offer["conversation"])
+    armed_token = _ARMED.set(dict(offer["keys"]))
+    try:
+        yield
+    finally:
+        _ARMED.reset(armed_token)
+        _CHAT_CONVERSATION.reset(conv_token)
+
+
+def note_tap(conversation: str, sentence: str) -> None:
+    with _OFFERS_LOCK:
+        _TAP_NOTES.setdefault(conversation, []).append(sentence)
+
+
+def take_tap_notes(conversation: str | None) -> list[str]:
+    if not conversation:
+        return []
+    with _OFFERS_LOCK:
+        return _TAP_NOTES.pop(conversation, [])
 
 
 def refuse_recipe_if_clashing(name: str, ingredients: list | None = None,
@@ -682,10 +821,9 @@ def refuse_recipe_if_clashing(name: str, ingredients: list | None = None,
     matcher every other door uses. With no list, the name is matched
     strictly.
 
-    `override` is honoured only as an answer to a refusal of this same
-    recipe (name and list) for this household, in a later chat turn, within
-    RECIPE_OVERRIDE_WINDOW_SECONDS (see _RECIPE_REFUSALS): never on a first
-    call, never in the same turn.
+    `override` is honoured only inside the replay of a tapped "Save it
+    anyway" for this same recipe (name and list) in this household's
+    conversation (see _override_armed). No typed reply arms it.
 
     Raises weekly_plan.SlotRefused, for the reason refuse_if_clashing gives:
     a raise is what the dispatch reports as "nothing was written". The
@@ -697,22 +835,19 @@ def refuse_recipe_if_clashing(name: str, ingredients: list | None = None,
     if not name:
         return
     own = _lines(ingredients)
-    if override and _override_armed("recipe", name, own):
-        return
     clashes = hard_clashes(name, ingredients=own)
-    if not clashes:
+    if not clashes or (override and override_covers("recipe", name, own, clashes)):
         return
-    _remember_refusal("recipe", name, own)
     word = next((c.get("matched_word") for c in clashes if c.get("matched_word")), "") or _food_word(clashes)
     food = _food_word(clashes)
     who = _person(clashes)
     cannot = f"{who} can’t have" if who else "this house can’t have"
     because = f"{word}" if word == food else f"{word} ({food})"
-    raise _weekly_plan.SlotRefused(
+    raise offer_override(_weekly_plan.SlotRefused(
         f"Not saved: {name} has {because}, which {cannot}. "
         f"Write it again without {word}, or pick a different dish.",
         reason=refusal_reason_for(clashes),
-    )
+    ), "recipe", name, own, clashes)
 
 
 # ---------- the re-pick ----------

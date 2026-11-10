@@ -1245,6 +1245,12 @@
         <p class="q-sub" id="snack-dishes-q">How many different snacks in the week?</p>
         <div class="uw-snacks" id="snack-dishes-chips" role="group" aria-labelledby="snack-dishes-q"></div>
       </div>
+      <!-- Sweet, savory or both (Emily, 2026-11-05). Both unless tapped;
+           sent only once tapped (snack_taste), like the count above. -->
+      <div class="q-group" id="snack-taste-group" hidden>
+        <p class="q-sub" id="snack-taste-q">Sweet or savory?</p>
+        <div class="uw-snacks" id="snack-taste-chips" role="group" aria-labelledby="snack-taste-q"></div>
+      </div>
     </div>
   </div>
   <div class="q-foot">
@@ -2207,8 +2213,28 @@ document.getElementById('snack-dishes-chips').addEventListener('click', e => {
   snackDishes = Number(btn.dataset.snackDishes);
   buildSnackDishes();
 });
+// Sweet, savory or both (Emily, 2026-11-05): Both unless tapped, and sent
+// only once tapped — untouched, the household reads 'both' on the server.
+const SNACK_TASTES = [['sweet', 'Sweet'], ['savory', 'Savory'], ['both', 'Both']];
+let snackTaste = null;
+function buildSnackTaste() {
+  const group = document.getElementById('snack-taste-group');
+  group.hidden = householdSnacksPerDay() <= 0;
+  if (group.hidden) return;
+  const on = snackTaste || 'both';
+  document.getElementById('snack-taste-chips').innerHTML = SNACK_TASTES.map(([key, label]) =>
+    `<button type="button" class="uw-q${on === key ? ' is-on' : ''}" data-snack-taste="${key}" aria-pressed="${on === key ? 'true' : 'false'}">${label}</button>`
+  ).join('');
+}
+document.getElementById('snack-taste-chips').addEventListener('click', e => {
+  const btn = e.target.closest('[data-snack-taste]');
+  if (!btn) return;
+  snackTaste = btn.dataset.snackTaste;
+  buildSnackTaste();
+});
 function buildSnacksStep() {
   buildSnackDishes();
+  buildSnackTaste();
   document.getElementById('snacks-people').innerHTML = currentMembers({ forMeals: true }).map(m => {
     const n = snacksFor(m);
     return `<div class="uw-card uw-card-row"><span class="uw-title">${escapeHtmlLocal(m.name)}</span><div class="uw-snacks" role="group" aria-label="${escapeHtmlLocal(m.name)}’s snacks a day">` +
@@ -3081,6 +3107,7 @@ async function saveOnboardingAnswers() {
     lunch_needs: lunchNeedsPayload(),
     member_snacks: memberSnacksPayload(),
     ...(snackDishes === null ? {} : { snack_dishes_per_week: shownSnackDishes() }),
+    ...(snackTaste === null ? {} : { snack_taste: snackTaste }),
     // "This week / Next week", sent here as well as on the reveal's stream
     // (2026-10-14): this is the one post both answers to sharing with
     // Claude make, and "Not now" never reaches the stream — so the answer

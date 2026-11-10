@@ -1,0 +1,329 @@
+[
+{
+"dish_name": "Cottage Cheese with Pineapple and Crackers",
+"cuisine": "",
+"main_protein": "dairy",
+"ingredients": [
+"Cottage cheese",
+"Pineapple chunks",
+"Whole-grain crackers"
+]
+},
+{
+"dish_name": "Rice Cakes with Almond Butter and Banana",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Rice cakes",
+"Almond butter",
+"Bananas"
+]
+},
+{
+"dish_name": "Rice Cakes with Sunflower Butter and Banana",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Rice cakes",
+"Sunflower seed butter",
+"Bananas"
+]
+},
+{
+"dish_name": "Snap Peas and Bell Pepper with Tzatziki",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Snap peas",
+"Bell pepper",
+"Tzatziki"
+]
+},
+{
+"dish_name": "Hard-Boiled Eggs with Cherry Tomatoes and Everything Seasoning",
+"cuisine": "",
+"main_protein": "egg",
+"ingredients": [
+"Eggs",
+"Cherry tomatoes",
+"Everything bagel seasoning"
+]
+},
+{
+"dish_name": "Pear with Ricotta, Honey and Cinnamon",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Pears",
+"Ricotta",
+"Honey",
+"Ground cinnamon"
+]
+},
+{
+"dish_name": "Tuna Salad on Cucumber Rounds",
+"cuisine": "",
+"main_protein": "fish",
+"ingredients": [
+"Canned tuna",
+"Mayonnaise",
+"Cucumber"
+]
+},
+{
+"dish_name": "Mini Caprese Skewers with a Cracker",
+"cuisine": "",
+"main_protein": "cheese",
+"ingredients": [
+"Cherry tomatoes",
+"Mini mozzarella balls",
+"Fresh basil",
+"Crackers"
+]
+},
+{
+"dish_name": "Smoked Salmon on Rye Crispbread with Cream Cheese",
+"cuisine": "",
+"main_protein": "fish",
+"ingredients": [
+"Smoked salmon",
+"Rye crispbread",
+"Cream cheese"
+]
+},
+{
+"dish_name": "Zucchini and Cheddar Muffins",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Zucchini",
+"Cheddar cheese",
+"All-purpose flour",
+"Eggs"
+]
+},
+{
+"dish_name": "Overnight Oats Jars with Fruit",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Rolled oats",
+"Milk",
+"Plain yogurt",
+"Berries"
+]
+},
+{
+"dish_name": "Chia Pudding with Mango",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Chia seeds",
+"Milk",
+"Mango"
+]
+},
+{
+"dish_name": "Homemade Trail Mix with Seeds, Dried Fruit and Dark Chocolate",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Pumpkin seeds",
+"Sunflower seeds",
+"Dried fruit",
+"Allergy-safe dark chocolate chips"
+]
+},
+{
+"dish_name": "Mini Quiche Cups",
+"cuisine": "",
+"main_protein": "egg",
+"ingredients": [
+"Eggs",
+"Milk",
+"Shredded cheese",
+"Bell pepper",
+"Refrigerated pie crust"
+]
+},
+{
+"dish_name": "Sweet Potato and Black Bean Quesadilla Wedges",
+"cuisine": "",
+"main_protein": "beans",
+"ingredients": [
+"Sweet potatoes",
+"Canned black beans",
+"Flour tortillas",
+"Shredded cheese"
+]
+},
+{
+"dish_name": "Hummus Pinwheels with Carrot and Spinach",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Flour tortillas",
+"Hummus",
+"Carrots",
+"Baby spinach"
+]
+},
+{
+"dish_name": "Mini Pita Pizzas with Veg",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Mini pitas",
+"Pizza sauce",
+"Shredded mozzarella",
+"Bell pepper"
+]
+},
+{
+"dish_name": "Cheese Quesadilla with Salsa and Sliced Peppers",
+"cuisine": "",
+"main_protein": "cheese",
+"ingredients": [
+"Flour tortillas",
+"Shredded cheese",
+"Salsa",
+"Bell pepper"
+]
+},
+{
+"dish_name": "Avocado Toast Soldiers with a Soft Egg",
+"cuisine": "",
+"main_protein": "egg",
+"ingredients": [
+"Whole-grain bread",
+"Avocado",
+"Eggs"
+]
+},
+{
+"dish_name": "Microwave Baked Apple with Yogurt and Oats",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Apples",
+"Plain Greek yogurt",
+"Rolled oats",
+"Ground cinnamon"
+]
+},
+{
+"dish_name": "Edamame Fried Rice",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Cooked rice",
+"Frozen shelled edamame",
+"Eggs",
+"Soy sauce"
+]
+},
+{
+"dish_name": "Onigiri with Cucumber",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Sushi rice",
+"Nori sheets",
+"Cucumber"
+]
+},
+{
+"dish_name": "Labneh with Za'atar, Olive Oil and Pita",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Labneh",
+"Za'atar",
+"Olive oil",
+"Pita bread"
+]
+},
+{
+"dish_name": "Elote Cups",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Frozen corn",
+"Mayonnaise",
+"Cotija cheese",
+"Limes"
+]
+},
+{
+"dish_name": "Chaat-Spiced Chickpea and Cucumber Cups",
+"cuisine": "",
+"main_protein": "beans",
+"ingredients": [
+"Canned chickpeas",
+"Cucumber",
+"Tomatoes",
+"Chaat masala",
+"Limes"
+]
+},
+{
+"dish_name": "Dates Stuffed with Peanut Butter",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Medjool dates",
+"Peanut butter"
+]
+},
+{
+"dish_name": "Dates Stuffed with Goat Cheese",
+"cuisine": "",
+"main_protein": "cheese",
+"ingredients": [
+"Medjool dates",
+"Goat cheese"
+]
+},
+{
+"dish_name": "Seaweed Snack and Rice Cracker Plate with Mandarin",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Roasted seaweed snacks",
+"Rice crackers",
+"Mandarins"
+]
+},
+{
+"dish_name": "Fruit with Tajín and Lime, Plus String Cheese",
+"cuisine": "",
+"main_protein": "cheese",
+"ingredients": [
+"Mango",
+"Limes",
+"Tajín seasoning",
+"String cheese"
+]
+},
+{
+"dish_name": "Muhammara with Veg Sticks and Pita",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Muhammara",
+"Carrots",
+"Bell pepper",
+"Pita bread"
+]
+},
+{
+"dish_name": "Ants on a Log with Sunflower Butter and Dried Cherries",
+"cuisine": "",
+"main_protein": "vegetarian",
+"ingredients": [
+"Celery",
+"Sunflower seed butter",
+"Dried cherries"
+]
+}
+]

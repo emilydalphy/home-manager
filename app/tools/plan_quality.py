@@ -1324,10 +1324,13 @@ def _allergen_title_words() -> set:
     """
     global _ALLERGEN_TITLE_WORDS
     if _ALLERGEN_TITLE_WORDS is None:
-        from .coordination import _ALLERGEN_ALIASES
+        from .coordination import _ALLERGEN_ALIASES, _FISH_PASTE_WORDS
         words = set(_ALLERGEN_ALIASES)
         for family in _ALARMING_ALLERGEN_FAMILIES:
-            words |= set(_ALLERGEN_ALIASES.get(family, ())) - _DISH_NOT_A_WARNING
+            # The Thai curry pastes and kimchi (2026-11-09) are dishes too,
+            # and their words ("red", "green", "curry") are ordinary title
+            # words, not warnings.
+            words |= set(_ALLERGEN_ALIASES.get(family, ())) - _DISH_NOT_A_WARNING - _FISH_PASTE_WORDS
         _ALLERGEN_TITLE_WORDS = {_stem(w) for word in words for w in re.findall(r"[a-z]+", word)}
     return _ALLERGEN_TITLE_WORDS
 

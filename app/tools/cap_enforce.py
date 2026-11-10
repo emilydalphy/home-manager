@@ -694,6 +694,7 @@ def fits_nowhere_candidate(night: dict, asks: tuple[str | None, ...] = ()) -> bo
         and (night.get("cooked_status") or "") != "done"
         and bool(str(derived.get("freeform") or "").strip())
         and not night.get("reheat") and not night.get("source")
+        and TWO_ASKS_KEY not in derived  # rule 7 placed it, on a day their words named
         and not named_a_day(derived, asks, night.get("meal"))
     )
 
@@ -1083,6 +1084,7 @@ def place_on_named_days(plan_id: int, intake: dict | None, memory: dict | None,
             span = str(derived.get("freeform") or "").strip()
             if (night is None or night["slot_state"] != "planned" or not span
                     or DAY_OUT_KEY in derived or derived.get("moved_for") or NAMED_DAY_KEY in derived
+                    or TWO_ASKS_KEY in derived
                     or night["cooked_status"] == "done" or night["reheat"] or night["source"]):
                 continue
             if meals_named(derived, asks, night["meal"]) - {"dinner"}:
@@ -1127,6 +1129,351 @@ def place_on_named_days(plan_id: int, intake: dict | None, memory: dict | None,
         except Exception:
             logger.exception("Plan %s: placing entry %s on its named night failed", plan_id, entry_id)
     return placed
+
+
+# ---------- two requests on the same day (Emily's rule 7) ----------
+#
+# "Two requests on the same day: fit both across that day's meals first
+# (fish lunch, pizza dinner), flagged. If the same meal was named for both,
+# or a dish doesn't suit lunch, the more specific request keeps the slot
+# and the other moves to the nearest fitting meal, flagged." (decided
+# 2026-11-09.) Before this, "Fish tacos and pizza on Friday" gave Friday to
+# the pizza alone (the clause split cuts at "and"), so the fish tacos sat
+# wherever the model put them; and two dinners on one named night left the
+# second where it was, said as "I couldn't free up Friday for it."
+#
+# THE CHOICES THE CARD LEFT OPEN, made here:
+#   * "More specific" is a request naming the day AND the meal over one
+#     naming only the day. Equally specific: the one their words mention
+#     FIRST keeps the slot.
+#   * "Doesn't suit lunch": the app keeps no per-dish meal record (see
+#     rule 1's note), so the one signal there is decides it — the day's
+#     lunch must be one somebody is home for and Pomona chose (not another
+#     request, a reheat or a batch), the dish must fit that lunch's time
+#     (time_caps, the weekday lunch cap, as a cook on the day), and nobody
+#     at that lunch has said no to it. A dish they named FOR lunch suits
+#     it by their word.
+#   * Fitted across the day: a dish they named for a meal keeps it; then
+#     the arrangement that moves least; then the quicker dish at lunch;
+#     then the one mentioned first at lunch (her own example's order).
+#     Said only when Pomona chose a meal — a lunch and a dinner they named
+#     themselves need no line.
+#   * Only two asks wanting the SAME meal of the day compete (each wants
+#     the meal it named, or dinner). Wanting different meals, each goes on
+#     its own meal where that meal is free, and otherwise stays put — never
+#     written into a meal nobody is home for, an open one, another request,
+#     a reheat or a batch (review, 2026-11-10).
+#   * The one that moves keeps the KIND of meal it named (or the one it is
+#     on), moves FIRST so the keeper's write can never land on it, and goes
+#     to the nearest day's meal of that kind it fits —
+#     everyone home first, a tie to the later day (move_target's rule) —
+#     never a meal nobody is home for, one already gone, a dish they asked
+#     for, a reheat, a cooked meal, or a table where someone has said no.
+#   * Three or more on one day are left alone: the card is about two.
+#
+# THE WRITES ARE THE EXISTING ONES: meal_move.move_meal (the Move sheet's
+# trade, rows re-dated in place so groceries, sides and thaws ride along)
+# when the dish stays the same kind of meal; across lunch and dinner, the
+# same _replace_slot_entries + clear_plan_slot pair
+# typed_requests.place_day_requests uses, the meal it leaves cleared for
+# the gap passes to fill. Runs right after rule 8 and before rule 3
+# (place_on_named_days), which then leaves both rows alone; the allergy
+# sweep still runs after. The line is draft_flags.flags_for_two_asks.
+TWO_ASKS_KEY = "two_asks_one_day"
+
+# Words a clause can carry around a dish and still be "just the dish":
+# "Fish tacos and pizza on Friday" — the fish tacos' clause is bare, so it
+# shares the day of the clause it is joined to.
+_BARE_FILLER = {"a", "an", "some", "the", "also", "please", "maybe", "we", "we'd", "id", "i'd", "like",
+                "want", "would", "love", "have", "make", "cook", "plus", "and", "or", "both", "too"}
+
+
+def _bare(clause: str, stems: set[str]) -> bool:
+    words = re.findall(r"[a-z]+(?:['’][a-z]+)*", _outside_the_dish(clause, stems))
+    return bool(stems) and all(w in _BARE_FILLER for w in words)
+
+
+def _day_and_meal_asked(derived: dict, asks: tuple[str | None, ...], meal: str | None) -> tuple[int | None, str]:
+    """
+    The one weekday (Monday = 0) their words put THIS dish on, and the meal
+    ("lunch"/"dinner", or "") they named for it. A dish whose own clause is
+    nothing but the dish shares the day and meal of the clause it is joined
+    to ("Fish tacos and pizza on Friday", "Lasagna and pizza for Friday
+    dinner"). (None, "") when no single weekday was named.
+    """
+    derived = derived if isinstance(derived, dict) else {}
+    days = weekdays_named(derived, asks, meal)
+    meals = meals_named(derived, asks, meal) & {"lunch", "dinner"}
+    if len(days) == 1:
+        return next(iter(days)), (next(iter(meals)) if len(meals) == 1 else "")
+    if days:
+        return None, ""
+    span = str(derived.get("freeform") or "").strip()
+    from . import draft_opener as _draft_opener  # lazy: it reaches back through meal_variety
+    stems = _name_stems(meal)
+    texts = [span] + [s for text in asks or () for s in _SENTENCE_SPLIT_RE.split(text or "")
+                      if s.strip() and _draft_opener._cited(s, span)]
+    for text in texts:
+        clauses = [c for c in _CLAUSE_SPLIT_RE.split(text) if c and c.strip()]
+        for i, clause in enumerate(clauses):
+            if not stems & {_stem(w) for w in _WORD_RE.findall(clause.lower())} or not _bare(clause, stems):
+                continue
+            for after in clauses[i + 1:]:
+                rest = _outside_the_dish(after, stems)
+                named = {_WEEKDAY_OF_WORD[m.group(1).lower()] for m in _NAMED_DAY_RE.finditer(rest)
+                         if m.group(1).lower() in _WEEKDAY_OF_WORD}
+                if not named and _bare(after, _name_stems(after)):
+                    continue  # another bare dish: "fish tacos, burgers and pizza on Friday"
+                if len(named) != 1:
+                    break
+                theirs = _meals_in(after, set()) & {"lunch", "dinner"}
+                return next(iter(named)), (next(iter(theirs)) if len(theirs) == 1 else "")
+    return None, ""
+
+
+def _mentioned_at(derived: dict, asks: tuple[str | None, ...], meal: str | None) -> int:
+    """Where their words first name this dish — for "the earlier-mentioned
+    keeps the slot"."""
+    stems = _name_stems(meal)
+    text = " ".join(a for a in asks or () if a) or str((derived or {}).get("freeform") or "")
+    for m in re.finditer(r"[a-z]+", text.lower()):
+        if _stem(m.group(0)) in stems:
+            return m.start()
+    return 10 ** 6
+
+
+def _row_contents(entry_id: int) -> dict | None:
+    """What a meal row carries, to write it into another meal."""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            """SELECT mpe.id, mpe.date, mpe.slot, mpe.reasoning, mpe.food_groups_json, mpe.derived_from_json,
+                      COALESCE(r.name, mpe.freeform_meal) AS meal
+               FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+               WHERE mpe.id = ? AND mpe.household_id = ?""",
+            (entry_id, household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        return None
+    try:
+        derived = json.loads(row["derived_from_json"] or "{}") or {}
+        groups = json.loads(row["food_groups_json"] or "[]") or None
+    except (TypeError, ValueError):
+        derived, groups = {}, None
+    derived = {k: v for k, v in derived.items() if k not in ("links_to", "make_double_for")}
+    return {"meal": row["meal"], "date": row["date"], "slot": row["slot"], "reasoning": row["reasoning"] or "",
+            "food_groups": groups, "derived": derived}
+
+
+def _find(plan_id: int, intake, memory, meal: str) -> dict | None:
+    """Where a dish they asked for is now (a write can re-date or re-id it):
+    the planned lunch or dinner carrying it, never a reheat of it."""
+    for slot in ("dinner", "lunch"):
+        for r in nights(plan_id, intake, memory, slot):
+            if (r["slot_state"] == "planned" and (r["meal"] or "").strip().lower() == meal.strip().lower()
+                    and not r["reheat"]):
+                return dict(r, slot=slot)
+    return None
+
+
+def _write_into(plan_id: int, contents: dict, to_date: str, to_slot: str) -> None:
+    conn = get_conn()
+    try:
+        ids = [r["id"] for r in conn.execute(
+            "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? AND date = ? "
+            "AND slot = ? AND component_category IS NULL", (plan_id, household_id(), to_date, to_slot)).fetchall()]
+    finally:
+        conn.close()
+    _weekly_plan._replace_slot_entries(
+        plan_id, ids, to_date, to_slot, contents["meal"], food_groups=contents["food_groups"],
+        reasoning=contents["reasoning"], derived_from=contents["derived"])
+
+
+def _put(plan_id: int, intake, memory, contents: dict, to_date: str, to_slot: str,
+         keep: tuple[str, str] | None = None) -> bool:
+    """
+    Put one dish they asked for on (to_date, to_slot). The same kind of meal:
+    the Move sheet's trade. Across lunch and dinner: written there and the
+    meal it leaves cleared — unless that meal is `keep`, which the caller is
+    about to fill. A dish no longer on the plan (overwritten by its partner's
+    write) is written from `contents`. True when it is there.
+    """
+    from . import meal_move as _meal_move  # lazy: it imports weekly_plan and tonight
+    here = _find(plan_id, intake, memory, contents["meal"])
+    if here and (here["date"], here["slot"]) == (to_date, to_slot):
+        return True
+    if here and here["slot"] == to_slot:
+        result = _meal_move.move_meal(plan_id, here["id"], to_date)
+        if result.get("status") != "moved":
+            logger.info("Plan %s: %s would not move to %s %s — %s", plan_id, contents["meal"], to_date,
+                        to_slot, result.get("message") or "refused")
+        return result.get("status") == "moved"
+    _write_into(plan_id, contents, to_date, to_slot)
+    if here and (here["date"], here["slot"]) != keep:
+        _weekly_plan.clear_plan_slot(plan_id, here["date"], here["slot"])
+    return True
+
+
+def place_two_asks_one_day(plan_id: int, intake: dict | None, memory: dict | None,
+                           asks: tuple[str | None, ...] = (), report: dict | None = None) -> list[dict]:
+    """Rule 7 (see the block above). Returns [{"meal", "from", "to", "how"}]
+    for every dish it settled; stamps both rows (TWO_ASKS_KEY) for the
+    draft's line. Never raises."""
+    placed: list[dict] = []
+    try:
+        asked: list[dict] = []
+        for slot in ("dinner", "lunch"):
+            for r in nights(plan_id, intake, memory, slot):
+                derived = r.get("derived") or {}
+                if (r["slot_state"] != "planned" or not (r["meal"] or "").strip()
+                        or not str(derived.get("freeform") or "").strip()
+                        or r["cooked_status"] == "done" or r["reheat"] or r["source"]
+                        or DAY_OUT_KEY in derived or derived.get("moved_for") or TWO_ASKS_KEY in derived):
+                    continue
+                weekday, named = _day_and_meal_asked(derived, asks, r["meal"])
+                if weekday is None or any(a["meal"].lower() == r["meal"].lower() for a in asked):
+                    continue
+                asked.append(dict(r, slot=slot, weekday=weekday, named=named,
+                                  order=_mentioned_at(derived, asks, r["meal"])))
+        dinner_dates = sorted(r["date"] for r in nights(plan_id, intake, memory, "dinner"))
+    except Exception:
+        logger.exception("Plan %s: reading the week for two requests on one day failed", plan_id)
+        return placed
+    by_day: dict[int, list[dict]] = {}
+    for a in asked:
+        by_day.setdefault(a["weekday"], []).append(a)
+    for weekday, pair in sorted(by_day.items()):
+        if len(pair) != 2:
+            if len(pair) > 2:
+                logger.info("Plan %s: %d requests named one day — left as they are", plan_id, len(pair))
+            continue
+        day = next((d for d in dinner_dates if datetime.date.fromisoformat(d).weekday() == weekday
+                    and not _weekly_plan.night_has_gone(d)), None)
+        if day is None:
+            continue
+        try:
+            placed += _settle_pair(plan_id, intake, memory, day, sorted(pair, key=lambda a: a["order"]),
+                                   asks, report)
+        except Exception:
+            logger.exception("Plan %s: settling two requests on %s failed", plan_id, day)
+    return placed
+
+
+def _settle_pair(plan_id: int, intake, memory, day: str, pair: list[dict],
+                 asks: tuple[str | None, ...], report: dict | None) -> list[dict]:
+    from . import weekday_lunches as _weekday_lunches
+    first, second = pair
+    rows = {s: {r["date"]: r for r in nights(plan_id, intake, memory, s)} for s in ("dinner", "lunch")}
+    ids = {first["id"], second["id"]}
+
+    def free(slot: str) -> bool:
+        """Whether that day's meal may be written into: planned (somebody is
+        home, a decision not handed back), not cooked, and holding Pomona's
+        own pick — or one of these two dishes. Never another request, a
+        reheat or a batch (review, 2026-11-10: a lunch holding their soup
+        was overwritten, and an empty lunch was filled)."""
+        r = rows[slot].get(day)
+        return bool(r is not None and r["slot_state"] == "planned" and r["cooked_status"] != "done"
+                    and (r["id"] in ids or not (_meal_variety.theirs(r["derived"]) or r["reheat"] or r["source"])))
+
+    lunch_cap = _time_caps.minutes_cap(day, "lunch", [], memory,
+                                       lunch_kind=_weekday_lunches.kinds_by_date(intake).get(day))
+
+    def suits_lunch(x: dict) -> bool:
+        if not free("lunch"):
+            return False
+        if x["named"] == "lunch":
+            return True  # their word
+        if lunch_cap and x["minutes"] and x["minutes"] > lunch_cap:
+            return False
+        verdict = _weekly_plan._taste_verdict_for_slot(x["meal"], day, "lunch")
+        return not (verdict and verdict.get("verdict") == "avoid")
+
+    def at(x: dict, slot: str) -> bool:
+        return (x["date"], x["slot"]) == (day, slot)
+
+    contents = {x["meal"]: _row_contents(x["id"]) for x in pair}
+    options = [] if first["named"] and first["named"] == second["named"] else [
+        (lo, hi) for lo, hi in ((first, second), (second, first))
+        if lo["named"] != "dinner" and hi["named"] != "lunch" and suits_lunch(lo) and free("dinner")
+    ]
+    if options:
+        lo, hi = min(options, key=lambda o: (-(at(o[0], "lunch") + at(o[1], "dinner")),
+                                             o[0]["minutes"] or 10 ** 4, o[0]["order"]))
+        if not _put(plan_id, intake, memory, contents[hi["meal"]], day, "dinner", keep=(day, "lunch")):
+            return []
+        if not _put(plan_id, intake, memory, contents[lo["meal"]], day, "lunch"):
+            return []
+        said = not (first["named"] and second["named"])
+        for x in pair:
+            now = _find(plan_id, intake, memory, x["meal"])
+            if now:
+                _stamp(now["id"], TWO_ASKS_KEY, {"day": day, "how": "fitted", "said": said,
+                                                 "first": first["meal"], "second": second["meal"],
+                                                 "lunch": lo["meal"], "dinner": hi["meal"]})
+        return [{"meal": x["meal"], "from": x["date"], "to": day, "how": "fitted"} for x in (lo, hi)]
+
+    # Not fitted. Each wants the meal it named, or dinner (rule 1's default).
+    # Wanting DIFFERENT meals is not a fight over one slot: each goes on its
+    # own meal of the day only where that meal is free, and otherwise stays
+    # where it is — nothing written, nothing said, no rule 7 mark (so the
+    # other rules treat them as they always have).
+    if (first["named"] or "dinner") != (second["named"] or "dinner"):
+        for x in pair:
+            want = x["named"] or "dinner"
+            if not at(x, want) and free(want):
+                _put(plan_id, intake, memory, contents[x["meal"]], day, want)
+        return []
+
+    # Both want the same meal of that day: the more specific keeps it.
+    keeper = max(pair, key=lambda x: (bool(x["named"]), -x["order"]))
+    mover = second if keeper is first else first
+    k_slot = keeper["named"] or "dinner"
+    # The mover keeps the kind of meal IT named, or the one it is on.
+    m_slot = mover["named"] or mover["slot"]
+    if not free(k_slot):
+        return []
+    minutes = mover["minutes"]
+    targets = []
+    for r in nights(plan_id, intake, memory, m_slot):
+        if (r["date"] == day or r["slot_state"] != "planned" or not (r["meal"] or "").strip()
+                or r["cooked_status"] == "done" or _weekly_plan.night_has_gone(r["date"])
+                or (m_slot == "dinner" and "left" in (r.get("tags") or []))):
+            continue
+        mine = r["id"] == mover["id"]
+        if not mine and (_meal_variety.theirs(r["derived"]) or r["reheat"] or r["source"]):
+            continue
+        if r.get("cap") and minutes and minutes > r["cap"]:
+            continue
+        verdict = _weekly_plan._taste_verdict_for_slot(mover["meal"], r["date"], m_slot)
+        if verdict and verdict.get("verdict") == "avoid":
+            continue
+        gap = (datetime.date.fromisoformat(r["date"]) - datetime.date.fromisoformat(day)).days
+        targets.append(((_someone_out(r["date"], m_slot), abs(gap), 0 if gap > 0 else 1), r))
+    # The mover goes FIRST, so the keeper's write can never land on it: a
+    # request is moved, never dropped. Nowhere for it: nothing is written.
+    for _key, target in sorted(targets, key=lambda t: t[0]):
+        if not _put(plan_id, intake, memory, contents[mover["meal"]], target["date"], m_slot):
+            continue
+        if not _put(plan_id, intake, memory, contents[keeper["meal"]], day, k_slot):
+            logger.info("Plan %s: %s moved for %s, which then would not go on %s", plan_id,
+                        mover["meal"], keeper["meal"], day)
+        both = first["named"] if first["named"] and first["named"] == second["named"] else ""
+        stamp = {"day": day, "how": "moved", "first": first["meal"], "second": second["meal"], "both": both}
+        for x, moved in ((keeper, False), (mover, True)):
+            row = _find(plan_id, intake, memory, x["meal"])
+            if row:
+                _stamp(row["id"], TWO_ASKS_KEY, dict(stamp, moved=moved))
+        if report is not None:
+            report.setdefault("moved_requests", []).append(
+                {"words": str((mover.get("derived") or {}).get("freeform") or "").strip(), "line": ""})
+        logger.info("Plan %s: %s and %s were both asked for on %s; %s keeps it, %s is on %s %s", plan_id,
+                    first["meal"], second["meal"], day, keeper["meal"], mover["meal"], target["date"], m_slot)
+        return [{"meal": mover["meal"], "from": mover["date"], "to": target["date"], "how": "moved"}]
+    logger.info("Plan %s: nowhere to move %s off %s", plan_id, mover["meal"], day)
+    return []
 
 
 # ---------- a dish they asked for at a meal, naming no day (Emily's rule 2) ----------
@@ -1235,8 +1582,8 @@ def asked_no_meal_no_day(derived: dict, asks: tuple[str | None, ...] = (), meal:
     worse than none.
     """
     derived = derived if isinstance(derived, dict) else {}
-    if derived.get("moved_for"):
-        return False
+    if derived.get("moved_for") or TWO_ASKS_KEY in derived:
+        return False  # a day was named (rule 7's "fish tacos and pizza on Friday")
     strict, stems = _clauses_about(derived, asks, meal, strict=True)
     # A request FOR THIS DISH: a clause with most of its name in it, its
     # head noun among them. "Something quick" or "something Mexican" cited
@@ -1850,7 +2197,10 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
         # A request the allergen gate took off (rule 9) leads: it says why
         # their dish is not there at all.
         flagged = (_draft_flags.flags_for_allergy_requests(plan_id, asks)
-                   + _draft_flags.flags_for_days_out(plan_id) + _draft_flags.flags_for_kept_over_cap(read_back)
+                   + _draft_flags.flags_for_days_out(plan_id)
+                   # Rule 7: two asks on one day, fitted or one moved.
+                   + _draft_flags.flags_for_two_asks(plan_id)
+                   + _draft_flags.flags_for_kept_over_cap(read_back)
                    + _draft_flags.flags_for_late_requests(plan_id)
                    # Rule 1, last: priority 6, and it says only where a dish
                    # no other line is about went.
