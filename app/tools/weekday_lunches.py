@@ -339,6 +339,14 @@ def _cookable(row: dict | None) -> bool:
     return bool(row) and row["slot_state"] == "planned" and bool(row["meal"])
 
 
+def _reheatable(row: dict | None) -> bool:
+    """A cook another meal may eat the leftovers of: cookable, and not an
+    egg dish that doesn't hold for reheating (Emily, 2026-11-09 — a
+    scramble or oyakodon is eaten the day it's made)."""
+    from .leftovers import egg_dish_keeps
+    return _cookable(row) and egg_dish_keeps(row["meal"], row)
+
+
 def _ids(rows: list[dict]) -> list[int]:
     return [r["id"] for r in rows]
 
@@ -392,7 +400,7 @@ def _week_dish_for_gap(plan_id: int, lunch_date: str, lunches: dict, dinners: di
     keys = _leftovers.run_keys(plan_id)
     cooks = [
         r for rows in list(lunches.values()) + list(dinners.values()) for r in rows
-        if _cookable(r) and not r["derived"].get("links_to")
+        if _reheatable(r) and not r["derived"].get("links_to")
         and not r["derived"].get(_leftovers.FROM_FREEZER_KEY)
         and r["meal"].strip().lower() not in taken
     ]
@@ -428,7 +436,7 @@ def _prep_day_cook(prep_date: str, first_lunch: str, lunches: dict, dinners: dic
         if len(planned) != 1:
             continue
         row = planned[0]
-        if not _cookable(row) or row["id"] in chains["leftovers"]:
+        if not _reheatable(row) or row["id"] in chains["leftovers"]:
             continue
         if row["derived"].get("links_to"):
             continue
@@ -620,7 +628,7 @@ def _lunch_from_a_kept_dinner(plan_id: int, row: dict, dinners: dict, chains: di
 
     keys = _leftovers.run_keys(plan_id)
     cooks = [r for rows in dinners.values() for r in rows
-             if r["date"] < row["date"] and _cookable(r) and r["id"] not in chains["leftovers"]
+             if r["date"] < row["date"] and _reheatable(r) and r["id"] not in chains["leftovers"]
              and not r["derived"].get("links_to") and not _leftovers.frozen_portion_on(r["derived"])
              and not _leftovers.too_many_in_a_row(keys, row["date"], "lunch", r["meal"])]
     cooks.sort(key=lambda r: r["date"], reverse=True)
@@ -961,7 +969,7 @@ def apply_to_plan(plan_id: int, intake: dict | None, budget=None, picker=None) -
                 continue
             rows = [r for r in lunches.get(d["date"], []) if r["slot_state"] == "planned"]
             evening = (date.fromisoformat(d["date"]) - timedelta(days=1)).isoformat()
-            dinner = next((r for r in dinners.get(evening, []) if _cookable(r)), None)
+            dinner = next((r for r in dinners.get(evening, []) if _reheatable(r)), None)
             if not rows or dinner is None:
                 out["skipped"].append({"date": d["date"], "why": "no dinner the evening before"})
                 continue
@@ -1068,7 +1076,7 @@ def apply_to_plan(plan_id: int, intake: dict | None, budget=None, picker=None) -
             taken = session_dishes.setdefault(prep_date, set())
             model_cook = next(
                 (rows[0] for d in members for rows in [rows_by_date[d["date"]]]
-                 if len(rows) == 1 and _cookable(rows[0]) and rows[0]["id"] not in chains["leftovers"]
+                 if len(rows) == 1 and _reheatable(rows[0]) and rows[0]["id"] not in chains["leftovers"]
                  and rows[0]["meal"].strip().lower() not in taken),
                 None,
             )

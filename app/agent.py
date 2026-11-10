@@ -273,7 +273,10 @@ chosen FOR it: braises, stews, chilli, curries, beans, baked pasta and anything 
 overnight; fried, crumbed, fish, and plain rice or pasta do not. Cook and store the starch \
 separately from the saucy thing. The leftovers entry says how it comes back — reheated low \
 with a splash of water, then re-finished with fresh herbs or a squeeze of something — and its \
-ingredients include that finish."""
+ingredients include that finish. Egg dishes mostly don't reheat: a scramble, an omelette, \
+oyakodon or carbonara is eaten the day it's made and never feeds a leftovers night or a batch. \
+The egg dishes made ahead on purpose (a Spanish tortilla, egg bites, a frittata, a quiche) can, \
+and their recipe says so in its notes: "Can be made ahead: keeps up to 3 days in the fridge." """
 
 
 # The model interactive chat runs on (Emily, 2026-10-25, Option A: "chat
@@ -3474,7 +3477,10 @@ def _expand_repeated_dates(items):
         # Which day cooks for which (see "ONE COOK" above), decided over
         # the days in date order; the rows still go out in the model's.
         cook_for: dict[str, str] = {}
-        if len(mine) > 1 and slot != "snack":
+        # An egg dish that doesn't hold for reheating (a scramble, oyakodon)
+        # is cooked fresh on each of its days, never one cook and its
+        # leftovers (Emily, 2026-11-09 — leftovers.egg_dish_keeps).
+        if len(mine) > 1 and slot != "snack" and _leftovers_mod.egg_dish_keeps(item.get("meal_name")):
             cook = None
             for date in sorted(mine):
                 if cook is not None and _days_between(cook, date) <= _leftovers_mod.MAX_LEFTOVER_DAYS:
@@ -3854,7 +3860,9 @@ that many different dishes: prepped lunches with the same prep day AND the same 
 dish (linked to the first of THAT batch's dates), and each batch is a different dish; \
 `leftovers` — that lunch is the dinner of the evening before (`from_dinner`), reheated: send \
 that dinner's dish for the lunch with derived_from.links_to "<from_dinner>:dinner", and make \
-that dinner something that keeps; \
+that dinner something that keeps (an egg dish keeps only when it is made ahead on purpose — \
+a Spanish tortilla, egg bites, a frittata, a quiche; never a scramble, an omelette, oyakodon \
+or carbonara, on a prepped or leftovers lunch or any leftovers night); \
 `cooked` — cooked fresh that day, held to household_memory's \
 `weekday_lunch_max_minutes` of prep+cook at most, hard, even on a \
 prep day. Weekend lunches are not in this list and are planned as usual.

@@ -789,6 +789,123 @@ _KEEPS_ANYWAY = (
 )
 
 
+# ---------- egg dishes ----------
+#
+# Emily, 2026-11-09: "as a rule, if a dish has eggs in it, it typically
+# doesn't hold well for reheating so it can't be prepped. but it's not
+# always. for example, a spanish tortilla can be pre-made, and egg bites can
+# be as well. but an egg scramble or oyakodon can't. Make sure that if you
+# suggest it as something that can be made and then have leftover that the
+# recipe says it can be made ahead."
+#
+# So an egg-led dish is a fresh dish by default — never a leftover source, a
+# batch or a prepped lunch — unless it is one of the egg dishes that are made
+# ahead on purpose (_EGG_KEEPS) or its own recipe says it can be made ahead.
+# And an egg dish that does keep has to SAY so on its recipe: add_recipe and
+# fill_recipe_details put EGG_MAKE_AHEAD_NOTE on any that don't already.
+#
+# Judged on the NAME (and main_protein "eggs"), not the ingredient list: an
+# egg binding meatballs or glazing a pie is not an egg dish, and those keep.
+_EGG_DISH_WORDS = (
+    "egg", "eggs", "omelette", "omelet", "frittata", "scramble", "scrambled",
+    "oyakodon", "katsudon", "tamago", "tamagoyaki", "shakshuka", "huevos",
+    "menemen", "quiche", "strata", "kuku", "carbonara", "spanish tortilla",
+    "tortilla española", "tortilla espanola", "tortilla de patatas",
+    "egg foo young", "çılbır", "cilbir", "chawanmushi", "bhurji", "akuri",
+    "anda", "gyeranbap", "gyeran mari",
+)
+# Never made ahead, even where a keeper word is also in the name.
+_EGG_NEVER_KEEPS = ("soft-boiled", "soft boiled", "fried egg", "poached", "scrambled", "omelet", "omelette")
+# Egg dishes that are made ahead on purpose and are fine cold or reheated.
+_EGG_KEEPS = (
+    "frittata", "quiche", "strata", "spanish tortilla", "tortilla española",
+    "tortilla espanola", "tortilla de patatas", "egg bite", "egg bites",
+    "bite", "bites", "muffin", "muffins", "egg cup", "egg cups", "egg bake",
+    "breakfast bake", "casserole",
+    "hard-boiled", "hard boiled", "boiled egg", "deviled", "devilled",
+    "egg salad", "tea egg", "ramen egg", "ajitsuke tamago", "jammy egg",
+    "marinated egg", "soy egg", "scotch egg", "kuku", "tamagoyaki",
+    "fried rice", "egg roll", "egg noodle", "egg curry", "egg roast", "biryani", "egg tart", "egg tarts", "mayak", "breakfast burrito",
+    "breakfast sandwich",
+)
+# A recipe that says this about itself keeps, whatever its name.
+_SAYS_MAKE_AHEAD = re.compile(
+    r"make(?:s)? (?:it |them )?ahead|made ahead|make-ahead|keeps? (?:for |up to |well)"
+    r"|up to \d+ days|will keep|store (?:it |them )?in the fridge",
+    re.IGNORECASE,
+)
+EGG_MAKE_AHEAD_NOTE = (
+    "Can be made ahead: keeps up to 3 days in the fridge. "
+    "Reheat it gently, or eat it at room temperature."
+)
+
+
+def _name_has(name: str, words) -> bool:
+    for word in words:
+        if " " in word or "-" in word:
+            if word in name:
+                return True
+        elif re.search(r"\b" + re.escape(word) + r"\b", name):
+            return True
+    return False
+
+
+def is_egg_dish(name: str | None, main_protein: str | None = None) -> bool:
+    """Whether eggs are what the dish IS (scramble, oyakodon, frittata),
+    not just in it (meatballs, a cake). "Eggplant" is not an egg."""
+    # main_protein "eggs" is not read: the library files banana bread,
+    # cookies and flan under it, and those keep fine.
+    lowered = (name or "").lower()
+    # A tofu or paneer scramble/bhurji borrows the egg word, not the egg.
+    if _name_has(lowered, ("tofu", "paneer")):
+        return False
+    return _name_has(lowered, _EGG_DISH_WORDS)
+
+
+def says_make_ahead(recipe: dict | None) -> bool:
+    """Whether the recipe's own words say it can be made ahead / keeps."""
+    r = dict(recipe) if recipe else {}
+    text = " ".join(
+        str(r.get(k) or "") for k in ("notes", "advance_prep_notes", "method_notes")
+    )
+    return bool(_SAYS_MAKE_AHEAD.search(text))
+
+
+def egg_dish_keeps(name: str | None, recipe: dict | None = None) -> bool:
+    """
+    True unless this is an egg dish that doesn't hold for reheating.
+    Not an egg dish → True (other rules decide). An egg dish keeps when it is
+    one made ahead on purpose (_EGG_KEEPS) or its recipe says it can be.
+    """
+    r = dict(recipe) if recipe else {}
+    if not is_egg_dish(name, r.get("main_protein")):
+        return True
+    lowered = (name or "").lower()
+    if _name_has(lowered, _EGG_NEVER_KEEPS):
+        return False
+    if _name_has(lowered, _EGG_KEEPS):
+        return True
+    return says_make_ahead(r)
+
+
+def with_make_ahead_note(name: str | None, notes: str | None, recipe: dict | None = None) -> str:
+    """
+    `notes` with EGG_MAKE_AHEAD_NOTE added when this is an egg dish that
+    keeps by name but whose recipe doesn't yet say it can be made ahead —
+    so any egg dish Pomona will use for leftovers says so on its recipe.
+    Unchanged for everything else.
+    """
+    notes = (notes or "").strip()
+    r = dict(recipe or {}, notes=notes)
+    if not is_egg_dish(name, r.get("main_protein")):
+        return notes
+    lowered = (name or "").lower()
+    if (_name_has(lowered, _EGG_NEVER_KEEPS) or not _name_has(lowered, _EGG_KEEPS)
+            or says_make_ahead(r)):
+        return notes
+    return f"{notes} {EGG_MAKE_AHEAD_NOTE}".strip()
+
+
 def keeps_as_leftovers(pick: dict | None) -> bool:
     """
     Whether a dish may be the thing in tomorrow's container.
@@ -814,6 +931,8 @@ def keeps_as_leftovers(pick: dict | None) -> bool:
         return True
     if any(exception in name for exception in _KEEPS_ANYWAY):
         return True
+    if not egg_dish_keeps(name, pick):
+        return False
     for word in _DOES_NOT_KEEP:
         if " " in word:
             if word in name:
