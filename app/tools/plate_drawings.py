@@ -15,6 +15,8 @@ suits, so a later drawing can claim it): the plate is worked out on read and
 written nowhere.
 
 The order for any recipe (plate_for):
+  0. the dish's own drawing, by exact name, if it fits (so a plate added
+     later replaces a borrowed one already stored);
   1. the stored plate;
   2. the library dish it was copied from (recipes.library_id), which holds
      through an edited title, as long as the plate still fits (fits);
@@ -420,6 +422,13 @@ def closest(name, main_protein="", ingredients=None, cuisine="") -> str:
 def plate_for(name, main_protein="", ingredients=None, *, stored=None, library_dish=None, cuisine="") -> str:
     """The plate for this recipe, stored or not. See the module's docstring."""
     try:
+        # The dish's own drawing beats a borrowed one stored before it was
+        # drawn (Emily, 2026-11-09: snacks kept a pretzel or a cookie after
+        # their own plates were added). fits() keeps rule 33: a recipe whose
+        # main food changed still keeps the plate it was moved to.
+        own = key_for_name(name)
+        if own and own != stored and fits(own, ingredients):
+            return own
         if stored and is_plate(stored):
             return stored
         if library_dish:

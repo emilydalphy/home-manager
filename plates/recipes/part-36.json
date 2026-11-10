@@ -1,0 +1,32 @@
+[
+{
+"dish_name": "Apple Slices with Cheddar and Pretzels",
+"cuisine": "American",
+"main_protein": "cheese",
+"ingredients": [
+"Apples",
+"Cheddar cheese",
+"Pretzels"
+]
+},
+{
+"dish_name": "Greek Yogurt with Berries and Granola",
+"cuisine": "American",
+"main_protein": "dairy",
+"ingredients": [
+"Plain Greek yogurt",
+"Berries",
+"Granola"
+]
+},
+{
+"dish_name": "Greek Yogurt with Berries and Seed Granola",
+"cuisine": "American",
+"main_protein": "dairy",
+"ingredients": [
+"Plain Greek yogurt",
+"Berries",
+"Seed granola"
+]
+}
+]

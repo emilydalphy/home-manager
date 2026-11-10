@@ -10,8 +10,8 @@ recs = json.load(open(f"{H}/recipes/part-{n}.json"))
 specs = json.load(open(f"{H}/specs/part-{n}.json"))
 ARITY = dict(well=1, pool=(2, 3), rice=7, mash=7, band=4, strips=(6, 8), slices=5, nuggets=(6, 8), cubes=(5, 7), dots=(5, 7), rings=(4, 6),
              leaves=5, frisee=5, cashews=4, poached=3, wontons=3, bokchoy=3, baguette=1, flautas=1, phyllo=1, loaf=1, patties=3,
-             rounds=6, glass=3, eggplant=(3, 5), ribbons=5, shrimp=(5, 7), omelette=5, steak=7, bread=5, tortellini=5, fillet=8, bacon=4, chop=6, potatoes=4, wedgering=5, noodles=5, wrap=4, pizza=4, pancakes=3, flatbread=3, dipbowl=3, bowl=2, pastries=4, stuffed=3, cutlet=7, block=7, rolls=3, wedges=5, yolk=3, ringbread=1, skewers=(1, 4), tacos=(1, 5), sandwiches=1, toast=(1, 4), cups=(1, 5),
-             drumstick=(7, 8), muffin=(3, 5), quesadilla=5, burger=(2, 7), mushroom=(5, 7), broccoli=(4, 6), chip=(6, 8), chipring=5, pretzel=(1, 4), waffle=(1, 3),
+             rounds=6, glass=3, eggplant=(3, 5), ribbons=5, shrimp=(5, 7), omelette=5, steak=7, bread=5, tortellini=5, fillet=8, bacon=4, chop=6, potatoes=4, wedgering=5, noodles=5, wrap=4, pizza=4, pancakes=3, flatbread=3, dipbowl=3, bowl=2, pastries=4, stuffed=3, cutlet=7, block=7, rolls=3, wedges=(5, 7), yolk=3, ringbread=1, skewers=(1, 4), tacos=(1, 5), sandwiches=1, toast=(1, 4), cups=(1, 5),
+             drumstick=(7, 8), muffin=(3, 5), quesadilla=5, burger=(2, 7), mushroom=(5, 7), broccoli=(4, 6), chip=(6, 8), chipring=5, pretzel=(1, 9), waffle=(1, 3),
              shell=(5, 7), sando=(4, 5), onigiri=(1, 5), bao=3, spiral=(3, 4), ricecakes=(5, 7), sticks=5, ribs=(3, 4), smallfish=5, wholefish=7, pecans=5, okra=(3, 5), tamagoyaki=(1, 3), summerroll=1, madeleine=5, teaegg=3,
              cauliflower=(5, 7), calamari=(3, 7), orzo=(5, 6), shortpasta=(5, 7), scallops=(4, 6), fritters=(7, 9),
              sausages=(1, 7), tart=(1, 7), hotdog=(1, 4), avocado=(1, 7), leeks=(1, 6), sardines=(1, 5), porkbelly=(1, 6), volauvent=(1, 8),

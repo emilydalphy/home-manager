@@ -240,6 +240,23 @@ def test_a_stored_plate_with_no_drawing_is_not_shown():
     assert drawings.is_plate(drawings.plate_for("Chicken Piccata", "chicken", stored="gone-now"))
 
 
+@pytest.mark.parametrize("name, ingredients, borrowed, own", [
+    ("Apple Slices with Cheddar and Pretzels", ["apples", "cheddar cheese", "pretzels"], "soft-pretzels",
+     "apple-slices-with-cheddar-and-pretzels"),
+    ("Greek Yogurt with Berries and Granola", ["plain Greek yogurt", "berries", "granola"], "oatmeal-raisin-cookies",
+     "greek-yogurt-with-berries-and-granola"),
+])
+def test_a_dishs_own_drawing_replaces_a_borrowed_plate_stored_before_it(name, ingredients, borrowed, own):
+    # Emily, 2026-11-09: her saved snacks kept a pretzel and a cookie after
+    # their own plates were drawn.
+    assert drawings.plate_for(name, "", ingredients, stored=borrowed) == own
+
+
+def test_an_own_drawing_that_no_longer_fits_leaves_the_stored_plate():
+    # Rule 33: the edit moved the plate because the main food changed.
+    assert drawings.plate_for("Chicken Piccata", "tofu", ["tofu", "capers"], stored="crispy-tofu-bites") == "crispy-tofu-bites"
+
+
 def test_a_neutral_dish_stores_nothing_so_a_later_drawing_can_claim_it():
     tools.add_recipe("Zorblax Surprise", [{"item": "Zorblax", "qty": "1"}])
     assert _stored("Zorblax Surprise") is None

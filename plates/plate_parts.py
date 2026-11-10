@@ -365,9 +365,10 @@ def op(rng, o):
             out += (f'<g transform="rotate({r} {x} {y})"><rect x="{x-14}" y="{y-6.5}" width="28" height="13" rx="6" fill="{c}"/>'
                     f'<path d="M{x-10} {y-3}q3 3 0 6M{x-3} {y-3.6}q3 3.5 0 7M{x+4} {y-3.6}q3 3.5 0 7" fill="none" stroke="{h}" stroke-width="1.3" stroke-linecap="round"/></g>')
         return out
-    if k == "wedges":  # fruit slices with skin
-        _, c, skin, n, r = o
-        return "".join(f'<g transform="translate({x:.1f} {y:.1f}) rotate({a:.0f})"><path d="M-12 3a13 13 0 0 1 24 0q-12 5-24 0z" fill="{c}"/><path d="M-12 3a13 13 0 0 1 24 0" fill="none" stroke="{skin}" stroke-width="2.2" stroke-linecap="round"/></g>' for x, y, a in spots(rng, n, r))
+    if k == "wedges":  # fruit slices with skin; cx, cy optional
+        _, c, skin, n, r = o[:5]
+        cx = o[5] if len(o) > 5 else 50; cy = o[6] if len(o) > 6 else 50
+        return "".join(f'<g transform="translate({x:.1f} {y:.1f}) rotate({a:.0f})"><path d="M-12 3a13 13 0 0 1 24 0q-12 5-24 0z" fill="{c}"/><path d="M-12 3a13 13 0 0 1 24 0" fill="none" stroke="{skin}" stroke-width="2.2" stroke-linecap="round"/></g>' for x, y, a in spots(rng, n, r, cx, cy))
     if k == "noodles":  # long flowing strands twirled into a nest
         _, c, shade, w, r = o
         out = ""
@@ -608,6 +609,20 @@ def op(rng, o):
         shade = o[2] if len(o) > 2 else "#7A4A1E"
         salt = o[3] if len(o) > 3 else "#FFFFFF"
         d = "M30 72C40 60 46 53 57 37C63 25 79 23 81 41C83 60 66 80 50 80C34 80 17 60 19 41C21 23 37 25 43 37C54 53 60 60 70 72"
+        if len(o) > 4:  # small pretzel twists: count, scale, r, cx, cy
+            n = o[4]; sc = o[5] if len(o) > 5 and o[5] != "" else .26
+            r = o[6] if len(o) > 6 else 10
+            cx = o[7] if len(o) > 7 else 50; cy = o[8] if len(o) > 8 else 50
+            out = ""
+            for x, y, a in spots(rng, n, r, cx, cy):
+                out += (f'<g transform="translate({x:.1f} {y:.1f}) rotate({a - 90:.0f}) scale({sc}) translate(-50 -52)">'
+                        f'<path d="{d}" fill="none" stroke="{shade}" stroke-width="12.5" stroke-linecap="round"/>'
+                        f'<path d="{d}" fill="none" stroke="{c}" stroke-width="9.5" stroke-linecap="round"/>')
+                if salt:
+                    for sx, sy in ((26, 50), (50, 79), (76, 52), (50, 46)):
+                        out += f'<circle cx="{sx}" cy="{sy}" r="2.6" fill="{salt}"/>'
+                out += "</g>"
+            return out
         out = (f'<g transform="rotate(-6 50 50)"><path d="{d}" fill="none" stroke="{shade}" stroke-width="11" stroke-linecap="round"/>'
                f'<path d="{d}" fill="none" stroke="{c}" stroke-width="8.6" stroke-linecap="round"/>'
                '<path d="M71 35Q77 36 76 44" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity=".3"/>')
