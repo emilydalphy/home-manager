@@ -1,8 +1,8 @@
 """
 Time limits per meal, not per date (Emily, 2026-09-23).
 
-1. "Short on time" (the `rush` tag) is dinner on the table in 30 minutes
-   or less, prep included. It was 20. On a weeknight where the household's
+1. "Short on time" (the `rush` tag) is dinner on the table in 35 minutes
+   or less, prep included. It was 20, then 30 (35 since Emily, 2026-11-09). On a weeknight where the household's
    own weeknight cap is lower, the lower one holds — before this a rush tag
    LOOSENED a weeknight cap of 15 to the rush number.
 2. Every Monday-Friday lunch that is cooked that day is 20 minutes or
@@ -49,9 +49,9 @@ cap = time_caps.minutes_cap
 # ---------- the numbers ----------
 
 
-def test_short_on_time_is_thirty_minutes():
-    assert tools.RUSH_MAX_MINUTES == 30
-    assert cap(TUE, "dinner", ["rush"], {}) == 30
+def test_short_on_time_is_thirty_five_minutes():
+    assert tools.RUSH_MAX_MINUTES == 35
+    assert cap(TUE, "dinner", ["rush"], {}) == 35
 
 
 def test_a_weekday_lunch_cooked_that_day_is_twenty_minutes():
@@ -65,11 +65,11 @@ def test_a_weekday_lunch_cooked_that_day_is_twenty_minutes():
 
 def test_a_rush_night_keeps_a_stricter_weeknight_cap():
     """Rush only ever tightens a night: a household whose weeknights are 15
-    minutes doesn't get 30 because the night was also tagged rush."""
+    minutes doesn't get 35 because the night was also tagged rush."""
     assert cap(TUE, "dinner", ["rush"], {"weeknight_max_minutes": 15}) == 15
-    assert cap(TUE, "dinner", ["rush"], {"weeknight_max_minutes": 45}) == 30
-    # The weeknight cap is Monday-Friday only, so a rush Saturday is 30.
-    assert cap(SAT, "dinner", ["rush"], {"weeknight_max_minutes": 15}) == 30
+    assert cap(TUE, "dinner", ["rush"], {"weeknight_max_minutes": 45}) == 35
+    # The weeknight cap is Monday-Friday only, so a rush Saturday is 35.
+    assert cap(SAT, "dinner", ["rush"], {"weeknight_max_minutes": 15}) == 35
 
 
 def test_the_dinner_rules_otherwise_stand():
@@ -200,7 +200,7 @@ def test_generation_hands_the_variety_pass_per_slot_caps(monkeypatch):
     lunch = time_caps.caps_for_slot(seen["lunch"], "lunch")
     dinner = time_caps.caps_for_slot(seen["dinner"], "dinner")
     breakfast = time_caps.caps_for_slot(seen["breakfast"], "breakfast")
-    assert dinner[tuesday] == 15 and dinner[saturday] == 30
+    assert dinner[tuesday] == 15 and dinner[saturday] == 35
     assert lunch[tuesday] == 20, "a weekday lunch is 20, not the 15-minute dinner cap"
     assert lunch[saturday] is None, "a rush Saturday's lunch is not held to the rush dinner cap"
     assert breakfast[tuesday] is None
@@ -326,7 +326,7 @@ def test_the_prompt_says_the_lunch_rule_and_the_rush_number():
     assert "is cooked that day is capped at 20" not in shipped
     assert "reheats well, like chili, a stew or a curry" in shipped
     assert "Dinner only: it does not change" in shipped
-    assert "30 minutes or less" in tools.NIGHT_TAGS["rush"]
+    assert "35 minutes or less" in tools.NIGHT_TAGS["rush"]
 
 
 @pytest.mark.parametrize("text", [

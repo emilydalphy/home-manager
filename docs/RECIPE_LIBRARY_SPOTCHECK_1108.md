@@ -2,7 +2,7 @@
 
 Emily, 2026-11-08: "Let's add 1000 more recipes to the database. Do an analysis of which areas that recipes should cover first. and make sure that it comes up with the drawings for it now with the new rules." Then: "make sure there are snakcs and breakfast options in that too."
 
-The plan and the gap analysis are in docs/RECIPE_LIBRARY_1000_PLAN.md. The list is now 2,104 dishes, and every new dish has a recipe file and a drawn plate. **Nothing has been filed into the live library.** Going live needs Emily's yes: a merge to main in the 1 to 6am window, then filing on Railway.
+The plan and the gap analysis are in docs/RECIPE_LIBRARY_1000_PLAN.md. The list was 2,104 dishes, and is 2,097 after the 2026-11-09 cuts below. Every dish on it has a recipe file and a drawn plate. Merged to main 2026-11-09 (1973ad8) on Emily's yes. **Not yet filed into the live library.**
 
 ## What was added
 
@@ -50,6 +50,12 @@ Every new recipe has a plate in plates/specs parts 10 to 35, drawn under all 41 
 - **Round 3:** croissants, biscuits, braided bread, danish, bananas, tamales, gimbap, pita pockets, kibbeh and lettuce cups.
 
 Existing plates draw exactly as before. Some plates read weakly and want a new part later: Bungeoppang, Palmiers, Pestinos, Egg Waffles, Banh Canh, Mi Quang, Flan, Daifuku, Elote en Vaso, Prosciutto e Melone, Sabich, Ensalada Campera, Bunuelos, Korean Corn Dog, Ca Kho Thom and Rice Krispie Treats. Parts asked for but not built yet include stuffed peppers, squash halves, braided pastry coils, whole roast chicken, stuffed squid, stromboli and raclette. Plates for 11 dishes that were cut from the round were removed.
+
+## Decided (2026-11-09, on the spot-check page)
+
+- **Call 2, weekend baking:** "Keep and add a weekend tag now". Every library breakfast of 2 hours or more carries `"weekend": true` on the starter list (11 dishes: the six above plus Cinnamon Rolls, Shokupan, Tamales de Rajas con Queso, Ambasha and Patjuk) and never lands on a Monday-to-Friday morning (breakfast_variety.weekend_only).
+- **Call 3, special pans:** "Call out that it needs a real pan. If there is an alternative pan that works you can leave it. if not just cut them". Cut: Takoyaki, Bungeoppang, Khanom Krok, Egg Waffles, Murukku (a press), Paniyaram, and Thai Coconut Pancakes (an older, already-live twin of Khanom Krok; it must also be taken out of the live library when this round is filed). Kept because the recipe names an everyday stand-in: Financiers (mini muffin tin), Chinese Egg Tarts (muffin cups), Sopes (heavy dish instead of a press), Paletas de Fresa (paper cups, added). Tebasaki, Yakgwa, Vada Pav, Pizzette and Khanom Chan need no special pan and stay.
+- **Call 5, added sauces:** "As long as the sauces make sense keep them, if they don't make sense find an alterative that does". Kept: Cumin Tofu's soy glaze, Steak Hache's Dijon cream pan sauce (classic French), Stromboli's warm pizza sauce (its taste step moved before serving). Changed: Kakiage's dip is now a proper dashi, soy and mirin dip (kombu dashi powder, vegetarian); Hoy Tod is served with Sriracha, the sauce Thai stalls serve it with, instead of sweet chili.
 
 ## Calls for Emily
 

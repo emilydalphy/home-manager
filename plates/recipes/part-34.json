@@ -428,28 +428,6 @@
 ]
 },
 {
-"dish_name": "Takoyaki",
-"cuisine": "Japanese",
-"main_protein": "seafood",
-"ingredients": [
-"Boiled octopus",
-"Dried bonito flakes (katsuobushi)",
-"Scallions",
-"Pickled red ginger (beni shoga)",
-"All-purpose flour",
-"Baking powder",
-"Salt",
-"Eggs",
-"Soy sauce",
-"Dashi stock",
-"Neutral oil",
-"Tenkasu (tempura scraps)",
-"Takoyaki sauce",
-"Japanese mayonnaise",
-"Aonori (dried green seaweed)"
-]
-},
-{
 "dish_name": "Tanghulu",
 "cuisine": "Chinese",
 "main_protein": "vegan",

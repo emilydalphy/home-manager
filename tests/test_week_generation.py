@@ -507,7 +507,7 @@ def test_a_rush_night_reaches_the_generator_as_a_real_cap(recipe, stub_model):
     assert seen["context"]["intake"]["night_tags"][wednesday] == ["rush"]
     # Emily, 2026-09-23: "Short on time" is 30 minutes or less, prep
     # included (it was 20).
-    assert tools.RUSH_MAX_MINUTES == 30
+    assert tools.RUSH_MAX_MINUTES == 35  # Emily, 2026-11-09 (was 30)
 
 
 def test_an_unrushed_night_reaches_the_generator_and_the_quality_check(recipe, stub_model):
@@ -534,10 +534,10 @@ def test_the_plate_pass_cap_is_lifted_by_an_unrushed_tag():
     cap, then nothing) is the whole rule; since 2026-09-23 a rush night
     with a LOWER weeknight cap keeps the lower one.
     """
-    memory = {"weeknight_max_minutes": 30}
+    memory = {"weeknight_max_minutes": 40}
     tuesday, saturday = "2026-09-08", "2026-09-12"
     cap = agent._meal_minutes_cap
-    assert cap(tuesday, "dinner", {"night_tags": {}}, memory) == 30
+    assert cap(tuesday, "dinner", {"night_tags": {}}, memory) == 40
     assert cap(tuesday, "dinner", {"night_tags": {tuesday: ["unrushed"]}}, memory) is None
     assert cap(tuesday, "dinner", {"night_tags": {tuesday: ["rush"]}}, memory) == tools.RUSH_MAX_MINUTES
     assert cap(tuesday, "dinner", {"night_tags": {tuesday: ["rush"]}}, {"weeknight_max_minutes": 15}) == 15

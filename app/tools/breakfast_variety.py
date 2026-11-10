@@ -109,6 +109,49 @@ def library_breakfasts(seed: str | int | None = None, avoid=(), limit: int = LIB
     return names[:limit]
 
 
+# ---------- weekend breakfasts (Emily, 2026-11-09) ----------
+#
+# The 1,000-recipe spot check listed Croissants (6 hours), Brioche, Tsoureki,
+# Ensaimada, Conchas and Beignets as breakfasts; Emily: "Keep and add a
+# weekend tag now". A library breakfast taking 2 hours or more carries
+# "weekend": true on the starter list (tests hold the rule for every round),
+# and is never put on a Monday-to-Friday morning: the draft is told, a
+# library top-up skips it on a weekday, the swap sheet doesn't offer it
+# there, and one the draft put on a weekday is moved (enforce_breakfast_spread).
+# A reheat on a weekday of a weekend bake is fine — it was made on the weekend.
+WEEKEND_MIN_MINUTES = 120
+
+
+@functools.lru_cache(maxsize=1)
+def _weekend_keys() -> frozenset[str]:
+    try:
+        with open(_SEED_PATH, encoding="utf-8") as fh:
+            raw = json.load(fh)
+    except (OSError, ValueError):
+        return frozenset()
+    return frozenset(_meal_variety.repeat_key(d["dish_name"]) for d in raw.get("dishes") or []
+                     if d.get("weekend") and d.get("dish_name"))
+
+
+def weekend_only(name: str | None) -> bool:
+    """Is this a library breakfast kept for Saturday and Sunday?"""
+    return bool(name) and _meal_variety.repeat_key(name) in _weekend_keys()
+
+
+def is_weekday(date: str | None) -> bool:
+    """Monday to Friday, for an ISO date; False when it can't be read."""
+    import datetime as _dt
+    try:
+        return _dt.date.fromisoformat(str(date)[:10]).weekday() < 5
+    except (TypeError, ValueError):
+        return False
+
+
+def weekend_only_breakfasts(names) -> list[str]:
+    """The ones of `names` kept for the weekend, for the drafting prompt."""
+    return [n for n in names if weekend_only(n)]
+
+
 def cap_for(memory: dict, mornings: int) -> int | None:
     """The most mornings one breakfast may hold, or None when the household
     chose the same breakfasts (see the module docstring)."""
@@ -185,6 +228,8 @@ def _library_pick(night: dict, on_week: list[str], memory: dict, recent: list[st
         key = _meal_variety.repeat_key(name)
         if key in refused:
             continue
+        if weekend_only(name) and is_weekday(night.get("date")):
+            continue
         refused.add(key)
         if make_ahead and _breakfast_prep.breakfast_keeps(name) is False:
             continue
@@ -232,20 +277,33 @@ def enforce_breakfast_spread(plan_id: int, dates: list[str], memory: dict, perio
                    if e["date"] in in_scope and e["slot_state"] == "planned" and e["meal"]]
         cap = cap_for(memory, len(entries))
         out["cap"] = cap
-        if cap is None:
-            out["skipped"] = "they chose the same breakfasts"
-            return out
         dishes = _meal_variety._group_dishes(entries, chains)
         for dish in dishes:
             dish["days"] = {n["date"] for n in dish["nights"]}
             if not dish["protected"] and _meal_variety.asked_for_by_name(dish["name"], asks):
                 dish["protected"] = True
-        over = [d for d in dishes if not d["protected"] and len(d["nights"]) > cap]
-        if not over:
-            return out
-
         sources = set(chains["sources"])
         surplus: list[tuple[dict, dict]] = []
+        # A weekend bake cooked on a weekday morning (not a reheat of the
+        # weekend's batch, not a cook another morning eats from) moves.
+        for dish in dishes:
+            if dish["protected"] or not weekend_only(dish["name"]):
+                continue
+            for night in list(dish["nights"]):
+                if (is_weekday(night["date"]) and night["id"] not in chains["leftovers"]
+                        and night["id"] not in sources and night["meal"] == dish["name"]):
+                    surplus.append((night, dish))
+                    dish["nights"].remove(night)
+                    dish["days"].discard(night["date"])
+        if cap is None:
+            if not surplus:
+                out["skipped"] = "they chose the same breakfasts"
+                return out
+            cap = max(len(entries), 1)
+        over = [d for d in dishes if not d["protected"] and len(d["nights"]) > cap]
+        if not over and not surplus:
+            return out
+
         for dish in over:
             keep = _spread_keep(dish["nights"], cap, sources)
             for night in dish["nights"]:
@@ -259,7 +317,8 @@ def enforce_breakfast_spread(plan_id: int, dates: list[str], memory: dict, perio
         refused: set[str] = set()
 
         def _week_pick(date: str) -> dict | None:
-            fits = [d for d in dishes if date not in d["days"] and len(d["days"]) < cap]
+            fits = [d for d in dishes if date not in d["days"] and len(d["days"]) < cap
+                    and not (is_weekday(date) and weekend_only(d["name"]))]
             return min(fits, key=lambda d: (len(d["days"]), d["name"])) if fits else None
 
         for night, old in sorted(surplus, key=lambda s: (s[0]["date"], s[0]["id"])):
