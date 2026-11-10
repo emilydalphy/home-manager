@@ -44,7 +44,7 @@ _needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node is n
 
 def _band_prelude() -> str:
     return (
-        _extract("escapeHtml", SHELL_JS) + "\n"
+        _extract("escapeHtml", SHELL_JS) + "\n" + _extract("headsUpRowHtml", SHELL_JS) + "\n" + _extract("headsUpHtml", SHELL_JS) + "\n"
         + "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];\n"
         + "var weekState = { days: [], data: null, selectedIndex: 0, step: 'week', draftView: 'menu', draftViewPlanId: null };\n"
         + "var planningPeriodDefault = null;\n"

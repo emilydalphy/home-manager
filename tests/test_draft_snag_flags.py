@@ -795,9 +795,9 @@ def _screen(data: dict) -> str:
     harness = (
         _ESCAPE_HTML
         + _extract("weekFlagStateFor")
+        + _extract("headsUpRowHtml")
         + _extract("weekFlagsHtml")
         + "var weekFlagState = null;\n"
-        + "var FLAG_EYEBROW = 'Worth knowing';\n"
         + "var FLAG_BUSY = 'Just a moment…';\n"
         + f"console.log(weekFlagsHtml({json.dumps(data)}));"
     )
@@ -830,12 +830,14 @@ def test_the_draft_draws_one_line_per_flag_with_its_fixes_as_buttons():
                   {"action": "move", "label": "Move it to Saturday", "date": "y"}],
     }]})
 
-    assert html.count('class="wk-flag"') == 1
+    # A row of the Heads up card since 2026-11-09 (headsUpRowHtml).
+    assert html.count('class="heads-up-item wk-flag"') == 1
     assert "Lasagna takes 60 minutes, and Wednesday is short on time." in html
     assert 'data-wk-flag="7" data-wk-flag-fix="prep_ahead"' in html
     assert 'data-wk-flag="7" data-wk-flag-fix="move"' in html
     assert "Prep it Tuesday night" in html and "Move it to Saturday" in html
-    assert "Worth knowing" in html
+    # The card's own eyebrow ("Heads up") names it now, once for every row.
+    assert "Worth knowing" not in html
 
 
 def test_a_week_with_nothing_to_say_draws_nothing_at_all():
@@ -876,17 +878,19 @@ def test_nothing_on_a_flag_is_apricot_or_urgent():
     """
     GUARD on hard rules 3 and 5. The draft's one apricot is Approve, and
     nothing here is overdue or owed — the week is approvable exactly as it
-    stands. Pinned by mutation: point .wk-flag at --urgent and this fails.
+    stands. Pinned by mutation: point .heads-up at --urgent and this fails.
+    Since 2026-11-09 a flag is a row of the Heads up card (theme.css), so
+    the card is what is checked.
     """
     # Comment-stripped, or this reads its own explanation rather than the
     # rules — the trap this repo's log records being bitten by three times,
     # and which this very assertion tripped over on its first run.
-    css = re.sub(r"/\*.*?\*/", "", open("static/shell.css").read(), flags=re.S)
-    start = css.index(".wk-flags {")
-    block = css[start:css.index("\n.day-rail", start)]
+    css = re.sub(r"/\*.*?\*/", "", open("static/theme.css").read(), flags=re.S)
+    start = css.index(".heads-up {")
+    block = css[start:css.index(".btn-main", start)]
     assert "--apricot" not in block
     assert "--urgent" not in block
-    assert "var(--celadon-tint)" in block
+    assert "var(--white)" in block
 
 
 # ------------------------------------------------- the review round, 2026-09-27

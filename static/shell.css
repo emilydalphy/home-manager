@@ -3032,14 +3032,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--warn-ink);
   font-weight: 600;
 }
-.week-suggested-note {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 1.3;
-  color: var(--apricot-label);
-  margin-top: 4px;
-}
 
 /* ---- What the draft had to bend, at the top of the draft ------------
    Emily's decided snag rules (2026-09-23): "one line to the top of the
@@ -3065,37 +3057,9 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    lives INSIDE a store card that already had the gutter — copying its
    rules without its container is how the first cut of this rendered flush
    to both screen edges. */
-.wk-flags {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 4px 0 2px;
-  padding-inline: 20px;
-}
-.wk-flag {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
-  background: var(--celadon-tint);
-  border: 1.5px solid transparent;
-  border-radius: var(--radius-control);
-}
-/* Rides .gro-eyebrow for the 10px/800/uppercase/.14em treatment and
-   overrides only the colour — there is no bare `.eyebrow` class in this
-   app (every one is namespaced), so the first cut's `class="eyebrow
-   wk-flag-eyebrow"` set a colour on browser-default 16px/400 text and
-   rendered the eyebrow LARGER than the sentence under it, in the same
-   ink. */
-.wk-flag-eyebrow { color: var(--celadon-label); }
-.wk-flag-text {
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--celadon-label);
-}
+/* Since 2026-11-09 a flag is a row of the Heads up card (theme.css
+   .heads-up): the card is the container, so the flag has none of its own. */
+.wk-flag-text { margin: 0; }
 /* A sentence the server sent back instead of doing it. NOT --warn-ink,
    which is the pair for .week-conflict-note and is measured against
    --ground: on this block's --celadon-tint it is 4.40:1 in light, under
@@ -3104,11 +3068,22 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    the mistake the --warn-ink comment made. Still not --urgent, because
    nothing broke and nothing is owed; what marks it as a refusal is that
    it replaces the buttons, not its colour. */
-.wk-flag-trouble { color: var(--ink); }
+.wk-flag-trouble { margin: 0 0 6px; font-size: var(--text-small); color: var(--ink); }
 .wk-flag-working { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--celadon-label); }
-.wk-flag-acts { display: flex; flex-wrap: wrap; gap: 8px; }
-.wk-flag .wk-mini.is-ghost { background: var(--sand); border-color: transparent; }
-@media (hover: hover) { .wk-flag .wk-mini.is-ghost:hover { background: var(--sand-deep); } }
+.wk-flag-acts { display: flex; flex-wrap: wrap; gap: 0 18px; }
+/* The fixes sit under the flag's words as clay words, side by side —
+   the row is the card's, so the buttons need no box of their own. Still
+   44px to tap (.wk-mini's ::before). */
+.wk-flag .wk-mini.is-ghost {
+  height: auto;
+  min-height: 32px;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  font-weight: 600;
+  color: var(--clay);
+}
 
 /* The day strip, bottom-aligned so the selected tile can be taller. */
 .day-rail {
@@ -4351,19 +4326,37 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-icon-btn svg { width: 20px; height: 20px; }
 .gro-icon-btn.listening { background: var(--apricot); animation: gro-pulse 1.6s ease-in-out infinite; }
 @keyframes gro-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .72; } }
-/* The no-signal line (renderGroceryOfflineLine): quiet, under the head.
-   Losing signal in a supermarket is ordinary, and the line's job is to say
-   the ticks are safe, not to alarm. */
-.gro-offline {
-  margin: 14px 0 0;
-  padding: 0 20px;
+/* One-line notes drawn on a single element as a one-row Heads up card
+   (theme.css .heads-up, S14 — never a loose line on the cream): the
+   no-signal line under Shop's head (renderGroceryOfflineLine), "Eyeball
+   these" under a recipe's ingredients (cookUnscaledHtml) and cook mode's
+   "Next:" (cookCookerHtml). Each keeps its one element because its own
+   code shows, hides or rewrites it. None is urgent: losing signal in a
+   supermarket is ordinary, and the line's job is to say the ticks are
+   safe, not to alarm — --ink-secondary words on white (6.4:1). */
+.gro-offline, .recipe-ings .cook-unscaled, .cook-next {
+  margin: 14px 20px 0;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   font-family: var(--font-body);
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
   color: var(--ink-secondary);
 }
-.gro-offline[hidden] { display: none; }
+.gro-offline::before, .recipe-ings .cook-unscaled::before, .cook-next::before {
+  content: "";
+  flex: 0 0 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--ink-secondary);
+}
+.gro-offline[hidden], .recipe-ings .cook-unscaled[hidden] { display: none; }
 .gro-sortrow { margin-bottom: 0; }
 
 /* ---------- "Before you shop" — the pass in front of sorting ----------
@@ -4447,7 +4440,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   font-weight: 500;
 }
 .gro-bs-said[hidden] { display: none; }
-.gro-bs-onlist { display: flex; flex-direction: column; }
+/* "Already on the list": a Heads up card named for it since 2026-11-09. */
 .gro-bs-eyebrow {
   margin: 0 0 2px;
   font-family: var(--font-body);
@@ -4456,21 +4449,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   font-weight: 600;
   color: var(--ink-secondary);
 }
-.gro-bs-onrow {
-  display: block;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 2px;
-  border: none;
-  background: none;
-  text-align: left;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ink-secondary);
-  cursor: pointer;
-}
-.gro-bs-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 0 2px 8px; }
+.gro-bs-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .gro-bs-confirm-q { flex: 1 0 100%; font-family: var(--font-body); font-size: 14px; font-weight: 500; color: var(--ink); }
 .gro-bs-confirm-no {
   min-height: 44px;
@@ -4483,7 +4462,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--ink);
   cursor: pointer;
 }
-.gro-bs-foot { font-family: var(--font-body); font-size: 14px; line-height: 20px; color: var(--ink-secondary); }
 /* Step 1's "None this week": the quiet button under the apricot. */
 .gro-bs-none {
   width: 100%;
@@ -5139,20 +5117,10 @@ p.gro-empty:not(.note-card) { font-size: 14px; color: var(--ink-secondary); marg
   font-weight: 600;
   color: var(--ink-secondary);
 }
-/* "Two rows of spinach · Merge": one quiet line above the store cards. */
-.gro-dupe {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-inline: 20px;
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--ink-secondary);
-}
-.gro-body > .gro-dupe { margin-inline: 20px; }
+/* "Two rows of spinach   Merge": rows of a Heads up card above the store
+   cards (S14), Merge at the row's right. */
+.gro-dupe .heads-up-text { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .gro-dupe-text { min-width: 0; }
-.gro-dupe-dot { color: var(--ink-secondary); }
 .gro-dupe-merge {
   background: none;
   border: none;
@@ -7898,22 +7866,6 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
    plates note. One line each, on the ground rather than in a card — boxing
    a sentence makes a third rounded rectangle out of one fact, and neither
    of these asks for anything. */
-.wk-notes {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 20px 0;
-}
-.wk-note {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--ink-secondary);
-}
-/* The draft root's soft line sits ABOVE the week (shell.js
-   draftSoftNoteHtml), so it needs the room below that .wk-notes keeps
-   above — or it touches the Schedule view's day tabs. */
-.wk-draft-notes { padding-bottom: 10px; }
 /* The draft's decision, directly under the week it is about. */
 /* Also a .dock (rule 2) — the box below only overrides the padding, because
    the Approve button needs a little more room above it than Cook's strip
@@ -10276,44 +10228,8 @@ body.first-open-active { overflow: hidden; }
   font-weight: 600;
   line-height: 1.3;
 }
-.wk-use-up-line {
-  margin: 14px 20px 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--ink-secondary);
-}
-/* The line as the way to its rows (wkUseUpLineHtml): the same words, a
-   chevron, a 44px target. */
-.wk-use-up-line.is-tap {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: calc(100% - 40px);
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-.wk-use-up-text { min-width: 0; }
-.wk-use-up-chev { flex: 0 0 auto; }
-.wk-use-up-chev svg { transition: rotate var(--motion-base) var(--motion-ease); }
-.wk-use-up-chev.is-open svg { rotate: 90deg; }
-.wk-use-up-past {
-  margin: 12px 20px 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--ink-secondary);
-}
-.wk-unfit {
-  margin: 12px 20px 0;
-  padding: 12px 16px;
-  border-color: var(--apricot-rule);
-}
+/* Opened under the use-up row, inside the Heads up card (2026-11-09). */
+.wk-unfit { padding: 0; }
 .wk-unfit-head {
   margin: 0 0 2px;
   font-family: var(--font-body);
@@ -10607,7 +10523,6 @@ body.first-open-active { overflow: hidden; }
   margin: 6px 3px;
   background: var(--tick-ring);
 }
-.wk-pday-tags { margin: 10px 20px 0; font-family: var(--font-body); font-size: 14px; line-height: 20px; color: var(--ink-secondary); }
 .wk-qrow[hidden] { display: none; }
 .wk-qrow.is-past .wk-qrow-name, .wk-qrow.is-done .wk-qrow-name { color: var(--ink-secondary); }
 .wk-qrow.is-done .wk-qrow-name { text-decoration: line-through; }
@@ -10621,20 +10536,6 @@ body.first-open-active { overflow: hidden; }
 .wk-day-snacks { justify-content: center; }
 /* A sheet of tiles sits in the sheet's own gutter. */
 .tiles.in-sheet { margin: 2px 0 0; }
-.wk-plan .wk-flags { padding-inline: 20px; margin: 14px 0 0; }
-.wk-plan .wk-flag { background: none; border: 0; border-left: 0; padding: 0; gap: 2px; }
-.wk-plan .wk-flag-acts { gap: 4px 12px; }
-.wk-plan .wk-flag .wk-mini.is-ghost {
-  height: auto;
-  min-height: 32px;
-  padding: 0;
-  background: none;
-  border: 0;
-  font-weight: 600;
-  color: var(--clay);
-}
-.wk-plan .wk-unfit { box-shadow: none; }
-.wk-plan .wk-notes, .wk-plan .wk-use-up-line, .wk-plan .wk-use-up-past, .wk-plan .week-suggested-note { margin: 14px 20px 0; }
 
 /* ---------- Today: quiet rows ---------- */
 /* A meals row is a button now: the eyebrow and the dish on the left, a
@@ -10737,7 +10638,7 @@ body.is-full-screen #tab-bar { display: none; }
   box-shadow: var(--shadow-card);
   transition: transform var(--motion-press) ease;
 }
-.cook-prepday:active, .cook-quiet-line:active, .cook-one-open:active { transform: scale(.98); }
+.cook-prepday:active, .cook-one-open:active { transform: scale(.98); }
 .cook-prepday-eyebrow { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
 .cook-prepday-title { font-size: 16px; line-height: 22px; font-weight: 500; }
 .cook-prepday + .tiles, .cook-bed + .tiles { margin-top: 10px; }
@@ -10802,33 +10703,11 @@ body.is-full-screen #tab-bar { display: none; }
 .cook-one-name { font-size: 26px; line-height: 30px; font-weight: 700; letter-spacing: -0.025em; overflow-wrap: anywhere; }
 .cook-one-time { font-size: 14px; line-height: 20px; color: var(--ink-secondary); }
 
-/* A line that opens something: prep done, the night before, the next prep. */
-.cook-quiet-line {
-  appearance: none;
-  border: 0;
-  font: inherit;
-  box-sizing: border-box;
-  width: calc(100% - 32px);
-  min-height: 52px;
-  margin: 10px 16px 0;
-  padding: 0 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  background: var(--white);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  color: var(--ink);
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 500;
-  text-align: left;
-  transition: transform var(--motion-press) ease;
-}
-.cook-quiet-line.is-link { cursor: pointer; }
-.cook-quiet-line.is-set { color: var(--ink-secondary); }
-.cook-quiet-line svg { width: 16px; height: 16px; flex: 0 0 16px; color: var(--ink-secondary); }
+/* Prep done, the night before, the next prep: rows of one Heads up card
+   under the meals since 2026-11-09 (theme.css .heads-up). Done is quieter. */
+.cook-quiet-line.is-set .heads-up-text { color: var(--ink-secondary); }
+/* Cook's cards sit in a 16px gutter (.cook-one, the tiles); the card matches. */
+.kit-body > .heads-up { margin-inline: 16px; }
 
 /* A plain card with nothing to cook on it, or a load that failed. */
 .cook-off { gap: 2px; }
@@ -11093,7 +10972,6 @@ button.prep-step-name { cursor: pointer; }
 .recipe-count { margin: 14px 20px -6px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
 .recipe-ing-group { padding-bottom: 0; }
 .recipe-ing-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.recipe-ings .cook-unscaled { margin: 12px 20px 0; font-size: 13px; line-height: 18px; color: var(--ink-secondary); }
 .recipe-takes { margin: 14px 20px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-secondary); }
 .recipe-steps {
   list-style: none;
@@ -11299,7 +11177,6 @@ button.prep-step-name { cursor: pointer; }
 .cook-needs { justify-content: flex-start; gap: 6px; }
 .cook-needs-label { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
 .cook-step-needs { font-size: 16px; line-height: 22px; font-weight: 500; color: var(--ink); overflow-wrap: anywhere; }
-.cook-next { margin: 14px 20px 0; font-size: 14px; line-height: 20px; color: var(--ink-secondary); }
 
 /* --- Ask (Z-Ask) --- */
 #ask-scrim { background: var(--scrim); }

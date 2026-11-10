@@ -624,9 +624,11 @@ def test_the_status_line_copy_is_exactly_what_emily_saw():
     assert 'var GRO_NO_COPY_LINE = "No signal — I’ll show your list as soon as you’re back.";' in SHELL_JS
     assert 'var ASK_NO_SIGNAL_LINE = "I need a signal for this one — try again when you’re back.";' in SHELL_JS
     assert '<p class="gro-offline" id="gro-offline" hidden></p>' in SHELL_JS
-    assert ".gro-offline {" in SHELL_CSS
+    # A one-row Heads up card since 2026-11-09 (S14), shared with the other
+    # one-element notes.
+    assert ".gro-offline, " in SHELL_CSS
     # Secondary ink: no signal in a supermarket is ordinary, not urgent.
-    block = SHELL_CSS[SHELL_CSS.index(".gro-offline {"):]
+    block = SHELL_CSS[SHELL_CSS.index(".gro-offline, "):]
     block = block[:block.index("}")]
     assert "var(--ink-secondary)" in block
     assert "urgent" not in block

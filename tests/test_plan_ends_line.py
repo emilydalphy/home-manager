@@ -120,7 +120,7 @@ _DAYNAME = (
 
 def _prelude() -> str:
     return (
-        _function("escapeHtml") + "\n" + _DAYNAME
+        _function("escapeHtml") + "\n" + _function("headsUpRowHtml") + "\n" + _function("headsUpHtml") + "\n" + _DAYNAME
         + "var planningPeriodDefault = null;\n"
         + "function thisWeekStartLocal() { return '2026-10-12'; }\n"
         + "var TODAY = '2026-10-14';\n"
@@ -130,7 +130,7 @@ def _prelude() -> str:
         + _function("planEntryLabel") + "\n"
         + _function("planNextLabel") + "\n"
         + _function("planEndsEarly") + "\n"
-        + _function("planEndsLineHtml") + "\n"
+        + _function("planEndsWords") + "\n"
     )
 
 
@@ -144,9 +144,9 @@ def test_the_root_says_where_the_plan_ends_and_the_existing_button_names_the_nex
     data = {"weekly_plan_id": 1, "days": [{"date": "2026-10-14"}], "next_period": _SHORT}
     out = _node(_prelude() + f"""
 var data = {json.dumps(data)};
-console.log(JSON.stringify([planEndsLineHtml(data), planNextLabel(nextPeriodFor(data, data.days))]));""")
-    assert "This plan ends Friday." in out[0]
-    assert "<button" not in out[0], "the next step is the button already on screen"
+console.log(JSON.stringify([planEndsWords(data), planNextLabel(nextPeriodFor(data, data.days))]));""")
+    # Said in the Plan head's line since Emily's Heads up pick (2026-11-09).
+    assert out[0] == "Ends Friday"
     assert out[1] == "Plan from Saturday"
 
 
@@ -156,8 +156,8 @@ def test_on_the_plans_last_day_it_says_today_and_tomorrow():
     out = _node(_prelude() + f"""
 TODAY = '2026-10-16';
 var data = {json.dumps(data)};
-console.log(JSON.stringify([planEndsLineHtml(data), planNextLabel(nextPeriodFor(data, data.days))]));""")
-    assert "This plan ends today." in out[0]
+console.log(JSON.stringify([planEndsWords(data), planNextLabel(nextPeriodFor(data, data.days))]));""")
+    assert out[0] == "Ends today"
     assert out[1] == "Plan from tomorrow"
 
 
@@ -168,18 +168,20 @@ def test_no_line_when_the_week_is_whole_or_the_next_day_is_already_held():
     drafted = dict(_SHORT, is_planned=True, draft_plan_id=7)
     out = _node(_prelude() + f"""
 console.log(JSON.stringify([{json.dumps(whole)}, {json.dumps(held)}, {json.dumps(drafted)}].map(function (n) {{
-  return [planEndsLineHtml({{ days: [], next_period: n }}), planNextLabel(n)];
+  return [planEndsWords({{ days: [], next_period: n }}), planNextLabel(n)];
 }})));""")
     assert out[0] == ["", "Plan next week"]
     assert out[1] == ["", "Re-plan next week"]
     assert out[2] == ["", "See next week’s draft"]
 
 
-def test_both_roots_carry_the_line_above_the_week():
-    # One Plan root for a draft and an approved week since 2026-10-30.
-    assert "return planWeekHtml(data, days);" in _function("weekStepHtml")
-    assert "weekSuggestedNoteHtml(data) + planEndsLineHtml(data) +" in _function("planWeekHtml")
-    assert "draftSoftNoteHtml(data) + planEndsLineHtml(data)" in _function("reviewStepHtml")
+def test_the_head_says_where_the_plan_ends_and_no_loose_line_does():
+    # Emily, 2026-11-09: no loose lines. "Ends Friday" is the head's line
+    # (weekBandParts), in place of "5 days"; neither root draws a line.
+    assert "planEndsWords(data)" in _function("weekBandParts")
+    assert "planEnds" not in _function("planWeekHtml")
+    assert "planEnds" not in _function("reviewStepHtml")
+    assert "This plan ends" not in SHELL_JS
 
 
 # ---------- "Before this plan" only before the plan ----------

@@ -65,6 +65,7 @@ _PRELUDE = (
     + _function("cookPreppedAhead") + "\n"
     + _function("cookSessionOn") + "\n"
     + _function("tileHtml") + "\n"
+    + _function("headsUpRowHtml") + "\n" + _function("headsUpHtml") + "\n"
     + _between("  function kitchenTodayRows(", "  function cookBandEyebrow(")
     + _function("kitchenNextCookLine") + "\n" + _function("kitchenNextCook") + "\n" + _function("kitchenNextWhen") + "\n"
     + ROOT_BLOCK
@@ -244,7 +245,7 @@ def test_during_the_day_the_night_before_is_one_quiet_line():
                                       "done": False, "tickable": True, "task_id": 13, "entry_id": 21}])
     html = out["html"]
     assert 'id="kit-get-ready"' in html and 'data-cook="bed-open"' in html
-    assert "<span>Before bed: 2 things for Wednesday</span>" in html
+    assert "<span class=\"heads-up-text\">Before bed: 2 things for Wednesday</span>" in html
     # The thaw itself is not on the screen yet — and never twice.
     assert "Move the chicken thighs" not in html
     assert "cook-bed\"" not in html and "cook-thaw" not in html
@@ -264,7 +265,7 @@ def test_after_the_last_meal_the_night_before_is_the_checklist_and_the_thaw_is_t
     assert ">All done<" in out["dock"] and 'data-cook="bed-all"' in out["dock"]
     # Every box ticked: one quiet line, and no dock.
     out = _root(meals, [_fridge(12, done=True)])
-    assert "<span>All set for Wednesday</span>" in out["html"] and 'class="cook-bed"' not in out["html"]
+    assert "<span class=\"heads-up-text\">All set for Wednesday</span>" in out["html"] and 'class="cook-bed"' not in out["html"]
     assert out["dock"] == ""
     # Opened by hand earlier in the day: the card sits under the list.
     meals[0]["cooked_status"] = "pending"
@@ -324,12 +325,12 @@ def test_the_prep_card_leads_only_on_a_prep_day_before_the_prep_is_done():
     # Done: one quiet line, no tile.
     out = _root(meals, sessions=[_session(13)])
     assert "cook-prepday" not in out["html"]
-    assert "<span>Tuesday prep is done · 13 of 13</span>" in out["html"]
+    assert "<span class=\"heads-up-text\">Tuesday prep is done · 13 of 13</span>" in out["html"]
     # Not a prep day: no card at all — a later prep day is one line.
     later = dict(_session(0), date="2026-09-17", weekday="Thursday")
     out = _root(meals, sessions=[later])
     assert "cook-prepday" not in out["html"]
-    assert "<span>Thursday prep · 13 things</span>" in out["html"]
+    assert "<span class=\"heads-up-text\">Thursday prep · 13 things</span>" in out["html"]
 
 
 # --------------------------------------------------------------------------

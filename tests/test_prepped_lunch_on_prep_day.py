@@ -570,6 +570,7 @@ _PRELUDE = (
     + _function("cookMealKey") + "\n"
     + _function("cookSessionOn") + "\n"
     + _function("tileHtml") + "\n"
+    + _function("headsUpRowHtml") + "\n" + _function("headsUpHtml") + "\n"
     + _function("kitchenNextCookLine") + "\n" + _function("kitchenNextCook") + "\n" + _function("kitchenNextWhen") + "\n"
     + _between("  // ---------- Cook's root: today, in the order it is eaten", "  function renderKitchen()")
 )

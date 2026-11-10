@@ -494,6 +494,69 @@ button.tile { cursor: pointer; }
   color: var(--ink);
 }
 
+/* --- Heads up: a screen's small notes, in one card (Emily, 2026-11-09) ---
+   Never a loose grey line on cream: every note on a screen goes in this
+   one white card under the head, one row each, a hairline between rows.
+   A row you can tap is a button with a chevron. The dot is decoration
+   (aria-hidden), in slate: never apricot, the screen's one apricot is its
+   main button (rule 5), and never dusk, which is for the tab bar, Use soon,
+   timers and the welcome; nothing here is urgent (rule 3). The
+   eyebrow names the card. Contrast on white: --ink
+   text 14.9:1, the --slate eyebrow 6.4:1. */
+.heads-up {
+  margin: 14px 20px 0;
+  padding: 4px 0;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+}
+.heads-up-eyebrow {
+  padding: 10px 16px 2px;
+  font-family: var(--font-body);
+  font-size: var(--text-tiny);
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.heads-up-item + .heads-up-item .heads-up-row { border-top: 1px solid var(--hairline); }
+.heads-up-row {
+  appearance: none;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  margin: 0;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--text-support);
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ink);
+}
+button.heads-up-row { cursor: pointer; }
+.heads-up-dot {
+  flex: 0 0 8px;
+  height: 8px;
+  margin-top: 6px;  /* centred on the first line: (14px x 1.4 - 8px) / 2 */
+  border-radius: var(--radius-pill);
+  background: var(--ink-secondary);
+}
+.heads-up-text { flex: 1 1 auto; min-width: 0; }
+.heads-up-chev { flex: 0 0 auto; display: flex; margin-top: 2px; color: var(--tick-ring); }
+.heads-up-chev svg { transition: rotate var(--motion-base) var(--motion-ease); }
+.heads-up-chev.is-open svg { rotate: 90deg; }
+/* What sits under a row's words (a flag's fixes, the Freeze it rows):
+   lined up with the words, not the dot. */
+.heads-up-item > :not(.heads-up-row) { margin: -10px 16px 10px 36px; }
+
 /* --- Buttons: one main apricot per screen, always dark text --- */
 .btn-main, .btn-quiet {
   appearance: none;

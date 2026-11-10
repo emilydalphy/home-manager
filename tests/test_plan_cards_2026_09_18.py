@@ -51,7 +51,7 @@ _DAYNAME_STUB = (
 
 def _prelude() -> str:
     return (
-        _extract("escapeHtml", SHELL_JS) + "\n"
+        _extract("escapeHtml", SHELL_JS) + "\n" + _extract("headsUpRowHtml", SHELL_JS) + "\n" + _extract("headsUpHtml", SHELL_JS) + "\n"
         + _extract_var("ASK_BOX_LABEL", SHELL_JS) + "\n"
         + _extract_var("ASK_BOX_PLACEHOLDER", SHELL_JS) + "\n"
         + _extract("askBoxHtml", SHELL_JS) + "\n"
