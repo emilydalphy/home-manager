@@ -128,6 +128,12 @@ DAY_OUT = "day_out"
 # choose.
 ALLERGY_REQUEST = "allergy_request"
 
+# Emily's rule 7 (decided 2026-11-09): two dishes they asked for on one
+# day — cap_enforce.place_two_asks_one_day fitted them across that day's
+# lunch and dinner, or kept the more specific one there and moved the other
+# to the nearest meal it fits. One line either way, no fixes.
+TWO_ASKS_ONE_DAY = "two_asks_one_day"
+
 # Emily's rule 1 (Decision A, 2026-09-23): a dish they asked for naming no
 # meal and no day — "Pomona says where it went", whether or not
 # cap_enforce.place_meal_requests had to move it for time. No fixes: the
@@ -205,12 +211,27 @@ def no_meal_no_day_text(dish: str, meal_date: str, slot: str, minutes: int | Non
 
 
 def no_meal_no_day_more_text(count: int) -> str:
-    """"Your other four asks are on the plan too, each on a day with the
-    time for it." Pomona's sentence, not Emily's — hers to approve."""
-    from .draft_opener import number_word  # lazy: keeps this module's imports light
+    """"Your other 4 requests are on the plan too." Emily's sentence
+    (2026-11-09), the number as digits."""
     if count == 1:
-        return "Your other ask is on the plan too, on a day with the time for it."
-    return f"Your other {number_word(count)} asks are on the plan too, each on a day with the time for it."
+        return "Your other request is on the plan too."
+    return f"Your other {int(count)} requests are on the plan too."
+
+
+def two_asks_fitted_text(first: str, second: str, day: str, lunch: str, dinner: str) -> str:
+    """"You asked for Fish Tacos and Pizza on Friday, so Fish Tacos is lunch
+    and Pizza is dinner." Emily's suggested line (2026-11-09). The dishes in
+    the order they asked for them."""
+    return f"You asked for {first} and {second} on {_weekday(day)}, so {lunch} is lunch and {dinner} is dinner."
+
+
+def two_asks_moved_text(first: str, second: str, day: str, both: str, dish: str,
+                        meal_date: str, slot: str) -> str:
+    """"You asked for Lasagna and Pizza for Friday dinner, so Pizza is
+    Saturday dinner." Emily's suggested line (2026-11-09). "for Friday
+    dinner" when they named that meal for both; "on Friday" otherwise."""
+    asked = f"for {_weekday(day)} {both}" if both else f"on {_weekday(day)}"
+    return f"You asked for {first} and {second} {asked}, so {dish} is {_weekday(meal_date)} {slot}."
 
 
 def allergy_request_text(asked: str, food: str, who: list[str], dish: str,
@@ -492,7 +513,8 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
             if row and (row["meal"] or "") == flag.get("dish") and (row["cooked_status"] or "") != "done":
                 live.append({**flag, "fixes": []})
             continue
-        if flag.get("kind") in (LATE_REQUEST, RUN_LEFT, DAY_OUT, ALLERGY_REQUEST, NO_MEAL_NO_DAY):
+        if flag.get("kind") in (LATE_REQUEST, RUN_LEFT, DAY_OUT, ALLERGY_REQUEST, NO_MEAL_NO_DAY,
+                                TWO_ASKS_ONE_DAY):
             # Not about a cap, so not judged by one: still about something
             # while the same dish is on the same meal, and not yet cooked.
             row = planned.get(flag.get("entry_id"))
@@ -619,6 +641,40 @@ def flags_for_days_out(weekly_plan_id: int) -> list[dict]:
                       "text": day_out_text(r["meal"], stamp["from"], r["date"], bool(stamp.get("away"))),
                       "entry_id": r["id"], "date": r["date"], "slot": "dinner", "dish": r["meal"], "fixes": []})
     return sorted(flags, key=lambda f: f["date"])
+
+
+def flags_for_two_asks(weekly_plan_id: int) -> list[dict]:
+    """
+    Rule 7: one line per pair cap_enforce.place_two_asks_one_day settled,
+    off its stamp. Fitted: on the lunch, said only when Pomona chose a meal,
+    and only while the other dish is still that day's dinner. Moved: on the
+    dish that moved, while the one that kept the day is still on it.
+    """
+    from . import cap_enforce as _cap_enforce  # lazy: it imports this module
+    rows = _planned_rows(weekly_plan_id).values()
+    at = {(r["date"], r["slot"]): (r["meal"] or "").strip() for r in rows}
+    flags = []
+    for r in sorted(rows, key=lambda r: (r["date"], r["slot"])):
+        stamp = _derived_of(r).get(_cap_enforce.TWO_ASKS_KEY)
+        dish = (r["meal"] or "").strip()
+        if not isinstance(stamp, dict) or not dish or not stamp.get("day"):
+            continue
+        day, first, second = stamp["day"], stamp.get("first") or "", stamp.get("second") or ""
+        if stamp.get("how") == "fitted":
+            if (not stamp.get("said") or r["slot"] != "lunch" or r["date"] != day or dish != stamp.get("lunch")
+                    or at.get((day, "dinner")) != stamp.get("dinner")):
+                continue
+            text = two_asks_fitted_text(first, second, day, dish, stamp["dinner"])
+        elif stamp.get("how") == "moved" and stamp.get("moved"):
+            keeper = second if dish == first else first
+            if r["date"] == day or keeper not in (at.get((day, "dinner")), at.get((day, "lunch"))):
+                continue
+            text = two_asks_moved_text(first, second, day, stamp.get("both") or "", dish, r["date"], r["slot"])
+        else:
+            continue
+        flags.append({"kind": TWO_ASKS_ONE_DAY, "text": text, "entry_id": r["id"],
+                      "date": r["date"], "slot": r["slot"], "dish": dish, "fixes": []})
+    return flags
 
 
 def _their_phrase(clauses: list[str], stems: set[str]) -> str:
