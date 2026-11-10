@@ -5340,7 +5340,14 @@ def _rewrite_meal_recipe(entry_id: int, text: str, this_meal_only: bool = False)
         ingredients = tools.complete_ingredient_list(
             ingredients, detail.get("instructions") or [], detail.get("default_servings"),
         )
-        clashes = _allergen_gate.hard_clashes(name, ingredients=ingredients, avoidances=avoidances)
+        # A change that swapped the main protein ("use shrimp instead")
+        # renames the dish the way Tweak's Change the protein row does
+        # (Emily, 2026-11-09) — read off the list that came back, never the
+        # words typed (recipe_change.protein_swap). Every check below judges
+        # the dish under the name it will carry.
+        swap = tools.protein_swap(spec_base, ingredients)
+        dish_name = swap["name"] if swap else name
+        clashes = _allergen_gate.hard_clashes(dish_name, ingredients=ingredients, avoidances=avoidances)
         if clashes:
             food = _allergen_gate._food_word(clashes)
             logger.warning("Recipe rewrite for %r wrote in a must-avoid (%s); %s",
@@ -5357,7 +5364,7 @@ def _rewrite_meal_recipe(entry_id: int, text: str, this_meal_only: bool = False)
         # written from the household's own words, which can name them. The
         # card's tweak variants are a later step.
         if this_meal_only:
-            disliked = tools.wont_eat_added(name, spec_base["ingredients"], ingredients)
+            disliked = tools.wont_eat_added(dish_name, spec_base["ingredients"], ingredients)
             if disliked:
                 # Asked for by name: a second write would only put it back.
                 # Otherwise the writer reached for it on its own — once more.
@@ -5366,7 +5373,22 @@ def _rewrite_meal_recipe(entry_id: int, text: str, this_meal_only: bool = False)
                             "which is on keep_out. Write it again without it."}
                     continue
                 return {"status": "blocked", "said": tools.wont_eat_said(disliked)}
-        return tools.apply_rewrite(spec_base, detail, text, this_meal_only=this_meal_only)
+        # They named a protein ("use shrimp instead") and it isn't in what
+        # came back: once more, saying so, then a plain no — a rewrite that
+        # kept the salmon is not "rewritten" (the card: never silently
+        # nothing). A protein somebody can't have was never going in.
+        left_out = None if swap else tools.protein_left_out(text, spec_base, ingredients)
+        if left_out:
+            if _allergen_gate.hard_clashes(left_out, ingredients=[{"item": left_out}], avoidances=avoidances):
+                return {"status": "blocked",
+                        "said": f"Somebody here can’t have {left_out}, so {name} is as it was."}
+            if attempt == 1:
+                logger.warning("Recipe rewrite for %r left out the %s they asked for; retrying once", name, left_out)
+                spec = {**spec, "note": spec["note"] + f" They asked for {left_out} by name and your previous "
+                        "attempt left it out. Put it in as the dish's main protein if that is what they asked."}
+                continue
+            return {"status": "blocked", "said": tools.protein_left_out_said(left_out, name)}
+        return tools.apply_rewrite(spec_base, detail, text, this_meal_only=this_meal_only, rename=swap)
     # Filed once, by the caller (_file_unanswered_change), not here too.
     raise ValueError("That rewrite didn’t come together — try it again.")
 
