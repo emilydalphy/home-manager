@@ -287,6 +287,9 @@ def add_recipe(
     # held and every later write in the app failed "database is locked"
     # until the server restarted.
     try:
+        # An egg dish that keeps says so on its recipe (Emily, 2026-11-09).
+        from .leftovers import with_make_ahead_note as _with_make_ahead_note
+        notes = _with_make_ahead_note(name, notes, {"main_protein": main_protein, "advance_prep_notes": advance_prep_notes})
         cur = conn.execute(
             "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
             "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
@@ -756,6 +759,23 @@ def fill_recipe_details(
                 (new_name.strip(), row["id"], household_id()),
             )
             recipe_name = new_name.strip()
+        # An egg dish that keeps says so on its recipe (Emily, 2026-11-09):
+        # a library copy or a written recipe gets the make-ahead line here.
+        noted = conn.execute(
+            "SELECT notes, main_protein FROM recipes WHERE id = ? AND household_id = ?",
+            (row["id"], household_id()),
+        ).fetchone()
+        if noted is not None:
+            from .leftovers import with_make_ahead_note as _with_make_ahead_note
+            new_notes = _with_make_ahead_note(
+                recipe_name, noted["notes"],
+                {"main_protein": noted["main_protein"], "advance_prep_notes": advance_prep_notes},
+            )
+            if new_notes != (noted["notes"] or "").strip():
+                conn.execute(
+                    "UPDATE recipes SET notes = ? WHERE id = ? AND household_id = ?",
+                    (new_notes, row["id"], household_id()),
+                )
         conn.execute(
             "UPDATE recipes SET ingredients_json = ?, instructions_json = ?, default_servings = ?, "
             "prep_time_minutes = COALESCE(?, prep_time_minutes), "
